@@ -112,13 +112,15 @@ Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak i
 
 Bu sürümde soru üretimi senin bir eğitmen veya uzman olmanı gerektirmez: yapay zekâ hem **soru yazarı** hem de **öğretmen/denetçi** rolünü kendisi üstlenir.
 
-1. Model seçildikten sonra sunucu, **Soru stüdyosu** sayfasını hiç açmasan da kendi kendine çalışmaya başlar: 29 ünitenin tamamını sırayla dolaşır, her biri için özgün bir soru yazar.
-2. Yazılan her soru, aynı anda cevabı ve gerekçeyi GÖRMEYEN bağımsız bir ikinci model geçişinden geçer. Bu "denetçi" soruyu anlatımdan bağımsızca yeniden çözer; tek doğru cevap var mı, cevap doğru mu, kaynakla destekleniyor mu ve soru sınav kalitesinde mi kontrol eder.
-3. Her iki geçiş de uyuşursa soru otomatik olarak **onaylanmış** sayılır ve hemen soru havuzuna girer — senin ayrıca "onaylaman" gerekmez. Uyuşmazsa soru hiç kaydedilmez.
-4. **Soru stüdyosu** sayfasında istersen ilerlemeyi izleyebilir, **Kendi kendine üretimi durdur/başlat** düğmesiyle süreci duraklatabilir veya devam ettirebilirsin.
-5. Bir ünite okuyup **Okudum, tamamla** dediğinde, o ünite için zaten hazırlanmış onaylı sorular testlerine hemen dahil olur; aynı anda arka planda henüz çalışmadığın üniteler için de üretim sürmeye devam eder.
+1. Model seçildikten sonra sunucu, **Soru stüdyosu** sayfasını hiç açmasan da kendi kendine çalışmaya başlar: 29 ünitenin tamamını dolaşır, her biri için özgün sorular yazar.
+2. Üretim artık **gerçekten paralel**: sunucu, tek bir üniteyi bitirip sıradakine geçmek yerine, aynı anda birden fazla ünite için soru üretir (varsayılan 3, Soru stüdyosu sayfasından 1 ile 29 arasında ayarlanabilir). Bir soru onaylanır onaylanmaz, yapay bir bekleme olmadan hemen boşalan yuvaya yeni bir ünite alınır.
+3. Gerçek hız sabit bir sayı (ör. "her 2 saniyede bir") değildir ve olamaz: her soru, iki ayrı model geçişinden geçmek zorundadır (bkz. 2. madde aşağıda), bu yüzden gerçek hız bilgisayarının ekran kartına ve seçtiğin modele bağlıdır. Hız için bu çift kontrolü kaldırmak bilinçli olarak tercih edilmedi.
+4. Yazılan her soru, aynı anda cevabı ve gerekçeyi GÖRMEYEN bağımsız bir ikinci model geçişinden geçer. Bu "denetçi" soruyu anlatımdan bağımsızca yeniden çözer; tek doğru cevap var mı, cevap doğru mu, kaynakla destekleniyor mu ve soru sınav kalitesinde mi kontrol eder.
+5. Her iki geçiş de uyuşursa soru otomatik olarak **onaylanmış** sayılır ve hemen soru havuzuna girer — senin ayrıca "onaylaman" gerekmez. Uyuşmazsa soru hiç kaydedilmez.
+6. **Soru stüdyosu** sayfasında istersen ilerlemeyi (hangi ünitelerin şu an aynı anda üretildiğini) izleyebilir, **Kendi kendine üretimi durdur/başlat** düğmesiyle süreci duraklatabilir veya devam ettirebilir, aynı anda kaç ünite üretileceğini değiştirebilirsin.
+7. Bir ünite okuyup **Okudum, tamamla** dediğinde, o ünite için zaten hazırlanmış onaylı sorular testlerine hemen dahil olur; aynı anda arka planda henüz çalışmadığın üniteler için de üretim sürmeye devam eder.
 
-Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. İki aşamalı otomatik kontrolden geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; otomatik kontrol doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz.
+Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. İki aşamalı otomatik kontrolden geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; otomatik kontrol doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz. Eşzamanlılığı çok yükseğe ayarlamak zayıf bir ekran kartında modeli yavaşlatabilir veya Ollama'yı yorabilir; deneyerek bilgisayarına uygun sayıyı bul.
 
 ## 10. Yapay zekânın kararlarını izle (istersen veto et)
 
@@ -141,6 +143,8 @@ Bu sürümde soru metnini uygulama içinden düzeltme özelliği yoktur. Yapay z
 
 Bu sistem her ünitenin önemli notunu hatırlatır; kitabın tüm konularını ayrı ayrı ölçmez ve kalıcı öğrenme garantisi vermez. Tekrar planı bu tarayıcıda saklanır.
 
+Bir üniteyi önceden okuyup tamamladıysan ama baştan tekrar okumak/çözmek istersen, ünite sayfasında **Üniteyi sıfırla, en baştan başla** düğmesini kullanabilirsin (yalnız o ünite okundu/tamamlandı işaretini, o üniteye ait test sonuçlarını ve Tekrar yolu kaydını siler; diğer ünitelerin ilerlemesine ve yapay zekânın ürettiği soru havuzuna dokunmaz). Bu düğme, ünite daha önce okunmuş veya en az bir kez test edilmişse görünür.
+
 ## 11A. Voice Studio ile dinle
 
 1. Sol menüden **Sesli çalışma** aç. Voice Studio'da kitap ve ünite seç.
@@ -153,6 +157,20 @@ Voice Studio tarayıcı ve Windows'un sunduğu konuşma sentezini kullanır; ayr
 ## 11B. Test çöz
 
 Ünite sayfasında **Ünite testine geç** düğmesini kullan. **Test merkezi** bölümünden kitap ve karma testleri de açabilirsin. Testlerde yalnız tamamlanan ünitelerin uygun soruları kullanılır; yapay zekânın kendi kendine onayladığı sorular ek bir işlem gerekmeden havuza girmiş olur. Rastgele seçim nedeniyle bir soru her testte hemen görünmeyebilir. Bir üniteyi yanlış yaptıkça o ünite, art arda üç doğruya ulaşana kadar karma testlerde daha sık ve daha ağırlıklı çıkar; üç doğruya ulaştığında ağırlığı azalır, ama kalıcılığı Tekrar yolu'ndaki uzun vadeli program korur.
+
+## 11C. Nasıl çalışmalı, hangi konulara ağırlık ver
+
+Bu bölüm, "Antrenörlük Temel Eğitimi" sınavının genel formatı ve çalışma taktikleri hakkında internet üzerinden yapılan genel bir araştırmanın özetidir (uygulama içinde **Çalışma planım** sayfasında da aynı bilgiler kart hâlinde bulunur). **Bunlar resmî değildir, sayılar kaynağa göre değişebilir**; sınav tarihinden önce mutlaka Gençlik ve Spor Bakanlığı / Anadolu Üniversitesi'nin kendi duyurularından doğrula.
+
+- **Sınav yapısı:** Uygulamadaki 5 kitapla eşleşen 5 modül (Hareket ve Antrenman Bilimleri, Spor ve Sağlık Bilimleri, Sporda Öğrenme ve Öğretme, Sporda Psikososyal Alanlar, Spor Yönetimi); her modülden 20, toplamda 100 soru.
+- **Geçme barajı modül başınadır, genel ortalama değildir:** Her modülde bağımsız olarak en az %60 (20 soruda 12 doğru) gerekir. Bir modülü geçememek yalnız o modülü etkiler ve genelde bir "bütünleme" sınavında tekrar girilebilir; diğer modüllerden çok yüksek almak düşük modülü telafi etmez.
+- **Yanlış, doğruyu götürmez:** Bildiğin kadarıyla işaretlemekten çekinme; boş bırakmakla yanlış yapmak arasında puan farkı yoktur (negatif puanlama yok).
+- **Önce en zayıf olduğun modülü bul:** Baraj modül başına olduğu için en kritik modül, en zayıf olduğun modüldür. Uygulamadaki **Test merkezi**nden her kitap için ayrı deneme çöz, en düşük çıkan modülde fazladan zaman geçir (hedef: güvenlik payı için 20 soruda 15-16 doğru).
+- **Bazı modüller daha teknik olma eğilimindedir:** Hareket ve Antrenman Bilimleri ile Spor ve Sağlık Bilimleri, anatomi/fizyoloji/antrenman terminolojisi içerdiğinden genelde daha zor bulunur; kart/özet çıkararak ve kavramları görselleştirerek (örn. "süper telafi" eğrisini çizerek) çalışmak ezbere göre daha kalıcı olabilir. Spor Yönetimi ve Sporda Psikososyal Alanlar genelde daha az teknik bulunur.
+- **Konuyu başka birine (veya kendine) sesli anlat:** Bir konuyu notlara bakmadan kendi cümlelerinle anlatabilmek, gerçekten öğrenip öğrenmediğini en iyi gösteren testlerden biridir. Uygulamadaki **Tekrar yolu**, tam bunun için kart başına "önce anlat, sonra notu gör" akışını kullanır.
+- **Son haftalarda süreyle (zamanlı) çalış:** Gerçek sınavda modül başına yaklaşık 1 dakika/soru düşer. Sınavdan 1-2 hafta önce **Test merkezi**nde 20 soruluk kitap testlerini zamanlayarak çözmek, gerçek temponu ölçmene yardımcı olur.
+- **Yanlış yaptıkların listesini tut, sonda onları tekrar çöz:** Her şeyi baştan yeniden okumak yerine, özellikle yanlış yaptığın sorulara yakın zamanda tekrar dön; uygulama bunu zaten otomatik yapar (bkz. "11B. Test çöz" ve "11. Tekrar yolunu kullan" — yanlış yapılan ünite, üç doğruya ulaşana kadar karma testlerde daha sık ve ağırlıklı çıkar).
+- **Erken başla:** Genel öneri, sınavdan 4-6 hafta önce düzenli çalışmaya başlamak ve kaynak metni (sadece özet değil) birkaç kez okumaktır; gerçek sınav ince ayrıntıları da sorabilir.
 
 ## 12. Her gün yeniden açarken
 
@@ -306,7 +324,7 @@ Geliştirici kontrolleri:
 ```powershell
 npm.cmd run build
 npm.cmd run audit
-node --test scripts/test-ollama.mjs scripts/test-memory.mjs
+node --test scripts/test-ollama.mjs scripts/test-ollama-auto.mjs scripts/test-memory.mjs
 py -3.11 -m unittest discover -s training -p "test_*.py"
 ```
 
