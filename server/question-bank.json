@@ -1,0 +1,5029 @@
+[
+  {
+    "unitId": "0-0",
+    "question": "Yüklenme sonrası toparlanmayla kapasitenin başlangıç düzeyini aşmasına ne denir?",
+    "answer": "Süperkompansasyon",
+    "options": [
+      "Süperkompansasyon",
+      "Detraining",
+      "Sürantrenman",
+      "Özelleşme"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Planlı, programlı ve tekrarlı fiziksel aktiviteye ne ad verilir?",
+    "answer": "Egzersiz",
+    "options": [
+      "Egzersiz",
+      "Refleks",
+      "İhmal",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Kararlara sporcuların katılımını destekleyen antrenörlük tarzı hangisidir?",
+    "answer": "Demokratik",
+    "options": [
+      "Demokratik",
+      "Otoriter",
+      "Bürokratik",
+      "Yalnız cezalandırıcı"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Yetersiz toparlanmayla birlikte uzun süreli performans düşüşü hangi kavramla ilişkilidir?",
+    "answer": "Sürantrenman",
+    "options": [
+      "Sürantrenman",
+      "Fazla tamamlama",
+      "Denge",
+      "Esneklik"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Bir antrenör her antrenman sonrasında dinlenme fırsatı vermeden yükü sürekli artırıyor ve sporcunun performansı uzun süre düşüyor. En uygun yorum hangisidir?",
+    "answer": "Yetersiz toparlanmaya bağlı sürantrenman riski vardır",
+    "options": [
+      "Yetersiz toparlanmaya bağlı sürantrenman riski vardır",
+      "Süperkompansasyon kesin olarak oluşmuştur",
+      "Sadece esneklik gelişmiştir",
+      "Bu durum yönetim denetimidir"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Düzenli bir programla her hafta yapılan koşular neden egzersiz sayılır?",
+    "answer": "Planlı ve tekrarlı fiziksel etkinlik olduğu için",
+    "options": [
+      "Planlı ve tekrarlı fiziksel etkinlik olduğu için",
+      "Yalnızca yarışma içerdiği için",
+      "Her zaman istem dışı olduğu için",
+      "Enerji harcatmadığı için"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Aşağıdakilerden hangisi egzersizin fiziksel aktiviteden ayrılan belirgin özelliğidir?",
+    "answer": "Planlı ve tekrarlı olması",
+    "options": [
+      "Planlı ve tekrarlı olması",
+      "İskelet kaslarını hiç kullanmaması",
+      "Enerji harcaması gerektirmemesi",
+      "Yalnız yarışmada yapılması"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Bir sporcu toparlanma sonrasında kapasitesinin başlangıç düzeyini geçtiği bir döneme giriyor. Bu durum hangi kavramdır?",
+    "answer": "Süperkompansasyon",
+    "options": [
+      "Süperkompansasyon",
+      "Detraining",
+      "Tahkim",
+      "Sosyalleşme"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Bir yürüyüşün egzersiz olarak nitelendirilmesi için aşağıdaki özelliklerden hangisi özellikle önemlidir?",
+    "answer": "Planlı ve tekrarlı yapılması",
+    "options": [
+      "Planlı ve tekrarlı yapılması",
+      "Mutlaka müsabaka içermesi",
+      "Hiç enerji harcatmaması",
+      "İstem dışı gerçekleşmesi"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "DMSP modelinde yaklaşık 6–12 yaş arası çeşitlilik ve farklı sporları deneme evresi nasıl adlandırılır?",
+    "answer": "Örnekleme (sampling)",
+    "options": [
+      "Örnekleme (sampling)",
+      "Yatırım (investment)",
+      "Emeklilik",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Antrenman bırakıldığında kazanılan uyumların zamanla kaybedilmesi hangi kavramdır?",
+    "answer": "Detraining",
+    "options": [
+      "Detraining",
+      "Süperkompansasyon",
+      "Örgütleme",
+      "Fleksiyon"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Kararları çoğunlukla kendisinin verdiği, emir ve yönlendirmeye ağırlık veren antrenör hangi liderlik tarzını gösterir?",
+    "answer": "Otoriter",
+    "options": [
+      "Otoriter",
+      "Demokratik",
+      "Hizmetkâr",
+      "Dönüşümcü"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Sporculara geniş hareket serbestliği tanıyan liderlik tarzı hangisidir?",
+    "answer": "Liberal",
+    "options": [
+      "Liberal",
+      "Otoriter",
+      "Bürokratik ölçme",
+      "Mutlak değerlendirme"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "DMSP modelinde örnekleme döneminden sonra gelen ve yaklaşık 13–15 yaşla ilişkilendirilen evre hangisidir?",
+    "answer": "Uzmanlaşma",
+    "options": [
+      "Uzmanlaşma",
+      "Yatırım",
+      "Emeklilik",
+      "Fazla tamamlama"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Bir sporcu düzenli yüklenme sonrası başlangıç düzeyinin üzerine çıkarken bir diğeri aralıksız ağır çalışmayla haftalarca geriliyor. Bu iki durum sırasıyla hangi kavramlarla en iyi açıklanır?",
+    "answer": "Süperkompansasyon ve sürantrenman",
+    "options": [
+      "Süperkompansasyon ve sürantrenman",
+      "Detraining ve süperkompansasyon",
+      "Sürantrenman ve özelleşme",
+      "Örnekleme ve detraining"
+    ]
+  },
+  {
+    "unitId": "0-0",
+    "question": "Antrenman sırasında nabzın artması ile aylarca düzenli antrenman sonunda görülen daha kalıcı değişim sırasıyla hangi uyum türleridir?",
+    "answer": "Akut ve kronik uyum",
+    "options": [
+      "Akut ve kronik uyum",
+      "Kronik ve akut uyum",
+      "Statik ve dinamik denge",
+      "Şiddet ve hacim"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Rakibe göre oyun planının uygulanması hangi hazırlık türüdür?",
+    "answer": "Taktiksel hazırlık",
+    "options": [
+      "Taktiksel hazırlık",
+      "Teknik hazırlık",
+      "Kondisyonel hazırlık",
+      "Antropometrik hazırlık"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Bir hareketin branşa uygun ve ekonomik biçimde uygulanması hangi hazırlıkla ilgilidir?",
+    "answer": "Teknik hazırlık",
+    "options": [
+      "Teknik hazırlık",
+      "Taktik hazırlık",
+      "Finansal hazırlık",
+      "Hukuki hazırlık"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Kaygı kontrolü ve odaklanma hangi hazırlığın parçasıdır?",
+    "answer": "Psikolojik hazırlık",
+    "options": [
+      "Psikolojik hazırlık",
+      "Muhasebe",
+      "Antropometrik ölçüm",
+      "Örgütleme"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Bir basketbolcu pas hareketini doğru uygular fakat doğru zamanda kime pas vereceğini seçemez. Öncelikle hangi hazırlık üzerinde çalışılmalıdır?",
+    "answer": "Taktik hazırlık",
+    "options": [
+      "Taktik hazırlık",
+      "Yalnız teknik hazırlık",
+      "Muhasebe hazırlığı",
+      "Antropometrik hazırlık"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Sporcu tekniği biliyor ancak yarışmada kaygı nedeniyle dikkatini toplayamıyor. Hangi hazırlık özellikle desteklenmelidir?",
+    "answer": "Psikolojik hazırlık",
+    "options": [
+      "Psikolojik hazırlık",
+      "Sadece teknik hazırlık",
+      "Finansal hazırlık",
+      "Hukuki hazırlık"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Antrenör sporcusuna hareketi daha akıcı ve ekonomik uygulamayı öğretiyor. Hangi hazırlık üzerinde durmaktadır?",
+    "answer": "Teknik hazırlık",
+    "options": [
+      "Teknik hazırlık",
+      "Taktik hazırlık",
+      "Yalnız finans",
+      "Halkla ilişkiler"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Oyun kurallarını öğrenmek hangi hazırlıkla en yakından ilişkilidir?",
+    "answer": "Kuramsal hazırlık",
+    "options": [
+      "Kuramsal hazırlık",
+      "Antropometrik değerlendirme",
+      "Statik denge",
+      "Doping kontrolü"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Bir sporcunun maç sırasında rakibin dizilişine göre oyun planını değiştirmesi hangi hazırlığa örnektir?",
+    "answer": "Taktik hazırlık",
+    "options": [
+      "Taktik hazırlık",
+      "Antropometrik hazırlık",
+      "Yalnız esneklik",
+      "Muhasebe hazırlığı"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Bir oyuncunun oyunun kurallarını ve stratejilerini öğrenmesi hangi hazırlığa örnektir?",
+    "answer": "Kuramsal hazırlık",
+    "options": [
+      "Kuramsal hazırlık",
+      "Antropometrik ölçüm",
+      "Fizyolojik test",
+      "Sadece pasif dinlenme"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Bir antrenörün kuvvet ve dayanıklılık çalışmaları hazırlığın hangi boyutundadır?",
+    "answer": "Kondisyonel hazırlık",
+    "options": [
+      "Kondisyonel hazırlık",
+      "Yalnız kuramsal hazırlık",
+      "Halkla ilişkiler",
+      "Spor tahkimi"
+    ]
+  },
+  {
+    "unitId": "0-1",
+    "question": "Sporcu pas hareketini kusursuz uyguluyor fakat rakip baskısında yanlış takım arkadaşını seçiyor. Hangi ayrım sorunu en iyi açıklar?",
+    "answer": "Teknik yeterli, taktik karar geliştirilmelidir",
+    "options": [
+      "Teknik yeterli, taktik karar geliştirilmelidir",
+      "Taktik yeterli, yalnız teknik geliştirilmelidir",
+      "Yalnız antropometrik ölçüm eksiktir",
+      "Sorun sadece kurumsal iletişimdir"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Bir antrenmanda yapılan toplam tekrar sayısı hangi yüklenme ögesidir?",
+    "answer": "Hacim",
+    "options": [
+      "Hacim",
+      "Şiddet",
+      "Teknik",
+      "Özelleşme"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Koşulan mesafenin artırılması öncelikle hangi yüklenme ögesini değiştirir?",
+    "answer": "Hacim",
+    "options": [
+      "Hacim",
+      "Şiddet",
+      "Liderlik",
+      "Teknik"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Antrenmanın sporcunun özelliklerine göre uyarlanması hangi ilkedir?",
+    "answer": "Bireyselleştirme",
+    "options": [
+      "Bireyselleştirme",
+      "Geriye dönüş",
+      "Tek tipleştirme",
+      "Pasif dinleme"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Koşu hızının artırılması öncelikle hangi ögeyi değiştirir?",
+    "answer": "Şiddet",
+    "options": [
+      "Şiddet",
+      "Hacim",
+      "Kültürel aktarım",
+      "Örgütleme"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "İki sporcuya aynı antrenman yerine mevcut durumlarına göre farklı yükler veriliyor. Hangi ilke uygulanmaktadır?",
+    "answer": "Bireyselleştirme",
+    "options": [
+      "Bireyselleştirme",
+      "Geriye dönüş",
+      "Tek tipleştirme",
+      "Pasif dinleme"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Bir yüzücünün aynı hızda 2 km yerine 3 km yüzmesi öncelikle hangi değişimi gösterir?",
+    "answer": "Hacim artışı",
+    "options": [
+      "Hacim artışı",
+      "Şiddet artışı",
+      "Sürat azalması zorunluluğu",
+      "Taktik değişimi"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Bir sporcu aynı toplam mesafeyi daha yüksek hızla koşuyor. Diğer koşullar aynıysa ne artmıştır?",
+    "answer": "Şiddet",
+    "options": [
+      "Şiddet",
+      "Toplam mesafe",
+      "Tekrar sayısı",
+      "Antrenman sıklığı"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "İki çalışma arasındaki zaman ilişkisi hangi yüklenme ögesiyle ifade edilir?",
+    "answer": "Sıklık",
+    "options": [
+      "Sıklık",
+      "Hacim",
+      "Kuvvet türü",
+      "Kültürel aktarım"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Bir antrenör aynı sporcu için haftadaki antrenman günlerinin sayısını artırıyor. Öncelikle hangi yüklenme ögesi değişir?",
+    "answer": "Sıklık",
+    "options": [
+      "Sıklık",
+      "Tekniğin türü",
+      "Vücut boyu",
+      "Yasal statü"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Koşu tekrarları arasında hafif yürümek hangi dinlenme türüne örnektir?",
+    "answer": "Aktif dinlenme",
+    "options": [
+      "Aktif dinlenme",
+      "Pasif dinlenme",
+      "Makro döngü",
+      "Ölçüt dayanaklı değerlendirme"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Tek bir antrenman uyaranının kaç saniye sürdüğünü belirten öge hangisidir?",
+    "answer": "Yüklenme süresi",
+    "options": [
+      "Yüklenme süresi",
+      "Yüklenme sıklığı",
+      "Somatotip",
+      "Liderlik tarzı"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Yüzücünün çalışmasının yüzmenin ihtiyaçlarına göre tasarlanması hangi ilkeye örnektir?",
+    "answer": "Özelleşme",
+    "options": [
+      "Özelleşme",
+      "Geriye dönüşüm",
+      "İhmal",
+      "Bağıl değerlendirme"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Antrenman uyaranlarının uygun biçimde değiştirilmesi hangi ilkeyle ilişkilidir?",
+    "answer": "Çeşitlilik",
+    "options": [
+      "Çeşitlilik",
+      "İhmal",
+      "Sabit değerlendirme",
+      "Gürültü"
+    ]
+  },
+  {
+    "unitId": "0-2",
+    "question": "Bir koşucu aynı sayıda tekrarı aynı mesafede daha hızlı tamamlıyor; antrenman günleri değişmiyor. Öncelikle hangi yüklenme ögesi değişmiştir?",
+    "answer": "Şiddet artmıştır",
+    "options": [
+      "Şiddet artmıştır",
+      "Hacim kesin olarak artmıştır",
+      "Sıklık artmıştır",
+      "Tek tekrar süresi kesin olarak uzamıştır"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Yorgunluğa karşı koyabilme yeteneği nedir?",
+    "answer": "Dayanıklılık",
+    "options": [
+      "Dayanıklılık",
+      "Esneklik",
+      "Sürat",
+      "Denge"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Bir direnci yenme veya ona karşı koyma yeteneği nedir?",
+    "answer": "Kuvvet",
+    "options": [
+      "Kuvvet",
+      "Dayanıklılık",
+      "Sosyalleşme",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Hareketleri en kısa sürede yapabilme yeteneği nedir?",
+    "answer": "Sürat",
+    "options": [
+      "Sürat",
+      "Esneklik",
+      "Denetim",
+      "İhmal"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Bir sporcu uzun süren çalışma sırasında yorgunluğa rağmen etkinliğini koruyor. Hangi özellik öne çıkar?",
+    "answer": "Dayanıklılık",
+    "options": [
+      "Dayanıklılık",
+      "Yalnız esneklik",
+      "Tahkim",
+      "İhmal"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Bir sporcu yüksek bir direnci tek seferde yenmeye odaklanıyor. Hangi kuvvet türü öne çıkar?",
+    "answer": "Maksimal kuvvet",
+    "options": [
+      "Maksimal kuvvet",
+      "Kuvvette devamlılık",
+      "Sosyalleşme",
+      "Dinamik denge"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Bir hareketin çok kısa sürede gerçekleştirilmesi hangi motorik özelliğe daha çok örnektir?",
+    "answer": "Sürat",
+    "options": [
+      "Sürat",
+      "Dayanıklılık",
+      "Sosyalleşme",
+      "Örgütleme"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Kısa sürede kuvvet üretmeye odaklanan çalışma hangi özelliği hedefler?",
+    "answer": "Çabuk kuvvet",
+    "options": [
+      "Çabuk kuvvet",
+      "Kuvvette devamlılık",
+      "Yalnız statik denge",
+      "İletişim becerisi"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Bir sporcunun çok sayıda tekrarda kas kuvveti uygulamayı sürdürebilmesi hangi özelliğe örnektir?",
+    "answer": "Kuvvette devamlılık",
+    "options": [
+      "Kuvvette devamlılık",
+      "Maksimal kuvvetin tek tekrar testi",
+      "Yalnız eklem hareket açıklığı",
+      "Sosyalleşme"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Bir eklemde kullanılabilen hareket açıklığı hangi özellik ile en yakından ilişkilidir?",
+    "answer": "Esneklik",
+    "options": [
+      "Esneklik",
+      "Yönetim denetimi",
+      "Spor tahkimi",
+      "Durumluk kaygı"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Oksijen kullanımına dayalı enerji üretimiyle ilişkili dayanıklılık türü hangisidir?",
+    "answer": "Aerobik dayanıklılık",
+    "options": [
+      "Aerobik dayanıklılık",
+      "Yalnız anaerobik dayanıklılık",
+      "Statik denge",
+      "İletişim dayanıklılığı"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Bir çıkış işaretine yanıt vermeye başlama hızı hangi sürat bileşeniyle ilişkilidir?",
+    "answer": "Reaksiyon sürati",
+    "options": [
+      "Reaksiyon sürati",
+      "Kuvvette devamlılık",
+      "Eklem hareket açıklığı",
+      "Kültürel aktarım"
+    ]
+  },
+  {
+    "unitId": "0-3",
+    "question": "Antrenör bir sporcunun yüksek direnci bir kez yenmesini, sonra daha düşük dirençle çok sayıda tekrarı sürdürmesini değerlendiriyor. Sırasıyla hangi özellikler incelenir?",
+    "answer": "Maksimal kuvvet ve kuvvette devamlılık",
+    "options": [
+      "Maksimal kuvvet ve kuvvette devamlılık",
+      "Çabuk kuvvet ve esneklik",
+      "Dayanıklılık ve statik denge",
+      "Sürat ve koordinasyon"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Hareket hâlinde vücut kontrolünü sürdürmek hangi denge türüdür?",
+    "answer": "Dinamik denge",
+    "options": [
+      "Dinamik denge",
+      "Statik denge",
+      "Maksimal kuvvet",
+      "Esneklik"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Sabit bir duruşta vücut kontrolünü korumak hangi dengeye örnektir?",
+    "answer": "Statik denge",
+    "options": [
+      "Statik denge",
+      "Dinamik denge",
+      "Taktik hazırlık",
+      "Aerobik güç"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Sinir ve kas sisteminin uyumlu çalışması hangi kavramdır?",
+    "answer": "Koordinasyon",
+    "options": [
+      "Koordinasyon",
+      "Doping",
+      "Denetim",
+      "Sosyalleşme"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Bir sporcu koşarken dengesini koruyarak yön değiştiriyor. Denge açısından ne gözlemlenir?",
+    "answer": "Dinamik denge",
+    "options": [
+      "Dinamik denge",
+      "Statik denge",
+      "Mutlak değerlendirme",
+      "Doping kontrolü"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Antrenör önce basit hareketleri daha sonra birleştirilmiş hareketleri çalıştırıyor. Bu yaklaşım hangi gelişimi destekler?",
+    "answer": "Koordinasyonun aşamalı gelişimini",
+    "options": [
+      "Koordinasyonun aşamalı gelişimini",
+      "Yalnız muhasebe bilgisini",
+      "Hukuki tahkimi",
+      "Besinlerin depolanmasını"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Tek ayak üzerinde hareketsiz durmaya çalışan sporcu hangi dengeyi kullanır?",
+    "answer": "Statik denge",
+    "options": [
+      "Statik denge",
+      "Dinamik denge",
+      "Bağıl değerlendirme",
+      "Antrenman hacmi"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Hareketlerin sinir ve kasların uyumlu çalışmasıyla akıcı biçimde yapılması nedir?",
+    "answer": "Koordinasyon",
+    "options": [
+      "Koordinasyon",
+      "Detraining",
+      "Tahkim",
+      "İhmal"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Antrenmanda önce tek bir basit hareket, ardından iki hareketin birleştirilmesi çalışılıyor. Bu sıra neyi destekler?",
+    "answer": "Koordinasyonun aşamalı gelişimini",
+    "options": [
+      "Koordinasyonun aşamalı gelişimini",
+      "Yasaklı liste güncellemesini",
+      "Bütçe planlamasını",
+      "Hukuki karar vermeyi"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Yön ve vücut pozisyonunu hızlı ve kontrollü değiştirme becerisi hangisidir?",
+    "answer": "Çeviklik",
+    "options": [
+      "Çeviklik",
+      "Statik denge",
+      "Mutlak değerlendirme",
+      "Kültürel aktarım"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Bir sporcu tek ayak üzerinde hareket etmeden duruyor; sonra aynı dengeyi yürürken koruyor. Bu iki durum sırasıyla hangisidir?",
+    "answer": "Statik ve dinamik denge",
+    "options": [
+      "Statik ve dinamik denge",
+      "Dinamik ve statik denge",
+      "Sürat ve kuvvet",
+      "Hacim ve şiddet"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Bir sporcu sabit tek ayak duruşunda başarılı fakat hareket ederek yön değiştirirken kontrolünü kaybediyor. En doğrudan hangi özelliği geliştirmek gerekir?",
+    "answer": "Dinamik denge",
+    "options": [
+      "Dinamik denge",
+      "Statik denge",
+      "Yalnız maksimal kuvvet",
+      "Yalnız esneklik"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Sezonluk antrenman planı hangi döngüdür?",
+    "answer": "Makro döngü",
+    "options": [
+      "Makro döngü",
+      "Mikro döngü",
+      "Mezo döngü",
+      "Birim hareket"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Haftalık antrenman planı hangi döngüye örnektir?",
+    "answer": "Mikro döngü",
+    "options": [
+      "Mikro döngü",
+      "Makro döngü",
+      "Olimpik döngü",
+      "Spor hukuku"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Antrenman öncesinde vücudu çalışmaya hazırlayan bölüm hangisidir?",
+    "answer": "Isınma",
+    "options": [
+      "Isınma",
+      "Denetim",
+      "Tahkim",
+      "Değerlendirme"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Haftalık bir plan, birkaç haftalık bir blok içinde yer alıyor. Bu blok hangi döngüdür?",
+    "answer": "Mezo döngü",
+    "options": [
+      "Mezo döngü",
+      "Mikro döngü",
+      "Tek tekrar",
+      "Tek hareket"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Bir takımın sezon boyu hazırlık ve yarışma dönemlerini içeren planı hangi ölçektedir?",
+    "answer": "Makro döngü",
+    "options": [
+      "Makro döngü",
+      "Mikro döngü",
+      "Tek ısınma hareketi",
+      "Tek test sorusu"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Birkaç haftalık antrenman bloğu için hangi kavram uygundur?",
+    "answer": "Mezo döngü",
+    "options": [
+      "Mezo döngü",
+      "Mikro döngü",
+      "Tek tekrar",
+      "Tek ısınma hareketi"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Antrenmanın ana çalışmaya hazırlık sağlayan aşaması hangisidir?",
+    "answer": "Isınma",
+    "options": [
+      "Isınma",
+      "Doping kontrolü",
+      "Sosyal karşılaştırma",
+      "Kültürel aktarım"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Bir sporcunun antrenmanında ısınmadan sonraki asıl çalışmanın yapıldığı bölüm hangisidir?",
+    "answer": "Ana bölüm",
+    "options": [
+      "Ana bölüm",
+      "Giriş açıklaması",
+      "Sadece yoklama",
+      "Hukuki denetim"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Olimpik döngü, çok yıllık planlamada kaç yıllık bir süreye örnektir?",
+    "answer": "Dört yıl",
+    "options": [
+      "Dört yıl",
+      "Bir gün",
+      "Üç hafta",
+      "Altı ay"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Ana çalışmadan sonra toparlanmaya geçişi destekleyen birim antrenman bölümü hangisidir?",
+    "answer": "Bitiriş bölümü",
+    "options": [
+      "Bitiriş bölümü",
+      "Yalnız giriş bölümü",
+      "Taktik karar",
+      "Makro döngü"
+    ]
+  },
+  {
+    "unitId": "0-5",
+    "question": "Bir antrenör sezonu birkaç haftalık bloklara, her bloğu da haftalık programlara ayırıyor. Bu üç planlama ölçeği büyükten küçüğe nasıl sıralanır?",
+    "answer": "Makro, mezo, mikro",
+    "options": [
+      "Makro, mezo, mikro",
+      "Mezo, makro, mikro",
+      "Mikro, mezo, makro",
+      "Makro, mikro, mezo"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Dikey sıçrama testi öncelikle hangi özelliğe ilişkin bilgi verir?",
+    "answer": "Patlayıcı kuvvet",
+    "options": [
+      "Patlayıcı kuvvet",
+      "İletişim becerisi",
+      "Statik esneklik",
+      "Spor hukuku bilgisi"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Boy ve vücut kütlesi hangi değerlendirmeye örnektir?",
+    "answer": "Antropometrik değerlendirme",
+    "options": [
+      "Antropometrik değerlendirme",
+      "Taktik değerlendirme",
+      "Etik değerlendirme",
+      "Medya analizi"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Mekik koşusu hangi özelliğin tahmininde kullanılabilir?",
+    "answer": "Aerobik kapasite",
+    "options": [
+      "Aerobik kapasite",
+      "Hukuk bilgisi",
+      "Liderlik tarzı",
+      "İletişim kanalı"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Bir antrenör oyuncunun boy ve vücut kütlesini kaydediyor. Bu ölçümler hangi gruptadır?",
+    "answer": "Antropometrik",
+    "options": [
+      "Antropometrik",
+      "Taktiksel",
+      "Hukuki",
+      "Sosyolojik"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Patlayıcı kuvvet hakkında bilgi edinmek isteyen antrenör hangi testi seçebilir?",
+    "answer": "Dikey sıçrama",
+    "options": [
+      "Dikey sıçrama",
+      "İletişim kanalı analizi",
+      "Bütçe incelemesi",
+      "Spor hukuku testi"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Ölçülmek istenen özelliğe uygun bir test seçilmesi neden önemlidir?",
+    "answer": "Testin amaca ilişkin bilgi vermesi için",
+    "options": [
+      "Testin amaca ilişkin bilgi vermesi için",
+      "Tüm testler aynı özelliği ölçtüğü için",
+      "Hiçbir ölçüm yapılmaması gerektiği için",
+      "Sadece test adını değiştirmek için"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Mekik koşusu hangi kapasitenin tahmini amacıyla kullanılabilir?",
+    "answer": "Aerobik kapasite",
+    "options": [
+      "Aerobik kapasite",
+      "Hukuk bilgisi",
+      "İletişim kanalı",
+      "Yönetim hiyerarşisi"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Bir sporcu için boy ve vücut kütlesinin kayıt altına alınması hangi tür ölçümdür?",
+    "answer": "Antropometrik ölçüm",
+    "options": [
+      "Antropometrik ölçüm",
+      "Taktik plan",
+      "Motivasyon iklimi",
+      "Tahkim kararı"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Endomorf, mezomorf ve ektomorf hangi kavramın sınıflarıdır?",
+    "answer": "Somatotip",
+    "options": [
+      "Somatotip",
+      "Dinlenme türü",
+      "İletişim kanalı",
+      "Liderlik biçimi"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "T-test ve Illinois testi hangi özelliğin değerlendirilmesinde kullanılabilir?",
+    "answer": "Çeviklik",
+    "options": [
+      "Çeviklik",
+      "Spor hukuku bilgisi",
+      "Kurumsal imaj",
+      "Vitamin türü"
+    ]
+  },
+  {
+    "unitId": "0-6",
+    "question": "Bir antrenör sporcuların patlayıcı kuvvetini ve aerobik kapasitesini ayrı ayrı izlemek istiyor. Hangi test eşleştirmesi uygundur?",
+    "answer": "Dikey sıçrama ve mekik koşusu",
+    "options": [
+      "Dikey sıçrama ve mekik koşusu",
+      "Mekik koşusu ve dikey sıçrama",
+      "Boy ölçümü ve iletişim analizi",
+      "Somatotip ve hukuki inceleme"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "Yetenek seçiminde antrenman yanıtının izlenmesi neden önemlidir?",
+    "answer": "Gelişim potansiyeli zaman içinde değişebilir",
+    "options": [
+      "Gelişim potansiyeli zaman içinde değişebilir",
+      "Tek test her şeyi kesin olarak belirler",
+      "Çevre performansı etkilemez",
+      "Yaş hiçbir rol oynamaz"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "Yetenek seçiminde tek bir ölçüm yerine gelişimi izlemek neden değerlidir?",
+    "answer": "Potansiyel ve antrenman yanıtı zamanla değişebilir",
+    "options": [
+      "Potansiyel ve antrenman yanıtı zamanla değişebilir",
+      "Tek ölçüm geleceği kesin belirler",
+      "Çevre gelişimi etkilemez",
+      "Bütün sporcular aynı hızda gelişir"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "Hareket ekonomisi neyi anlatır?",
+    "answer": "Bir işi daha düşük enerji maliyetiyle yapmayı",
+    "options": [
+      "Bir işi daha düşük enerji maliyetiyle yapmayı",
+      "Yalnız para yönetimini",
+      "Antrenmanı tamamen bırakmayı",
+      "Sadece boy uzunluğunu"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "İlk ölçümde geride olan çocuğun gelişimi birkaç yıl boyunca izleniyor. Bu uygulama hangi düşünceye dayanır?",
+    "answer": "Gelişim ve antrenman yanıtı zamanla değişebilir",
+    "options": [
+      "Gelişim ve antrenman yanıtı zamanla değişebilir",
+      "İlk ölçüm geleceği kesin belirler",
+      "Çevre gelişime etki etmez",
+      "Bütün çocuklar aynı anda gelişir"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "İki sporcu aynı işi yaparken biri daha az enerji harcıyor. Bu sporcuda hangi özellik daha iyi olabilir?",
+    "answer": "Hareket ekonomisi",
+    "options": [
+      "Hareket ekonomisi",
+      "Yasal özerklik",
+      "İletişim gürültüsü",
+      "Bağıl not"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "Yetenek seçimi sürecinde aşağıdakilerden hangisi tek başına kesin gelecek performansı garantilemez?",
+    "answer": "Tek bir başlangıç ölçümü",
+    "options": [
+      "Tek bir başlangıç ölçümü",
+      "Zaman içindeki gelişim izlemi",
+      "Antrenman yanıtının değerlendirilmesi",
+      "Farklı özelliklerin birlikte incelenmesi"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "Bir hareketi daha az enerji harcayarak yapmak hangi kavramla açıklanır?",
+    "answer": "Hareket ekonomisi",
+    "options": [
+      "Hareket ekonomisi",
+      "Yönetim denetimi",
+      "Etkin dinleme",
+      "Taktik faul"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "Antrenman yanıtı ve gelişimin zaman içinde izlenmesi neden tek bir seçme testini tamamlayabilir?",
+    "answer": "Gelişim bireyler arasında farklılık gösterebilir",
+    "options": [
+      "Gelişim bireyler arasında farklılık gösterebilir",
+      "Tek bir sonuç bütün geleceği garanti eder",
+      "Sporcuların gelişim hızı hep aynıdır",
+      "Antrenman yanıtı hiç değişmez"
+    ]
+  },
+  {
+    "unitId": "0-7",
+    "question": "Ergenlik döneminde tek bir ölçümde geride kalan bir çocuk sonraki yıllarda hızla gelişiyor. Yetenek seçiminde hangi sonuç daha savunulabilir?",
+    "answer": "Tek ölçüme dayanmak yerine gelişim ve antrenman yanıtı izlenmelidir",
+    "options": [
+      "Tek ölçüme dayanmak yerine gelişim ve antrenman yanıtı izlenmelidir",
+      "İlk ölçüm geleceği kesin olarak belirler",
+      "Çevrenin hiçbir etkisi yoktur",
+      "Bütün çocuklar aynı zamanda olgunlaşır"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Biseps ile dirsek fleksiyonu hangi kaldıraç tipine örnektir?",
+    "answer": "Üçüncü tip",
+    "options": [
+      "Üçüncü tip",
+      "Birinci tip",
+      "İkinci tip",
+      "Dördüncü tip"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Vücudun orta hattına daha yakın anlamına gelen terim hangisidir?",
+    "answer": "Medial",
+    "options": [
+      "Medial",
+      "Lateral",
+      "Distal",
+      "Posterior"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Fleksiyon ve ekstansiyon ağırlıklı olarak hangi düzlemde görülür?",
+    "answer": "Sagittal",
+    "options": [
+      "Sagittal",
+      "Frontal",
+      "Transvers",
+      "Çapraz finansal"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "İkinci tip kaldıraçta ortada bulunan nedir?",
+    "answer": "Yük",
+    "options": [
+      "Yük",
+      "Destek",
+      "Kuvvet",
+      "Denge duygusu"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Anatomik duruşta avuç içlerinin yönü hangisidir?",
+    "answer": "Öne",
+    "options": [
+      "Öne",
+      "Arkaya",
+      "Yere",
+      "Birbirine zorunlu dönük"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Dirsek bükülürken iki kemik arasındaki açı küçülür. Bu hareket nedir?",
+    "answer": "Fleksiyon",
+    "options": [
+      "Fleksiyon",
+      "Ekstansiyon",
+      "Sosyalleşme",
+      "Örgütleme"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Vücutta orta hattan daha uzakta bulunan bir yapı hangi yön terimiyle tanımlanır?",
+    "answer": "Lateral",
+    "options": [
+      "Lateral",
+      "Medial",
+      "Proksimal",
+      "Superior"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Dirsek fleksiyonu örneğinde kuvvetin destek ile yük arasında olması hangi kaldıraç tipidir?",
+    "answer": "Üçüncü tip",
+    "options": [
+      "Üçüncü tip",
+      "Birinci tip",
+      "İkinci tip",
+      "Kaldıraç değildir"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Anatomik duruşta ellerin avuç içleri hangi yöne bakar?",
+    "answer": "Öne",
+    "options": [
+      "Öne",
+      "Arkaya",
+      "Yere",
+      "Zorunlu olarak birbirine"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Gövdeye veya uzvun başlangıç noktasına daha yakın konum hangi terimle anlatılır?",
+    "answer": "Proksimal",
+    "options": [
+      "Proksimal",
+      "Distal",
+      "Lateral",
+      "Posterior"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Abduksiyon ve adduksiyon hareketleri hangi düzlemle ilişkilidir?",
+    "answer": "Frontal düzlem",
+    "options": [
+      "Frontal düzlem",
+      "Sagittal düzlem",
+      "Yalnız yatay çizgi",
+      "Yönetim düzlemi"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Parmak ucunda yükselme hangi kaldıraç türüne örnektir?",
+    "answer": "İkinci tip",
+    "options": [
+      "İkinci tip",
+      "Birinci tip",
+      "Üçüncü tip",
+      "Kaldıraç değildir"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Anatomik yön terimlerinden posterior neyi anlatır?",
+    "answer": "Arka yönü",
+    "options": [
+      "Arka yönü",
+      "Ön yönü",
+      "Orta hatta yakınlığı",
+      "Gövdeye yakınlığı"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "İç ve dış rotasyon hangi düzlemle ilişkilidir?",
+    "answer": "Transvers düzlem",
+    "options": [
+      "Transvers düzlem",
+      "Sagittal düzlem",
+      "Yalnız frontal düzlem",
+      "Yönetim düzlemi"
+    ]
+  },
+  {
+    "unitId": "1-0",
+    "question": "Dirsek bükülürken eklem açısı küçülüyor; bisepsin uyguladığı kuvvet destek ile yük arasında bulunuyor. Hareket ve kaldıraç eşleştirmesi hangisidir?",
+    "answer": "Fleksiyon ve üçüncü tip",
+    "options": [
+      "Fleksiyon ve üçüncü tip",
+      "Ekstansiyon ve ikinci tip",
+      "Fleksiyon ve birinci tip",
+      "Rotasyon ve ikinci tip"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Çok kısa ve patlayıcı bir eforda hangi sistemin katkısı özellikle yüksektir?",
+    "answer": "ATP-CP sistemi",
+    "options": [
+      "ATP-CP sistemi",
+      "Yalnız yağ oksidasyonu",
+      "Yalnız aerobik sistem",
+      "Protein sentezi"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Protein senteziyle ilişkili hücresel yapı hangisidir?",
+    "answer": "Ribozom",
+    "options": [
+      "Ribozom",
+      "Sarkoplazmik retikulum",
+      "Eklem kapsülü",
+      "Tendon"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Kas hücresinde kalsiyum depolanmasıyla ilişkili yapı hangisidir?",
+    "answer": "Sarkoplazmik retikulum",
+    "options": [
+      "Sarkoplazmik retikulum",
+      "Ribozom",
+      "CAS",
+      "Tendon"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Çok kısa süren patlayıcı bir harekette hangi sistemin katkısı özellikle yüksektir?",
+    "answer": "ATP-CP sistemi",
+    "options": [
+      "ATP-CP sistemi",
+      "Yalnız protein sentezi",
+      "Sadece yağ depolama",
+      "İletişim sistemi"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Bir öğrenci enerji sistemlerinin sırayla açılıp tamamen kapandığını söylüyor. Doğru düzeltme hangisidir?",
+    "answer": "Sistemler birlikte çalışır ve katkı oranları değişir",
+    "options": [
+      "Sistemler birlikte çalışır ve katkı oranları değişir",
+      "Sadece tek sistem her zaman çalışır",
+      "ATP egzersizde kullanılmaz",
+      "Enerji sistemleri yalnız dinlenmede çalışır"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Protein sentezinde görev yapan hücresel yapı hangisidir?",
+    "answer": "Ribozom",
+    "options": [
+      "Ribozom",
+      "Tendon",
+      "Eklem kapsülü",
+      "Bağ"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Kas hücresinde kalsiyumun depolanması ve salınmasıyla ilgili yapı hangisidir?",
+    "answer": "Sarkoplazmik retikulum",
+    "options": [
+      "Sarkoplazmik retikulum",
+      "Ribozom",
+      "CAS",
+      "TİCİ"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Kısa süreli çok yüksek şiddetli eforda fosfajen sistemin yüksek katkı vermesi, diğer sistemlerin tamamen kapandığı anlamına gelir mi?",
+    "answer": "Hayır, sistemler birlikte çalışır",
+    "options": [
+      "Hayır, sistemler birlikte çalışır",
+      "Evet, diğer sistemler tamamen kapanır",
+      "Evet, ATP kullanılmaz",
+      "Hayır, hiçbir sistem enerji sağlamaz"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Aerobik enerji üretimiyle yakından ilişkili hücresel yapı hangisidir?",
+    "answer": "Mitokondri",
+    "options": [
+      "Mitokondri",
+      "Tendon",
+      "Eklem kapsülü",
+      "Bağ dokusu"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Çok kısa süreli patlayıcı eforda öne çıkan fosfajen sistemin diğer adı hangisidir?",
+    "answer": "ATP-CP sistemi",
+    "options": [
+      "ATP-CP sistemi",
+      "Sistem teorisi",
+      "TARGET modeli",
+      "POLICE"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Kas hücresinde kalsiyum depolanması ile protein sentezinden sorumlu yapılar sırasıyla hangileridir?",
+    "answer": "Sarkoplazmik retikulum ve ribozom",
+    "options": [
+      "Sarkoplazmik retikulum ve ribozom",
+      "Ribozom ve sarkoplazmik retikulum",
+      "Tendon ve bağ",
+      "Kas lifi ve eklem kapsülü"
+    ]
+  },
+  {
+    "unitId": "1-1",
+    "question": "Bir sporcu kısa patlayıcı hareketten sonra daha uzun süre efora devam ediyor. Enerji sistemleri için hangi yorum doğrudur?",
+    "answer": "Sistemler birlikte çalışır, göreli katkıları efora göre değişir",
+    "options": [
+      "Sistemler birlikte çalışır, göreli katkıları efora göre değişir",
+      "ATP-CP tamamen kapanır ve diğerleri ancak sonra açılır",
+      "Aerobik sistem kısa çabada hiçbir zaman çalışmaz",
+      "ATP kas faaliyetinde kullanılmaz"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Doku yapımı ve onarımında hangi makro besin ögesi öne çıkar?",
+    "answer": "Protein",
+    "options": [
+      "Protein",
+      "Su",
+      "Mineral",
+      "Vitamin"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Kas ve karaciğerde depolanan karbonhidrat biçimi nedir?",
+    "answer": "Glikojen",
+    "options": [
+      "Glikojen",
+      "Kalsiyum",
+      "Kolajen",
+      "Hemoglobin"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Aşağıdakilerden hangisi yağda çözünen vitaminlerdendir?",
+    "answer": "D vitamini",
+    "options": [
+      "D vitamini",
+      "C vitamini",
+      "B vitamini",
+      "Su"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Sporcu kas ve karaciğerindeki karbonhidrat deposunu soruyor. Hangi kavram açıklanmalıdır?",
+    "answer": "Glikojen",
+    "options": [
+      "Glikojen",
+      "Kalsiyum",
+      "Ribozom",
+      "Ekecheiria"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Bir vitaminin yağda çözünenler arasında olduğu söyleniyor. Hangisi bu gruptadır?",
+    "answer": "K vitamini",
+    "options": [
+      "K vitamini",
+      "C vitamini",
+      "B vitamini",
+      "Su"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Aşağıdakilerden hangisi suda çözünen vitamin grubundadır?",
+    "answer": "C vitamini",
+    "options": [
+      "C vitamini",
+      "A vitamini",
+      "D vitamini",
+      "K vitamini"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Proteinlerin beslenmedeki önemli işlevlerinden biri hangisidir?",
+    "answer": "Doku yapımı ve onarımı",
+    "options": [
+      "Doku yapımı ve onarımı",
+      "Spor tahkimi",
+      "Yönetim denetimi",
+      "Antrenman döngüsü oluşturma"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Uzun süreli etkinlik sırasında enerji sağlayabilen makro besin ögesi hangisidir?",
+    "answer": "Yağ",
+    "options": [
+      "Yağ",
+      "C vitamini",
+      "Kalsiyum",
+      "Demir"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Hemoglobin aracılığıyla oksijen taşınmasıyla ilişkili mineral hangisidir?",
+    "answer": "Demir",
+    "options": [
+      "Demir",
+      "Kalsiyum",
+      "Glikojen",
+      "Protein"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Kemik sağlığı ve kas kasılmasıyla ilişkili mineral hangisidir?",
+    "answer": "Kalsiyum",
+    "options": [
+      "Kalsiyum",
+      "Glikojen",
+      "C vitamini",
+      "ATP"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Glikojenin depolanabildiği iki temel yer hangisidir?",
+    "answer": "Kas ve karaciğer",
+    "options": [
+      "Kas ve karaciğer",
+      "Kemik ve deri",
+      "Tendon ve bağ",
+      "Kalp kapağı ve eklem kapsülü"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Aşağıdaki vitamin çiftlerinden hangisinin ikisi de suda çözünür?",
+    "answer": "B ve C",
+    "options": [
+      "B ve C",
+      "A ve D",
+      "E ve K",
+      "A ve K"
+    ]
+  },
+  {
+    "unitId": "1-2",
+    "question": "Bir sporcu kas ve karaciğerdeki yakıt deposunu ve doku onarımını soruyor. Bu iki işlevle en yakından ilgili eşleştirme hangisidir?",
+    "answer": "Glikojen ve protein",
+    "options": [
+      "Glikojen ve protein",
+      "Kalsiyum ve glikojen",
+      "C vitamini ve yağ",
+      "Demir ve su"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "POLICE içindeki OL neyi ifade eder?",
+    "answer": "Optimal yüklenme",
+    "options": [
+      "Optimal yüklenme",
+      "Tam hareketsizlik",
+      "Oksijen seviyesi",
+      "Dış konum"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "Zemin ve ekipman hangi yaralanma riski grubundadır?",
+    "answer": "Dışsal faktörler",
+    "options": [
+      "Dışsal faktörler",
+      "İçsel faktörler",
+      "Hücresel organeller",
+      "Motor dönemler"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "TOTAPS değerlendirmesinin ilk aşaması hangisidir?",
+    "answer": "Talk: konuşma",
+    "options": [
+      "Talk: konuşma",
+      "Touch: dokunma",
+      "Skill: beceri testi",
+      "Passive: pasif hareket"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "Kaygan zemin nedeniyle yaralanma riski artan sporcuda riskin kaynağı hangi gruptadır?",
+    "answer": "Dışsal faktör",
+    "options": [
+      "Dışsal faktör",
+      "İçsel faktör",
+      "Yalnız kalıtsal faktör",
+      "Motor gelişim evresi"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "Sakatlanan sporcuyla önce konuşup öyküsünü almak hangi protokolün ilk adımıdır?",
+    "answer": "TOTAPS",
+    "options": [
+      "TOTAPS",
+      "Sistem yaklaşımı",
+      "VKİ",
+      "Gallahue modeli"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "Yorgunluk yaralanma riskleri bakımından hangi gruba girer?",
+    "answer": "İçsel faktör",
+    "options": [
+      "İçsel faktör",
+      "Dışsal faktör",
+      "İletişim kanalı",
+      "Yasal kurul"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "POLICE yaklaşımında optimal yüklenme neyi anlatır?",
+    "answer": "Dokuya uygun ve kontrollü yüklenmeyi",
+    "options": [
+      "Dokuya uygun ve kontrollü yüklenmeyi",
+      "Her durumda sınırsız yük vermeyi",
+      "Yaralanmayı yok saymayı",
+      "Yalnız takım seçimini"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "Bir yaralanma değerlendirmesinde TOTAPS sıralamasında konuşmadan sonra ne gelir?",
+    "answer": "Gözlem",
+    "options": [
+      "Gözlem",
+      "Beceri testi",
+      "Pasif hareket",
+      "Sporcu seçimi"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "POLICE protokolünde “elevation” hangi uygulamayı anlatır?",
+    "answer": "Yaralanan bölgenin yükseltilmesi",
+    "options": [
+      "Yaralanan bölgenin yükseltilmesi",
+      "Yükün sürekli artırılması",
+      "Beceri testinin kaldırılması",
+      "İletişim kanalının değiştirilmesi"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "TOTAPS protokolünde “observe” hangi aşamayı ifade eder?",
+    "answer": "Gözlemleme",
+    "options": [
+      "Gözlemleme",
+      "Dokunma",
+      "Beceri testi",
+      "Pasif hareket"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "TOTAPS değerlendirmesinde sporcunun hareketi kendisinin yapması hangi aşamadır?",
+    "answer": "Aktif hareket",
+    "options": [
+      "Aktif hareket",
+      "Pasif hareket",
+      "Gözlem",
+      "Beceri testi"
+    ]
+  },
+  {
+    "unitId": "1-3",
+    "question": "Kaygan zeminde sakatlanan bir sporcuya önce öyküsü soruluyor; ardından görünür şişlik inceleniyor. Bu değerlendirmede risk türü ve ilk iki TOTAPS adımı hangileridir?",
+    "answer": "Dışsal risk; konuşma ve gözlem",
+    "options": [
+      "Dışsal risk; konuşma ve gözlem",
+      "İçsel risk; gözlem ve konuşma",
+      "Dışsal risk; dokunma ve beceri testi",
+      "İçsel risk; pasif hareket ve konuşma"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Aşağıdakilerden hangisi doping kural ihlali oluşturabilir?",
+    "answer": "Numune vermekten kaçınmak",
+    "options": [
+      "Numune vermekten kaçınmak",
+      "Yeterli su içmek",
+      "Düzenli uyumak",
+      "Isınma yapmak"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Aşağıdakilerden hangisi doping ihlali kapsamına girebilir?",
+    "answer": "Yasaklı maddenin bulundurulması",
+    "options": [
+      "Yasaklı maddenin bulundurulması",
+      "Düzenli dinlenme",
+      "Teknik çalışma",
+      "Su tüketimi"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Dünya Anti-Doping Ajansının kısaltması nedir?",
+    "answer": "WADA",
+    "options": [
+      "WADA",
+      "CAS",
+      "TİCİ",
+      "TARGET"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Bir sporcu yasaklı maddeyi kullanmadığını ancak bulundurduğunu söylüyor. Hangi ifade daha uygundur?",
+    "answer": "Bulundurma da ihlal oluşturabilir",
+    "options": [
+      "Bulundurma da ihlal oluşturabilir",
+      "Yalnız kullanım ihlaldir",
+      "Liste hiçbir zaman değişmez",
+      "Kontrol kuralları önemsizdir"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Bir ilacın yarışma dönemindeki durumunu belirlemek için en güvenilir yaklaşım hangisidir?",
+    "answer": "Güncel yetkili yasaklı listeyi ve kuralları kontrol etmek",
+    "options": [
+      "Güncel yetkili yasaklı listeyi ve kuralları kontrol etmek",
+      "Eski bir özete kesinlikle güvenmek",
+      "İlaç adını tahmin etmek",
+      "Yalnız takım arkadaşına sormak"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Numune vermekten kaçınma doping kuralları açısından nasıl ele alınabilir?",
+    "answer": "Bir kural ihlali olabilir",
+    "options": [
+      "Bir kural ihlali olabilir",
+      "Her zaman ödüllendirilir",
+      "Yalnız bir beslenme tercihidir",
+      "Antrenman hacmini tanımlar"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Yasaklı maddeler listesi konusunda hangi ifade doğrudur?",
+    "answer": "Güncellenebilir ve yetkili kaynaklardan kontrol edilmelidir",
+    "options": [
+      "Güncellenebilir ve yetkili kaynaklardan kontrol edilmelidir",
+      "Hiçbir zaman değişmez",
+      "Yalnız antrenörün görüşü belirler",
+      "Sadece besin türlerini listeler"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Doping kuralları açısından hangi işlem bir ihlal oluşturabilir?",
+    "answer": "Yasaklı madde bulundurmak",
+    "options": [
+      "Yasaklı madde bulundurmak",
+      "Planlı ısınmak",
+      "Su içmek",
+      "Antrenmandan sonra dinlenmek"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Doping kontrolünde numune vermekten kaçınma için en uygun ifade hangisidir?",
+    "answer": "Doping kural ihlali oluşturabilir",
+    "options": [
+      "Doping kural ihlali oluşturabilir",
+      "Kesinlikle hiçbir kuralı ilgilendirmez",
+      "Yalnız ölçme ve değerlendirme yöntemidir",
+      "Bir antrenman döngüsüdür"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Aşağıdakilerden hangisi yasaklı doping yöntemine örnektir?",
+    "answer": "Kan dopingi",
+    "options": [
+      "Kan dopingi",
+      "Yeterli uyku",
+      "Uygun ısınma",
+      "Su tüketimi"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Bir sporcu pozitif test sonucu olmadığını ancak numune vermeyi reddettiğini belirtiyor. Hangi yorum en uygundur?",
+    "answer": "Numune vermekten kaçınma ayrıca doping kural ihlali oluşturabilir",
+    "options": [
+      "Numune vermekten kaçınma ayrıca doping kural ihlali oluşturabilir",
+      "Pozitif test yoksa hiçbir davranış ihlal olamaz",
+      "Numune verme kuralları sadece antrenöre uygulanır",
+      "Ret yalnızca antrenman hacmini etkiler"
+    ]
+  },
+  {
+    "unitId": "1-4",
+    "question": "Bir antrenör sporcunun ilaç kullanımıyla ilgili güncel doping kurallarını öğrenmek istiyor. En uygun yaklaşım hangisidir?",
+    "answer": "Güncel yetkili kuralları kontrol etmek",
+    "options": [
+      "Güncel yetkili kuralları kontrol etmek",
+      "Yıllar önceki özeti kesin kabul etmek",
+      "İlaç adından yasallığı tahmin etmek",
+      "Yalnız takımın bütçesine bakmak"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Hawthorne araştırmaları hangi yaklaşım ile ilişkilidir?",
+    "answer": "Neo-klasik yaklaşım",
+    "options": [
+      "Neo-klasik yaklaşım",
+      "Klasik bürokrasi",
+      "Yalnız finansal yaklaşım",
+      "Mekanik kaldıraç yaklaşımı"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Girdi, süreç, çıktı ve geri bildirim hangi yaklaşımla ilişkilidir?",
+    "answer": "Sistem yaklaşımı",
+    "options": [
+      "Sistem yaklaşımı",
+      "Kaldıraç yaklaşımı",
+      "Fosfajen sistem",
+      "Fair play ödülü"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Planlama ve denetim neyin örnekleridir?",
+    "answer": "Yönetim süreçlerinin",
+    "options": [
+      "Yönetim süreçlerinin",
+      "Enerji sistemlerinin",
+      "İstismar türlerinin",
+      "Hareket düzlemlerinin"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Bir kulüp üyelerden geri bildirim alıp hizmet sürecini değiştiriyor. Bu yaklaşım hangisine örnektir?",
+    "answer": "Sistem yaklaşımı",
+    "options": [
+      "Sistem yaklaşımı",
+      "Kaldıraç sınıflaması",
+      "Kas kasılması",
+      "İstismar türü"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Bir yönetici görevleri dağıtıp birimler oluşturuyor. Hangi yönetim süreci öne çıkar?",
+    "answer": "Örgütleme",
+    "options": [
+      "Örgütleme",
+      "Fleksiyon",
+      "Doping",
+      "Glikoliz"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "İnsan ilişkileri, informal gruplar ve motivasyonu vurgulayan yaklaşım hangisidir?",
+    "answer": "Neo-klasik yaklaşım",
+    "options": [
+      "Neo-klasik yaklaşım",
+      "Yalnız klasik yaklaşım",
+      "Kaldıraç yaklaşımı",
+      "Fosfajen sistem"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Yönetimde hedeflerin ve bunlara ulaşma yollarının belirlenmesi hangi süreçtir?",
+    "answer": "Planlama",
+    "options": [
+      "Planlama",
+      "Denetim",
+      "Fleksiyon",
+      "İhmal"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Bir kulüp hedef belirledikten sonra faaliyetlerini bu hedeflere göre kontrol ediyor. Kontrol hangi yönetim sürecidir?",
+    "answer": "Denetim",
+    "options": [
+      "Denetim",
+      "Fleksiyon",
+      "Motor öğrenme",
+      "Glikojen depolama"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "1922’de kurulan ve Türkiye’de ilk özerk spor örgütlenmesi olarak anılan yapı hangisidir?",
+    "answer": "Türkiye İdman Cemiyetleri İttifakı",
+    "options": [
+      "Türkiye İdman Cemiyetleri İttifakı",
+      "Türk Spor Kurumu",
+      "CAS",
+      "WADA"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Bilimsel yönetim yaklaşımı hangi isimle ilişkilendirilir?",
+    "answer": "Taylor",
+    "options": [
+      "Taylor",
+      "Mayo",
+      "Ling",
+      "Gallahue"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Bürokrasi yaklaşımı hangi yönetim düşünürüyle ilişkilendirilir?",
+    "answer": "Weber",
+    "options": [
+      "Weber",
+      "Arnold",
+      "Coubertin",
+      "Skinner"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Bir kulüpte farklı birimlerin faaliyetlerini birbiriyle uyumlu hâle getirme hangi yönetim sürecidir?",
+    "answer": "Koordinasyon",
+    "options": [
+      "Koordinasyon",
+      "Fleksiyon",
+      "İhmal",
+      "Pekiştirme"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Bir kulüp üyelerin önerilerini topluyor, hizmetini değiştiriyor ve sonuçları yeniden izliyor. Süreci açıklayan yönetim yaklaşımı hangisidir?",
+    "answer": "Geri bildirimi içeren sistem yaklaşımı",
+    "options": [
+      "Geri bildirimi içeren sistem yaklaşımı",
+      "Yalnız klasik iş bölümü",
+      "Sadece kaldıraç yaklaşımı",
+      "Ölçümden bağımsız yönetim"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Yeni bir spor hizmetinin geliştirilmesi hangi işleve girer?",
+    "answer": "AR-GE",
+    "options": [
+      "AR-GE",
+      "Muhasebe",
+      "Denetim",
+      "Personel seçimi"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Hedef kitleye spor hizmeti ulaştırmak hangi işletme işlevidir?",
+    "answer": "Pazarlama",
+    "options": [
+      "Pazarlama",
+      "Anatomi",
+      "Doping kontrolü",
+      "Motor gelişim"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bütçe ve kaynak yönetimi hangi işlevle en yakından ilgilidir?",
+    "answer": "Finans",
+    "options": [
+      "Finans",
+      "Motor öğrenme",
+      "Hakemlik",
+      "Esneklik"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir kulüp yeni bir antrenman uygulaması tasarlıyor. Hangi işletme işlevi öne çıkar?",
+    "answer": "AR-GE",
+    "options": [
+      "AR-GE",
+      "Yalnız muhasebe",
+      "Anatomik duruş",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir tesis gelir ve giderlerini planlıyor. Bu faaliyet hangi alanla yakından ilgilidir?",
+    "answer": "Finans",
+    "options": [
+      "Finans",
+      "Motor gelişim",
+      "Duygusal istismar",
+      "Kaldıraç tipi"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Personelin işe alınması ve gelişimi hangi işletme işleviyle ilgilidir?",
+    "answer": "İnsan kaynakları",
+    "options": [
+      "İnsan kaynakları",
+      "Kinesiyoloji",
+      "Spor tarihi",
+      "Kas fizyolojisi"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir spor kuruluşunun hedef kitlesine hizmetini tanıtması hangi işlevle ilişkilidir?",
+    "answer": "Pazarlama",
+    "options": [
+      "Pazarlama",
+      "Motor gelişim",
+      "Kalsiyum depolama",
+      "Fleksiyon"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir spor işletmesinin çalışanlarının eğitim ve performans süreçlerini düzenlemesi hangi işlevdir?",
+    "answer": "İnsan kaynakları",
+    "options": [
+      "İnsan kaynakları",
+      "Spor tarihi",
+      "İlk yardım",
+      "Kinesiyoloji"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir spor kuruluşunun paydaşlarıyla ilişkisini ve kurumsal imajını yönetmesi hangi işlevdir?",
+    "answer": "Halkla ilişkiler",
+    "options": [
+      "Halkla ilişkiler",
+      "AR-GE",
+      "Anatomi",
+      "Motor gelişim"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir spor işletmesinin gelir ve gider kayıtlarını tutması hangi işleve örnektir?",
+    "answer": "Muhasebe",
+    "options": [
+      "Muhasebe",
+      "Motor gelişim",
+      "Fair play",
+      "Spor anatomisi"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Hedef kitleye hizmet ulaştırma ile paydaş ilişkilerini ve kurumsal imajı yönetme sırasıyla hangi işlevlerdir?",
+    "answer": "Pazarlama ve halkla ilişkiler",
+    "options": [
+      "Pazarlama ve halkla ilişkiler",
+      "Halkla ilişkiler ve pazarlama",
+      "Anatomi ve fizyoloji",
+      "Ölçme ve dinlenme"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir kulüp yeni antrenman hizmeti tasarlıyor, bütçesini planlıyor ve hedef kitleye duyuruyor. İşlevlerin sırası hangisidir?",
+    "answer": "AR-GE, finans, pazarlama",
+    "options": [
+      "AR-GE, finans, pazarlama",
+      "Pazarlama, AR-GE, finans",
+      "Finans, pazarlama, AR-GE",
+      "Halkla ilişkiler, anatomi, muhasebe"
+    ]
+  },
+  {
+    "unitId": "2-1",
+    "question": "Bir spor işletmesinin önce gerekli malzemeleri edinmesi, ardından bu kaynaklarla hizmet oluşturması sırasıyla hangi işlevlerdir?",
+    "answer": "Satın alma ve üretim",
+    "options": [
+      "Satın alma ve üretim",
+      "Üretim ve satın alma",
+      "Pazarlama ve denetim",
+      "İletişim ve tahkim"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Vizyon ve değişimi öne çıkaran liderlik hangisidir?",
+    "answer": "Dönüşümcü liderlik",
+    "options": [
+      "Dönüşümcü liderlik",
+      "Etkileşimci liderlik",
+      "Pasif dinleme",
+      "Bürokratik ölçme"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Ödül ve sonuç ilişkisini öne çıkaran liderlik hangisidir?",
+    "answer": "Etkileşimci",
+    "options": [
+      "Etkileşimci",
+      "Dönüşümcü",
+      "Anatomik",
+      "Statik"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Karar sürecine katılımı destekleyen liderlik hangisidir?",
+    "answer": "Demokratik",
+    "options": [
+      "Demokratik",
+      "Otoriter",
+      "Tek yönlü",
+      "Kayıtsız"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Antrenör sporcularıyla ortak bir gelecek vizyonu kuruyor ve değişimi destekliyor. Hangi tarz öne çıkar?",
+    "answer": "Dönüşümcü liderlik",
+    "options": [
+      "Dönüşümcü liderlik",
+      "Etkileşimci liderlik",
+      "Pasif dinleme",
+      "Antropometrik ölçüm"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Belirlenen hedefe ulaşan sporcuya ödül verilmesi öncelikle hangi liderlik anlayışını yansıtır?",
+    "answer": "Etkileşimci liderlik",
+    "options": [
+      "Etkileşimci liderlik",
+      "Dönüşümcü liderlik",
+      "Sistematik ihmal",
+      "Anatomik yaklaşım"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Liderlikte değişim ve ortak vizyonu vurgulayan yaklaşım hangisidir?",
+    "answer": "Dönüşümcü",
+    "options": [
+      "Dönüşümcü",
+      "Etkileşimci",
+      "Anatomik",
+      "Lokomotor"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Resmî makamdan kaynaklanan yetkiyle çalışmak hangi rolle özellikle ilişkilidir?",
+    "answer": "Yöneticilik",
+    "options": [
+      "Yöneticilik",
+      "Yalnız sporcu sağlığı",
+      "Kaldıraç sistemi",
+      "Enerji metabolizması"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Bir lider sporcuların görüşlerini alarak karar sürecine katılmalarını sağlıyor. Hangi yaklaşım öne çıkar?",
+    "answer": "Demokratik liderlik",
+    "options": [
+      "Demokratik liderlik",
+      "Yalnız otoriter liderlik",
+      "Enerji metabolizması",
+      "Antropometrik değerlendirme"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Sporcuların ihtiyaç ve gelişimini merkeze koyarak onlara hizmet etmeyi öne çıkaran liderlik hangisidir?",
+    "answer": "Hizmetkâr liderlik",
+    "options": [
+      "Hizmetkâr liderlik",
+      "Yalnız etkileşimci liderlik",
+      "Somatotip",
+      "Pasif dinlenme"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Makamından kaynaklanan biçimsel yetki hangi rolle özellikle ilişkilidir?",
+    "answer": "Yönetici",
+    "options": [
+      "Yönetici",
+      "Yalnız alıcı",
+      "Yalnız dinleyici",
+      "Hakem çizgisi"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Hedef karşılığında ödül kullanmayı vurgulayan liderlik ile vizyon ve değişimi vurgulayan liderlik sırasıyla hangileridir?",
+    "answer": "Etkileşimci ve dönüşümcü",
+    "options": [
+      "Etkileşimci ve dönüşümcü",
+      "Dönüşümcü ve etkileşimci",
+      "Otoriter ve pasif dinleme",
+      "Sistem ve anatomik"
+    ]
+  },
+  {
+    "unitId": "2-2",
+    "question": "Bir antrenör önce takımına ortak bir gelecek hedefi sunuyor; diğer antrenör performans hedeflerini ödülle ilişkilendiriyor. Sırasıyla hangi liderlik tarzları öne çıkar?",
+    "answer": "Dönüşümcü ve etkileşimci",
+    "options": [
+      "Dönüşümcü ve etkileşimci",
+      "Etkileşimci ve dönüşümcü",
+      "Liberal ve anatomik",
+      "Bürokratik ve lokomotor"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Alıcının kaynağa verdiği yanıt iletişimin hangi ögesidir?",
+    "answer": "Geri bildirim",
+    "options": [
+      "Geri bildirim",
+      "Gürültü",
+      "Kanal",
+      "Kaynak"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Mesajın aktarılmasını bozan etkene ne denir?",
+    "answer": "Gürültü",
+    "options": [
+      "Gürültü",
+      "Geri bildirim",
+      "Alıcı",
+      "Liderlik"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Karşıdakinin duygu ve içeriğini doğrulayarak dinleme hangisidir?",
+    "answer": "Etkin dinleme",
+    "options": [
+      "Etkin dinleme",
+      "Görmezden gelme",
+      "Yalnız konuşma",
+      "Tek yönlü emir"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Antrenör sporcunun sözlerini özetleyerek doğru anlayıp anlamadığını kontrol ediyor. Bu neye örnektir?",
+    "answer": "Etkin dinleme",
+    "options": [
+      "Etkin dinleme",
+      "İletişim gürültüsü",
+      "Pasif görmezden gelme",
+      "Yalnız emir verme"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Bir salondaki yüksek ses antrenörün verdiği mesajın duyulmasını engelliyor. Bu hangi iletişim ögesidir?",
+    "answer": "Gürültü",
+    "options": [
+      "Gürültü",
+      "Geri bildirim",
+      "Alıcı",
+      "Kaynak"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Mesajı ileten kişi iletişim sürecinde hangi ögedir?",
+    "answer": "Kaynak",
+    "options": [
+      "Kaynak",
+      "Alıcı",
+      "Gürültü",
+      "Geri bildirim"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Alıcının mesajın anlaşıldığını bildirmesi hangi ögedir?",
+    "answer": "Geri bildirim",
+    "options": [
+      "Geri bildirim",
+      "Gürültü",
+      "Yüklenme hacmi",
+      "Spor tahkimi"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Sporcunun mesajı yanlış anlamasına yol açan salondaki yüksek ses hangi iletişim ögesidir?",
+    "answer": "Gürültü",
+    "options": [
+      "Gürültü",
+      "Kaynak",
+      "Geri bildirim",
+      "Alıcı"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Bir antrenörün sporcuya mesajını iletmek için kullandığı araç iletişimin hangi ögesidir?",
+    "answer": "Kanal",
+    "options": [
+      "Kanal",
+      "Alıcı",
+      "Gürültü",
+      "Geriye dönüş"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Antrenörün sözlü mesajını dinleyen sporcu iletişimde hangi roldedir?",
+    "answer": "Alıcı",
+    "options": [
+      "Alıcı",
+      "Kaynak",
+      "Gürültü",
+      "Kanal"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Bir sporcuya “Anladığım kadarıyla bu durum seni kaygılandırıyor” demek hangi iletişim becerisini gösterir?",
+    "answer": "Etkin dinleme",
+    "options": [
+      "Etkin dinleme",
+      "Gürültü yaratma",
+      "Fiziksel ölçme",
+      "Örgütleme"
+    ]
+  },
+  {
+    "unitId": "2-3",
+    "question": "Antrenör talimat verirken salon gürültüsü mesajı bozuyor; sporcu daha sonra anladığını kendi sözleriyle aktarıyor. Bu iki unsur sırasıyla nedir?",
+    "answer": "Gürültü ve geri bildirim",
+    "options": [
+      "Gürültü ve geri bildirim",
+      "Kanal ve kaynak",
+      "Alıcı ve kanal",
+      "Geri bildirim ve gürültü"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "CAS hangi alanla ilişkilidir?",
+    "answer": "Spor tahkimi",
+    "options": [
+      "Spor tahkimi",
+      "Besin metabolizması",
+      "Motor gelişim",
+      "Antrenman hacmi"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Aşağıdakilerden hangisi spor hukukunun paydaşlarından biridir?",
+    "answer": "Spor federasyonu",
+    "options": [
+      "Spor federasyonu",
+      "Mitokondri",
+      "Sarkoplazmik retikulum",
+      "Sagittal düzlem"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Spor mevzuatını uygularken hangi yaklaşım uygundur?",
+    "answer": "Güncel mevzuatı kontrol etmek",
+    "options": [
+      "Güncel mevzuatı kontrol etmek",
+      "Eski bir özeti kesin kaynak saymak",
+      "Kuralları görmezden gelmek",
+      "Tüm branşların aynı olduğunu varsaymak"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Bir uluslararası spor uyuşmazlığında CAS adı geçiyor. Bu kurum hangi alanla ilişkilidir?",
+    "answer": "Spor tahkimi",
+    "options": [
+      "Spor tahkimi",
+      "Kas fizyolojisi",
+      "Antrenman hacmi",
+      "Vitamin sentezi"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Bir kulüp yönetmeliği değişmiş olabilir. Karar vermeden önce ne yapılmalıdır?",
+    "answer": "Güncel mevzuat ve ilgili kurallar kontrol edilmeli",
+    "options": [
+      "Güncel mevzuat ve ilgili kurallar kontrol edilmeli",
+      "Eski bir özet kesin kabul edilmeli",
+      "Kurallar tamamen göz ardı edilmeli",
+      "Yalnızca varsayımla hareket edilmeli"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Bir kulüp ile sporcunun hak ve yükümlülükleri hangi alanın konusudur?",
+    "answer": "Spor hukuku",
+    "options": [
+      "Spor hukuku",
+      "Enerji sistemleri",
+      "Anatomik düzlemler",
+      "Vitamin sınıflaması"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "CAS kısaltması aşağıdakilerden hangisiyle ilişkilidir?",
+    "answer": "Spor tahkimi",
+    "options": [
+      "Spor tahkimi",
+      "Fosfajen enerji",
+      "Denge çalışması",
+      "Motor gelişim dönemi"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Bir spor uyuşmazlığının tahkim yoluyla ele alınması hangi kurumla ilişkilendirilebilir?",
+    "answer": "CAS",
+    "options": [
+      "CAS",
+      "Ribozom",
+      "ATP-CP",
+      "Glikojen"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Aşağıdakilerden hangisi spor hukukunun kurumsal aktörlerinden biridir?",
+    "answer": "Spor kulübü",
+    "options": [
+      "Spor kulübü",
+      "Mitokondri",
+      "Sagittal düzlem",
+      "Glikojen"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Spor disiplinine ilişkin kuralları araştırırken hangi yol daha uygundur?",
+    "answer": "Güncel federasyon talimatlarını ve mevzuatı kontrol etmek",
+    "options": [
+      "Güncel federasyon talimatlarını ve mevzuatı kontrol etmek",
+      "Eski bir özeti daima kesin kabul etmek",
+      "Hiçbir kurala bakmadan varsaymak",
+      "Yalnız beslenme tablosunu incelemek"
+    ]
+  },
+  {
+    "unitId": "2-4",
+    "question": "Bir kulüp eski ders özetine dayanarak disiplin işlemi uygulamayı planlıyor. Mevzuatın değişebileceği dikkate alındığında en uygun adım nedir?",
+    "answer": "Güncel mevzuat ve ilgili federasyon talimatlarını kontrol etmek",
+    "options": [
+      "Güncel mevzuat ve ilgili federasyon talimatlarını kontrol etmek",
+      "Özeti değişmez hukuk kaynağı kabul etmek",
+      "Hiçbir kurala bakmadan karar vermek",
+      "Yalnız performans testine dayanmak"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Antrenör-sporcu-ebeveyn ilişkisi neyi ifade eder?",
+    "answer": "Spor ortamındaki üçlü paydaş ilişkisini",
+    "options": [
+      "Spor ortamındaki üçlü paydaş ilişkisini",
+      "Yalnız yarışma puanını",
+      "Enerji sistemlerini",
+      "Tek tip liderliği"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Çağdaş sporcu gelişiminde yaşam boyu sporda kalmayı destekleyen yol hangisidir?",
+    "answer": "Katılım yolu",
+    "options": [
+      "Katılım yolu",
+      "Yalnız eleme",
+      "Yalnız profesyonellik",
+      "Zorunlu emeklilik"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Sporcunun gelişiminde antrenör ve ebeveyn iletişimi nasıl ele alınmalıdır?",
+    "answer": "Destekleyici bir paydaş ilişkisi olarak",
+    "options": [
+      "Destekleyici bir paydaş ilişkisi olarak",
+      "Tamamen önemsiz olarak",
+      "Yalnız ceza aracı olarak",
+      "Sadece finansal kayıt olarak"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Bir çocuk yarışmacı düzeye geçmeden yıllarca keyif için spor yapıyor. Hangi yaklaşım bunu da değerli görür?",
+    "answer": "Yaşam boyu katılım yaklaşımı",
+    "options": [
+      "Yaşam boyu katılım yaklaşımı",
+      "Yalnız eleme anlayışı",
+      "Sadece elit sonuç yaklaşımı",
+      "Geriye dönüş ilkesi"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Antrenör ebeveynlerle yapıcı iletişim kuruyor. Bu hangi ilişkiyi destekler?",
+    "answer": "Antrenör-sporcu-ebeveyn ilişkisini",
+    "options": [
+      "Antrenör-sporcu-ebeveyn ilişkisini",
+      "Kaldıraç tipini",
+      "Enerji sistemini",
+      "VKİ formülünü"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Antrenör, sporcu ve ebeveyn arasındaki ilişkiyi olumlu tutmak için hangi tutum uygundur?",
+    "answer": "Açık ve destekleyici iletişim",
+    "options": [
+      "Açık ve destekleyici iletişim",
+      "Sürekli aşağılama",
+      "Güvenliği görmezden gelme",
+      "Her konuda iletişimi kesme"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Katılım yaklaşımı aşağıdakilerden hangisine de değer verir?",
+    "answer": "Yaşam boyu spor",
+    "options": [
+      "Yaşam boyu spor",
+      "Yalnız erken eleme",
+      "Sadece profesyonel başarı",
+      "Herkesin spordan uzaklaşması"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Antrenörün çocuğun ebeveyniyle yapıcı iletişim kurması hangi ilişkinin parçasıdır?",
+    "answer": "Antrenör-sporcu-ebeveyn ilişkisi",
+    "options": [
+      "Antrenör-sporcu-ebeveyn ilişkisi",
+      "Yalnız kaldıraç düzeni",
+      "Enerji sistemi seçimi",
+      "Kas lifi sınıflaması"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Katılım yaklaşımına göre yarışma düzeyinde olmayan bireylerin spora devam etmesi nasıl görülür?",
+    "answer": "Yaşam boyu katılım açısından değerlidir",
+    "options": [
+      "Yaşam boyu katılım açısından değerlidir",
+      "Kesinlikle spor dışıdır",
+      "Yalnız profesyoneller için mümkündür",
+      "Motor gelişimle ilgisizdir"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Sporcu, antrenör ve ebeveyn ilişkisinde hangi tutum daha yapıcıdır?",
+    "answer": "Açık ve destekleyici iletişim",
+    "options": [
+      "Açık ve destekleyici iletişim",
+      "Sürekli aşağılama",
+      "Güvenliği yok sayma",
+      "İletişimi tamamen kesme"
+    ]
+  },
+  {
+    "unitId": "3-0",
+    "question": "Bir çocuk üst düzey yarışmaya katılmasa da düzenli spor yapmaktan keyif alıyor. Çağdaş katılım yaklaşımı bu durumu nasıl değerlendirir?",
+    "answer": "Yaşam boyu spor katılımı açısından anlamlıdır",
+    "options": [
+      "Yaşam boyu spor katılımı açısından anlamlıdır",
+      "Yalnız seçkin yarışmacılar için spor değerlidir",
+      "Sporcu hemen sistemden çıkarılmalıdır",
+      "Sadece müsabaka sonucu önemlidir"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Değişken çevreye uyum gerektiren beceri hangisidir?",
+    "answer": "Açık beceri",
+    "options": [
+      "Açık beceri",
+      "Kapalı beceri",
+      "Refleks",
+      "Statik duruş"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Görece sabit ve öngörülebilir çevrede sergilenen beceri hangisidir?",
+    "answer": "Kapalı beceri",
+    "options": [
+      "Kapalı beceri",
+      "Açık beceri",
+      "Sosyalleşme",
+      "Fazla tamamlama"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Başlangıcı ve bitişi belirli bir şut hangi sınıfa örnektir?",
+    "answer": "Kesikli beceri",
+    "options": [
+      "Kesikli beceri",
+      "Sürekli beceri",
+      "Refleks",
+      "Gelişim ilkesi"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Basketbolda hareket eden rakiplere göre pas seçmek hangi beceri türüdür?",
+    "answer": "Açık beceri",
+    "options": [
+      "Açık beceri",
+      "Kapalı beceri",
+      "Yalnız refleks",
+      "Statik ölçüm"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Başlangıcı ve bitişi belirgin tek bir şut hangi sınıftadır?",
+    "answer": "Kesikli beceri",
+    "options": [
+      "Kesikli beceri",
+      "Sürekli beceri",
+      "Sosyalleşme",
+      "Örgütleme"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Sabit ve öngörülebilir bir ortamda uygulanan beceriye ne denir?",
+    "answer": "Kapalı beceri",
+    "options": [
+      "Kapalı beceri",
+      "Açık beceri",
+      "Sosyalleşme",
+      "Fazla tamamlama"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Birbirine bağlanan hareketlerden oluşan beceri hangi sınıftadır?",
+    "answer": "Seri beceri",
+    "options": [
+      "Seri beceri",
+      "Yalnız kesikli beceri",
+      "Refleks dönemi",
+      "Doping kuralı"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Hareketin çevredeki değişikliklere uyarlanması gerekiyorsa hangi beceri sınıfı öne çıkar?",
+    "answer": "Açık beceri",
+    "options": [
+      "Açık beceri",
+      "Kapalı beceri",
+      "Yalnız refleks",
+      "Sadece antropometrik ölçüm"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Tekrarlanan bir hareket akışı içeren koşu hangi beceri sınıfına örnektir?",
+    "answer": "Sürekli beceri",
+    "options": [
+      "Sürekli beceri",
+      "Yalnız kesikli beceri",
+      "Refleksif dönem",
+      "Bağıl değerlendirme"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Hassas küçük kas kontrolünün öne çıktığı beceri hangi sınıflandırmayla ifade edilir?",
+    "answer": "İnce beceri",
+    "options": [
+      "İnce beceri",
+      "Kaba beceri",
+      "Yalnız açık beceri",
+      "Statik döngü"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Birbiriyle bağlantılı hareketlerin oluşturduğu cimnastik dizisi hangi beceri sınıfına örnektir?",
+    "answer": "Seri beceri",
+    "options": [
+      "Seri beceri",
+      "Yalnız kesikli beceri",
+      "Refleksif hareket",
+      "Kaldıraç tipi"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Bir sporcu önce sabit koşullarda serbest atış yapıyor, ardından hareketli rakiplerle pas seçiyor. Çevreye göre bu beceriler sırasıyla nasıl sınıflanır?",
+    "answer": "Kapalı ve açık",
+    "options": [
+      "Kapalı ve açık",
+      "Açık ve kapalı",
+      "İkisi de yalnız refleks",
+      "İkisi de zorunlu olarak seri"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Bir sporcu yorgun olduğu bir günde beceriyi kötü uygularsa bu tek sonuç için en uygun yorum hangisidir?",
+    "answer": "Anlık performans düşmüş olabilir; tek deneme kalıcı öğrenmeyi kesin göstermez",
+    "options": [
+      "Anlık performans düşmüş olabilir; tek deneme kalıcı öğrenmeyi kesin göstermez",
+      "Beceri kesinlikle hiç öğrenilmemiştir",
+      "Performans ile öğrenme tamamen aynı şeydir",
+      "Yorgunluk performansı hiçbir koşulda etkilemez"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Topa vurma hangi temel hareket becerisi kategorisidir?",
+    "answer": "Nesne kontrolü",
+    "options": [
+      "Nesne kontrolü",
+      "Yer değiştirme",
+      "Yalnız statik denge",
+      "Refleksif hareket"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Koşma hangi temel hareket kategorisindedir?",
+    "answer": "Yer değiştirme",
+    "options": [
+      "Yer değiştirme",
+      "Nesne kontrolü",
+      "Doping kontrolü",
+      "Muhasebe"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Hareketin nerede yapıldığını anlamak hangi farkındalıktır?",
+    "answer": "Alan farkındalığı",
+    "options": [
+      "Alan farkındalığı",
+      "Efor farkındalığı",
+      "Finans farkındalığı",
+      "Liderlik farkındalığı"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Çocuk topu yakalayıp geri atıyor. Hangi kategoriye çalışmaktadır?",
+    "answer": "Nesne kontrolü",
+    "options": [
+      "Nesne kontrolü",
+      "Yer değiştirme",
+      "Yalnız statik denge",
+      "Yasal denetim"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Çocuk hareketini hızlı veya yavaş yapmayı deniyor. Hangi kavrama odaklanmaktadır?",
+    "answer": "Efor farkındalığı",
+    "options": [
+      "Efor farkındalığı",
+      "Alan farkındalığı",
+      "Spor tahkimi",
+      "Örgütleme"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Çocuğun koşup yer değiştirmesi hangi temel hareket kategorisine girer?",
+    "answer": "Lokomotor",
+    "options": [
+      "Lokomotor",
+      "Manipülatif",
+      "Yalnız statik denge",
+      "Finansal yönetim"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Hareketin nerede yapıldığı hangi farkındalıkla ilgilidir?",
+    "answer": "Alan farkındalığı",
+    "options": [
+      "Alan farkındalığı",
+      "Efor farkındalığı",
+      "Tahkim farkındalığı",
+      "Doping farkındalığı"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Çocuğun eğilip ağırlığını bir ayağından diğerine aktarması hangi temel hareket kategorisine yakındır?",
+    "answer": "Dengeleme",
+    "options": [
+      "Dengeleme",
+      "Nesne kontrolü",
+      "Yalnız yer değiştirme",
+      "Yasal denetim"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Hareketin nerede yapıldığını fark etmek hangi hareket kavramıdır?",
+    "answer": "Alan farkındalığı",
+    "options": [
+      "Alan farkındalığı",
+      "Efor farkındalığı",
+      "Mutlak değerlendirme",
+      "Dönüşümcü liderlik"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Topa vurma ile atlama sırasıyla hangi iki temel hareket kategorisindedir?",
+    "answer": "Nesne kontrolü ve yer değiştirme",
+    "options": [
+      "Nesne kontrolü ve yer değiştirme",
+      "Yer değiştirme ve nesne kontrolü",
+      "İkisi de sadece dengeleme",
+      "İkisi de ölçme"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Bir çocuğun hareketi kiminle veya hangi nesneyle yaptığını düşünmesi hangi hareket kavramıyla ilgilidir?",
+    "answer": "Hareket ilişkileri",
+    "options": [
+      "Hareket ilişkileri",
+      "Alan farkındalığı",
+      "Bağıl değerlendirme",
+      "Fosfajen sistem"
+    ]
+  },
+  {
+    "unitId": "3-2",
+    "question": "Bir çocuk koşarak topa yaklaşıyor, topu yakalıyor ve tek ayakta duruyor. Sırayla hangi temel hareket kategorileri öne çıkar?",
+    "answer": "Yer değiştirme, nesne kontrolü, dengeleme",
+    "options": [
+      "Yer değiştirme, nesne kontrolü, dengeleme",
+      "Nesne kontrolü, dengeleme, yer değiştirme",
+      "Dengeleme, yer değiştirme, nesne kontrolü",
+      "Üçü de yalnız yer değiştirme"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Gallahue modelinde yaklaşık 2–7 yaş hangi dönemdir?",
+    "answer": "Temel hareketler",
+    "options": [
+      "Temel hareketler",
+      "Refleksif hareketler",
+      "İlkel hareketler",
+      "Yalnız elit performans"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Gelişimin gövde merkezinden uçlara doğru ilerlemesi hangi ilkedir?",
+    "answer": "İçten dışa gelişim",
+    "options": [
+      "İçten dışa gelişim",
+      "Bağıl değerlendirme",
+      "Sistem yaklaşımı",
+      "Geriye dönüş"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "İstem dışı erken tepkiler hangi hareket dönemiyle ilişkilidir?",
+    "answer": "Refleksif hareketler",
+    "options": [
+      "Refleksif hareketler",
+      "Spor tahkimi",
+      "İşletme dönemi",
+      "Karma deneme"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Bir çocuk koşma ve atlama gibi temel hareketleri öğreniyor. Bu beceriler yaklaşık hangi dönemle ilişkilidir?",
+    "answer": "Temel hareketler dönemi",
+    "options": [
+      "Temel hareketler dönemi",
+      "Yalnız refleksif dönem",
+      "Yalnız yetişkin emeklilik dönemi",
+      "Spor hukuku dönemi"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Bir bebekte gelişimin baştan ayağa ilerlemesi hangi ilkeyi örnekler?",
+    "answer": "Baştan ayağa gelişim",
+    "options": [
+      "Baştan ayağa gelişim",
+      "Bağıl değerlendirme",
+      "Dönüşümcü liderlik",
+      "Geriye dönüş"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Yaklaşık 2–7 yaş arasında koşma ve atlamanın gelişmesi hangi dönemle ilişkilidir?",
+    "answer": "Temel hareketler dönemi",
+    "options": [
+      "Temel hareketler dönemi",
+      "Yalnız refleksif dönem",
+      "Yönetim dönemi",
+      "Tahkim dönemi"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Gövde merkezinden uzuvlara doğru gelişim hangi ilkeyle ifade edilir?",
+    "answer": "İçten dışa gelişim",
+    "options": [
+      "İçten dışa gelişim",
+      "Geriye dönüşüm",
+      "Bağıl değerlendirme",
+      "Şiddet artışı"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Bir bebeğin istem dışı erken hareket tepkileri hangi hareket dönemiyle ilişkilidir?",
+    "answer": "Refleksif hareketler",
+    "options": [
+      "Refleksif hareketler",
+      "Spor tahkimi",
+      "İşletmecilik",
+      "Yalnız elit performans"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "İlk istemli hareketlerle ve yaklaşık 0–2 yaşla ilişkilendirilen dönem hangisidir?",
+    "answer": "İlkel hareketler dönemi",
+    "options": [
+      "İlkel hareketler dönemi",
+      "Sporla ilgili hareketler dönemi",
+      "Yalnız emeklilik dönemi",
+      "Yönetim dönemi"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Hareketlerin zamanla daha farklılaşmış ve kontrollü hâle gelmesi hangi gelişim ilkesiyle ilişkilidir?",
+    "answer": "Genelden özele",
+    "options": [
+      "Genelden özele",
+      "Yalnız dıştan içe",
+      "Sabit grup ortalaması",
+      "Tam dinlenme"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "Temel becerilerin spor bağlamında birleştirilmesi Gallahue modelinde hangi dönemle ilişkilidir?",
+    "answer": "Sporla ilgili hareketler dönemi",
+    "options": [
+      "Sporla ilgili hareketler dönemi",
+      "Yalnız refleksif dönem",
+      "Yönetim dönemi",
+      "Tahkim dönemi"
+    ]
+  },
+  {
+    "unitId": "3-3",
+    "question": "İlk istemli hareketler, temel koşma-atlama becerileri ve bunların spor bağlamında birleştirilmesi sırasıyla hangi dönemlerle ilişkilidir?",
+    "answer": "İlkel, temel, sporla ilgili hareketler",
+    "options": [
+      "İlkel, temel, sporla ilgili hareketler",
+      "Temel, refleksif, ilkel hareketler",
+      "Sporla ilgili, ilkel, refleksif hareketler",
+      "Refleksif, sporla ilgili, ilkel hareketler"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Önceden belirlenmiş sabit ölçüte göre değerlendirme hangisidir?",
+    "answer": "Mutlak değerlendirme",
+    "options": [
+      "Mutlak değerlendirme",
+      "Bağıl değerlendirme",
+      "Gözlem hatası",
+      "Grup ortalaması"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir koşu sonucunun 11 saniye olarak kaydedilmesi nedir?",
+    "answer": "Ölçme",
+    "options": [
+      "Ölçme",
+      "Değerlendirme kararı",
+      "Ceza",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Grup başarısına göre karar vermek hangi değerlendirmedir?",
+    "answer": "Bağıl değerlendirme",
+    "options": [
+      "Bağıl değerlendirme",
+      "Mutlak değerlendirme",
+      "Yalnız ölçüm",
+      "Doping kontrolü"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ve 2 metre boy için VKİ kaçtır?",
+    "answer": "20",
+    "options": [
+      "20",
+      "40",
+      "80",
+      "160"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir sporcu 12 saniyelik koşu sonucuna göre önceden belirlenmiş barajı geçti sayılıyor. Karar hangi değerlendirmedir?",
+    "answer": "Mutlak değerlendirme",
+    "options": [
+      "Mutlak değerlendirme",
+      "Bağıl değerlendirme",
+      "Yalnız ölçme",
+      "Sosyalleşme"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir antrenör sadece koşu süresini saniye cinsinden kaydediyor. Bu işlem nedir?",
+    "answer": "Ölçme",
+    "options": [
+      "Ölçme",
+      "Tek başına değerlendirme kararı",
+      "Pekiştirme",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Grup ortalamasını referans alarak başarıya karar vermek hangi değerlendirme türüdür?",
+    "answer": "Bağıl değerlendirme",
+    "options": [
+      "Bağıl değerlendirme",
+      "Mutlak değerlendirme",
+      "Yalnız ölçüm",
+      "Spor tahkimi"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir koşunun 11 saniye olarak kaydedilmesi öncelikle nedir?",
+    "answer": "Ölçme",
+    "options": [
+      "Ölçme",
+      "Değerlendirme kararı",
+      "Ceza",
+      "Kuramsal hazırlık"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir öğrencinin ölçülen sonucunun önceden belirlenmiş barajla karşılaştırılması hangi değerlendirmedir?",
+    "answer": "Mutlak değerlendirme",
+    "options": [
+      "Mutlak değerlendirme",
+      "Bağıl değerlendirme",
+      "Sadece ölçme",
+      "Katılım modeli"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Öğretim sürerken eksikleri belirleyip öğretimi uyarlamak için yapılan değerlendirme hangisidir?",
+    "answer": "Biçimlendirici değerlendirme",
+    "options": [
+      "Biçimlendirici değerlendirme",
+      "Yalnız özetleyici değerlendirme",
+      "Doping kontrolü",
+      "Spor tahkimi"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir öğretim sürecinin sonunda genel başarıya karar vermek hangi değerlendirmeyle ilişkilidir?",
+    "answer": "Özetleyici değerlendirme",
+    "options": [
+      "Özetleyici değerlendirme",
+      "Yalnız başlangıç gözlemi",
+      "Fleksiyon",
+      "Aktif dinlenme"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir sporcunun sıçrama sonucunu ölçüp önceden belirlenen eşikle karşılaştırarak seçilmesine karar vermek hangi işlemi içerir?",
+    "answer": "Değerlendirme",
+    "options": [
+      "Değerlendirme",
+      "Yalnız ölçme",
+      "Sadece gözlem kaydı",
+      "Doping ihlali"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "VKİ formülünde boy hangi biçimde kullanılır?",
+    "answer": "Metre cinsinden boyun karesi",
+    "options": [
+      "Metre cinsinden boyun karesi",
+      "Santimetre cinsinden boyun kendisi",
+      "Kilogram cinsinden boy",
+      "Boy ile ağırlığın toplamı"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Bir sporcu 12 saniyede koşuyor; antrenör bu sonucu önceden belirlenmiş 13 saniyelik sınırla karşılaştırıp başarılı diyor. Bu iki işlem sırasıyla nedir?",
+    "answer": "Ölçme ve mutlak değerlendirme",
+    "options": [
+      "Ölçme ve mutlak değerlendirme",
+      "Değerlendirme ve bağıl ölçme",
+      "Bağıl değerlendirme ve yalnız gözlem",
+      "Ölçme ve bağıl değerlendirme"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "Antrenörün ölçme sonuçlarını öğrencinin eksiklerini belirlemek için kullanması hangi amaca örnektir?",
+    "answer": "Tanılama",
+    "options": [
+      "Tanılama",
+      "Yalnız kaynak satın alma",
+      "Yalnız tahkim",
+      "Gürültü oluşturma"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Bilgiyi öğrenenin deneyimleriyle aktif olarak inşa etmesini vurgulayan yaklaşım hangisidir?",
+    "answer": "Yapılandırmacılık",
+    "options": [
+      "Yapılandırmacılık",
+      "Davranışçılık",
+      "Bürokrasi",
+      "Klasik yönetim"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Pekiştireç ve uyaran-tepki ilişkisi hangi yaklaşımla ilişkilidir?",
+    "answer": "Davranışçılık",
+    "options": [
+      "Davranışçılık",
+      "Yapılandırmacılık",
+      "Sistem teorisi",
+      "Fair play"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Öğrencinin keşfederek sonuca ulaşması hangi stratejiyle ilişkilidir?",
+    "answer": "Buluş yoluyla öğretim",
+    "options": [
+      "Buluş yoluyla öğretim",
+      "Yalnız ezber aktarımı",
+      "Finansal denetim",
+      "Yaralanma protokolü"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Antrenör sporcunun bir problemi deneyerek çözmesini sağlıyor. Hangi yaklaşımın aktif bilgi inşası vurgusuna uygundur?",
+    "answer": "Yapılandırmacılık",
+    "options": [
+      "Yapılandırmacılık",
+      "Yalnız bürokrasi",
+      "Spor tahkimi",
+      "Kaldıraç sınıflaması"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Antrenör önce kolay bir hareketi sonra daha karmaşık biçimini öğretiyor. Hangi ilke uygulanır?",
+    "answer": "Basitten karmaşığa",
+    "options": [
+      "Basitten karmaşığa",
+      "Uzak alandan yakına zorunluluğu",
+      "Yalnız ceza",
+      "Gelişigüzel sıralama"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Pekiştireç kavramı hangi öğrenme yaklaşımında özellikle öne çıkar?",
+    "answer": "Davranışçı yaklaşım",
+    "options": [
+      "Davranışçı yaklaşım",
+      "Yalnız sistem yaklaşımı",
+      "Spor tahkimi",
+      "Anatomik yaklaşım"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Bilgiyi zihinsel süreçler ve şemalar üzerinden ele alan yaklaşım hangisidir?",
+    "answer": "Bilişsel yaklaşım",
+    "options": [
+      "Bilişsel yaklaşım",
+      "Yalnız bürokrasi",
+      "Doping kontrolü",
+      "Antropometrik yaklaşım"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Öğrenenin deneyimleriyle bilgiyi aktif olarak oluşturduğunu vurgulayan yaklaşım hangisidir?",
+    "answer": "Yapılandırmacılık",
+    "options": [
+      "Yapılandırmacılık",
+      "Yalnız bürokrasi",
+      "Spor tahkimi",
+      "Kaldıraç sınıflaması"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Öğreticinin düzenli biçimde bilgiyi sunması hangi öğretim stratejisiyle ilişkilidir?",
+    "answer": "Sunuş yoluyla öğretim",
+    "options": [
+      "Sunuş yoluyla öğretim",
+      "Yalnız bağımsız tahkim",
+      "Doping kontrolü",
+      "Geriye dönüş"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Bir öğreticinin önce gerçek nesneleri gösterip ardından soyut kavramı açıklaması hangi öğretim ilkesidir?",
+    "answer": "Somuttan soyuta",
+    "options": [
+      "Somuttan soyuta",
+      "Uzak tarihten yakına",
+      "Yalnız cezalandırma",
+      "Geriye dönüş"
+    ]
+  },
+  {
+    "unitId": "3-5",
+    "question": "Antrenör önce gerçek nesneler gösteriyor, sonra genel kavramı açıklıyor; ardından öğrenciden yeni örneklerden kuralı keşfetmesini istiyor. Bu iki yaklaşım sırasıyla nedir?",
+    "answer": "Somuttan soyuta ve buluş yoluyla öğretim",
+    "options": [
+      "Somuttan soyuta ve buluş yoluyla öğretim",
+      "Soyuttan somuta ve yalnız sunuş",
+      "Bağıl değerlendirme ve pekiştirme",
+      "Geriye dönüş ve tahkim"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "İsveç jimnastik akımıyla ilişkilendirilen isim kimdir?",
+    "answer": "Pehr Henrik Ling",
+    "options": [
+      "Pehr Henrik Ling",
+      "Friedrich Jahn",
+      "Thomas Arnold",
+      "Pierre de Coubertin"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Modern Olimpiyatlar 1896 yılında hangi şehirde düzenlenmiştir?",
+    "answer": "Atina",
+    "options": [
+      "Atina",
+      "Bursa",
+      "Tokyo",
+      "Berlin"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Kutsal ateşkes hangi kavramla ifade edilir?",
+    "answer": "Ekecheiria",
+    "options": [
+      "Ekecheiria",
+      "Detraining",
+      "POLICE",
+      "VKİ"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Sağlık ve sistematik egzersiz odaklı İsveç jimnastik akımı hangi isimle ilişkilidir?",
+    "answer": "Pehr Henrik Ling",
+    "options": [
+      "Pehr Henrik Ling",
+      "Friedrich Jahn",
+      "Thomas Arnold",
+      "Pierre de Coubertin"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Antik olimpiyatlardaki kutsal ateşkes kavramı hangisidir?",
+    "answer": "Ekecheiria",
+    "options": [
+      "Ekecheiria",
+      "POLICE",
+      "VKİ",
+      "ATP-CP"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Alman jimnastik akımıyla ilişkilendirilen isim kimdir?",
+    "answer": "Friedrich Jahn",
+    "options": [
+      "Friedrich Jahn",
+      "Pehr Henrik Ling",
+      "Thomas Arnold",
+      "Mayo"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Modern Olimpiyatların yeniden başlaması hangi yıl ve şehirle ilişkilidir?",
+    "answer": "1896 Atina",
+    "options": [
+      "1896 Atina",
+      "1922 Bursa",
+      "776 Roma",
+      "1938 Londra"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "İngiliz okul sporları ve centilmenlik anlayışı hangi isimle ilişkilendirilir?",
+    "answer": "Thomas Arnold",
+    "options": [
+      "Thomas Arnold",
+      "Pehr Henrik Ling",
+      "Friedrich Jahn",
+      "Elton Mayo"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Modern Olimpiyatların yeniden canlandırılmasıyla ilişkilendirilen isim hangisidir?",
+    "answer": "Pierre de Coubertin",
+    "options": [
+      "Pierre de Coubertin",
+      "Pehr Henrik Ling",
+      "Elton Mayo",
+      "Frederick Taylor"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Antik Olimpiyatların başlangıcı geleneksel olarak hangi tarihle ilişkilendirilir?",
+    "answer": "MÖ 776",
+    "options": [
+      "MÖ 776",
+      "MS 1896",
+      "1922",
+      "1938"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Alman ve İsveç jimnastik akımları sırasıyla hangi isimlerle ilişkilidir?",
+    "answer": "Jahn ve Ling",
+    "options": [
+      "Jahn ve Ling",
+      "Ling ve Jahn",
+      "Mayo ve Taylor",
+      "Skinner ve Pavlov"
+    ]
+  },
+  {
+    "unitId": "4-0",
+    "question": "Bir öğrenci Jahn ile Ling’i ve 1896 Atina oyunlarını eşleştiriyor. Hangisi doğrudur?",
+    "answer": "Alman akımı, İsveç akımı ve modern Olimpiyatların başlangıcı",
+    "options": [
+      "Alman akımı, İsveç akımı ve modern Olimpiyatların başlangıcı",
+      "İsveç akımı, Alman akımı ve antik Olimpiyatların başlangıcı",
+      "İngiliz akımı, Alman akımı ve TİCİ’nin kuruluşu",
+      "Alman akımı, İngiliz akımı ve kutsal ateşkes"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Aşağıdakilerden hangisi sosyalleşme ajanıdır?",
+    "answer": "Aile",
+    "options": [
+      "Aile",
+      "ATP",
+      "Fleksiyon",
+      "Mikro döngü"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Aile, okul ve akran grupları hangi kavramın örnekleridir?",
+    "answer": "Sosyalleşme ajanları",
+    "options": [
+      "Sosyalleşme ajanları",
+      "Enerji sistemleri",
+      "Kaldıraç tipleri",
+      "Kas lifleri"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Sporun kültürel değerleri yeni kuşaklara taşıması hangi işleve örnektir?",
+    "answer": "Kültürel aktarım",
+    "options": [
+      "Kültürel aktarım",
+      "Fleksiyon",
+      "Tahkim",
+      "Fosfajen üretimi"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Bir çocuğun ailesinden sporla ilgili değerler öğrenmesi hangi sürece örnektir?",
+    "answer": "Sosyalleşme",
+    "options": [
+      "Sosyalleşme",
+      "Fleksiyon",
+      "Doping kontrolü",
+      "Fazla tamamlama"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Spor yoluyla değerlerin kuşaklar arasında aktarılması hangi toplumsal işlevdir?",
+    "answer": "Kültürel aktarım",
+    "options": [
+      "Kültürel aktarım",
+      "Yüklenme şiddeti",
+      "Kaldıraç desteği",
+      "Kalsiyum salınımı"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Aşağıdakilerden hangisi sporda sosyalleşme ajanıdır?",
+    "answer": "Akran grubu",
+    "options": [
+      "Akran grubu",
+      "ATP",
+      "Kaldıraç",
+      "Kas lifi"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Toplumsal cinsiyet kalıpları sporda neyi etkileyebilir?",
+    "answer": "Katılım fırsatlarını ve temsili",
+    "options": [
+      "Katılım fırsatlarını ve temsili",
+      "Yalnız kaldıraç tipini",
+      "Sadece VKİ formülünü",
+      "Yalnız kemik uzunluğunu"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Bir spor takımında yeni katılan çocuğun takım arkadaşlarından davranış ve değerleri öğrenmesi hangi sürece örnektir?",
+    "answer": "Sosyalleşme",
+    "options": [
+      "Sosyalleşme",
+      "Kas kasılması",
+      "Süperkompansasyon",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Spor aracılığıyla insanların bir araya gelmesi ve topluma bağlarının güçlenmesi hangi işleve örnektir?",
+    "answer": "Toplumsal bütünleşme",
+    "options": [
+      "Toplumsal bütünleşme",
+      "Kalsiyum depolama",
+      "Kas fleksiyonu",
+      "Yasal tahkim"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Bir çocuğun antrenörünü örnek alarak takım kurallarını öğrenmesi hangi kavrama örnektir?",
+    "answer": "Sosyalleşme",
+    "options": [
+      "Sosyalleşme",
+      "Fleksiyon",
+      "Optimal yüklenme",
+      "Tahkim"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Sporda kadınların medya temsilindeki eşitsizlik hangi sosyolojik konuyla ilişkilidir?",
+    "answer": "Toplumsal cinsiyet",
+    "options": [
+      "Toplumsal cinsiyet",
+      "Kasılma türü",
+      "Enerji sistemi",
+      "Kaldıraç desteği"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Bir çocuk ailesinden spora ilişkin değerler öğrenirken medya aracılığıyla kadın sporcuların temsilini gözlemliyor. Bu iki olgu sırasıyla hangi kavramlarla ilişkilidir?",
+    "answer": "Sosyalleşme ve toplumsal cinsiyet temsili",
+    "options": [
+      "Sosyalleşme ve toplumsal cinsiyet temsili",
+      "Fleksiyon ve yüklenme şiddeti",
+      "Tahkim ve kaldıraç",
+      "Aerobik kapasite ve somatotip"
+    ]
+  },
+  {
+    "unitId": "4-1",
+    "question": "Ailenin çocuğu spora yönlendirmesi ve çocuğun takım içinde toplumsal davranışlar edinmesi sırasıyla hangi süreçlerdir?",
+    "answer": "Spora yönelik ve spor yoluyla sosyalleşme",
+    "options": [
+      "Spora yönelik ve spor yoluyla sosyalleşme",
+      "Spor yoluyla ve spora yönelik sosyalleşme",
+      "Fleksiyon ve ekstansiyon",
+      "Ölçme ve tahkim"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Çaba ve bireysel gelişimi öne çıkaran iklim hangisidir?",
+    "answer": "Ustalık iklimi",
+    "options": [
+      "Ustalık iklimi",
+      "Yalnız sonuç iklimi",
+      "Bürokratik iklim",
+      "Pasif iklim"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Belirli bir anda yaşanan kaygı hangi türdür?",
+    "answer": "Durumluk kaygı",
+    "options": [
+      "Durumluk kaygı",
+      "Sürekli kaygı",
+      "Statik denge",
+      "Mutlak değerlendirme"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Sosyal karşılaştırma ve sonucu öne çıkaran iklim hangisidir?",
+    "answer": "Performans iklimi",
+    "options": [
+      "Performans iklimi",
+      "Ustalık iklimi",
+      "Güvenli bakım",
+      "Dengeleme"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Bir sporcu sadece önemli bir maçtan hemen önce kaygı hissediyor. Bu durum hangi kavrama daha yakındır?",
+    "answer": "Durumluk kaygı",
+    "options": [
+      "Durumluk kaygı",
+      "Sürekli kaygı",
+      "Statik denge",
+      "Bağıl ölçüt"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Antrenör sporcunun önceki performansına göre gelişimini takdir ediyor. Hangi iklimi destekler?",
+    "answer": "Ustalık iklimi",
+    "options": [
+      "Ustalık iklimi",
+      "Yalnız sosyal karşılaştırma iklimi",
+      "Şike iklimi",
+      "Doping iklimi"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Daha genel ve süreklilik gösterebilen kaygı eğilimi hangisidir?",
+    "answer": "Sürekli kaygı",
+    "options": [
+      "Sürekli kaygı",
+      "Durumluk kaygı",
+      "Statik denge",
+      "Mutlak değerlendirme"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Çabanın ve bireysel gelişimin öne çıkarılması hangi motivasyon iklimidir?",
+    "answer": "Ustalık iklimi",
+    "options": [
+      "Ustalık iklimi",
+      "Yalnız sonuç iklimi",
+      "Şike",
+      "Gürültü"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Antrenörün sadece başkalarını yenmeyi ve sıralamayı öne çıkarması hangi iklime daha yakındır?",
+    "answer": "Performans iklimi",
+    "options": [
+      "Performans iklimi",
+      "Ustalık iklimi",
+      "Güvenli bakım",
+      "Motor gelişim dönemi"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Uzun süreli stresle ilişkili fiziksel ve zihinsel yıpranma hangi kavramla ifade edilir?",
+    "answer": "Tükenmişlik",
+    "options": [
+      "Tükenmişlik",
+      "Esneklik",
+      "Geri bildirim",
+      "Hareket ekonomisi"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Belirli bir maç öncesindeki geçici kaygı ile genel kaygı eğilimi sırasıyla hangi kavramlardır?",
+    "answer": "Durumluk ve sürekli kaygı",
+    "options": [
+      "Durumluk ve sürekli kaygı",
+      "Sürekli ve durumluk kaygı",
+      "Hacim ve şiddet",
+      "Statik ve dinamik denge"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Başarıyı kişisel gelişimle tanımlayan iklim ile başkalarını yenmeyle tanımlayan iklim sırasıyla hangileridir?",
+    "answer": "Ustalık ve performans iklimi",
+    "options": [
+      "Ustalık ve performans iklimi",
+      "Performans ve ustalık iklimi",
+      "Statik ve dinamik denge",
+      "Mutlak ve bağıl ölçme"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Bir antrenör bir sporcuyu önceki performansına göre gelişimi için, diğerini yalnız rakibini geçtiği için ödüllendiriyor. Bu davranışlar sırasıyla hangi iklimleri destekler?",
+    "answer": "Ustalık ve performans iklimi",
+    "options": [
+      "Ustalık ve performans iklimi",
+      "Performans ve ustalık iklimi",
+      "Durumluk ve sürekli kaygı",
+      "Fiziksel ve duygusal istismar"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Fair play anlayışının temelinde hangisi yer alır?",
+    "answer": "Rakibe saygı ve dürüstlük",
+    "options": [
+      "Rakibe saygı ve dürüstlük",
+      "Her koşulda kazanmak",
+      "Şike",
+      "Rakibi aşağılamak"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Aşağıdakilerden hangisi fair play değerlerini zedeleyebilir?",
+    "answer": "Şike",
+    "options": [
+      "Şike",
+      "Rakibe saygı",
+      "Dürüstlük",
+      "Eşit mücadele"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Fair play yalnızca yazılı kurallara uymak mıdır?",
+    "answer": "Hayır, saygı ve dürüstlüğü de kapsar",
+    "options": [
+      "Hayır, saygı ve dürüstlüğü de kapsar",
+      "Evet, başka hiçbir boyutu yoktur",
+      "Yalnız kazanma anlamına gelir",
+      "Yalnız beslenmeyle ilgilidir"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Bir oyuncu rakibinin sakatlandığını fark edip oyunu durduruyor. Bu davranış hangi değere uygundur?",
+    "answer": "Fair play",
+    "options": [
+      "Fair play",
+      "Şike",
+      "İhmal",
+      "Doping"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Bir takımın kazanmak için şikeye başvurması nasıl değerlendirilir?",
+    "answer": "Fair play değerlerini zedeler",
+    "options": [
+      "Fair play değerlerini zedeler",
+      "Eşit mücadeleyi güçlendirir",
+      "Dürüstlüğü artırır",
+      "Yalnız teknik hazırlıktır"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Fair play aşağıdakilerden hangisini de içerir?",
+    "answer": "Rakibe saygı ve dürüstlük",
+    "options": [
+      "Rakibe saygı ve dürüstlük",
+      "Yalnız kazanma",
+      "Kuralları gizlice çiğneme",
+      "Şikeyi teşvik"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Hangisi fair play değerlerini zedeleyen bir etkendir?",
+    "answer": "Şiddet",
+    "options": [
+      "Şiddet",
+      "Rakibe saygı",
+      "Dürüstlük",
+      "Eşit mücadele"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Oyuncunun rakibine dürüst ve saygılı davranması hangi spor değerini örnekler?",
+    "answer": "Fair play",
+    "options": [
+      "Fair play",
+      "Şike",
+      "Doping",
+      "İhmal"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Fair play neden sadece yazılı kurallara uymakla sınırlı değildir?",
+    "answer": "Dürüstlük ve rakibe saygıyı da içerdiği için",
+    "options": [
+      "Dürüstlük ve rakibe saygıyı da içerdiği için",
+      "Sadece sonuçla ilgilendiği için",
+      "Kuralları tamamen reddettiği için",
+      "Yalnız fiziksel uygunluğu ölçtüğü için"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Kazanma baskısı altında bile rakibin haklarını gözetmek hangi değerle ilişkilidir?",
+    "answer": "Fair play",
+    "options": [
+      "Fair play",
+      "Şike",
+      "Doping",
+      "İhmal"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Eşit koşullarda mücadele anlayışı aşağıdakilerden hangisiyle çelişir?",
+    "answer": "Şike",
+    "options": [
+      "Şike",
+      "Rakibe saygı",
+      "Dürüstlük",
+      "Kurallara uyma"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Bir oyuncu rakibi sakatlandığı hâlde avantaj sağlamak için oyuna devam ediyor. Fair play açısından hangi değerlendirme daha uygundur?",
+    "answer": "Rakibe saygıyı gözetmek kuralların ötesinde etik bir sorumluluktur",
+    "options": [
+      "Rakibe saygıyı gözetmek kuralların ötesinde etik bir sorumluluktur",
+      "Yalnız skor etik davranışı belirler",
+      "Her kazanma davranışı otomatik olarak dürüsttür",
+      "Fair play sadece beslenmeyle ilgilidir"
+    ]
+  },
+  {
+    "unitId": "4-3",
+    "question": "Bir sporcu yazılı kurala uyuyor, ayrıca rakibine gönüllü olarak yardım ediyor. Bu davranışlar sırasıyla hangi fair play türleriyle ilişkilidir?",
+    "answer": "Formal ve informal",
+    "options": [
+      "Formal ve informal",
+      "İnformal ve formal",
+      "Duygusal ve fiziksel",
+      "Bağıl ve mutlak"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Bir çocuğun sürekli aşağılanması hangi istismar türüdür?",
+    "answer": "Duygusal istismar",
+    "options": [
+      "Duygusal istismar",
+      "Yalnız fiziksel istismar",
+      "Yalnız ihmal",
+      "Sportif geri bildirim"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Çocuğun temel bakım ve güvenlik ihtiyaçlarının karşılanmaması nedir?",
+    "answer": "İhmal",
+    "options": [
+      "İhmal",
+      "Etkin dinleme",
+      "Dönüşümcü liderlik",
+      "Fazla tamamlama"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Çocuklar için güvenli spor ortamında ne bulunmalıdır?",
+    "answer": "Koruma politikası ve bildirim mekanizması",
+    "options": [
+      "Koruma politikası ve bildirim mekanizması",
+      "Hakaretin normalleştirilmesi",
+      "Güvenlik ihtiyaçlarının yok sayılması",
+      "Gizli cezalandırma"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Çocuğun sağlık ve güvenlik ihtiyaçlarının karşılanmaması hangi sorundur?",
+    "answer": "İhmal",
+    "options": [
+      "İhmal",
+      "Etkin dinleme",
+      "Ödüllendirme",
+      "Dönemleme"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Bir antrenör çocuğu sürekli aşağılayıp tehdit ediyor. Bu hangi istismar türüdür?",
+    "answer": "Duygusal istismar",
+    "options": [
+      "Duygusal istismar",
+      "Sadece sağlıklı geri bildirim",
+      "Yalnız ihmal",
+      "Fizyolojik adaptasyon"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Sürekli aşağılama hangi istismar türüne örnektir?",
+    "answer": "Duygusal istismar",
+    "options": [
+      "Duygusal istismar",
+      "Yalnız fiziksel istismar",
+      "Kuvvet gelişimi",
+      "Teknik hazırlık"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Güvenli spor ortamı için hangi uygulama uygundur?",
+    "answer": "Çocuk koruma politikası ve bildirim mekanizması",
+    "options": [
+      "Çocuk koruma politikası ve bildirim mekanizması",
+      "Güvenlik endişelerini gizlemek",
+      "Aşağılamayı normalleştirmek",
+      "Temel bakım ihtiyaçlarını yok saymak"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Bir çocuğun temel güvenlik ve tıbbi bakım ihtiyacının karşılanmaması hangi kavramdır?",
+    "answer": "İhmal",
+    "options": [
+      "İhmal",
+      "Aktif dinleme",
+      "Pekiştirme",
+      "Fazla tamamlama"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Temel tıbbi bakım gereksiniminin karşılanmaması hangi kavramla en yakından ilişkilidir?",
+    "answer": "İhmal",
+    "options": [
+      "İhmal",
+      "Etkin dinleme",
+      "Kültürel aktarım",
+      "Makro döngü"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Bir çocuğa fiziksel ceza verilmesi hangi istismar türüne örnek olabilir?",
+    "answer": "Fiziksel istismar",
+    "options": [
+      "Fiziksel istismar",
+      "Yalnız duygusal geri bildirim",
+      "Kültürel aktarım",
+      "Antrenman periyotlaması"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Çocuk koruma açısından bir istismar şüphesi ortaya çıktığında hangi yaklaşım uygundur?",
+    "answer": "Çocuğun güvenliğini öncelemek ve uygun bildirim sürecini işletmek",
+    "options": [
+      "Çocuğun güvenliğini öncelemek ve uygun bildirim sürecini işletmek",
+      "Olayı zorunlu olarak gizlemek",
+      "Çocuğu cezalandırmak",
+      "Hiçbir koruma prosedürüne bakmamak"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Antrenör bir çocuğu sürekli aşağılıyor ve çocuğun gerekli sağlık bakımını da görmezden geliyor. Bu iki durum sırasıyla hangi kategorilerdir?",
+    "answer": "Duygusal istismar ve ihmal",
+    "options": [
+      "Duygusal istismar ve ihmal",
+      "İhmal ve duygusal istismar",
+      "Fiziksel istismar ve fair play",
+      "Aktif dinleme ve fiziksel hazırlık"
+    ]
+  },
+  {
+    "unitId": "4-4",
+    "question": "Bir spor kurumunun yalnız olay sonrası müdahale etmek yerine koruma politikası ve güvenli bildirim yolu kurması neyi destekler?",
+    "answer": "Hak temelli güvenli spor ortamını",
+    "options": [
+      "Hak temelli güvenli spor ortamını",
+      "İstismar riskinin gizlenmesini",
+      "Sadece sportif sıralamayı",
+      "Yalnız finansal kayıtları"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "21,3 kg/m²",
+    "options": [
+      "21,3 kg/m²",
+      "23,3 kg/m²",
+      "25,3 kg/m²",
+      "19,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "20,0 kg/m²",
+    "options": [
+      "20,0 kg/m²",
+      "22,0 kg/m²",
+      "24,0 kg/m²",
+      "18,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "18,7 kg/m²",
+    "options": [
+      "18,7 kg/m²",
+      "20,7 kg/m²",
+      "22,7 kg/m²",
+      "16,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "17,6 kg/m²",
+    "options": [
+      "17,6 kg/m²",
+      "19,6 kg/m²",
+      "21,6 kg/m²",
+      "15,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "16,6 kg/m²",
+    "options": [
+      "16,6 kg/m²",
+      "18,6 kg/m²",
+      "20,6 kg/m²",
+      "14,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "15,7 kg/m²",
+    "options": [
+      "15,7 kg/m²",
+      "17,7 kg/m²",
+      "19,7 kg/m²",
+      "13,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "14,8 kg/m²",
+    "options": [
+      "14,8 kg/m²",
+      "16,8 kg/m²",
+      "18,8 kg/m²",
+      "12,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "14,0 kg/m²",
+    "options": [
+      "14,0 kg/m²",
+      "16,0 kg/m²",
+      "18,0 kg/m²",
+      "12,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "13,3 kg/m²",
+    "options": [
+      "13,3 kg/m²",
+      "15,3 kg/m²",
+      "17,3 kg/m²",
+      "11,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "48 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "12,6 kg/m²",
+    "options": [
+      "12,6 kg/m²",
+      "14,6 kg/m²",
+      "16,6 kg/m²",
+      "10,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,1 kg/m²",
+    "options": [
+      "23,1 kg/m²",
+      "25,1 kg/m²",
+      "27,1 kg/m²",
+      "21,1 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "21,6 kg/m²",
+    "options": [
+      "21,6 kg/m²",
+      "23,6 kg/m²",
+      "25,6 kg/m²",
+      "19,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "20,3 kg/m²",
+    "options": [
+      "20,3 kg/m²",
+      "22,3 kg/m²",
+      "24,3 kg/m²",
+      "18,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "19,1 kg/m²",
+    "options": [
+      "19,1 kg/m²",
+      "21,1 kg/m²",
+      "23,1 kg/m²",
+      "17,1 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "18,0 kg/m²",
+    "options": [
+      "18,0 kg/m²",
+      "20,0 kg/m²",
+      "22,0 kg/m²",
+      "16,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "17,0 kg/m²",
+    "options": [
+      "17,0 kg/m²",
+      "19,0 kg/m²",
+      "21,0 kg/m²",
+      "15,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "16,0 kg/m²",
+    "options": [
+      "16,0 kg/m²",
+      "18,0 kg/m²",
+      "20,0 kg/m²",
+      "14,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "15,2 kg/m²",
+    "options": [
+      "15,2 kg/m²",
+      "17,2 kg/m²",
+      "19,2 kg/m²",
+      "13,2 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "14,4 kg/m²",
+    "options": [
+      "14,4 kg/m²",
+      "16,4 kg/m²",
+      "18,4 kg/m²",
+      "12,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "52 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "13,7 kg/m²",
+    "options": [
+      "13,7 kg/m²",
+      "15,7 kg/m²",
+      "17,7 kg/m²",
+      "11,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "24,9 kg/m²",
+    "options": [
+      "24,9 kg/m²",
+      "26,9 kg/m²",
+      "28,9 kg/m²",
+      "22,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,3 kg/m²",
+    "options": [
+      "23,3 kg/m²",
+      "25,3 kg/m²",
+      "27,3 kg/m²",
+      "21,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "21,9 kg/m²",
+    "options": [
+      "21,9 kg/m²",
+      "23,9 kg/m²",
+      "25,9 kg/m²",
+      "19,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "20,6 kg/m²",
+    "options": [
+      "20,6 kg/m²",
+      "22,6 kg/m²",
+      "24,6 kg/m²",
+      "18,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "19,4 kg/m²",
+    "options": [
+      "19,4 kg/m²",
+      "21,4 kg/m²",
+      "23,4 kg/m²",
+      "17,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "18,3 kg/m²",
+    "options": [
+      "18,3 kg/m²",
+      "20,3 kg/m²",
+      "22,3 kg/m²",
+      "16,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "17,3 kg/m²",
+    "options": [
+      "17,3 kg/m²",
+      "19,3 kg/m²",
+      "21,3 kg/m²",
+      "15,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "16,4 kg/m²",
+    "options": [
+      "16,4 kg/m²",
+      "18,4 kg/m²",
+      "20,4 kg/m²",
+      "14,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "15,5 kg/m²",
+    "options": [
+      "15,5 kg/m²",
+      "17,5 kg/m²",
+      "19,5 kg/m²",
+      "13,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "56 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "14,7 kg/m²",
+    "options": [
+      "14,7 kg/m²",
+      "16,7 kg/m²",
+      "18,7 kg/m²",
+      "12,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "26,7 kg/m²",
+    "options": [
+      "26,7 kg/m²",
+      "28,7 kg/m²",
+      "30,7 kg/m²",
+      "24,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "25,0 kg/m²",
+    "options": [
+      "25,0 kg/m²",
+      "27,0 kg/m²",
+      "29,0 kg/m²",
+      "23,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,4 kg/m²",
+    "options": [
+      "23,4 kg/m²",
+      "25,4 kg/m²",
+      "27,4 kg/m²",
+      "21,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "22,0 kg/m²",
+    "options": [
+      "22,0 kg/m²",
+      "24,0 kg/m²",
+      "26,0 kg/m²",
+      "20,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "20,8 kg/m²",
+    "options": [
+      "20,8 kg/m²",
+      "22,8 kg/m²",
+      "24,8 kg/m²",
+      "18,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "19,6 kg/m²",
+    "options": [
+      "19,6 kg/m²",
+      "21,6 kg/m²",
+      "23,6 kg/m²",
+      "17,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "18,5 kg/m²",
+    "options": [
+      "18,5 kg/m²",
+      "20,5 kg/m²",
+      "22,5 kg/m²",
+      "16,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "17,5 kg/m²",
+    "options": [
+      "17,5 kg/m²",
+      "19,5 kg/m²",
+      "21,5 kg/m²",
+      "15,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "16,6 kg/m²",
+    "options": [
+      "16,6 kg/m²",
+      "18,6 kg/m²",
+      "20,6 kg/m²",
+      "14,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "60 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "15,8 kg/m²",
+    "options": [
+      "15,8 kg/m²",
+      "17,8 kg/m²",
+      "19,8 kg/m²",
+      "13,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "28,4 kg/m²",
+    "options": [
+      "28,4 kg/m²",
+      "30,4 kg/m²",
+      "32,4 kg/m²",
+      "26,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "26,6 kg/m²",
+    "options": [
+      "26,6 kg/m²",
+      "28,6 kg/m²",
+      "30,6 kg/m²",
+      "24,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "25,0 kg/m²",
+    "options": [
+      "25,0 kg/m²",
+      "27,0 kg/m²",
+      "29,0 kg/m²",
+      "23,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,5 kg/m²",
+    "options": [
+      "23,5 kg/m²",
+      "25,5 kg/m²",
+      "27,5 kg/m²",
+      "21,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "22,1 kg/m²",
+    "options": [
+      "22,1 kg/m²",
+      "24,1 kg/m²",
+      "26,1 kg/m²",
+      "20,1 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "20,9 kg/m²",
+    "options": [
+      "20,9 kg/m²",
+      "22,9 kg/m²",
+      "24,9 kg/m²",
+      "18,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "19,8 kg/m²",
+    "options": [
+      "19,8 kg/m²",
+      "21,8 kg/m²",
+      "23,8 kg/m²",
+      "17,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "18,7 kg/m²",
+    "options": [
+      "18,7 kg/m²",
+      "20,7 kg/m²",
+      "22,7 kg/m²",
+      "16,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "17,7 kg/m²",
+    "options": [
+      "17,7 kg/m²",
+      "19,7 kg/m²",
+      "21,7 kg/m²",
+      "15,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "64 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "16,8 kg/m²",
+    "options": [
+      "16,8 kg/m²",
+      "18,8 kg/m²",
+      "20,8 kg/m²",
+      "14,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "30,2 kg/m²",
+    "options": [
+      "30,2 kg/m²",
+      "32,2 kg/m²",
+      "34,2 kg/m²",
+      "28,2 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "28,3 kg/m²",
+    "options": [
+      "28,3 kg/m²",
+      "30,3 kg/m²",
+      "32,3 kg/m²",
+      "26,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "26,6 kg/m²",
+    "options": [
+      "26,6 kg/m²",
+      "28,6 kg/m²",
+      "30,6 kg/m²",
+      "24,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "25,0 kg/m²",
+    "options": [
+      "25,0 kg/m²",
+      "27,0 kg/m²",
+      "29,0 kg/m²",
+      "23,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,5 kg/m²",
+    "options": [
+      "23,5 kg/m²",
+      "25,5 kg/m²",
+      "27,5 kg/m²",
+      "21,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "22,2 kg/m²",
+    "options": [
+      "22,2 kg/m²",
+      "24,2 kg/m²",
+      "26,2 kg/m²",
+      "20,2 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "21,0 kg/m²",
+    "options": [
+      "21,0 kg/m²",
+      "23,0 kg/m²",
+      "25,0 kg/m²",
+      "19,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "19,9 kg/m²",
+    "options": [
+      "19,9 kg/m²",
+      "21,9 kg/m²",
+      "23,9 kg/m²",
+      "17,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "18,8 kg/m²",
+    "options": [
+      "18,8 kg/m²",
+      "20,8 kg/m²",
+      "22,8 kg/m²",
+      "16,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "68 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "17,9 kg/m²",
+    "options": [
+      "17,9 kg/m²",
+      "19,9 kg/m²",
+      "21,9 kg/m²",
+      "15,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "32,0 kg/m²",
+    "options": [
+      "32,0 kg/m²",
+      "34,0 kg/m²",
+      "36,0 kg/m²",
+      "30,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "30,0 kg/m²",
+    "options": [
+      "30,0 kg/m²",
+      "32,0 kg/m²",
+      "34,0 kg/m²",
+      "28,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "28,1 kg/m²",
+    "options": [
+      "28,1 kg/m²",
+      "30,1 kg/m²",
+      "32,1 kg/m²",
+      "26,1 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "26,4 kg/m²",
+    "options": [
+      "26,4 kg/m²",
+      "28,4 kg/m²",
+      "30,4 kg/m²",
+      "24,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "24,9 kg/m²",
+    "options": [
+      "24,9 kg/m²",
+      "26,9 kg/m²",
+      "28,9 kg/m²",
+      "22,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,5 kg/m²",
+    "options": [
+      "23,5 kg/m²",
+      "25,5 kg/m²",
+      "27,5 kg/m²",
+      "21,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "22,2 kg/m²",
+    "options": [
+      "22,2 kg/m²",
+      "24,2 kg/m²",
+      "26,2 kg/m²",
+      "20,2 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "21,0 kg/m²",
+    "options": [
+      "21,0 kg/m²",
+      "23,0 kg/m²",
+      "25,0 kg/m²",
+      "19,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "19,9 kg/m²",
+    "options": [
+      "19,9 kg/m²",
+      "21,9 kg/m²",
+      "23,9 kg/m²",
+      "17,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "72 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "18,9 kg/m²",
+    "options": [
+      "18,9 kg/m²",
+      "20,9 kg/m²",
+      "22,9 kg/m²",
+      "16,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "33,8 kg/m²",
+    "options": [
+      "33,8 kg/m²",
+      "35,8 kg/m²",
+      "37,8 kg/m²",
+      "31,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "31,6 kg/m²",
+    "options": [
+      "31,6 kg/m²",
+      "33,6 kg/m²",
+      "35,6 kg/m²",
+      "29,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "29,7 kg/m²",
+    "options": [
+      "29,7 kg/m²",
+      "31,7 kg/m²",
+      "33,7 kg/m²",
+      "27,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "27,9 kg/m²",
+    "options": [
+      "27,9 kg/m²",
+      "29,9 kg/m²",
+      "31,9 kg/m²",
+      "25,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "26,3 kg/m²",
+    "options": [
+      "26,3 kg/m²",
+      "28,3 kg/m²",
+      "30,3 kg/m²",
+      "24,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "24,8 kg/m²",
+    "options": [
+      "24,8 kg/m²",
+      "26,8 kg/m²",
+      "28,8 kg/m²",
+      "22,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,5 kg/m²",
+    "options": [
+      "23,5 kg/m²",
+      "25,5 kg/m²",
+      "27,5 kg/m²",
+      "21,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "22,2 kg/m²",
+    "options": [
+      "22,2 kg/m²",
+      "24,2 kg/m²",
+      "26,2 kg/m²",
+      "20,2 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "21,1 kg/m²",
+    "options": [
+      "21,1 kg/m²",
+      "23,1 kg/m²",
+      "25,1 kg/m²",
+      "19,1 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "76 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "20,0 kg/m²",
+    "options": [
+      "20,0 kg/m²",
+      "22,0 kg/m²",
+      "24,0 kg/m²",
+      "18,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "35,6 kg/m²",
+    "options": [
+      "35,6 kg/m²",
+      "37,6 kg/m²",
+      "39,6 kg/m²",
+      "33,6 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "33,3 kg/m²",
+    "options": [
+      "33,3 kg/m²",
+      "35,3 kg/m²",
+      "37,3 kg/m²",
+      "31,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "31,2 kg/m²",
+    "options": [
+      "31,2 kg/m²",
+      "33,2 kg/m²",
+      "35,2 kg/m²",
+      "29,2 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "29,4 kg/m²",
+    "options": [
+      "29,4 kg/m²",
+      "31,4 kg/m²",
+      "33,4 kg/m²",
+      "27,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "27,7 kg/m²",
+    "options": [
+      "27,7 kg/m²",
+      "29,7 kg/m²",
+      "31,7 kg/m²",
+      "25,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "26,1 kg/m²",
+    "options": [
+      "26,1 kg/m²",
+      "28,1 kg/m²",
+      "30,1 kg/m²",
+      "24,1 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "24,7 kg/m²",
+    "options": [
+      "24,7 kg/m²",
+      "26,7 kg/m²",
+      "28,7 kg/m²",
+      "22,7 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,4 kg/m²",
+    "options": [
+      "23,4 kg/m²",
+      "25,4 kg/m²",
+      "27,4 kg/m²",
+      "21,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "22,2 kg/m²",
+    "options": [
+      "22,2 kg/m²",
+      "24,2 kg/m²",
+      "26,2 kg/m²",
+      "20,2 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "80 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "21,0 kg/m²",
+    "options": [
+      "21,0 kg/m²",
+      "23,0 kg/m²",
+      "25,0 kg/m²",
+      "19,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "37,3 kg/m²",
+    "options": [
+      "37,3 kg/m²",
+      "39,3 kg/m²",
+      "41,3 kg/m²",
+      "35,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "35,0 kg/m²",
+    "options": [
+      "35,0 kg/m²",
+      "37,0 kg/m²",
+      "39,0 kg/m²",
+      "33,0 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "32,8 kg/m²",
+    "options": [
+      "32,8 kg/m²",
+      "34,8 kg/m²",
+      "36,8 kg/m²",
+      "30,8 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "30,9 kg/m²",
+    "options": [
+      "30,9 kg/m²",
+      "32,9 kg/m²",
+      "34,9 kg/m²",
+      "28,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "29,1 kg/m²",
+    "options": [
+      "29,1 kg/m²",
+      "31,1 kg/m²",
+      "33,1 kg/m²",
+      "27,1 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "27,4 kg/m²",
+    "options": [
+      "27,4 kg/m²",
+      "29,4 kg/m²",
+      "31,4 kg/m²",
+      "25,4 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "25,9 kg/m²",
+    "options": [
+      "25,9 kg/m²",
+      "27,9 kg/m²",
+      "29,9 kg/m²",
+      "23,9 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "24,5 kg/m²",
+    "options": [
+      "24,5 kg/m²",
+      "26,5 kg/m²",
+      "28,5 kg/m²",
+      "22,5 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "23,3 kg/m²",
+    "options": [
+      "23,3 kg/m²",
+      "25,3 kg/m²",
+      "27,3 kg/m²",
+      "21,3 kg/m²"
+    ]
+  },
+  {
+    "unitId": "3-4",
+    "question": "84 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
+    "answer": "22,1 kg/m²",
+    "options": [
+      "22,1 kg/m²",
+      "24,1 kg/m²",
+      "26,1 kg/m²",
+      "20,1 kg/m²"
+    ]
+  }
+]

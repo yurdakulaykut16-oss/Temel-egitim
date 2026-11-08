@@ -1,0 +1,9 @@
+node_modules/
+dist/
+
+.tempo-data/
+
+.venv/
+
+__pycache__/
+*.py[cod]
