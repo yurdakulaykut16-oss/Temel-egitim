@@ -4,12 +4,12 @@ import {build} from 'esbuild';
 const compiled=await build({entryPoints:['src/memory.ts'],bundle:true,write:false,platform:'node',format:'esm'});
 const {schedule,prioritize,loadReviews}=await import('data:text/javascript;base64,'+Buffer.from(compiled.outputFiles[0].contents).toString('base64'));
 const day=86400000, now=1700000000000;
-test('remembered reviews advance through bounded spaced intervals',()=>{
+test('remembered reviews advance through a long-term, bounded spaced schedule (kalıcı ezber)',()=>{
  let previous;
- for(const days of [1,3,7,14,30,30]){const result=schedule(previous,true,now);assert.equal(result.due,now+days*day);previous=result}
+ for(const days of [1,3,7,14,30,60,120,240,365,365]){const result=schedule(previous,true,now);assert.equal(result.due,now+days*day);previous=result}
 });
-test('forgotten and wrong answers restart review',()=>{
- assert.deepEqual(schedule({stage:4,due:now,reviewed:now},false,now),{stage:0,due:now+600000,reviewed:now});
+test('forgotten and wrong answers restart review immediately',()=>{
+ assert.deepEqual(schedule({stage:8,due:now,reviewed:now},false,now),{stage:0,due:now+600000,reviewed:now});
  assert.deepEqual(prioritize(now),{stage:0,due:now,reviewed:now});
 });
 test('stored review data is checked before use',()=>{
