@@ -19,10 +19,10 @@ const DIFFICULTIES = ['kolay','orta','zor'];
 async function readSettings(){try{const v=JSON.parse(await readFile(settingsFile,'utf8'));return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){if(e.code==='ENOENT')return {};throw e}}
 async function writeSettings(patch){await mkdir(dataDir,{recursive:true});const current=await readSettings();const next={...current,...patch};const tmp=settingsFile+'.tmp';await writeFile(tmp,JSON.stringify(next,null,2),'utf8');await rename(tmp,settingsFile);return next}
 async function selectedModel(){const v=await readSettings();return typeof v.model==='string'&&v.model.length<=200&&v.model.trim()?v.model:defaultModel}
-// Denetçi ve iki ek "bağımsız denetçi/hakem" modeli: arayüzden ayrı ayrı seçilebilir (bkz.
+// Denetçi ve bir ek "bağımsız hakem" modeli: arayüzden ayrı ayrı seçilebilir (bkz.
 // /select-model'in role alanı). Hiçbiri seçilmemişse denetçi, eski OLLAMA_VERIFIER_MODEL ortam
-// değişkenine veya üretici modele; judge2/judge3 ise denetçiyle AYNI modele düşer (tek model kurulu
-// olan bilgisayarlarda da çalışmaya devam etmesi için). Gerçek bağımsızlık için üç farklı model
+// değişkenine veya üretici modele; judge2 ise denetçiyle AYNI modele düşer (tek model kurulu
+// olan bilgisayarlarda da çalışmaya devam etmesi için). Gerçek bağımsızlık için iki farklı model
 // seçilmesi önerilir.
 async function selectedVerifierModel(model){const v=await readSettings();if(typeof v.verifierModel==='string'&&v.verifierModel.length<=200&&v.verifierModel.trim())return v.verifierModel;return process.env.OLLAMA_VERIFIER_MODEL||model}
 async function selectedJudgeModel(key,fallback){const v=await readSettings();return typeof v[key]==='string'&&v[key].length<=200&&v[key].trim()?v[key]:fallback}
@@ -121,7 +121,7 @@ async function finalize(parsed,ctx,model,verification){
 // dokunmaz; bu sayede hem elle tetiklenen istekten hem de kendi kendine çalışan döngüden, hatta
 // BİRDEN FAZLA ünite için AYNI ANDA çağrılabilir. Yavaş olan iki model çağrısı burada, kilit
 // olmadan çalışır; yalnızca sondaki finalize() kilitlidir.
-async function generateAndVerify(ctx,model,verifierModel,judge2Model,judge3Model,signal,onPhase){
+async function generateAndVerify(ctx,model,verifierModel,judge2Model,signal,onPhase){
  const items=await load();
  const resultAudit=audit(items);
  if(resultAudit.invalid||resultAudit.duplicates)throw Error('Havuz denetiminde biçim veya birebir tekrar hatası var; üretim durduruldu.');
@@ -134,18 +134,18 @@ async function generateAndVerify(ctx,model,verifierModel,judge2Model,judge3Model
  const prompt=`Sen Türkçe antrenörlük temel eğitim soru yazarı ve öğretmenisin. Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, tek doğru cevaplı dört seçenekli BİR özgün soru üret. Sorunun zorluk seviyesi tam olarak şöyle olmalı: ${difficultyHint} Kaynakta bulunmayan bilgi isteme. Konunun dışına çıkma, sağlık tavsiyesi verme. Anlamsal olarak farklı bir soru sor. JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kısa gerekçe), evidence (aşağıdaki anlatımdan sorunun cevabını destekleyen aynen alınmış en az 15 karakterlik kısa bir cümle), topic (kısa konu adı). Kitap: ${ctx.book}. Ünite: ${ctx.unit}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (bunları tekrarlama, anlamca da çok benzer bir soru sorma): ${[...questionBank,...items].filter(x=>x.unitId===ctx.id).slice(-10).map(x=>x.question).join(' / ')}. KONU ANLATIMI: ${ctx.text}`;
  const parsed=await runModel(model,prompt,0.8,signal,900);
  const draft=validate(parsed,ctx,items,model);
- // Soru havuza eklenmeden ÖNCE, cevabı ve gerekçeyi hiç GÖRMEYEN ÜÇ bağımsız model (denetçi +
- // 2 ayrı "hakem") aynı soruyu birbirinden habersiz, PARALEL olarak kendi başlarına çözer; her biri
+ // Soru havuza eklenmeden ÖNCE, cevabı ve gerekçeyi hiç GÖRMEYEN İKİ bağımsız model (denetçi +
+ // 1 ayrı "hakem") aynı soruyu birbirinden habersiz, PARALEL olarak kendi başlarına çözer; her biri
  // hem doğruluğu (tek doğru cevap, kaynak desteği, kalite) hem de zorluk seviyesini (kolay/orta/zor)
- // bağımsızca değerlendirir. Üçü de AYNI cevapta birleşmezse soru hiç kaydedilmez; zorlukta ise en az
- // ikisinin (çoğunluğun) aynı seviyede birleşmesi yeterli görülür — zorluk daha öznel bir yargıdır.
- // Varsayılan olarak judge2/judge3 denetçiyle aynı modele düşebilir (kullanıcı ayrı model seçmediyse);
- // gerçek bağımsızlık için üç farklı model seçmesi önerilir. Üç çağrı da aynı anda (Promise.all ile)
+ // bağımsızca değerlendirir. İkisi de AYNI cevapta VE aynı zorlukta birleşmezse soru hiç kaydedilmez
+ // — yalnızca iki hakem olduğu için "çoğunluk" kavramı yerine tam görüş birliği aranır.
+ // Varsayılan olarak judge2 denetçiyle aynı modele düşebilir (kullanıcı ayrı model seçmediyse);
+ // gerçek bağımsızlık için iki farklı model seçmesi önerilir. İki çağrı da aynı anda (Promise.all ile)
  // gönderilir; tek ekran kartlı bir bilgisayarda Ollama bunları muhtemelen sırayla işler, bu yüzden
- // gerçek süre tek bir denetim çağrısının ~3 katına kadar çıkabilir (bkz. README "azami süre bütçesi").
+ // gerçek süre tek bir denetim çağrısının ~2 katına kadar çıkabilir (bkz. README "azami süre bütçesi").
  onPhase?.('verifying');
  const checkPrompt=`Sen Türkçe antrenörlük temel eğitim alanında dikkatli bir öğretmen/soru denetçisisin. Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, birden fazla seçenek doğruysa, belirsizse, konuyla ilgisizse veya dil bilgisi/anlatım açısından sınava uygun değilse reddet. Ayrıca soruyu, sana SÖYLENEN bir hedefe göre değil, TAMAMEN KENDİ bağımsız değerlendirmenle zorluk açısından sınıflandır: "kolay" (cevap anlatımda tek ve açık bir cümlede doğrudan geçer, neredeyse birebir hatırlamayla bulunur), "orta" (cevap için iki ayrı bilgiyi birleştirmek veya basit bir çıkarım gerekir) veya "zor" (cevap ayrıntılı/az vurgulanan bir noktaya dayanır ya da seçenekler arasında ince bir ayrım gerektirir). Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean), supported (boolean), qualityOk (boolean: soru açık, konuya uygun ve sınav kalitesinde mi), difficulty (tam olarak "kolay", "orta" veya "zor"), evidence (anlatımdan cevabı destekleyen 15 karakterden uzun aynen alınmış kısa metin), reason (kısa Türkçe gerekçe; hem doğruluk hem zorluk değerlendirmeni açıkla). KONU ANLATIMI: ${ctx.text}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
- const judgeModels=[verifierModel,judge2Model,judge3Model];
+ const judgeModels=[verifierModel,judge2Model];
  const rawChecks=await Promise.all(judgeModels.map(m=>runModel(m,checkPrompt,0.2,signal,500)));
  const judges=[];
  for(let i=0;i<rawChecks.length;i++){
@@ -155,32 +155,33 @@ async function generateAndVerify(ctx,model,verifierModel,judge2Model,judge3Model
  }
  const agreedAnswers=new Set(judges.map(j=>j.answer));
  if(agreedAnswers.size!==1||[...agreedAnswers][0]!==draft.answer)throw Error(`Bağımsız denetçiler aynı doğru cevapta birleşmedi (${judges.map(j=>j.answer).join(' / ')}); soru kaydedilmedi.`);
- const difficultyVotes={};for(const j of judges)difficultyVotes[j.difficulty]=(difficultyVotes[j.difficulty]||0)+1;
- const [majorityDifficulty,majorityCount]=Object.entries(difficultyVotes).sort((a,b)=>b[1]-a[1])[0];
- if(majorityCount<2)throw Error(`Bağımsız denetçiler bu sorunun zorluğunda görüş birliğine varamadı (${judges.map(j=>j.difficulty).join(' / ')}); soru kaydedilmedi.`);
- if(majorityDifficulty!==targetDifficulty)throw Error(`Soru, bu ünite için sıradaki hedef zorluk seviyesiyle (${targetDifficulty}) eşleşmedi (denetçilerin çoğunluk kararı: ${majorityDifficulty}); kalıp bozulmasın diye kaydedilmedi, farklı bir soru denenecek.`);
- const verification={judges,answer:draft.answer,difficulty:majorityDifficulty};
+ // Yalnızca iki hakem olduğu için "çoğunluk" anlamlı değildir: zorlukta da tam görüş birliği aranır.
+ const agreedDifficulties=new Set(judges.map(j=>j.difficulty));
+ if(agreedDifficulties.size!==1)throw Error(`Bağımsız denetçiler bu sorunun zorluğunda görüş birliğine varamadı (${judges.map(j=>j.difficulty).join(' / ')}); soru kaydedilmedi.`);
+ const agreedDifficulty=[...agreedDifficulties][0];
+ if(agreedDifficulty!==targetDifficulty)throw Error(`Soru, bu ünite için sıradaki hedef zorluk seviyesiyle (${targetDifficulty}) eşleşmedi (denetçilerin ortak kararı: ${agreedDifficulty}); kalıp bozulmasın diye kaydedilmedi, farklı bir soru denenecek.`);
+ const verification={judges,answer:draft.answer,difficulty:agreedDifficulty};
  onPhase?.('saving');
  return finalize(parsed,ctx,model,verification);
 }
 // Elle (API ile) tek seferlik üretim: eskisi gibi tek seferde yalnız bir istek kabul eder.
-async function generateOneManual(ctx,model,verifierModel,judge2Model,judge3Model,{timeoutMs=120000}={}){
+async function generateOneManual(ctx,model,verifierModel,judge2Model,{timeoutMs=120000}={}){
  if(busy)throw Error('Bir üretim zaten devam ediyor.');
  busy=true;phase='loading';lastError='';
  controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),timeoutMs);
- try{return await generateAndVerify(ctx,model,verifierModel,judge2Model,judge3Model,controller.signal,p=>{phase=p})}
+ try{return await generateAndVerify(ctx,model,verifierModel,judge2Model,controller.signal,p=>{phase=p})}
  catch(e){lastError=e.name==='AbortError'?'Üretim zaman aşımına uğradı veya durduruldu.':e.message;throw e}
  finally{clearTimeout(timeout);busy=false;phase='idle';controller=undefined}
 }
 // Kendi kendine çalışan döngü için: ateşle-ve-unut (fire-and-forget). Kendi AbortController'ını
 // autoControllers'a kaydeder; bittiğinde (başarılı ya da başarısız) kendini oradan siler ve böylece
 // zamanlayıcı o "yuvayı" hemen başka bir üniteyle doldurabilir — araya yapay bir bekleme konmaz.
-function launchAutoUnit(ctx,model,verifierModel,judge2Model,judge3Model,timeoutMs=120000){
+function launchAutoUnit(ctx,model,verifierModel,judge2Model,timeoutMs=120000){
  const entry={unit:ctx.id,phase:'loading'};
  const controller=new AbortController();
  autoControllers.set(controller,entry);
  const timeout=setTimeout(()=>controller.abort(),timeoutMs);
- generateAndVerify(ctx,model,verifierModel,judge2Model,judge3Model,controller.signal,p=>{entry.phase=p})
+ generateAndVerify(ctx,model,verifierModel,judge2Model,controller.signal,p=>{entry.phase=p})
   .catch(e=>{autoLastError=e.name==='AbortError'?'Üretim zaman aşımına uğradı veya durduruldu.':e.message})
   .finally(()=>{clearTimeout(timeout);autoControllers.delete(controller)});
 }
@@ -194,14 +195,14 @@ async function autoScheduler(){
    if(await autoRunningEnabled()){
     const limit=await autoConcurrencyLimit();
     if(autoControllers.size<limit){
-     const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',verifierModel);const judge3Model=await selectedJudgeModel('judge3Model',verifierModel);
+     const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',verifierModel);
      let models=[];
      try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(r.ok)models=((await r.json()).models||[]).map(x=>x.name)}catch{}
-     if(models.includes(model)&&models.includes(verifierModel)&&models.includes(judge2Model)&&models.includes(judge3Model)){
+     if(models.includes(model)&&models.includes(verifierModel)&&models.includes(judge2Model)){
       const items=await load();const a=audit(items);
       if(!a.invalid&&!a.duplicates&&items.length<5000){
        const ctx=contexts[autoCursor++%contexts.length];
-       launchAutoUnit(ctx,model,verifierModel,judge2Model,judge3Model,await autoTimeoutMs());
+       launchAutoUnit(ctx,model,verifierModel,judge2Model,await autoTimeoutMs());
       }
      }
     }
@@ -218,13 +219,13 @@ export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(serve
  server.middlewares.use('/api/ollama',async(req,res,next)=>{
  try{
   const path=(req.url||'').split('?')[0];
-  const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',verifierModel);const judge3Model=await selectedJudgeModel('judge3Model',verifierModel);
+  const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',verifierModel);
   if(req.method==='GET'&&path==='/status'){
    let models=[],connected=false;try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(r.ok){const d=await r.json();models=(d.models||[]).map(x=>x.name);connected=true}}catch{}
    const items=await load();const storage=await storageUsage();const autoRunning=await autoRunningEnabled();const autoConcurrency=await autoConcurrencyLimit();const autoTimeout=await autoTimeoutMs();
    const autoPhases=[...autoControllers.values()].map(x=>({unit:x.unit,phase:x.phase}));
    const difficultyCounts={kolay:0,orta:0,zor:0};for(const x of items)if(DIFFICULTIES.includes(x.difficulty))difficultyCounts[x.difficulty]++;
-   return respond(res,200,{connected,model,verifierModel,judge2Model,judge3Model,installed:models.includes(model),verifierInstalled:models.includes(verifierModel),judge2Installed:models.includes(judge2Model),judge3Installed:models.includes(judge3Model),models,busy,phase,lastError,storage,count:items.length,approved:items.filter(x=>x.status==='approved').length,rejected:items.filter(x=>x.status==='rejected').length,difficultyCounts,autoRunning,autoConcurrency,autoTimeoutMs:autoTimeout,autoActive:autoControllers.size,autoPhases,autoLastError,totalUnits:contexts.length});
+   return respond(res,200,{connected,model,verifierModel,judge2Model,installed:models.includes(model),verifierInstalled:models.includes(verifierModel),judge2Installed:models.includes(judge2Model),models,busy,phase,lastError,storage,count:items.length,approved:items.filter(x=>x.status==='approved').length,rejected:items.filter(x=>x.status==='rejected').length,difficultyCounts,autoRunning,autoConcurrency,autoTimeoutMs:autoTimeout,autoActive:autoControllers.size,autoPhases,autoLastError,totalUnits:contexts.length});
   }
   if(req.method==='GET'&&path==='/questions')return respond(res,200,{items:await load()});
   if(req.method==='GET'&&path==='/audit')return respond(res,200,audit(await load()));
@@ -233,7 +234,7 @@ export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(serve
    if(busy)return respond(res,409,{error:'Üretim sürerken model değiştirilemez.'});
    const input=await body(req);const chosen=input.model;
    const role=typeof input.role==='string'?input.role:'model';
-   const roleKey={model:'model',verifier:'verifierModel',judge2:'judge2Model',judge3:'judge3Model'}[role];
+   const roleKey={model:'model',verifier:'verifierModel',judge2:'judge2Model'}[role];
    if(!roleKey)return respond(res,400,{error:'Geçersiz rol.'});
    const storage=await storageUsage();if(storage.total+1_000_000>storageLimit)return respond(res,400,{error:'100 GB sınırına yaklaşıldı; ayar kaydedilmedi.'});
    if(typeof chosen!=='string'||chosen.length>200||!chosen.trim())return respond(res,400,{error:'Geçersiz model adı.'});
@@ -257,7 +258,7 @@ export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(serve
    const input=await body(req);const ids=Array.isArray(input.units)?input.units.filter(x=>typeof x==='string'):[];const candidates=contexts.filter(x=>ids.includes(x.id));
    if(!candidates.length)return respond(res,400,{error:'Önce en az bir üniteyi tamamla.'});
    const ctx=candidates[cursor++%candidates.length];
-   try{const record=await generateOneManual(ctx,model,verifierModel,judge2Model,judge3Model);return respond(res,200,{item:record})}
+   try{const record=await generateOneManual(ctx,model,verifierModel,judge2Model);return respond(res,200,{item:record})}
    catch(e){const conflict=/zaten devam/.test(e.message||'');return respond(res,conflict?409:502,{error:e.message||'Üretim başarısız.'})}
   }
   if(req.method==='POST'&&path==='/stop'){if(controller)controller.abort();for(const c of autoControllers.keys())c.abort();await writeSettings({autoRunning:false});return respond(res,200,{ok:true,autoRunning:false})}
