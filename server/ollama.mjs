@@ -10,12 +10,19 @@ const settingsFile = resolve(dataDir,'settings.json');
 const ledgerFile = resolve(dataDir,'ollama-created.json');
 const storageLimit = 100_000_000_000;
 const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/,'');
-const defaultModel = process.env.OLLAMA_MODEL || 'qwen2.5:14b';
-async function selectedModel(){try{const v=JSON.parse(await readFile(settingsFile,'utf8'));return typeof v.model==='string'&&v.model.length<=200?v.model:defaultModel}catch(e){if(e.code==='ENOENT')return defaultModel;throw e}}
+// Qwen3 14B: Qwen2.5 32B seviyesinde yanıt kalitesi sunar ve ~9-12 GB VRAM ile 12 GB'lik
+// kartlara (örn. RTX 3080 Ti) sığar; bu nedenle varsayılan "öğretmen" modeli budur.
+const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:14b';
+async function readSettings(){try{const v=JSON.parse(await readFile(settingsFile,'utf8'));return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){if(e.code==='ENOENT')return {};throw e}}
+async function writeSettings(patch){await mkdir(dataDir,{recursive:true});const current=await readSettings();const next={...current,...patch};const tmp=settingsFile+'.tmp';await writeFile(tmp,JSON.stringify(next,null,2),'utf8');await rename(tmp,settingsFile);return next}
+async function selectedModel(){const v=await readSettings();return typeof v.model==='string'&&v.model.length<=200&&v.model.trim()?v.model:defaultModel}
+async function autoRunningEnabled(){const v=await readSettings();return v.autoRunning!==false}
 let busy = false;
 let phase = 'idle';
-let cursor = 0;
+let cursor = 0; // elle (API ile) istenen üretimler için
+let autoCursor = 0; // kendi kendine çalışan öğretmen döngüsü için; tüm üniteleri sırayla dolaşır
 let lastError = '';
+let lastAutoUnit = '';
 let controller;
 async function load(){try {const data=JSON.parse(await readFile(dataFile,'utf8'));return Array.isArray(data)?data:[]} catch(e){if(e.code==='ENOENT')return [];throw e}}
 async function directoryBytes(path){
@@ -47,15 +54,82 @@ function validate(o,ctx,existing,model){
  if(!norm(ctx.text).includes(norm(evidence))||norm(evidence).length<15)throw Error('Kaynak alıntısı ünite anlatımında bulunamadı.');
  if([...questionBank,...existing].some(x=>norm(x.question)===norm(question)))throw Error('Aynı soru zaten kayıtlı.');
  if([...questionBank,...existing].some(x=>x.unitId===ctx.id&&similarity(x.question,question)>=0.9))throw Error('Bu ünite için çok benzer bir soru bulundu.');
- return {id:randomUUID(),unitId:ctx.id,book:ctx.book,unit:ctx.unit,topic:topic.trim(),question:question.trim(),options:options.map(x=>x.trim()),answer:answer.trim(),explanation:explanation.trim(),evidence:evidence.trim(),status:'pending',model,createdAt:new Date().toISOString()};
+ // Not: status burada doğrudan 'approved' olarak kurulur, fakat bu kayıt yalnızca aşağıdaki
+ // bağımsız denetçi geçişini de geçtikten SONRA diske yazılır. Yani her kaydedilen soru,
+ // kaydedilmeden önce zaten iki aşamalı yapay zekâ "öğretmen" denetiminden geçmiş olur;
+ // kullanıcıdan ayrı bir onay beklenmez. Kullanıcı yine de /review ile istediği soruyu reddedebilir.
+ return {id:randomUUID(),unitId:ctx.id,book:ctx.book,unit:ctx.unit,topic:topic.trim(),question:question.trim(),options:options.map(x=>x.trim()),answer:answer.trim(),explanation:explanation.trim(),evidence:evidence.trim(),status:'approved',model,createdAt:new Date().toISOString()};
 }
-export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(server){server.middlewares.use('/api/ollama',async(req,res,next)=>{
+async function runModel(which,input,temperature,signal){
+ const r=await fetch(`${base}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:which,prompt:input,stream:false,format:'json',options:{temperature,num_predict:900}}),signal});
+ if(!r.ok)throw Error(`Ollama (${which}) HTTP ${r.status}: ${(await r.text()).slice(0,250)}`);
+ const result=await r.json();try{return JSON.parse(result.response)}catch{throw Error(`${which} geçerli JSON üretmedi.`)}
+}
+// Tek bir ünite için üretim + bağımsız denetim + kaydetme. Hem elle tetiklenen /generate
+// isteğinden hem de sunucunun kendi kendine çalışan "öğretmen" döngüsünden kullanılır.
+async function generateOne(ctx,model,verifierModel,{timeoutMs=360000}={}){
+ if(busy)throw Error('Bir üretim zaten devam ediyor.');
+ // busy bayrağı herhangi bir await'ten ÖNCE, senkron olarak kurulur; böylece elle tetiklenen
+ // isteklerle kendi kendine çalışan döngü arasında çakışan iki üretim aynı anda başlayamaz.
+ busy=true;phase='loading';lastError='';
+ try{
+  const items=await load();const resultAudit=audit(items);
+  if(resultAudit.invalid||resultAudit.duplicates)throw Error('Havuz denetiminde biçim veya birebir tekrar hatası var; üretim durduruldu.');
+  if(items.length>=5000)throw Error('Yerel havuz 5000 kayıt sınırına ulaştı.');
+  phase='generating';controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+   const prompt=`Sen Türkçe antrenörlük temel eğitim soru yazarı ve öğretmenisin. Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, zorlayıcı, tek doğru cevaplı dört seçenekli BİR özgün soru üret. Kaynakta bulunmayan bilgi isteme. Konunun dışına çıkma, sağlık tavsiyesi verme. Anlamsal olarak farklı bir soru sor. JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kısa gerekçe), evidence (aşağıdaki anlatımdan sorunun cevabını destekleyen aynen alınmış en az 15 karakterlik kısa bir cümle), topic (kısa konu adı). Kitap: ${ctx.book}. Ünite: ${ctx.unit}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (bunları tekrarlama): ${[...questionBank,...items].filter(x=>x.unitId===ctx.id).slice(-10).map(x=>x.question).join(' / ')}. KONU ANLATIMI: ${ctx.text}`;
+   const parsed=await runModel(model,prompt,0.8,controller.signal);
+   const record=validate(parsed,ctx,items,model);
+   // Denetçi, soruyu cevabı ve gerekçeyi görmeden bağımsızca yeniden çözer; ayrıca sorunun
+   // anlatılan konuyla uyumlu ve sınava uygun nitelikte olup olmadığını da değerlendirir.
+   phase='verifying';
+   const checkPrompt=`Sen Türkçe antrenörlük temel eğitim alanında dikkatli bir öğretmen/soru denetçisisin. Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, birden fazla seçenek doğruysa, belirsizse, konuyla ilgisizse veya dil bilgisi/anlatım açısından sınava uygun değilse reddet. Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean), supported (boolean), qualityOk (boolean: soru açık, konuya uygun ve sınav kalitesinde mi), evidence (anlatımdan cevabı destekleyen 15 karakterden uzun aynen alınmış kısa metin), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${ctx.text}\nSORU: ${record.question}\nSEÇENEKLER: ${JSON.stringify(record.options)}`;
+   const check=await runModel(verifierModel,checkPrompt,0,controller.signal);
+   if(!check || check.singleCorrect!==true || check.supported!==true || check.qualityOk!==true || typeof check.answer!=='string' || !record.options.includes(check.answer) || check.answer!==record.answer || typeof check.evidence!=='string' || norm(check.evidence).length<15 || !norm(ctx.text).includes(norm(check.evidence)) || typeof check.reason!=='string' || !check.reason.trim())throw Error('Bağımsız model kontrolü soruyu, tek doğru cevabı, kaliteyi veya kaynak dayanağını doğrulayamadı; soru kaydedilmedi.');
+   record.verification={model:verifierModel,answer:check.answer,evidence:check.evidence.trim().slice(0,500),reason:check.reason.trim().slice(0,1200)};
+   phase='saving';const latest=await load();validate(parsed,ctx,latest,model);latest.push(record);await save(latest);return record;
+  }finally{clearTimeout(timeout)}
+ }catch(e){lastError=e.name==='AbortError'?'Üretim zaman aşımına uğradı veya durduruldu.':e.message;throw e}
+ finally{busy=false;phase='idle';controller=undefined}
+}
+// Sunucunun kendi kendine çalışan "öğretmen" döngüsü: tarayıcı sekmesi kapalı olsa bile,
+// bu Node süreci (npm run dev / Ollama) açık kaldığı sürece TÜM 29 üniteyi sırayla dolaşıp
+// soru havuzunu büyütmeye devam eder. Kullanıcının bir üniteyi tamamlamış olması şart değildir;
+// testler yine de yalnızca tamamlanan ünitelerden soru çeker (bkz. ön yüzdeki filtre).
+async function autoTick(){
+ let delay=5000;
+ try{
+  if(process.env.TEMPO_DISABLE_AUTOLOOP==='1'){delay=60000}
+  else if(busy){delay=4000}
+  else if(!(await autoRunningEnabled())){delay=10000}
+  else{
+   const model=await selectedModel();const verifierModel=process.env.OLLAMA_VERIFIER_MODEL||model;
+   let models=[];
+   try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(r.ok)models=((await r.json()).models||[]).map(x=>x.name)}catch{models=[]}
+   if(!models.includes(model)||!models.includes(verifierModel)){delay=20000}
+   else{
+    const ctx=contexts[autoCursor++%contexts.length];lastAutoUnit=ctx.id;
+    await generateOne(ctx,model,verifierModel);
+    delay=4000;
+   }
+  }
+ }catch{delay=20000}
+ if(process.env.TEMPO_DISABLE_AUTOLOOP!=='1')setTimeout(autoTick,delay);
+}
+let autoLoopStarted=false;
+export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(server){
+ // Döngü yalnızca gerçek geliştirme sunucusu (npm run dev) başlatıldığında kurulur; `vite build`
+ // configureServer çağırmaz, bu yüzden derleme sırasında arka planda bitmeyen bir zamanlayıcı kalmaz.
+ if(!autoLoopStarted&&process.env.TEMPO_DISABLE_AUTOLOOP!=='1'){autoLoopStarted=true;setTimeout(autoTick,3000)}
+ server.middlewares.use('/api/ollama',async(req,res,next)=>{
  try{
   const path=(req.url||'').split('?')[0];
   const model=await selectedModel();const verifierModel=process.env.OLLAMA_VERIFIER_MODEL || model;
   if(req.method==='GET'&&path==='/status'){
    let models=[],connected=false;try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(r.ok){const d=await r.json();models=(d.models||[]).map(x=>x.name);connected=true}}catch{}
-   const items=await load();const storage=await storageUsage();return respond(res,200,{connected,model,verifierModel,installed:models.includes(model),verifierInstalled:models.includes(verifierModel),models,busy,phase,lastError,storage,count:items.length,pending:items.filter(x=>x.status==='pending').length});
+   const items=await load();const storage=await storageUsage();const autoRunning=await autoRunningEnabled();
+   return respond(res,200,{connected,model,verifierModel,installed:models.includes(model),verifierInstalled:models.includes(verifierModel),models,busy,phase,lastError,storage,count:items.length,approved:items.filter(x=>x.status==='approved').length,rejected:items.filter(x=>x.status==='rejected').length,autoRunning,autoUnit:lastAutoUnit,totalUnits:contexts.length});
   }
   if(req.method==='GET'&&path==='/questions')return respond(res,200,{items:await load()});
   if(req.method==='GET'&&path==='/audit')return respond(res,200,audit(await load()));
@@ -66,33 +140,18 @@ export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(serve
    if(typeof chosen!=='string'||chosen.length>200||!chosen.trim())return respond(res,400,{error:'Geçersiz model adı.'});
    let tags;try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(!r.ok)throw Error('Ollama yanıt vermedi.');tags=await r.json()}catch{return respond(res,502,{error:'Ollama model listesi alınamadı.'})}
    if(!Array.isArray(tags.models)||!tags.models.some(x=>x.name===chosen))return respond(res,400,{error:'Model yerel Ollama listesinde bulunamadı.'});
-   await mkdir(dataDir,{recursive:true});const tmp=settingsFile+'.tmp';await writeFile(tmp,JSON.stringify({model:chosen},null,2),'utf8');await rename(tmp,settingsFile);return respond(res,200,{model:chosen});
+   await writeSettings({model:chosen});return respond(res,200,{model:chosen});
   }
+  if(req.method==='POST'&&path==='/start'){await writeSettings({autoRunning:true});return respond(res,200,{autoRunning:true})}
   if(req.method==='POST'&&path==='/generate'){
    if(busy)return respond(res,409,{error:'Bir üretim zaten devam ediyor.'});
    const input=await body(req);const ids=Array.isArray(input.units)?input.units.filter(x=>typeof x==='string'):[];const candidates=contexts.filter(x=>ids.includes(x.id));
    if(!candidates.length)return respond(res,400,{error:'Önce en az bir üniteyi tamamla.'});
-   const items=await load();const resultAudit=audit(items);if(resultAudit.invalid||resultAudit.duplicates)return respond(res,400,{error:'Havuz denetiminde biçim veya birebir tekrar hatası var; üretim durduruldu.'});if(items.length>=5000)return respond(res,400,{error:'Yerel havuz 5000 kayıt sınırına ulaştı.'});
-   const ctx=candidates[cursor++%candidates.length];busy=true;phase='generating';lastError='';controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),360000);
-   try{
-    const prompt=`Sen Türkçe antrenörlük temel eğitim soru yazarı ve öğretmenisin. Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, zorlayıcı, tek doğru cevaplı dört seçenekli BİR özgün soru üret. Kaynakta bulunmayan bilgi isteme. Konunun dışına çıkma, sağlık tavsiyesi verme. Anlamsal olarak farklı bir soru sor. JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kısa gerekçe), evidence (aşağıdaki anlatımdan sorunun cevabını destekleyen aynen alınmış en az 15 karakterlik kısa bir cümle), topic (kısa konu adı). Kitap: ${ctx.book}. Ünite: ${ctx.unit}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (bunları tekrarlama): ${[...questionBank,...items].filter(x=>x.unitId===ctx.id).slice(-10).map(x=>x.question).join(' / ')}. KONU ANLATIMI: ${ctx.text}`;
-    const runModel=async(which,input,temperature)=>{
-     const r=await fetch(`${base}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:which,prompt:input,stream:false,format:'json',options:{temperature,num_predict:900}}),signal:controller.signal});
-     if(!r.ok)throw Error(`Ollama (${which}) HTTP ${r.status}: ${(await r.text()).slice(0,250)}`);
-     const result=await r.json();try{return JSON.parse(result.response)}catch{throw Error(`${which} geçerli JSON üretmedi.`)}
-    };
-    const parsed=await runModel(model,prompt,0.8);
-    const record=validate(parsed,ctx,items,model);
-    // The checker solves without seeing the proposed answer or explanation.
-    phase='verifying';
-    const checkPrompt=`Sen Türkçe antrenörlük temel eğitim alanında dikkatli bir soru denetçisisin. Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, birden fazla seçenek doğruysa veya cevap açıkça çıkarılamıyorsa reddet. Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean), supported (boolean), evidence (anlatımdan cevabı destekleyen 15 karakterden uzun aynen alınmış kısa metin), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${ctx.text}\nSORU: ${record.question}\nSEÇENEKLER: ${JSON.stringify(record.options)}`;
-    const check=await runModel(verifierModel,checkPrompt,0);
-    if(!check || check.singleCorrect!==true || check.supported!==true || typeof check.answer!=='string' || !record.options.includes(check.answer) || check.answer!==record.answer || typeof check.evidence!=='string' || norm(check.evidence).length<15 || !norm(ctx.text).includes(norm(check.evidence)) || typeof check.reason!=='string' || !check.reason.trim())throw Error('Bağımsız model kontrolü soruyu, tek doğru cevabı veya kaynak dayanağını doğrulayamadı; soru kaydedilmedi.');
-    record.verification={model:verifierModel,answer:check.answer,evidence:check.evidence.trim().slice(0,500),reason:check.reason.trim().slice(0,1200)};
-    phase='saving';const latest=await load();validate(parsed,ctx,latest,model);latest.push(record);await save(latest);return respond(res,200,{item:record});
-   }catch(e){lastError=e.name==='AbortError'?'Üretim zaman aşımına uğradı veya durduruldu.':e.message;return respond(res,502,{error:lastError})}finally{clearTimeout(timeout);busy=false;phase='idle';controller=undefined}
+   const ctx=candidates[cursor++%candidates.length];
+   try{const record=await generateOne(ctx,model,verifierModel);return respond(res,200,{item:record})}
+   catch(e){const conflict=/zaten devam/.test(e.message||'');return respond(res,conflict?409:502,{error:e.message||'Üretim başarısız.'})}
   }
-  if(req.method==='POST'&&path==='/stop'){if(controller)controller.abort();return respond(res,200,{ok:true})}
+  if(req.method==='POST'&&path==='/stop'){if(controller)controller.abort();await writeSettings({autoRunning:false});return respond(res,200,{ok:true,autoRunning:false})}
   if(req.method==='POST'&&path==='/review'){
    const {id,status}=await body(req);if(!['approved','rejected'].includes(status))return respond(res,400,{error:'Geçersiz durum.'});const items=await load(),item=items.find(x=>x.id===id);if(!item)return respond(res,404,{error:'Soru bulunamadı.'});item.status=status;await save(items);return respond(res,200,{item});
   }

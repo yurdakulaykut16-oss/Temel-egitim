@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export manually reviewed local questions as grouped, provenance-preserving SFT data."""
+"""Export AI-öğretmen onaylı yerel soruları, kökene dair izi koruyan gruplanmış SFT verisi olarak dışa aktarır."""
 import argparse, hashlib, json, random
 from pathlib import Path
 
@@ -11,7 +11,7 @@ def normalize(text):
 
 def build(rows, contexts, reviewer, seed=42):
     if not reviewer.strip():
-        raise ValueError('İnsan gözden geçirenin adı veya kodu gerekli.')
+        raise ValueError('İnceleyen adı, kodu veya "AI öğretmen" etiketi gerekli.')
     by_id = {x['id']: x for x in contexts}
     records, seen, rejected = [], set(), 0
     for q in rows:
@@ -30,8 +30,11 @@ def build(rows, contexts, reviewer, seed=42):
         seen.add(normalize(question))
         output = {'question':question, 'options':options, 'answer':answer, 'explanation':explanation, 'evidence':evidence, 'topic':topic}
         prompt = f"Kitap: {ctx['book']}\nÜnite: {ctx['unit']}\nKONU ANLATIMI:\n{ctx['text']}"
+        verified = bool(q.get('verification'))
+        source = ('Yapay zekâ öğretmen onayı: üretici model + bağımsız denetçi modelle iki aşamalı otomatik doğrulama; uzman onayı değildir'
+                  if verified else 'Onaylı soru; ikinci aşama otomatik doğrulama kaydı bulunamadı')
         records.append({'unit_id':ctx['id'], 'question_id':q.get('id'), 'reviewer':reviewer.strip(),
-                        'source':'Kullanıcı onaylı Ollama sorusu; bağımsız uzman onayı doğrulanmadı',
+                        'source':source,
                         'context_sha256':hashlib.sha256(ctx['text'].encode('utf-8')).hexdigest(),
                         'messages':[{'role':'system','content':SYSTEM},{'role':'user','content':prompt},
                                     {'role':'assistant','content':json.dumps(output,ensure_ascii=False)}]})
@@ -51,7 +54,7 @@ def main():
     ap.add_argument('--input',default=str(ROOT/'.tempo-data/questions.json'))
     ap.add_argument('--contexts',default=str(ROOT/'server/contexts.json'))
     ap.add_argument('--output',default=str(ROOT/'.tempo-data/training'))
-    ap.add_argument('--reviewer',required=True,help='Gerçek insan inceleyicinin adı veya kodu; uzmanlık otomatik doğrulanmaz.')
+    ap.add_argument('--reviewer',default='AI öğretmen (iki aşamalı otomatik doğrulama)',help='Kayıt amaçlı etiket. Artık sorular varsayılan olarak yapay zekâ tarafından kendi kendine onaylanır; bir insan ayrıca göz attıysa burada o kişinin adını/kodunu yazabilirsin. Boş bırakılamaz.')
     ap.add_argument('--seed',type=int,default=42)
     args=ap.parse_args()
     try:
@@ -65,7 +68,7 @@ def main():
         (out/f'{name}.jsonl').write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in items),encoding='utf-8')
     metadata={'train_count':len(train),'eval_count':len(val),'rejected_count':rejected,
               'train_units':sorted({r['unit_id'] for r in train}), 'eval_units':sorted({r['unit_id'] for r in val}),
-              'seed':args.seed,'reviewer':args.reviewer,'warning':'İnsan onayı uzman doğrulaması anlamına gelmez.'}
+              'seed':args.seed,'reviewer':args.reviewer,'warning':'Onay varsayılan olarak yapay zekânın kendi kendine yaptığı iki aşamalı kontrolden gelir; bağımsız bir insan uzman doğrulaması anlamına gelmez.'}
     (out/'manifest.json').write_text(json.dumps(metadata,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(metadata,ensure_ascii=False,indent=2))
 

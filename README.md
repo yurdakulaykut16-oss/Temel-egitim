@@ -2,12 +2,12 @@
 
 Bu rehber **Windows 11 üzerinde, doğrudan kendi bilgisayarında** çalışmak içindir. Ubuntu veya WSL kurman gerekmez. İşlemleri sırayla yap: önce projeyi ve Ollama'yı çalıştır, ardından soruları incele. Model eğitimi isteğe bağlıdır ve sonraki adımlardadır.
 
-> **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/9b188ed1-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
+> **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/affea53d-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
 
 ## 1. Projeyi GitHub'dan indir
 
 1. Tarayıcıda [proje sayfasını](https://github.com/yurdakulaykut16-oss/Temel-egitim) aç.
-2. Sol üstteki dal seçme düğmesinden güncel uygulamanın bulunduğu dalı seç. Bu çalışma oturumunun dalı `arena/9b188ed1-temel-egitim` adını taşır; yalnız GitHub'a gönderilmişse listede görünür. Değişiklikler sonradan `main` dalına alınmışsa güncel `main` da kullanılabilir.
+2. Sol üstteki dal seçme düğmesinden güncel uygulamanın bulunduğu dalı seç. Bu çalışma oturumunun dalı `arena/affea53d-temel-egitim` adını taşır; yalnız GitHub'a gönderilmişse listede görünür. Değişiklikler sonradan `main` dalına alınmışsa güncel `main` da kullanılabilir.
 3. **Code → Download ZIP** seçeneğine bas.
 4. İnen ZIP dosyasına sağ tıkla ve **Tümünü ayıkla** seç.
 5. Çıkan klasörü örneğin `C:\Users\KullanıcıAdın\Desktop\Temel-egitim` konumuna koy. `KullanıcıAdın` kendi Windows kullanıcı adındır; örnek yolu harfiyen yazman gerekmez.
@@ -49,16 +49,16 @@ ollama list
 
 Sürüm ve kurulu model listesi görünmeli. Komut bulunamazsa PowerShell'i kapatıp yeniden aç. Bağlantı hatası varsa Ollama uygulamasının çalıştığını kontrol et.
 
-## 4. Soru üretecek modeli indir
+## 4. Soru üretecek "öğretmen" modeli indir
 
 Aynı PowerShell penceresinde:
 
 ```powershell
-ollama pull qwen2.5:7b
+ollama pull qwen3:14b
 ollama list
 ```
 
-İndirme tamamlanınca listede `qwen2.5:7b` görünmeli. Bu ilk başlangıç için 14B'den daha küçük bir modeldir; doğru cevap garantisi vermez. İnternet hızına göre indirme sürebilir ve disk alanı kullanır.
+İndirme tamamlanınca listede `qwen3:14b` görünmeli. Bu, projenin varsayılan modelidir: Qwen3 14B, boyutuna göre güçlü ve Qwen2.5 32B düzeyine yakın yanıt kalitesi sunan, "hibrit düşünme" moduna sahip görece yeni bir modeldir; Q4 nicemlemeyle yaklaşık 9 GB VRAM kullanır ve RTX 3080 Ti'nin 12 GB belleğine rahatça sığar. Yine de doğru cevap garantisi vermez; bu yüzden proje iki aşamalı bağımsız denetim kullanır (bkz. Adım 9-10). İnternet hızına göre indirme sürebilir ve disk alanı kullanır. Daha küçük bir kart kullanıyorsan `qwen2.5:7b` gibi daha hafif bir modeli de seçebilirsin; Adım 8'de istediğin zaman değiştirebilirsin.
 
 ## 5. Ekran kartını kontrol et
 
@@ -88,7 +88,7 @@ Aynı proje PowerShell penceresinde sırayla:
 
 ```powershell
 npm.cmd install
-$env:OLLAMA_MODEL="qwen2.5:7b"
+$env:OLLAMA_MODEL="qwen3:14b"
 npm.cmd run dev -- --host 127.0.0.1
 ```
 
@@ -96,45 +96,47 @@ npm.cmd run dev -- --host 127.0.0.1
 
 Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak için **Ctrl + C** kullanabilirsin. Ollama uygulaması da açık olmalı. Bu yerel sunucuyu internete açma; kullanıcı yetkilendirmesi yoktur.
 
+**Önemli:** Soru üretimi artık bu PowerShell penceresinin (sunucunun) kendisinde, arka planda çalışır — tarayıcıda bir sekme açık tutman gerekmez. Tarayıcıyı yalnızca modeli seçmek, ilerlemeni görmek ve test çözmek için açarsın; onu kapatsan bile sunucu ve Ollama açık kaldığı sürece soru üretimi sürer.
+
 ## 8. Modeli uygulamada seç
 
 1. Uygulamada **Soru stüdyosu**na gir.
 2. **Durumu yenile** düğmesine bas.
-3. **Yerel model seçimi** listesinden `qwen2.5:7b` seç.
+3. **Yerel model seçimi** listesinden `qwen3:14b` seç.
 4. **Modeli kullan** düğmesine bas.
 5. Bağlantı ve model durumunu kontrol et. Daha önce seçilmiş bir model kaydedildiyse terminaldeki varsayılanın yerine o kullanılabilir; gerekirse arayüzden tekrar seç.
 
 **Ollama bağlantısı yok** yazıyorsa Windows'ta Ollama'nın açık olduğunu ve PowerShell'de `ollama list` komutunun çalıştığını kontrol et. **Model kurulu değil** yazıyorsa 4. adımdaki indirmeyi tamamla ve doğru modeli seç.
 
-## 9. Ders çalış ve soru üret
+## 9. Yapay zekâ kendi kendine öğretmenlik yapsın
 
-1. Sol menüden **Derslerim** bölümünü aç.
-2. Bir kitap ve ünite seç. Anlatımı ve ilgili kitap PDF bölümünü oku.
-3. **Okudum, tamamla** düğmesine bas.
-4. **Soru stüdyosu**na dön. Ollama bağlı, model hazır ve otomatik üretim açıksa tamamlanan ünitelerden soru üretimi başlar.
-5. Üretim kapalıysa **Sürekli üretimi başlat** düğmesine bas.
-6. Sekme açık kaldığı sürece uygulamanın diğer sayfalarına geçebilirsin. Sekme kapanırsa yeni üretim istekleri gönderilmez. Bilgisayar uykuya geçtiğinde de üretimin sürmesini bekleme.
+Bu sürümde soru üretimi senin bir eğitmen veya uzman olmanı gerektirmez: yapay zekâ hem **soru yazarı** hem de **öğretmen/denetçi** rolünü kendisi üstlenir.
 
-Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. İki aşamalı otomatik kontrolden geçemeyen taslaklar kaydedilmez. Üretim zaman alabilir; otomatik kontrol doğruluk garantisi değildir.
+1. Model seçildikten sonra sunucu, **Soru stüdyosu** sayfasını hiç açmasan da kendi kendine çalışmaya başlar: 29 ünitenin tamamını sırayla dolaşır, her biri için özgün bir soru yazar.
+2. Yazılan her soru, aynı anda cevabı ve gerekçeyi GÖRMEYEN bağımsız bir ikinci model geçişinden geçer. Bu "denetçi" soruyu anlatımdan bağımsızca yeniden çözer; tek doğru cevap var mı, cevap doğru mu, kaynakla destekleniyor mu ve soru sınav kalitesinde mi kontrol eder.
+3. Her iki geçiş de uyuşursa soru otomatik olarak **onaylanmış** sayılır ve hemen soru havuzuna girer — senin ayrıca "onaylaman" gerekmez. Uyuşmazsa soru hiç kaydedilmez.
+4. **Soru stüdyosu** sayfasında istersen ilerlemeyi izleyebilir, **Kendi kendine üretimi durdur/başlat** düğmesiyle süreci duraklatabilir veya devam ettirebilirsin.
+5. Bir ünite okuyup **Okudum, tamamla** dediğinde, o ünite için zaten hazırlanmış onaylı sorular testlerine hemen dahil olur; aynı anda arka planda henüz çalışmadığın üniteler için de üretim sürmeye devam eder.
 
-## 10. Soruları nasıl onaylayacağım?
+Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. İki aşamalı otomatik kontrolden geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; otomatik kontrol doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz.
 
-1. **Soru stüdyosu** sayfasında aşağı kaydır ve **Soruları gözden geçir** başlığını bul.
-2. **İncelenecek** sekmesine bas. Liste boşsa henüz geçerli taslak oluşmamış olabilir; üretimin açık olduğunu kontrol edip bekle.
-3. Kartta **kitap, ünite, konu, soru, dört seçenek, işaretli cevap, gerekçe ve anlatımdaki dayanağı** oku. İşaretli cevap `✓` ile gösterilir.
-4. Ünite anlatımını ve ilgili kitap PDF bölümünü aç. Sorunun anlatılan konuya ait olduğuna, yalnız bir doğru cevap bulunduğuna ve gerekçenin doğru olduğuna bak. Dayanağın cevapla gerçekten ilişkili olduğundan emin ol.
-5. Soru doğru ve açıksa **Onayla ve teste ekle** düğmesine bas. Soru **Onaylanan** sekmesine geçer.
-6. Soru yanlış, belirsiz, tekrarlı veya anlatım dışında bir bilgiye dayanıyorsa **Reddet** düğmesine bas. Reddedilen sorular teste ve eğitime girmez.
-7. Kararını değiştirirsen **Onaylanan** veya **Reddedilen** sekmesinden sorunun durumunu değiştirebilirsin.
+## 10. Yapay zekânın kararlarını izle (istersen veto et)
 
-Bu sürümde soru metnini uygulama içinden düzeltme özelliği yoktur. Emin olmadığın soruyu onaylama. Kullanıcı onayı, bağımsız uzman doğrulaması değildir.
+Kendin bir eğitmen olmak veya her soruyu tek tek onaylamak zorunda değilsin; bu sürümde o rolü yapay zekâ üstlenir. Yine de son sözü sende bırakan bir güvenlik kapısı var:
+
+1. **Soru stüdyosu** sayfasında aşağı kaydır, **Yapay zekâ öğretmenin kararları** başlığını bul.
+2. **AI onayladı** sekmesinde, yapay zekânın otomatik olarak onayladığı sorular ve her birinin yanında denetçi modelin gerekçesi görünür.
+3. Bir soruyu okurken yanlış, belirsiz veya anlatım dışı bulursan **Reddet** düğmesine bas; o soru artık teste veya eğitime girmez ve **Reddedilen** sekmesine taşınır.
+4. Fikrini değiştirirsen reddettiğin bir soruyu **Yeniden onayla** ile tekrar havuza katabilirsin.
+
+Bu sürümde soru metnini uygulama içinden düzeltme özelliği yoktur. Yapay zekânın onayı, bağımsız bir uzman doğrulaması değildir; sen de incelemek istersen her zaman reddetme hakkına sahipsin.
 
 ## 11. Tekrar yolunu kullan
 
 1. Sol menüden **Tekrar yolu**na gir. Yalnız tamamladığın üniteler için hatırlama kartları açılır.
 2. Karttaki konuyu nota bakmadan kendi cümlelerinle anlat; sonra **Notu göster** düğmesine bas.
 3. Notla karşılaştır. Hatırladıysan **Hatırladım**, eksikse **Tekrar etmeliyim** seç.
-4. Hatırlanan konular 1, 3, 7, 14 ve 30 gün sonra; eksik kalan konu 10 dakika sonra tekrar gösterilir. Testte yapılan yanlış, ilgili üniteyi hemen tekrar sırasına alır.
+4. Hatırlanan konular giderek büyüyen aralıklarla (1, 3, 7, 14, 30, 60, 120, 240, sonra yaklaşık her 365 günde bir) tekrar gösterilir; amaç bir kez öğrenilen bir şeyi kalıcı hâle getirip sessizce unutulmasını önlemektir. Eksik kalan konu 10 dakika sonra tekrar gösterilir. Testte yapılan yanlış, ilgili üniteyi hemen tekrar sırasına alır ve aralığı sıfırlar.
 5. **Derse dön** veya **Ünite testini çöz** ile konuyu pekiştirebilirsin. Tekrar tarihi uygulamayı açtığında kontrol edilir; otomatik bildirim gönderilmez.
 
 Bu sistem her ünitenin önemli notunu hatırlatır; kitabın tüm konularını ayrı ayrı ölçmez ve kalıcı öğrenme garantisi vermez. Tekrar planı bu tarayıcıda saklanır.
@@ -150,7 +152,7 @@ Voice Studio tarayıcı ve Windows'un sunduğu konuşma sentezini kullanır; ayr
 
 ## 11B. Test çöz
 
-Ünite sayfasında **Ünite testine geç** düğmesini kullan. **Test merkezi** bölümünden kitap ve karma testleri de açabilirsin. Testlerde yalnız tamamlanan ünitelerin uygun soruları kullanılır; yapay zekâ taslakları ancak sen onayladıktan sonra havuza katılır. Rastgele seçim nedeniyle bir soru her testte hemen görünmeyebilir. Yanlış sayısı yüksek üniteler sonraki karma seçimlerde daha çok ağırlık alır.
+Ünite sayfasında **Ünite testine geç** düğmesini kullan. **Test merkezi** bölümünden kitap ve karma testleri de açabilirsin. Testlerde yalnız tamamlanan ünitelerin uygun soruları kullanılır; yapay zekânın kendi kendine onayladığı sorular ek bir işlem gerekmeden havuza girmiş olur. Rastgele seçim nedeniyle bir soru her testte hemen görünmeyebilir. Bir üniteyi yanlış yaptıkça o ünite, art arda üç doğruya ulaşana kadar karma testlerde daha sık ve daha ağırlıklı çıkar; üç doğruya ulaştığında ağırlığı azalır, ama kalıcılığı Tekrar yolu'ndaki uzun vadeli program korur.
 
 ## 12. Her gün yeniden açarken
 
@@ -159,12 +161,12 @@ Voice Studio tarayıcı ve Windows'un sunduğu konuşma sentezini kullanır; ayr
 3. Şunları çalıştır:
 
 ```powershell
-$env:OLLAMA_MODEL="qwen2.5:7b"
+$env:OLLAMA_MODEL="qwen3:14b"
 npm.cmd run dev -- --host 127.0.0.1
 ```
 
-4. Terminalde gösterilen adresi tarayıcıda aç. Daha önce arayüzde farklı bir model kaydettiysen Soru stüdyosunda istediğin modeli seç.
-5. Ders çalış, üniteyi tamamla, üretilen soruları incele ve test çöz. Her gün `npm.cmd install` veya `ollama pull` tekrarlaman gerekmez; bağımlılıklar ya da model değişirse yeniden gerekebilir.
+4. Terminalde gösterilen adresi tarayıcıda aç. Daha önce arayüzde farklı bir model kaydettiysen Soru stüdyosunda istediğin modeli seç. Sunucu açılır açılmaz kendi kendine üretim de otomatik devam eder; ayrıca bir şey başlatman gerekmez.
+5. Ders çalış, üniteyi tamamla; yapay zekânın arka planda zaten biriktirdiği onaylı soruları test çöz. Her gün `npm.cmd install` veya `ollama pull` tekrarlaman gerekmez; bağımlılıklar ya da model değişirse yeniden gerekebilir.
 
 ---
 
@@ -172,20 +174,20 @@ npm.cmd run dev -- --host 127.0.0.1
 
 **Önceki 12 adım soru üretimi için yeterlidir.** Eğitim ayrı ve deneysel bir işlemdir. Aşağıdaki akış doğrudan Windows içindir; bu ortamda gerçek Windows/3080 Ti üzerinde test edilmedi. Sürücü, CUDA, Python paketleri, GPU belleği ve RAM uyumsuzlukları çıkabilir. Soruların doğruluğu veya modelin iyileşmesi garanti değildir.
 
-## 13. En az 50 soruyu onayla
+## 13. En az 50 onaylı soru birikmesini bekle
 
-Eğitim için **en az 50 geçerli onaylı soru ve 5 farklı ünite** gerekir. Bu yalnızca programın teknik alt sınırıdır; güvenilir eğitim için çok daha fazla, dengeli ve tercihen alan uzmanı tarafından doğrulanmış soru gerekir. Taslaklar ve reddedilen sorular kullanılmaz. Yalnız modelin kendi ürettiği sorularla eğitim hataları pekiştirebilir.
+Eğitim için **en az 50 geçerli onaylı soru ve 5 farklı ünite** gerekir. Yapay zekâ kendi kendine ürettiği her soruyu iki aşamalı denetimden geçirip otomatik onayladığı için bu eşiğe genellikle ek bir işlem yapmadan, sunucuyu biraz süre açık bırakarak ulaşırsın. Bu sayı yalnızca programın teknik alt sınırıdır; daha güvenilir bir eğitim için çok daha fazla, dengeli ve tercihen bir insanın da göz attığı soru daha iyidir. Reddettiğin sorular kullanılmaz. Yalnız modelin kendi ürettiği sorularla eğitim, modelin kendi hatalarını da pekiştirebilir; bu yüzden Adım 10'daki inceleme ekranından ara sıra göz gezdirip tuhaf gördüklerini reddetmen önerilir.
 
-Eğitimden önce Soru stüdyosunda **Üretimi durdur** seç. Başka bir PowerShell penceresinde çalışan modelleri gör:
+Eğitimden önce Soru stüdyosunda **Kendi kendine üretimi durdur** seç. Başka bir PowerShell penceresinde çalışan modelleri gör:
 
 ```powershell
 ollama ps
 ```
 
-Örneğin `qwen2.5:7b` çalışıyorsa GPU belleğini boşaltmak için:
+Örneğin `qwen3:14b` çalışıyorsa GPU belleğini boşaltmak için:
 
 ```powershell
-ollama stop qwen2.5:7b
+ollama stop qwen3:14b
 ```
 
 Farklı bir model çalışıyorsa onun tam adını yaz. Ollama uygulamasını tamamen kapatma; eğitim sonrası aktarım için servisin açık olması gerekir.
@@ -203,11 +205,11 @@ py -3.11 --version
 4. Veriyi hazırla:
 
 ```powershell
-py -3.11 training\prepare.py --reviewer "Ad Soyad"
+py -3.11 training\prepare.py
 Get-Content .tempo-data\training\manifest.json
 ```
 
-`Ad Soyad` yerine soruları gerçekten inceleyen kişinin adını yaz. Komut 50 soru / 5 ünite hatası verirse daha fazla farklı üniteden geçerli soru inceleyip onayla. Tekrarlanan veya dayanağı geçersiz olan kayıtlar elenebilir. Tekrar hazırlama aynı eğitim dosyalarını yeniden oluşturur; eski veri kümesini saklamak istiyorsan önce yedekle.
+`--reviewer` artık zorunlu değil; belirtmezsen kayıtlar "AI öğretmen (iki aşamalı otomatik doğrulama)" etiketiyle işaretlenir, çünkü onay varsayılan olarak yapay zekânın kendisinden gelir. Soruları sen de ayrıca gözden geçirdiysen kendi adını veya kodunu eklemek istersen `py -3.11 training\prepare.py --reviewer "Ad Soyad"` kullanabilirsin. Komut 50 soru / 5 ünite hatası verirse sunucuyu biraz daha açık bırakıp daha fazla üniteden onaylı soru birikmesini bekle. Tekrarlanan veya dayanağı geçersiz olan kayıtlar elenebilir. Tekrar hazırlama aynı eğitim dosyalarını yeniden oluşturur; eski veri kümesini saklamak istiyorsan önce yedekle.
 
 ## 15. Eğitim ortamını kur
 
@@ -278,7 +280,7 @@ Aktarımın gerçekten başarılı olduğunu kontrol et:
 ollama list
 ```
 
-Başarılıysa listede `tempo-trained:...` adlı yeni bir model görünür. Uygulamada **Soru stüdyosu → Durumu yenile → Yerel model seçimi** yolundan modeli seçip **Modeli kullan** düğmesine bas. Gerekirse önce üretimi durdur. Sonra **Sürekli üretimi başlat** ile devam et.
+Başarılıysa listede `tempo-trained:...` adlı yeni bir model görünür. Uygulamada **Soru stüdyosu → Durumu yenile → Yerel model seçimi** yolundan modeli seçip **Modeli kullan** düğmesine bas. Gerekirse önce **Kendi kendine üretimi durdur**, sonra **Kendi kendine üretimi başlat** ile devam et.
 
 Yeni modelin sorularını da 10. adımda anlatıldığı gibi inceleyip onaylaman gerekir. Modelin daha iyi olduğunu varsayma. Varsayılan adaptörü taban modelle biçim ve alıntı bakımından karşılaştırmak istersen:
 
