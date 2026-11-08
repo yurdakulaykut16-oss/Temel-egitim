@@ -1,0 +1,22 @@
+{
+  "name": "temel-egitim-studio",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "audit": "esbuild scripts/audit.ts --bundle --platform=node --outfile=node_modules/.tempo-audit.cjs --log-level=error && node node_modules/.tempo-audit.cjs",
+    "contexts": "esbuild scripts/build-context.ts --bundle --platform=node --outfile=node_modules/.tempo-context.cjs --log-level=error && node node_modules/.tempo-context.cjs"
+  },
+  "dependencies": {
+    "vite": "^6.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": "^0.468.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

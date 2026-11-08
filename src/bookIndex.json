@@ -1,0 +1,528 @@
+[
+  {
+    "file": "/books/hareket.pdf",
+    "units": [
+      {
+        "page": 10,
+        "keywords": [
+          "Antrenman",
+          "Fiziksel Aktivite",
+          "Antrenör",
+          "Sporcu Gelişim Modeli",
+          "Sürantrenman",
+          "Fazla Tamamlama",
+          "Akut ve Kronik Uyum",
+          "Adaptasyon"
+        ],
+        "summaryPages": [
+          32,
+          33
+        ],
+        "testPage": 34,
+        "answerPage": 35
+      },
+      {
+        "page": 40,
+        "keywords": [
+          "Fiziksel Hazırlık",
+          "Teknik Hazırlık",
+          "Taktik Hazırlık",
+          "Zihinsel Hazırlık",
+          "Kuramsal Hazırlık"
+        ],
+        "summaryPages": [
+          54
+        ],
+        "testPage": 55,
+        "answerPage": 56
+      },
+      {
+        "page": 58,
+        "keywords": [
+          "Antrenman İlkeleri",
+          "Yüklenme",
+          "Yüklenme İlkesi",
+          "Yüklenmenin Ögeleri",
+          "Süperkompenzasyon",
+          "Detraining",
+          "Model Antrenman",
+          "Özelleşme"
+        ],
+        "summaryPages": [
+          71,
+          72
+        ],
+        "testPage": 73,
+        "answerPage": 75
+      },
+      {
+        "page": 78,
+        "keywords": [
+          "Biyomotor Özellikler",
+          "Motorik Özellikler",
+          "Dayanıklılık",
+          "Kuvvet",
+          "Sürat",
+          "Esneklik",
+          "Beceri"
+        ],
+        "summaryPages": [
+          90
+        ],
+        "testPage": 91,
+        "answerPage": 92
+      },
+      {
+        "page": 94,
+        "keywords": [
+          "Koordinasyon",
+          "Hareketlilik",
+          "Çeviklik",
+          "Denge",
+          "Antrenman"
+        ],
+        "summaryPages": [
+          110,
+          111
+        ],
+        "testPage": 112,
+        "answerPage": 113
+      },
+      {
+        "page": 118,
+        "keywords": [
+          "Antrenman",
+          "Antrenman Planı",
+          "Antrenman Periyotlaması",
+          "Birim Antrenman",
+          "Makro Plan",
+          "Mikro Plan",
+          "Yıllık Antrenman Planı",
+          "Çok Yıllık Plan"
+        ],
+        "summaryPages": [
+          134
+        ],
+        "testPage": 135,
+        "answerPage": 136
+      },
+      {
+        "page": 138,
+        "keywords": [
+          "Fiziksel Aktivite",
+          "Ölçme Değerlendirme",
+          "Antropometrik Ölçümler",
+          "Fiziksel Performans Testleri"
+        ],
+        "summaryPages": [
+          159
+        ],
+        "testPage": 160,
+        "answerPage": 161
+      },
+      {
+        "page": 164,
+        "keywords": [
+          "Spor",
+          "Yetenek",
+          "Eğilim",
+          "Sportif Yatkınlık",
+          "Motorik Özellikler",
+          "Yönlendirme"
+        ],
+        "summaryPages": [
+          192
+        ],
+        "testPage": 193,
+        "answerPage": 194
+      }
+    ]
+  },
+  {
+    "file": "/books/saglik.pdf",
+    "units": [
+      {
+        "page": 10,
+        "keywords": [
+          "Doku",
+          "Kas",
+          "Düzlemler",
+          "Hareket"
+        ],
+        "summaryPages": [
+          37,
+          38
+        ],
+        "testPage": 39,
+        "answerPage": 40
+      },
+      {
+        "page": 42,
+        "keywords": [
+          "Canlı",
+          "Hücre",
+          "Enerji",
+          "Egzersiz",
+          "Enerji Sistemleri"
+        ],
+        "summaryPages": [
+          70,
+          71,
+          72
+        ],
+        "testPage": 73,
+        "answerPage": 74
+      },
+      {
+        "page": 76,
+        "keywords": [
+          "Spor Beslenmesi",
+          "Sporcu Beslenmesi",
+          "Vitamin",
+          "Mineral",
+          "Su",
+          "Karbonhidrat",
+          "Protein",
+          "Yağ"
+        ],
+        "summaryPages": [
+          98,
+          99,
+          100,
+          101
+        ],
+        "testPage": 102,
+        "answerPage": 104
+      },
+      {
+        "page": 106,
+        "keywords": [
+          "Sporcu Sağlığı",
+          "Spor Yaralanmaları",
+          "Spor Yaralanmalarını Önleme",
+          "İlk Yardım",
+          "POLICE Protokolü"
+        ],
+        "summaryPages": [
+          118,
+          119
+        ],
+        "testPage": 120,
+        "answerPage": 121
+      },
+      {
+        "page": 124,
+        "keywords": [
+          "Dopingle Mücadele",
+          "Yasaklılar Listesi",
+          "Bulunabilirlik Bildirimi",
+          "Tedavi Amaçlı Kullanım İstisnası",
+          "Sonuçların Değerlendirilmesi"
+        ],
+        "summaryPages": [
+          136,
+          137
+        ],
+        "testPage": 138,
+        "answerPage": 140
+      }
+    ]
+  },
+  {
+    "file": "/books/yonetim.pdf",
+    "units": [
+      {
+        "page": 10,
+        "keywords": [
+          "Yönetim",
+          "Yönetim Yaklaşımları",
+          "Spor Yönetimi",
+          "Spor Yönetiminin Süreçleri",
+          "Spor Yönetiminin İlkeleri"
+        ],
+        "summaryPages": [
+          37,
+          38,
+          39
+        ],
+        "testPage": 40,
+        "answerPage": 42
+      },
+      {
+        "page": 46,
+        "keywords": [
+          "İşletme",
+          "İşletme Kurma Gerekliliği",
+          "İşletme İşlevleri",
+          "Satın Alma İşlevi",
+          "Üretim İşlevi",
+          "Pazarlama İşlevi",
+          "Finans İşlevi",
+          "Muhasebe İşlevi",
+          "Personel İşlevi",
+          "Halkla İlişkiler İşlevi",
+          "Araştırma Geliştirme İşlevi"
+        ],
+        "summaryPages": [
+          63
+        ],
+        "testPage": 64,
+        "answerPage": 65
+      },
+      {
+        "page": 68,
+        "keywords": [
+          "Lider",
+          "Liderlik",
+          "Sporda Liderlik",
+          "Liderlik ve Yönetim",
+          "Lider ve Yönetici",
+          "Liderlik Tarzları",
+          "Sporda Liderlik Tarzları"
+        ],
+        "summaryPages": [
+          84
+        ],
+        "testPage": 85,
+        "answerPage": null
+      },
+      {
+        "page": 90,
+        "keywords": [
+          "Halkla İlişkiler",
+          "Medya",
+          "Spor",
+          "İletişim",
+          "Dinleme",
+          "Medya Okuryazarlığı"
+        ],
+        "summaryPages": [
+          114,
+          115,
+          116,
+          117
+        ],
+        "testPage": 118,
+        "answerPage": 120
+      },
+      {
+        "page": 128,
+        "keywords": [
+          "Hukuk",
+          "Hukukun Temel Kavramları",
+          "Hukukun Kaynakları",
+          "Spor Hukuku"
+        ],
+        "summaryPages": [
+          147,
+          148
+        ],
+        "testPage": 149,
+        "answerPage": 150
+      }
+    ]
+  },
+  {
+    "file": "/books/ogrenme.pdf",
+    "units": [
+      {
+        "page": 10,
+        "keywords": [
+          "Antrenörlük",
+          "Spora Katılım",
+          "Spor Ortamı Paydaşları",
+          "Sporcu Gelişimi"
+        ],
+        "summaryPages": [
+          25,
+          26
+        ],
+        "testPage": 27,
+        "answerPage": 29
+      },
+      {
+        "page": 32,
+        "keywords": [
+          "Beceri Öğrenimi",
+          "Performans",
+          "Hareket",
+          "Beceri Sınıflaması",
+          "Karar Verme",
+          "Reaksiyon Zamanı",
+          "Dikkat Teorileri",
+          "Canlılık Düzeyi"
+        ],
+        "summaryPages": [
+          41,
+          42
+        ],
+        "testPage": 43,
+        "answerPage": 45
+      },
+      {
+        "page": 48,
+        "keywords": [
+          "Hareket Eğitimi",
+          "Oyun",
+          "Temel Hareket Becerileri",
+          "Hareket Kavramları",
+          "Oyunun Sınıflandırılması",
+          "Eğitsel Oyunların Yapısı",
+          "Eğitsel Oyunların Sınıflandırılması"
+        ],
+        "summaryPages": [
+          73,
+          74,
+          75,
+          76
+        ],
+        "testPage": 77,
+        "answerPage": 79
+      },
+      {
+        "page": 82,
+        "keywords": [
+          "Gelişim",
+          "Motor Gelişim",
+          "Gelişim İlkeleri",
+          "Gelişim Türleri"
+        ],
+        "summaryPages": [
+          105,
+          106,
+          107,
+          108
+        ],
+        "testPage": 109,
+        "answerPage": 111
+      },
+      {
+        "page": 114,
+        "keywords": [
+          "Ölçme",
+          "Değişken",
+          "Birim",
+          "Ölçüt",
+          "Değerlendirme"
+        ],
+        "summaryPages": [
+          129,
+          130,
+          131
+        ],
+        "testPage": 132,
+        "answerPage": 134
+      },
+      {
+        "page": 136,
+        "keywords": [
+          "Eğitim, Öğretim, Öğrenme",
+          "Öğrenmeyi Etkileyen Faktörler",
+          "Öğrenme Kuramları",
+          "Öğretim İlkeleri",
+          "Öğretim Stratejileri ve Yöntemleri"
+        ],
+        "summaryPages": [
+          165,
+          166,
+          167
+        ],
+        "testPage": 168,
+        "answerPage": 170
+      }
+    ]
+  },
+  {
+    "file": "/books/psikososyal.pdf",
+    "units": [
+      {
+        "page": 10,
+        "keywords": [
+          "Sporun Kökeni",
+          "Olimpiyat Oyunları",
+          "Cimnastik Akımları",
+          "Modern Spor"
+        ],
+        "summaryPages": [
+          36,
+          37,
+          38,
+          39
+        ],
+        "testPage": 40,
+        "answerPage": 41
+      },
+      {
+        "page": 44,
+        "keywords": [
+          "Spor",
+          "Sosyoloji",
+          "Toplum",
+          "Kültür",
+          "Sosyalleşme",
+          "Toplumsal Cinsiyet"
+        ],
+        "summaryPages": [
+          68,
+          69,
+          70
+        ],
+        "testPage": 71,
+        "answerPage": 73
+      },
+      {
+        "page": 76,
+        "keywords": [
+          "Spor",
+          "Psikoloji",
+          "Spor Psikolojisi",
+          "Egzersiz Psikolojisi",
+          "Çocuk Sporcu",
+          "Genç Sporcu",
+          "İletişim",
+          "Antrenör İletişimi"
+        ],
+        "summaryPages": [
+          103,
+          104,
+          105
+        ],
+        "testPage": 106,
+        "answerPage": 107
+      },
+      {
+        "page": 112,
+        "keywords": [
+          "Spor",
+          "Fair Play",
+          "Formal Fair Play",
+          "İnformal Fair Play",
+          "Ödül"
+        ],
+        "summaryPages": [
+          132,
+          133
+        ],
+        "testPage": 134,
+        "answerPage": 136
+      },
+      {
+        "page": 138,
+        "keywords": [
+          "Spor",
+          "Koruma",
+          "Sporcu",
+          "Çocuk",
+          "Güvenli Spor",
+          "Spora Katılım Hakkı"
+        ],
+        "summaryPages": [
+          157,
+          158
+        ],
+        "testPage": 159,
+        "answerPage": 160
+      }
+    ]
+  }
+]
