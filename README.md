@@ -58,7 +58,7 @@ ollama pull qwen3:14b
 ollama list
 ```
 
-İndirme tamamlanınca listede `qwen3:14b` görünmeli. Bu, projenin varsayılan modelidir: Qwen3 14B, boyutuna göre güçlü ve Qwen2.5 32B düzeyine yakın yanıt kalitesi sunan, "hibrit düşünme" moduna sahip görece yeni bir modeldir; Q4 nicemlemeyle yaklaşık 9 GB VRAM kullanır ve RTX 3080 Ti'nin 12 GB belleğine rahatça sığar. Yine de doğru cevap garantisi vermez; bu yüzden proje iki aşamalı bağımsız denetim kullanır (bkz. Adım 9-10). İnternet hızına göre indirme sürebilir ve disk alanı kullanır. Daha küçük bir kart kullanıyorsan `qwen2.5:7b` gibi daha hafif bir modeli de seçebilirsin; Adım 8'de istediğin zaman değiştirebilirsin.
+İndirme tamamlanınca listede `qwen3:14b` görünmeli. Bu, projenin varsayılan modelidir: Qwen3 14B, boyutuna göre güçlü ve Qwen2.5 32B düzeyine yakın yanıt kalitesi sunan, "hibrit düşünme" moduna sahip görece yeni bir modeldir; Q4 nicemlemeyle yaklaşık 9 GB VRAM kullanır ve RTX 3080 Ti'nin 12 GB belleğine rahatça sığar. Yine de doğru cevap garantisi vermez; bu yüzden proje ÜÇ bağımsız hakemden oluşan bir konsensüs denetimi kullanır (bkz. Adım 9-10). İnternet hızına göre indirme sürebilir ve disk alanı kullanır. Daha küçük bir kart kullanıyorsan `qwen2.5:7b` gibi daha hafif bir modeli de seçebilirsin; Adım 8'de istediğin zaman değiştirebilirsin. Üç hakemin GERÇEKTEN bağımsız olmasını istiyorsan (aynı modelin kendi kendine üç kez onayı yerine), isteğe bağlı olarak burada `ollama pull` ile bir veya iki farklı model daha indirip Adım 8'de hakemlere ayrı ayrı atayabilirsin; tek model indirip yalnız onu kullanmak da sistemi çalıştırmaya yeter, sadece bağımsızlık o durumda daha zayıf olur.
 
 ## 5. Ekran kartını kontrol et
 
@@ -102,38 +102,41 @@ Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak i
 
 1. Uygulamada **Soru stüdyosu**na gir.
 2. **Durumu yenile** düğmesine bas.
-3. **Yerel model seçimi** listesinden `qwen3:14b` seç.
-4. **Modeli kullan** düğmesine bas.
-5. Bağlantı ve model durumunu kontrol et. Daha önce seçilmiş bir model kaydedildiyse terminaldeki varsayılanın yerine o kullanılabilir; gerekirse arayüzden tekrar seç.
+3. **Yerel model seçimi** listesinden `qwen3:14b` seç ve **Modeli kullan** düğmesine bas — bu, soruları YAZAN (üretici) modeldir.
+4. Aynı sayfada ayrıca üç bağımsız denetleyici seçicisi daha vardır: **Denetçi (1. hakem)**, **2. hakem** ve **3. hakem**. İstersen (indirdiysen) her biri için FARKLI bir model seç ve her birinin yanındaki **Modeli kullan** düğmesine ayrı ayrı bas — bkz. 9. madde, neden önerildiği için.
+5. Bağlantı ve model durumunu kontrol et. Daha önce seçilmiş modeller kaydedildiyse terminaldeki varsayılanın yerine onlar kullanılabilir; gerekirse arayüzden tekrar seç.
 
-**Ollama bağlantısı yok** yazıyorsa Windows'ta Ollama'nın açık olduğunu ve PowerShell'de `ollama list` komutunun çalıştığını kontrol et. **Model kurulu değil** yazıyorsa 4. adımdaki indirmeyi tamamla ve doğru modeli seç.
+**Ollama bağlantısı yok** yazıyorsa Windows'ta Ollama'nın açık olduğunu ve PowerShell'de `ollama list` komutunun çalıştığını kontrol et. **Model kurulu değil** yazıyorsa 4. adımdaki indirmeyi tamamla ve doğru modeli seç. Hakemlerden biri hiç seçilmediyse, o otomatik olarak denetçiyle (o da seçilmediyse üretici modelle) aynı modele düşer; sistem böylece tek model indirilmiş bir bilgisayarda da çalışmaya devam eder, ama gerçek bağımsızlık için üçünü de farklı modellere ayarlaman önerilir.
 
-## 9. Yapay zekâ kendi kendine öğretmenlik yapsın
+## 9. Yapay zekâ kendi kendine öğretmenlik yapsın — ÜÇ bağımsız hakem konsensüsü
 
-Bu sürümde soru üretimi senin bir eğitmen veya uzman olmanı gerektirmez: yapay zekâ hem **soru yazarı** hem de **öğretmen/denetçi** rolünü kendisi üstlenir.
+Bu sürümde soru üretimi senin bir eğitmen veya uzman olmanı gerektirmez: bir model **soru yazarı** olur, ÜÇ AYRI model de birbirinden habersizce **öğretmen/hakem** rolünü üstlenir ve ancak üçü de hemfikir olursa soru havuza girer.
 
-1. Model seçildikten sonra sunucu, **Soru stüdyosu** sayfasını hiç açmasan da kendi kendine çalışmaya başlar: 29 ünitenin tamamını dolaşır, her biri için özgün sorular yazar.
-2. Üretim artık **gerçekten paralel**: sunucu, tek bir üniteyi bitirip sıradakine geçmek yerine, aynı anda birden fazla ünite için soru üretir (varsayılan 3, Soru stüdyosu sayfasından 1 ile 29 arasında ayarlanabilir). Bir soru onaylanır onaylanmaz, yapay bir bekleme olmadan hemen boşalan yuvaya yeni bir ünite alınır.
-3. Gerçek hız sabit bir sayı (ör. "her 2 saniyede bir") değildir ve olamaz: her soru, iki ayrı model geçişinden geçmek zorundadır (bkz. 4. madde aşağıda), bu yüzden gerçek hız bilgisayarının ekran kartına ve seçtiğin modele bağlıdır. Hız için bu çift kontrolü kaldırmak bilinçli olarak tercih edilmedi. Bunun yerine her denemeye bir **azami süre bütçesi** konur (varsayılan 5 saniye, Soru stüdyosu sayfasından 1-120 saniye arasında ayarlanabilir): bir ünitenin üretim + bağımsız kontrol adımı bu süreyi aşarsa deneme iptal edilir ve yuva hemen yeni bir denemeyle doldurulur. Yavaş bir ekran kartında varsayılan 5 saniye sık sık yetmeyebilir; üretim neredeyse hiç başarılı olmuyorsa bu süreyi yükselt.
-4. Yazılan her soru, havuza eklenmeden ÖNCE, aynı anda cevabı ve gerekçeyi GÖRMEYEN bağımsız bir ikinci model geçişinden geçer. Bu "denetçi" soruyu anlatımdan bağımsızca yeniden çözer; tek doğru cevap var mı, cevap doğru mu, kaynakla destekleniyor mu, soru sınav kalitesinde mi ve **zorluğu ne** (kolay/orta/zor) kontrol eder — bu kararların hepsi **Soru stüdyosu**'nda sana gösterilir.
-5. Her ünite için sorular her zaman belirli bir sırayla üretilir: **önce 1 kolay, sonra 1 orta, sonra 1 zor**, sonra tekrar kolaydan başlayarak döner. Bağımsız denetçinin bulduğu zorluk, o andaki hedefle eşleşmezse (örn. hedef "kolay" iken denetçi "zor" bulursa) soru kaydedilmez; kalıp bozulmasın diye farklı bir soru yeniden denenir.
+1. Model(ler) seçildikten sonra sunucu, **Soru stüdyosu** sayfasını hiç açmasan da kendi kendine çalışmaya başlar: 29 ünitenin tamamını dolaşır, her biri için özgün sorular yazar.
+2. Üretim **gerçekten paralel**: sunucu, tek bir üniteyi bitirip sıradakine geçmek yerine, aynı anda birden fazla ünite için soru üretir (varsayılan 3, Soru stüdyosu sayfasından 1 ile 29 arasında ayarlanabilir). Bir soru onaylanır onaylanmaz, yapay bir bekleme olmadan hemen boşalan yuvaya yeni bir ünite alınır.
+3. Yazılan her soru, havuza eklenmeden ÖNCE, cevabı ve gerekçeyi hiç GÖRMEYEN **ÜÇ bağımsız model** (denetçi + 2 ayrı hakem) tarafından AYNI ANDA, birbirinden habersiz olarak yeniden çözülür. Her biri kendi başına: tek doğru cevap var mı, cevap doğru mu, kaynakla destekleniyor mu, soru sınav kalitesinde mi ve **zorluğu ne** (kolay/orta/zor) değerlendirir.
+   - **Doğruluk için oy birliği (3/3) şarttır**: üçü de aynı cevapta birleşmezse — biri farklı bir cevap verirse, reddederse ya da kalite/kaynak kontrolünden geçiremezse — soru hiç kaydedilmez. Tek bir hakemin vetosu yeterlidir.
+   - **Zorlukta ise yalnız çoğunluk (en az 2/3) aranır**, çünkü zorluk daha öznel bir yargıdır: üçünden ikisi aynı zorlukta birleşirse o zorluk "konsensüs zorluk" sayılır; tam oy birliği aranmaz.
+   - Üç hakemin ayrı ayrı modeli, cevabı, zorluk kararı ve gerekçesi **Soru stüdyosu**'ndaki her soru kartında TEK TEK, hiçbirine indirgenmeden gösterilir.
+4. Her ünite için sorular her zaman belirli bir sırayla üretilir: **önce 1 kolay, sonra 1 orta, sonra 1 zor**, sonra tekrar kolaydan başlayarak döner. Üç hakemin çoğunlukla bulduğu zorluk, o andaki hedefle eşleşmezse (örn. hedef "kolay" iken çoğunluk "zor" bulursa) soru kaydedilmez; kalıp bozulmasın diye farklı bir soru yeniden denenir.
+5. Gerçek hız sabit bir sayı (ör. "her 2 saniyede bir") değildir ve olamaz: her soru artık **dört ayrı model geçişinden** (1 üretici + 3 paralel hakem) geçmek zorundadır, bu yüzden gerçek hız bilgisayarının ekran kartına ve seçtiğin modellere bağlıdır. Üç hakem çağrısı aynı anda (paralel) gönderilir, ama **tek ekran kartlı bir bilgisayarda Ollama bunları muhtemelen sırayla işler** — bu durumda gerçek süre, tek-hakemli bir sürüme göre yaklaşık üç kat daha uzun sürebilir. Hız için bu kontrolleri azaltmak bilinçli olarak tercih edilmedi. Bunun yerine her denemeye bir **azami süre bütçesi** konur (varsayılan 5 saniye, Soru stüdyosu sayfasından 1-120 saniye arasında ayarlanabilir): bir ünitenin üretim + üç bağımsız kontrol adımı bu süreyi aşarsa deneme iptal edilir ve yuva hemen yeni bir denemeyle doldurulur. **Dürüstçe söylemek gerekirse:** üç hakem eklenmesiyle bu varsayılan 5 saniyelik bütçeyi tutturmak eskisinden belirgin biçimde zorlaştı, özellikle yavaş veya tek ekran kartlı bilgisayarlarda; üretim sık sık zaman aşımına uğruyorsa (neredeyse hiç soru onaylanmıyorsa) bu süreyi yükselt.
 6. Üretilen her soru **benzersizdir**: aynı metinle birebir aynı soru hiçbir zaman ikinci kez kaydedilmez, aynı ünite içinde anlamca çok yakın (kelime örtüşmesi yüksek) bir soru da reddedilir; model ayrıca o üniteye daha önce sorulmuş sorulardan haberdar edilip onları tekrarlamaması istenir.
-7. Hem doğruluk hem zorluk kontrolü geçerse soru otomatik olarak **onaylanmış** sayılır ve hemen soru havuzuna girer — senin ayrıca "onaylaman" gerekmez. Herhangi biri uyuşmazsa soru hiç kaydedilmez.
-8. **Soru stüdyosu** sayfasında istersen ilerlemeyi (hangi ünitelerin şu an aynı anda üretildiğini) izleyebilir, **Kendi kendine üretimi durdur/başlat** düğmesiyle süreci duraklatabilir veya devam ettirebilir, aynı anda kaç ünite üretileceğini ve deneme başına azami süreyi değiştirebilirsin.
+7. Hem doğruluk (oy birliği) hem zorluk (çoğunluk) kontrolü geçerse soru otomatik olarak **onaylanmış** sayılır ve hemen soru havuzuna girer — senin ayrıca "onaylaman" gerekmez. Herhangi bir koşul sağlanmazsa soru hiç kaydedilmez.
+8. **Soru stüdyosu** sayfasında istersen ilerlemeyi (hangi ünitelerin şu an aynı anda üretildiğini) izleyebilir, **Kendi kendine üretimi durdur/başlat** düğmesiyle süreci duraklatabilir veya devam ettirebilir, aynı anda kaç ünite üretileceğini, deneme başına azami süreyi ve üç hakemin hangi modeller olacağını değiştirebilirsin.
 9. Bir ünite okuyup **Okudum, tamamla** dediğinde, o ünite için zaten hazırlanmış onaylı sorular testlerine hemen dahil olur; aynı anda arka planda henüz çalışmadığın üniteler için de üretim sürmeye devam eder.
 
-Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. İki aşamalı otomatik kontrolden (doğruluk + zorluk) geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; otomatik kontrol doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz — "kolay/orta/zor" etiketi de yapay zekânın öznel değerlendirmesidir, resmî bir zorluk ölçeği değildir. Eşzamanlılığı çok yükseğe veya süre bütçesini çok düşüğe ayarlamak zayıf bir ekran kartında üretimi neredeyse tamamen durdurabilir; deneyerek bilgisayarına uygun sayıları bul.
+Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. Oy birliği + çoğunluk kontrolünden geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; bu otomatik konsensüs doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz — "kolay/orta/zor" etiketi de yapay zekâların öznel değerlendirmesidir, resmî bir zorluk ölçeği değildir. Üç hakemi FARKLI modellere ayarlamazsan (örn. hepsi varsayılan olarak aynı modele düşerse), konsensüs gerçek bir bağımsız doğrulama değil, aynı modelin kendi kendine üç kez onayı anlamına gelir — gerçek bağımsızlık istiyorsan üç ayrı model indirip ayrı ayrı seçmen gerekir. Eşzamanlılığı çok yükseğe veya süre bütçesini çok düşüğe ayarlamak zayıf bir ekran kartında üretimi neredeyse tamamen durdurabilir; deneyerek bilgisayarına uygun sayıları bul.
 
 ## 10. Yapay zekânın kararlarını izle (istersen veto et)
 
-Kendin bir eğitmen olmak veya her soruyu tek tek onaylamak zorunda değilsin; bu sürümde o rolü yapay zekâ üstlenir. Yine de son sözü sende bırakan bir güvenlik kapısı var:
+Kendin bir eğitmen olmak veya her soruyu tek tek onaylamak zorunda değilsin; bu sürümde o rolü üç bağımsız yapay zekâ hakemi üstlenir. Yine de son sözü sende bırakan bir güvenlik kapısı var:
 
 1. **Soru stüdyosu** sayfasında aşağı kaydır, **Yapay zekâ öğretmenin kararları** başlığını bul.
-2. **AI onayladı** sekmesinde, yapay zekânın otomatik olarak onayladığı sorular ve her birinin yanında denetçi modelin gerekçesi görünür.
+2. **AI onayladı** sekmesinde, otomatik olarak onaylanan sorular ve her birinin yanında **üç hakemin ayrı ayrı** modeli, zorluk kararı ve gerekçesi görünür.
 3. Bir soruyu okurken yanlış, belirsiz veya anlatım dışı bulursan **Reddet** düğmesine bas; o soru artık teste veya eğitime girmez ve **Reddedilen** sekmesine taşınır.
 4. Fikrini değiştirirsen reddettiğin bir soruyu **Yeniden onayla** ile tekrar havuza katabilirsin.
 
-Bu sürümde soru metnini uygulama içinden düzeltme özelliği yoktur. Yapay zekânın onayı, bağımsız bir uzman doğrulaması değildir; sen de incelemek istersen her zaman reddetme hakkına sahipsin.
+Bu sürümde soru metnini uygulama içinden düzeltme özelliği yoktur. Üç hakemin oy birliği/çoğunluğu, bağımsız bir uzman doğrulaması değildir; sen de incelemek istersen her zaman reddetme hakkına sahipsin.
 
 ## 11. Tekrar yolunu kullan
 
@@ -196,7 +199,7 @@ npm.cmd run dev -- --host 127.0.0.1
 
 ## 13. En az 50 onaylı soru birikmesini bekle
 
-Eğitim için **en az 50 geçerli onaylı soru ve 5 farklı ünite** gerekir. Yapay zekâ kendi kendine ürettiği her soruyu iki aşamalı denetimden geçirip otomatik onayladığı için bu eşiğe genellikle ek bir işlem yapmadan, sunucuyu biraz süre açık bırakarak ulaşırsın. Bu sayı yalnızca programın teknik alt sınırıdır; daha güvenilir bir eğitim için çok daha fazla, dengeli ve tercihen bir insanın da göz attığı soru daha iyidir. Reddettiğin sorular kullanılmaz. Yalnız modelin kendi ürettiği sorularla eğitim, modelin kendi hatalarını da pekiştirebilir; bu yüzden Adım 10'daki inceleme ekranından ara sıra göz gezdirip tuhaf gördüklerini reddetmen önerilir.
+Eğitim için **en az 50 geçerli onaylı soru ve 5 farklı ünite** gerekir. Yapay zekâ kendi kendine ürettiği her soruyu üç bağımsız hakemin denetiminden geçirip otomatik onayladığı için bu eşiğe genellikle ek bir işlem yapmadan, sunucuyu biraz süre açık bırakarak ulaşırsın. Bu sayı yalnızca programın teknik alt sınırıdır; daha güvenilir bir eğitim için çok daha fazla, dengeli ve tercihen bir insanın da göz attığı soru daha iyidir. Reddettiğin sorular kullanılmaz. Yalnız modelin kendi ürettiği sorularla eğitim, modelin kendi hatalarını da pekiştirebilir; bu yüzden Adım 10'daki inceleme ekranından ara sıra göz gezdirip tuhaf gördüklerini reddetmen önerilir.
 
 Eğitimden önce Soru stüdyosunda **Kendi kendine üretimi durdur** seç. Başka bir PowerShell penceresinde çalışan modelleri gör:
 
@@ -229,7 +232,7 @@ py -3.11 training\prepare.py
 Get-Content .tempo-data\training\manifest.json
 ```
 
-`--reviewer` artık zorunlu değil; belirtmezsen kayıtlar "AI öğretmen (iki aşamalı otomatik doğrulama)" etiketiyle işaretlenir, çünkü onay varsayılan olarak yapay zekânın kendisinden gelir. Soruları sen de ayrıca gözden geçirdiysen kendi adını veya kodunu eklemek istersen `py -3.11 training\prepare.py --reviewer "Ad Soyad"` kullanabilirsin. Komut 50 soru / 5 ünite hatası verirse sunucuyu biraz daha açık bırakıp daha fazla üniteden onaylı soru birikmesini bekle. Tekrarlanan veya dayanağı geçersiz olan kayıtlar elenebilir. Tekrar hazırlama aynı eğitim dosyalarını yeniden oluşturur; eski veri kümesini saklamak istiyorsan önce yedekle.
+`--reviewer` artık zorunlu değil; belirtmezsen kayıtlar "AI öğretmen (üç bağımsız hakem konsensüsüyle otomatik doğrulama)" etiketiyle işaretlenir, çünkü onay varsayılan olarak yapay zekânın kendisinden gelir. Soruları sen de ayrıca gözden geçirdiysen kendi adını veya kodunu eklemek istersen `py -3.11 training\prepare.py --reviewer "Ad Soyad"` kullanabilirsin. Komut 50 soru / 5 ünite hatası verirse sunucuyu biraz daha açık bırakıp daha fazla üniteden onaylı soru birikmesini bekle. Tekrarlanan veya dayanağı geçersiz olan kayıtlar elenebilir. Tekrar hazırlama aynı eğitim dosyalarını yeniden oluşturur; eski veri kümesini saklamak istiyorsan önce yedekle.
 
 ## 15. Eğitim ortamını kur
 

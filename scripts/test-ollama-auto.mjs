@@ -80,6 +80,10 @@ test('otomatik havuz: paralel üretim, zorluk sıralaması ve eşzamanlılık ay
   assert.equal(status.autoRunning,true);
   assert.equal(status.autoConcurrency,3);
   assert.equal(status.autoTimeoutMs,5000);
+  // Judge2/judge3 ayrıca seçilmediyse denetçiyle (ve tek kurulu modelle) aynı ada düşer; böylece
+  // tek model kurulu bir makinede de üç bağımsız çağrı (aynı modelle de olsa) yapılabilir.
+  assert.equal(status.verifierModel,'fake:1');assert.equal(status.judge2Model,'fake:1');assert.equal(status.judge3Model,'fake:1');
+  assert.equal(status.judge2Installed,true);assert.equal(status.judge3Installed,true);
 
   // Havuz gerçekten dolana ve birkaç soru onaylanana kadar bekle.
   let approved=0;
@@ -96,6 +100,10 @@ test('otomatik havuz: paralel üretim, zorluk sıralaması ve eşzamanlılık ay
   assert.ok(units.size>=2,`en az 2 farklı ünite üretilmeliydi, görülen: ${units.size}`);
   assert.ok(questions.items.every(x=>x.status==='approved'));
   assert.ok(questions.items.every(x=>['kolay','orta','zor'].includes(x.difficulty)),'her soru bir zorluk etiketi taşımalı');
+  // Her soru, ÜÇ bağımsız denetçinin kendi (model, cevap, zorluk, gerekçe) kararını ayrı ayrı
+  // saklamalı — konsensüs tek bir yargıya indirgenip gizlenmemeli.
+  assert.ok(questions.items.every(x=>Array.isArray(x.verification?.judges)&&x.verification.judges.length===3),'her sorunun üç bağımsız denetçi kararı olmalı');
+  assert.ok(questions.items.every(x=>x.verification.judges.every(j=>typeof j.model==='string'&&typeof j.answer==='string'&&['kolay','orta','zor'].includes(j.difficulty)&&typeof j.reason==='string')));
 
   // Zorluk sıralaması: her ünitenin kendi sorularını oluşturulma sırasına (createdAt) göre
   // dizdiğimizde kolay→orta→zor→kolay... kalıbını izlemesi gerekir.
