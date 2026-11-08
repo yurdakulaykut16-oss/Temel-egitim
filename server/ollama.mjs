@@ -14,11 +14,23 @@ const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/
 // kartlara (örn. RTX 3080 Ti) sığar; bu nedenle varsayılan "öğretmen" modeli budur.
 const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:14b';
 const defaultConcurrency = 3; // aynı anda kaç ünite için soru üretilsin (bkz. autoConcurrencyLimit)
+const defaultAutoTimeoutMs = 5000; // bir ünitenin üretim+bağımsız kontrol denemesinin alabileceği azami süre
+const DIFFICULTIES = ['kolay','orta','zor'];
 async function readSettings(){try{const v=JSON.parse(await readFile(settingsFile,'utf8'));return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){if(e.code==='ENOENT')return {};throw e}}
 async function writeSettings(patch){await mkdir(dataDir,{recursive:true});const current=await readSettings();const next={...current,...patch};const tmp=settingsFile+'.tmp';await writeFile(tmp,JSON.stringify(next,null,2),'utf8');await rename(tmp,settingsFile);return next}
 async function selectedModel(){const v=await readSettings();return typeof v.model==='string'&&v.model.length<=200&&v.model.trim()?v.model:defaultModel}
 async function autoRunningEnabled(){const v=await readSettings();return v.autoRunning!==false}
 async function autoConcurrencyLimit(){const v=await readSettings();const n=Number.isFinite(v.autoConcurrency)?Math.round(v.autoConcurrency):defaultConcurrency;return Math.max(1,Math.min(contexts.length,n))}
+// Bir ünite için tek bir üretim denemesinin (üretici + bağımsız denetçi çağrısı dahil) en fazla ne
+// kadar sürebileceği: bu süre dolarsa deneme iptal edilir ve o "yuva" hemen yeni bir denemeyle
+// doldurulur. Varsayılan 5000ms istenen azami hızı yansıtır; yavaş donanımlarda sürekli zaman
+// aşımına uğranıyorsa ayar ekranından yükseltilebilir (bkz. /api/ollama/timeout).
+async function autoTimeoutMs(){const v=await readSettings();const n=Number.isFinite(v.autoTimeoutMs)?Math.round(v.autoTimeoutMs):defaultAutoTimeoutMs;return Math.max(1000,Math.min(120000,n))}
+// Bir ünite için havuzda zaten kaç tane YAPAY ZEKÂ ÜRETİMİ (zorluk etiketli) soru varsa, sıradaki
+// denemenin hangi zorlukta olması gerektiğini belirler: her ünite için sırayla kolay → orta → zor
+// → tekrar kolay... Kitaptan gelen hazır sorular (question-bank.json, zorluk etiketi yok) bu sayıma
+// dahil edilmez.
+function nextDifficulty(ctx,items){const n=[...questionBank,...items].filter(x=>x.unitId===ctx.id&&DIFFICULTIES.includes(x.difficulty)).length;return DIFFICULTIES[n%3]}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 // --- Manuel (API ile tek seferlik) üretim için paylaşılan durum ---
@@ -90,6 +102,9 @@ async function finalize(parsed,ctx,model,verification){
   const latest=await load();
   const record=validate(parsed,ctx,latest,model);
   record.verification=verification;
+  // Zorluk etiketi GÜVENİLİR KAYNAK olarak her zaman bağımsız denetçinin kendi değerlendirmesinden
+  // gelir (verification.difficulty); üreticinin kendi iddiasına güvenilmez.
+  record.difficulty=verification.difficulty;
   latest.push(record);
   await save(latest);
   return record;
@@ -104,17 +119,26 @@ async function generateAndVerify(ctx,model,verifierModel,signal,onPhase){
  const resultAudit=audit(items);
  if(resultAudit.invalid||resultAudit.duplicates)throw Error('Havuz denetiminde biçim veya birebir tekrar hatası var; üretim durduruldu.');
  if(items.length>=5000)throw Error('Yerel havuz 5000 kayıt sınırına ulaştı.');
+ // Bu ünite için havuzda zaten kaç zorluk etiketli soru varsa, sıradakinin hangi zorlukta
+ // OLMASI GEREKTİĞİNİ belirler: her ünitede sırayla kolay → orta → zor → tekrar kolay...
+ const targetDifficulty=nextDifficulty(ctx,items);
+ const difficultyHint={kolay:'KOLAY: cevap anlatımda tek ve açık bir cümlede doğrudan geçmeli, neredeyse birebir hatırlama ile bulunabilmeli.',orta:'ORTA: cevap için anlatımdaki iki ayrı bilgiyi birleştirmek veya basit bir çıkarım yapmak gerekmeli; tek cümleyi aynen tekrarlamak yetmemeli.',zor:'ZOR: cevap anlatımın ayrıntılı veya az vurgulanan bir noktasına dayanmalı ya da birbirine yakın görünen seçenekler arasında ince bir ayrım gerektirmeli.'}[targetDifficulty];
  onPhase?.('generating');
- const prompt=`Sen Türkçe antrenörlük temel eğitim soru yazarı ve öğretmenisin. Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, zorlayıcı, tek doğru cevaplı dört seçenekli BİR özgün soru üret. Kaynakta bulunmayan bilgi isteme. Konunun dışına çıkma, sağlık tavsiyesi verme. Anlamsal olarak farklı bir soru sor. JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kısa gerekçe), evidence (aşağıdaki anlatımdan sorunun cevabını destekleyen aynen alınmış en az 15 karakterlik kısa bir cümle), topic (kısa konu adı). Kitap: ${ctx.book}. Ünite: ${ctx.unit}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (bunları tekrarlama): ${[...questionBank,...items].filter(x=>x.unitId===ctx.id).slice(-10).map(x=>x.question).join(' / ')}. KONU ANLATIMI: ${ctx.text}`;
+ const prompt=`Sen Türkçe antrenörlük temel eğitim soru yazarı ve öğretmenisin. Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, tek doğru cevaplı dört seçenekli BİR özgün soru üret. Sorunun zorluk seviyesi tam olarak şöyle olmalı: ${difficultyHint} Kaynakta bulunmayan bilgi isteme. Konunun dışına çıkma, sağlık tavsiyesi verme. Anlamsal olarak farklı bir soru sor. JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kısa gerekçe), evidence (aşağıdaki anlatımdan sorunun cevabını destekleyen aynen alınmış en az 15 karakterlik kısa bir cümle), topic (kısa konu adı). Kitap: ${ctx.book}. Ünite: ${ctx.unit}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (bunları tekrarlama, anlamca da çok benzer bir soru sorma): ${[...questionBank,...items].filter(x=>x.unitId===ctx.id).slice(-10).map(x=>x.question).join(' / ')}. KONU ANLATIMI: ${ctx.text}`;
  const parsed=await runModel(model,prompt,0.8,signal,900);
  const draft=validate(parsed,ctx,items,model);
- // Denetçi, soruyu cevabı ve gerekçeyi görmeden bağımsızca yeniden çözer; ayrıca sorunun
- // anlatılan konuyla uyumlu ve sınava uygun nitelikte olup olmadığını da değerlendirir.
+ // Soru havuza eklenmeden ÖNCE, cevabı ve gerekçeyi hiç GÖRMEYEN bağımsız bir ikinci model geçişi
+ // devreye girer: bu "denetçi" hem sorunun doğruluğunu (tek doğru cevap, kaynak desteği, kalite)
+ // hem de zorluk seviyesini (kolay/orta/zor) kendi başına, bağımsızca değerlendirir. İki görevi
+ // ayrı ayrı iki model çağrısına bölmek yerine aynı bağımsız geçişte birleştirmek, azami 5 saniyelik
+ // üretim bütçesine uymayı kolaylaştırır; yine de karar tek bir modele/göze değil, üreticiden tamamen
+ // ayrı bir ikinci modele aittir.
  onPhase?.('verifying');
- const checkPrompt=`Sen Türkçe antrenörlük temel eğitim alanında dikkatli bir öğretmen/soru denetçisisin. Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, birden fazla seçenek doğruysa, belirsizse, konuyla ilgisizse veya dil bilgisi/anlatım açısından sınava uygun değilse reddet. Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean), supported (boolean), qualityOk (boolean: soru açık, konuya uygun ve sınav kalitesinde mi), evidence (anlatımdan cevabı destekleyen 15 karakterden uzun aynen alınmış kısa metin), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${ctx.text}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
+ const checkPrompt=`Sen Türkçe antrenörlük temel eğitim alanında dikkatli bir öğretmen/soru denetçisisin. Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, birden fazla seçenek doğruysa, belirsizse, konuyla ilgisizse veya dil bilgisi/anlatım açısından sınava uygun değilse reddet. Ayrıca soruyu, sana SÖYLENEN bir hedefe göre değil, TAMAMEN KENDİ bağımsız değerlendirmenle zorluk açısından sınıflandır: "kolay" (cevap anlatımda tek ve açık bir cümlede doğrudan geçer, neredeyse birebir hatırlamayla bulunur), "orta" (cevap için iki ayrı bilgiyi birleştirmek veya basit bir çıkarım gerekir) veya "zor" (cevap ayrıntılı/az vurgulanan bir noktaya dayanır ya da seçenekler arasında ince bir ayrım gerektirir). Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean), supported (boolean), qualityOk (boolean: soru açık, konuya uygun ve sınav kalitesinde mi), difficulty (tam olarak "kolay", "orta" veya "zor"), evidence (anlatımdan cevabı destekleyen 15 karakterden uzun aynen alınmış kısa metin), reason (kısa Türkçe gerekçe; hem doğruluk hem zorluk değerlendirmeni açıkla). KONU ANLATIMI: ${ctx.text}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
  const check=await runModel(verifierModel,checkPrompt,0,signal,500);
- if(!check || check.singleCorrect!==true || check.supported!==true || check.qualityOk!==true || typeof check.answer!=='string' || !draft.options.includes(check.answer) || check.answer!==draft.answer || typeof check.evidence!=='string' || norm(check.evidence).length<15 || !norm(ctx.text).includes(norm(check.evidence)) || typeof check.reason!=='string' || !check.reason.trim())throw Error('Bağımsız model kontrolü soruyu, tek doğru cevabı, kaliteyi veya kaynak dayanağını doğrulayamadı; soru kaydedilmedi.');
- const verification={model:verifierModel,answer:check.answer,evidence:check.evidence.trim().slice(0,500),reason:check.reason.trim().slice(0,1200)};
+ if(!check || check.singleCorrect!==true || check.supported!==true || check.qualityOk!==true || typeof check.answer!=='string' || !draft.options.includes(check.answer) || check.answer!==draft.answer || typeof check.evidence!=='string' || norm(check.evidence).length<15 || !norm(ctx.text).includes(norm(check.evidence)) || typeof check.reason!=='string' || !check.reason.trim() || !DIFFICULTIES.includes(check.difficulty))throw Error('Bağımsız model kontrolü soruyu, tek doğru cevabı, kaliteyi, zorluk etiketini veya kaynak dayanağını doğrulayamadı; soru kaydedilmedi.');
+ if(check.difficulty!==targetDifficulty)throw Error(`Soru, bu ünite için sıradaki hedef zorluk seviyesiyle (${targetDifficulty}) eşleşmedi (bağımsız değerlendirme: ${check.difficulty}); kalıp bozulmasın diye kaydedilmedi, farklı bir soru denenecek.`);
+ const verification={model:verifierModel,answer:check.answer,difficulty:check.difficulty,evidence:check.evidence.trim().slice(0,500),reason:check.reason.trim().slice(0,1200)};
  onPhase?.('saving');
  return finalize(parsed,ctx,model,verification);
 }
@@ -156,7 +180,7 @@ async function autoScheduler(){
       const items=await load();const a=audit(items);
       if(!a.invalid&&!a.duplicates&&items.length<5000){
        const ctx=contexts[autoCursor++%contexts.length];
-       launchAutoUnit(ctx,model,verifierModel);
+       launchAutoUnit(ctx,model,verifierModel,await autoTimeoutMs());
       }
      }
     }
@@ -176,9 +200,10 @@ export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(serve
   const model=await selectedModel();const verifierModel=process.env.OLLAMA_VERIFIER_MODEL || model;
   if(req.method==='GET'&&path==='/status'){
    let models=[],connected=false;try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(r.ok){const d=await r.json();models=(d.models||[]).map(x=>x.name);connected=true}}catch{}
-   const items=await load();const storage=await storageUsage();const autoRunning=await autoRunningEnabled();const autoConcurrency=await autoConcurrencyLimit();
+   const items=await load();const storage=await storageUsage();const autoRunning=await autoRunningEnabled();const autoConcurrency=await autoConcurrencyLimit();const autoTimeout=await autoTimeoutMs();
    const autoPhases=[...autoControllers.values()].map(x=>({unit:x.unit,phase:x.phase}));
-   return respond(res,200,{connected,model,verifierModel,installed:models.includes(model),verifierInstalled:models.includes(verifierModel),models,busy,phase,lastError,storage,count:items.length,approved:items.filter(x=>x.status==='approved').length,rejected:items.filter(x=>x.status==='rejected').length,autoRunning,autoConcurrency,autoActive:autoControllers.size,autoPhases,autoLastError,totalUnits:contexts.length});
+   const difficultyCounts={kolay:0,orta:0,zor:0};for(const x of items)if(DIFFICULTIES.includes(x.difficulty))difficultyCounts[x.difficulty]++;
+   return respond(res,200,{connected,model,verifierModel,installed:models.includes(model),verifierInstalled:models.includes(verifierModel),models,busy,phase,lastError,storage,count:items.length,approved:items.filter(x=>x.status==='approved').length,rejected:items.filter(x=>x.status==='rejected').length,difficultyCounts,autoRunning,autoConcurrency,autoTimeoutMs:autoTimeout,autoActive:autoControllers.size,autoPhases,autoLastError,totalUnits:contexts.length});
   }
   if(req.method==='GET'&&path==='/questions')return respond(res,200,{items:await load()});
   if(req.method==='GET'&&path==='/audit')return respond(res,200,audit(await load()));
@@ -195,6 +220,11 @@ export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(serve
    const input=await body(req);const n=Number(input.value);
    if(!Number.isFinite(n)||Math.round(n)!==n||n<1||n>contexts.length)return respond(res,400,{error:`1 ile ${contexts.length} arasında bir tam sayı gerekir.`});
    await writeSettings({autoConcurrency:n});return respond(res,200,{autoConcurrency:n});
+  }
+  if(req.method==='POST'&&path==='/timeout'){
+   const input=await body(req);const n=Number(input.value);
+   if(!Number.isFinite(n)||Math.round(n)!==n||n<1000||n>120000)return respond(res,400,{error:'1000 ile 120000 (ms) arasında bir tam sayı gerekir.'});
+   await writeSettings({autoTimeoutMs:n});return respond(res,200,{autoTimeoutMs:n});
   }
   if(req.method==='POST'&&path==='/start'){await writeSettings({autoRunning:true});return respond(res,200,{autoRunning:true})}
   if(req.method==='POST'&&path==='/generate'){
