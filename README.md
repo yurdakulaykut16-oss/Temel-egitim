@@ -58,7 +58,16 @@ ollama pull qwen3:14b
 ollama list
 ```
 
-İndirme tamamlanınca listede `qwen3:14b` görünmeli. Bu, projenin varsayılan modelidir: Qwen3 14B, boyutuna göre güçlü ve Qwen2.5 32B düzeyine yakın yanıt kalitesi sunan, "hibrit düşünme" moduna sahip görece yeni bir modeldir; Q4 nicemlemeyle yaklaşık 9 GB VRAM kullanır ve RTX 3080 Ti'nin 12 GB belleğine rahatça sığar. Yine de doğru cevap garantisi vermez; bu yüzden proje iki bağımsız hakemden oluşan bir denetim kullanır (bkz. Adım 9-10). İnternet hızına göre indirme sürebilir ve disk alanı kullanır. Daha küçük bir kart kullanıyorsan `qwen2.5:7b` gibi daha hafif bir modeli de seçebilirsin; Adım 8'de istediğin zaman değiştirebilirsin. İki hakemin GERÇEKTEN bağımsız olmasını istiyorsan (aynı modelin kendi kendine iki kez onayı yerine), isteğe bağlı olarak burada `ollama pull` ile bir farklı model daha indirip Adım 8'de ikinci hakeme atayabilirsin; tek model indirip yalnız onu kullanmak da sistemi çalıştırmaya yeter, sadece bağımsızlık o durumda daha zayıf olur.
+İndirme tamamlanınca listede `qwen3:14b` görünmeli. Bu, projenin varsayılan üretici/denetçi modelidir: Qwen3 14B, boyutuna göre güçlü ve Qwen2.5 32B düzeyine yakın yanıt kalitesi sunan, "hibrit düşünme" moduna sahip görece yeni bir modeldir; Q4 nicemlemeyle yaklaşık 9 GB VRAM kullanır ve RTX 3080 Ti'nin 12 GB belleğine rahatça sığar. Yine de doğru cevap garantisi vermez; bu yüzden proje iki bağımsız hakemden oluşan bir denetim kullanır (bkz. Adım 9-10).
+
+İki hakemin GERÇEKTEN bağımsız olması için 2. hakemin varsayılanı Qwen ailesinden DEĞİL, Google'ın **Gemma 3 12B** modelidir (Türkçe dahil 140'tan fazla dili resmi olarak destekler, soru üretmede üstün olması şart değildir — amacı yalnızca bağımsız bir "ikinci görüş" sunmaktır, ve Q4 nicemlemeyle ~8 GB VRAM kullanarak 12 GB'lık karta rahatça sığar). Bunu da aynı adımda indirmen önerilir:
+
+```powershell
+ollama pull gemma3:12b
+ollama list
+```
+
+Bu modeli indirmezsen program yine çalışır, ama arayüzde 2. hakem "kurulu değil" görünür ve o model indirilene (veya Adım 8'de elle başka bir kurulu model seçilene) kadar kendi kendine üretim bekler. İnternet hızına göre indirmeler sürebilir ve disk alanı kullanır. Daha küçük bir kart kullanıyorsan `qwen2.5:7b` gibi daha hafif bir modeli üretici/denetçi için seçebilirsin; Adım 8'de istediğin zaman değiştirebilirsin. 2. hakem için de Gemma 3 12B yerine başka bir kurulu modeli (ör. `mistral-nemo:12b`) seçmekte serbestsin.
 
 ## 5. Ekran kartını kontrol et
 
@@ -106,7 +115,7 @@ Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak i
 4. Aynı sayfada ayrıca iki bağımsız denetleyici seçicisi daha vardır: **Denetçi (1. hakem)** ve **2. hakem**. İstersen (indirdiysen) her biri için FARKLI bir model seç ve her birinin yanındaki **Modeli kullan** düğmesine ayrı ayrı bas — bkz. 9. madde, neden önerildiği için.
 5. Bağlantı ve model durumunu kontrol et. Daha önce seçilmiş modeller kaydedildiyse terminaldeki varsayılanın yerine onlar kullanılabilir; gerekirse arayüzden tekrar seç.
 
-**Ollama bağlantısı yok** yazıyorsa Windows'ta Ollama'nın açık olduğunu ve PowerShell'de `ollama list` komutunun çalıştığını kontrol et. **Model kurulu değil** yazıyorsa 4. adımdaki indirmeyi tamamla ve doğru modeli seç. Hakem hiç seçilmediyse, o otomatik olarak denetçiyle (o da seçilmediyse üretici modelle) aynı modele düşer; sistem böylece tek model indirilmiş bir bilgisayarda da çalışmaya devam eder, ama gerçek bağımsızlık için ikisini de farklı modellere ayarlaman önerilir.
+**Ollama bağlantısı yok** yazıyorsa Windows'ta Ollama'nın açık olduğunu ve PowerShell'de `ollama list` komutunun çalıştığını kontrol et. **Model kurulu değil** yazıyorsa 4. adımdaki indirmeyi tamamla ve doğru modeli seç. **Denetçi (1. hakem)** hiç seçilmediyse otomatik olarak üretici modelle aynısına düşer. **2. hakem** hiç seçilmediyse, gerçek bağımsızlık için otomatik olarak Gemma 3 12B'ye düşmeye çalışır (bkz. Adım 4) — bu model kurulu değilse karşısında "kurulu değil" görürsün; ya `ollama pull gemma3:12b` ile indir ya da listeden kurulu başka bir modeli elle seç.
 
 ## 9. Yapay zekâ kendi kendine öğretmenlik yapsın — iki bağımsız hakem denetimi
 
@@ -124,7 +133,7 @@ Bu sürümde soru üretimi senin bir eğitmen veya uzman olmanı gerektirmez: bi
 8. **Soru stüdyosu** sayfasında istersen ilerlemeyi (hangi ünitelerin şu an aynı anda üretildiğini) izleyebilir, **Kendi kendine üretimi durdur/başlat** düğmesiyle süreci duraklatabilir veya devam ettirebilir, aynı anda kaç ünite üretileceğini, deneme başına azami süreyi ve iki hakemin hangi modeller olacağını değiştirebilirsin.
 9. Bir ünite okuyup **Okudum, tamamla** dediğinde, o ünite için zaten hazırlanmış onaylı sorular testlerine hemen dahil olur; aynı anda arka planda henüz çalışmadığın üniteler için de üretim sürmeye devam eder.
 
-Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. Tam görüş birliğinden geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; bu otomatik denetim doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz — "kolay/orta/zor" etiketi de yapay zekâların öznel değerlendirmesidir, resmî bir zorluk ölçeği değildir. İki hakemi FARKLI modellere ayarlamazsan (örn. ikisi de varsayılan olarak aynı modele düşerse), bu gerçek bir bağımsız doğrulama değil, aynı modelin kendi kendine iki kez onayı anlamına gelir — gerçek bağımsızlık istiyorsan iki ayrı model indirip ayrı ayrı seçmen gerekir. Eşzamanlılığı çok yükseğe veya süre bütçesini çok düşüğe ayarlamak zayıf bir ekran kartında üretimi neredeyse tamamen durdurabilir; deneyerek bilgisayarına uygun sayıları bul.
+Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. Tam görüş birliğinden geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; bu otomatik denetim doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz — "kolay/orta/zor" etiketi de yapay zekâların öznel değerlendirmesidir, resmî bir zorluk ölçeği değildir. Gerçek bağımsızlık için 2. hakemin varsayılanı zaten üretici/denetçiden (Qwen) FARKLI bir model ailesidir (Gemma 3 12B, bkz. Adım 4); bu modeli indirmediysen veya elle aynı modeli ikisine de seçersen, bu artık gerçek bir bağımsız doğrulama değil, aynı modelin kendi kendine iki kez onayı anlamına gelir — gerçek bağımsızlık istiyorsan iki ayrı model indirip ayrı ayrı seçili tut. Eşzamanlılığı çok yükseğe veya süre bütçesini çok düşüğe ayarlamak zayıf bir ekran kartında üretimi neredeyse tamamen durdurabilir; deneyerek bilgisayarına uygun sayıları bul.
 
 ## 10. Yapay zekânın kararlarını izle (istersen veto et)
 

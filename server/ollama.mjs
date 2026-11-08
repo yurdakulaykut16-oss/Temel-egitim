@@ -13,6 +13,14 @@ const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/
 // Qwen3 14B: Qwen2.5 32B seviyesinde yanıt kalitesi sunar ve ~9-12 GB VRAM ile 12 GB'lik
 // kartlara (örn. RTX 3080 Ti) sığar; bu nedenle varsayılan "öğretmen" modeli budur.
 const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:14b';
+// 2. hakem için varsayılan olarak üreticiden/denetçiden FARKLI bir model önerilir: Gemma 3 12B
+// (Google), Qwen ailesinden tamamen bağımsız, Türkçe dahil 140'tan fazla dilde resmi destek sunar
+// ve soru-cevap/akıl yürütme değerlendirmesinde güçlüdür; Q4 nicemlemeyle ~8 GB VRAM kullanır, 12
+// GB'lik kartlara (RTX 3080 Ti) rahatça sığar. Soru ÜRETMEDE illa daha iyi olması gerekmez — burada
+// önemli olan, denetim/kalite değerlendirmesinde bağımsız ikinci bir "görüş" sağlamasıdır. Bu model
+// kurulu değilse arayüz "kurulu değil" gösterir ve kullanıcı `ollama pull gemma3:12b` ile indirip
+// Soru stüdyosu'ndan değiştirebilir; indirilmemişse otomatik üretim bu hakem kurulana kadar bekler.
+const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:12b';
 const defaultConcurrency = 3; // aynı anda kaç ünite için soru üretilsin (bkz. autoConcurrencyLimit)
 const defaultAutoTimeoutMs = 5000; // bir ünitenin üretim+bağımsız kontrol denemesinin alabileceği azami süre
 const DIFFICULTIES = ['kolay','orta','zor'];
@@ -21,9 +29,9 @@ async function writeSettings(patch){await mkdir(dataDir,{recursive:true});const 
 async function selectedModel(){const v=await readSettings();return typeof v.model==='string'&&v.model.length<=200&&v.model.trim()?v.model:defaultModel}
 // Denetçi ve bir ek "bağımsız hakem" modeli: arayüzden ayrı ayrı seçilebilir (bkz.
 // /select-model'in role alanı). Hiçbiri seçilmemişse denetçi, eski OLLAMA_VERIFIER_MODEL ortam
-// değişkenine veya üretici modele; judge2 ise denetçiyle AYNI modele düşer (tek model kurulu
-// olan bilgisayarlarda da çalışmaya devam etmesi için). Gerçek bağımsızlık için iki farklı model
-// seçilmesi önerilir.
+// değişkenine veya üretici modele düşer; judge2 ise GERÇEK bağımsızlık sağlaması için varsayılan
+// olarak FARKLI bir model (bkz. defaultJudge2Model) dener, kullanıcı ayrıca kendi seçimini yaparsa
+// o kullanılır.
 async function selectedVerifierModel(model){const v=await readSettings();if(typeof v.verifierModel==='string'&&v.verifierModel.length<=200&&v.verifierModel.trim())return v.verifierModel;return process.env.OLLAMA_VERIFIER_MODEL||model}
 async function selectedJudgeModel(key,fallback){const v=await readSettings();return typeof v[key]==='string'&&v[key].length<=200&&v[key].trim()?v[key]:fallback}
 async function autoRunningEnabled(){const v=await readSettings();return v.autoRunning!==false}
@@ -139,8 +147,8 @@ async function generateAndVerify(ctx,model,verifierModel,judge2Model,signal,onPh
  // hem doğruluğu (tek doğru cevap, kaynak desteği, kalite) hem de zorluk seviyesini (kolay/orta/zor)
  // bağımsızca değerlendirir. İkisi de AYNI cevapta VE aynı zorlukta birleşmezse soru hiç kaydedilmez
  // — yalnızca iki hakem olduğu için "çoğunluk" kavramı yerine tam görüş birliği aranır.
- // Varsayılan olarak judge2 denetçiyle aynı modele düşebilir (kullanıcı ayrı model seçmediyse);
- // gerçek bağımsızlık için iki farklı model seçmesi önerilir. İki çağrı da aynı anda (Promise.all ile)
+ // Gerçek bağımsızlık için judge2 varsayılan olarak denetçiden FARKLI bir modele (bkz.
+ // defaultJudge2Model) düşer; kullanıcı kendi seçimini yaparsa o kullanılır. İki çağrı da aynı anda (Promise.all ile)
  // gönderilir; tek ekran kartlı bir bilgisayarda Ollama bunları muhtemelen sırayla işler, bu yüzden
  // gerçek süre tek bir denetim çağrısının ~2 katına kadar çıkabilir (bkz. README "azami süre bütçesi").
  onPhase?.('verifying');
@@ -195,7 +203,7 @@ async function autoScheduler(){
    if(await autoRunningEnabled()){
     const limit=await autoConcurrencyLimit();
     if(autoControllers.size<limit){
-     const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',verifierModel);
+     const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',defaultJudge2Model);
      let models=[];
      try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(r.ok)models=((await r.json()).models||[]).map(x=>x.name)}catch{}
      if(models.includes(model)&&models.includes(verifierModel)&&models.includes(judge2Model)){
@@ -219,7 +227,7 @@ export function ollamaPlugin(){return {name:'tempo-ollama',configureServer(serve
  server.middlewares.use('/api/ollama',async(req,res,next)=>{
  try{
   const path=(req.url||'').split('?')[0];
-  const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',verifierModel);
+  const model=await selectedModel();const verifierModel=await selectedVerifierModel(model);const judge2Model=await selectedJudgeModel('judge2Model',defaultJudge2Model);
   if(req.method==='GET'&&path==='/status'){
    let models=[],connected=false;try{const r=await fetch(`${base}/api/tags`,{signal:AbortSignal.timeout(2500)});if(r.ok){const d=await r.json();models=(d.models||[]).map(x=>x.name);connected=true}}catch{}
    const items=await load();const storage=await storageUsage();const autoRunning=await autoRunningEnabled();const autoConcurrency=await autoConcurrencyLimit();const autoTimeout=await autoTimeoutMs();

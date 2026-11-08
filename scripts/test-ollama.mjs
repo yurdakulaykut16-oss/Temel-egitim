@@ -53,10 +53,12 @@ test('soru üretimi: kör denetim, hata ve tekrar kontrolleri',async()=>{
  const post=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-0']})});
  try{
   const status=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(status.verifierInstalled,true);
-  // Judge2 açıkça seçilmediyse denetçiyle (verifierModel) aynı modele düşer; tek model kurulu
-  // bilgisayarlarda da sistemin çalışabilmesi için.
-  assert.equal(status.verifierModel,'fake:1');assert.equal(status.judge2Model,'fake:1');
-  assert.equal(status.judge2Installed,true);
+  // Judge2 açıkça seçilmediyse (ve OLLAMA_JUDGE2_MODEL ortam değişkeni de ayarlanmadıysa) GERÇEK
+  // bağımsızlık için denetçiden FARKLI, önceden tanımlı bir model (gemma3:12b) varsayılan olur;
+  // bu test ortamında kurulu olmadığı için judge2Installed=false görünmesi beklenir — arayüz de
+  // kullanıcıya bunu "kurulu değil" olarak gösterecektir.
+  assert.equal(status.verifierModel,'fake:1');assert.equal(status.judge2Model,'gemma3:12b');
+  assert.equal(status.judge2Installed,false);
   const audit=await (await fetch(`${base}/api/ollama/audit`)).json();assert.equal(audit.invalid,0);assert.equal(audit.duplicates,0);
   mismatch=true;let response=await post();assert.equal(response.status,502);
   // Her iki bağımsız denetçi de (aynı sahte sunucu olduğu için) AYNI yanlış cevapta hemfikir olur;

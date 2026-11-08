@@ -69,6 +69,10 @@ test('otomatik havuz: paralel üretim, zorluk sıralaması ve eşzamanlılık ay
   });
   const fakePort=await listen(fake);dir=await mkdtemp(join(tmpdir(),'tempo-test-auto-'));
   process.env.OLLAMA_BASE_URL=`http://127.0.0.1:${fakePort}`;process.env.OLLAMA_MODEL='fake:1';process.env.OLLAMA_VERIFIER_MODEL='fake:1';process.env.TEMPO_DATA_DIR=dir;
+  // Varsayılan judge2 modeli (gemma3:12b) bu sahte ortamda kurulu değildir; autoScheduler'ın
+  // gerçekten yuva açabilmesi için burada açıkça kurulu bir modele sabitliyoruz (gerçek kullanımda
+  // kullanıcı bu ortam değişkenini ayarlamazsa sistem, ikinci hakem indirilene kadar bekler).
+  process.env.OLLAMA_JUDGE2_MODEL='fake:1';
   delete process.env.TEMPO_DISABLE_AUTOLOOP; // bu testte döngü KASITLI OLARAK açık
   const {ollamaPlugin}=await import('../server/ollama.mjs');let middleware;
   ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
