@@ -428,10 +428,27 @@ let lastTrainerTickAt = 0;
 let lastApexTimeAt = 0;
 let lastCoachTrainPrepCount = 0;
 let lastApexCycleAtAttempt = -20;
+// Tam otonom arka plan exec zaman damgaları & kilitler (kullanıcı hiçbir düğmeye basmadan çalışır)
+let precisionAuditBusy = false;
+let hundredAiBusy = false;
+let hundredAiEvolveBusy = false;
+let levelUpBusy = false;
+let nexusDevelopBusy = false;
+let nexusBuildBusy = false;
+let nexusAutoApplyBusy = false;
+let coderPullBootAttempted = false;
+let sftPrepareBootAttempted = false;
+let lastPrecisionAuditAt = 0;
+let lastHundredAiSolveAt = 0;
+let lastHundredAiEvolveAt = 0;
+let lastLevelUpAt = 0;
+let lastNexusDevelopAt = 0;
+let lastNexusBuildAt = 0;
+let lastNexusAutoApplyAt = 0;
 
 const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:14b';
 const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:12b';
-const defaultConcurrency = 3;
+const defaultConcurrency = 6;
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
 const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 45000;
 
@@ -547,19 +564,20 @@ async function autoTimeoutMs() {
  return Math.max(1000, Math.min(300000, n));
 }
 async function getPipelineConfig() {
+ // TEK MOD = TURBO (Kalite Kilidi AKTİF). Dengeli/Derin profilleri kaldırıldı; her çağrı 8 soru, kuyruklu boru hattı,
+ // toplu kör hakem, self-correction, akıllı zorluk ve hızlı düşünme HER ZAMAN açıktır.
  const v = await readSettings();
- const preset = ['turbo', 'balanced', 'deep'].includes(v.preset) ? v.preset : 'turbo';
- const turboQualityLock = v.turboQualityLock !== false;
- const batchPerCall = Number.isFinite(v.batchPerCall) ? Math.max(1, Math.min(8, Math.round(v.batchPerCall))) : (preset === 'turbo' ? 6 : 5);
- const pipelineMode = v.pipelineMode === 'direct' ? 'direct' : 'batched';
- const fastThink = v.fastThink !== false;
- // Kalite kilidi açıkken Turbo modda bile selfCorrection ve dual-judge asla gevşetilmez ("turbo mod saçmalamasın")
- const selfCorrection = turboQualityLock ? true : v.selfCorrection !== false;
+ const preset = 'turbo';
+ const turboQualityLock = true;
+ const batchPerCall = 8;
+ const pipelineMode = 'batched';
+ const fastThink = true;
+ const selfCorrection = true;
  const passageMode = v.passageMode === 'summary-only' ? 'summary-only' : 'full-book';
- const smartDifficulty = turboQualityLock ? true : v.smartDifficulty !== false;
- const batchVerify = v.batchVerify !== false;
- const generateStudyMaterials = v.generateStudyMaterials !== false;
- const autoEvolve = v.autoEvolve !== false;
+ const smartDifficulty = true;
+ const batchVerify = true;
+ const generateStudyMaterials = true;
+ const autoEvolve = true;
  const subSecondAllBots = v.subSecondAllBots !== false;
  const subSecondBudgetMs = Number.isFinite(v.subSecondBudgetMs) ? Math.max(250, Math.min(980, Math.round(v.subSecondBudgetMs))) : SUBSECOND_BOT_BUDGET_MS;
  return {
@@ -3224,6 +3242,203 @@ async function triggerHyperBotEvolveCycle() {
  }
 }
 
+// ===== TAM OTONOM ARKA PLAN GÖREVLERİ — kullanıcı hiçbir düğmeye basmadan proje başladığı andan itibaren çalışır =====
+
+// 29-Ünite Kitap/TVGFBF Hassasiyet Denetimi (eski düğme kaldırıldı; tamamen otomatik)
+async function runPrecisionAuditAuto() {
+ if (precisionAuditBusy) return null;
+ precisionAuditBusy = true;
+ try {
+  const items = await load().catch(() => []);
+  const report = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...items]);
+  lastPrecisionAuditSummary = {
+   evaluatedCount: report.evaluatedCount,
+   averagePrecisionScore: report.averagePrecisionScore,
+   averageStyleScore: report.averageStyleScore,
+   tvgfbfAlignedPct: report.tvgfbfAlignedPct,
+   flaggedCount: report.flaggedCount,
+   dpoEliteCount: report.dpoEliteCount,
+   unitCoverageCount: report.unitCoverageCount,
+   updatedAt: new Date().toISOString()
+  };
+  lastPrecisionAuditAt = Date.now();
+  return report;
+ } finally {
+  precisionAuditBusy = false;
+ }
+}
+
+// 100 Yapay Zekâ Konseyi havuzu çözüp etiketler (eski düğme kaldırıldı; tamamen otomatik)
+async function runHundredAiSolveAuto() {
+ if (hundredAiBusy) return null;
+ hundredAiBusy = true;
+ try {
+  const items = await load().catch(() => []);
+  const pool = [...questionBank, ...bookStyleQuestions, ...items];
+  const summary = await hundredAiCouncil.calibratePoolWith100AIs(pool);
+  lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
+  lastHundredAiSolveAt = Date.now();
+  return summary;
+ } finally {
+  hundredAiBusy = false;
+ }
+}
+
+// Qwen Code ile 100-AI zekâ evrimi (eski düğme kaldırıldı; tamamen otomatik)
+async function runHundredAiEvolveAuto() {
+ if (hundredAiEvolveBusy) return null;
+ hundredAiEvolveBusy = true;
+ try {
+  const items = await load().catch(() => []);
+  const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]);
+  const evolved = await hundredAiCouncil.evolveWithQwenCode(summary);
+  lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
+  lastHundredAiEvolveAt = Date.now();
+  return evolved;
+ } finally {
+  hundredAiEvolveBusy = false;
+ }
+}
+
+// Tüm Proje 8-Katman Seviye Atlama (eski düğme kaldırıldı; tamamen otomatik, 100/100 kapılı)
+async function runProjectLevelUpAuto() {
+ if (levelUpBusy) return null;
+ levelUpBusy = true;
+ try {
+  const evo = await projectLevelUp.runFullProjectLevelUpCycle({ allowUiEvolution: true });
+  lastLevelUpAt = Date.now();
+  return evo;
+ } catch {
+  return null;
+ } finally {
+  levelUpBusy = false;
+ }
+}
+
+// Nexus-Titan: TÜM PROJEYİ & arayüzü geliştir (eski düğme kaldırıldı; tamamen otomatik)
+async function runNexusDevelopAuto(models = []) {
+ if (nexusDevelopBusy) return null;
+ nexusDevelopBusy = true;
+ try {
+  const [items, studentProfile] = await Promise.all([load(), evolver.loadStudentProfile()]);
+  const withLive = Boolean(models.length && !models.some(m => /^fake:/i.test(m)));
+  const devRes = await nexusModel.developEntireProject({
+   installedModels: models,
+   githubMiner,
+   githubMegaCorpus: githubMega,
+   coderCouncil,
+   jarvis,
+   qwenCodeLab,
+   paramMatrix,
+   evolver,
+   items,
+   telemetry: getTelemetrySnapshot(),
+   studentProfile,
+   hardwareProfile: cachedHardwareProfile,
+   runModelFn: withLive ? runModel : null,
+   ollamaBaseUrl: base,
+   includeUi: true,
+   applyLiveUiTheme: true
+  });
+  if (devRes?.summary?.githubMegaCorpus) cachedGithubMegaSummary = devRes.summary.githubMegaCorpus;
+  if (devRes?.fusionResult?.state) cachedNexusModelState = devRes.fusionResult.state;
+  lastNexusDevelopAt = Date.now();
+  lastNexusFusionAt = Date.now();
+  return devRes;
+ } catch {
+  return null;
+ } finally {
+  nexusDevelopBusy = false;
+ }
+}
+
+// Nexus-Titan: tempo-nexus-titan:latest Ollama modelini oluştur/güncelle (eski düğme kaldırıldı; tamamen otomatik)
+async function runNexusOllamaBuildAuto(models = []) {
+ if (nexusBuildBusy) return null;
+ nexusBuildBusy = true;
+ try {
+  if (!models.length || models.some(m => /^fake:/i.test(m))) return null;
+  const buildRes = await nexusModel.buildOrUpdateOllamaModel({
+   ollamaBaseUrl: base,
+   installedModels: models,
+   baseModel: ''
+  });
+  if (buildRes?.state) cachedNexusModelState = buildRes.state;
+  lastNexusBuildAt = Date.now();
+  return buildRes;
+ } catch {
+  return null;
+ } finally {
+  nexusBuildBusy = false;
+ }
+}
+
+// Doğrulanmış Nexus-Titan öneri kuyruğunu kendiliğinden "100-yollu kapıdan geçir & projeye uygula" (eski düğme kaldırıldı)
+async function autoApplyNexusProposals() {
+ if (nexusAutoApplyBusy) return null;
+ nexusAutoApplyBusy = true;
+ try {
+  const state = await nexusModel.loadState().catch(() => null);
+  const pending = ((state?.stagedProposals) || []).filter(p => p && p.status === 'verified_ready').slice(0, 2);
+  const applied = [];
+  for (const p of pending) {
+   try {
+    const res = await nexusModel.applyStagedProposalSafely(p.id);
+    if (res?.ok) applied.push(p.id);
+   } catch {}
+  }
+  lastNexusAutoApplyAt = Date.now();
+  return applied;
+ } catch {
+  return null;
+ } finally {
+  nexusAutoApplyBusy = false;
+ }
+}
+
+// Çok Görevli SFT + DPO veri seti hazırlığı (eski düğme kaldırıldı) — hazır olduğunda kendiliğinden çalışır
+async function autoPrepareTrainingData(force = false) {
+ const items = await load().catch(() => []);
+ const approvedNow = items.filter(x => x.status === 'approved').length;
+ if (approvedNow < 50) return null;
+ if (!force && approvedNow - lastCoachTrainPrepCount < 25) return null;
+ lastCoachTrainPrepCount = approvedNow;
+ const py = process.env.PYTHON || 'python3';
+ try {
+  await execFileAsync(py, ['training/prepare.py', '--input', dataFile, '--study', studyFile, '--output', resolve(dataDir, 'training'), '--multitask', '--dpo', '--traces', tracesFile], { timeout: 120000 });
+  sftPrepareBootAttempted = true;
+  return { ok: true, approvedCount: approvedNow };
+ } catch {
+  return null;
+ }
+}
+
+// Güçlü açık kaynak kodlama modellerini proje açılışında Ollama'ya kendiliğinden kurar (eski düğme kaldırıldı)
+async function autoPullCoderStackAtBoot() {
+ if (coderPullBootAttempted) return null;
+ coderPullBootAttempted = true;
+ if (process.env.TEMPO_NO_AUTO_PULL === '1' || process.env.TEMPO_OFFLINE_ONLY === '1') return null;
+ try {
+  const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(2500) });
+  if (!r.ok) return null;
+  const tags = ((await r.json()).models || []).map(x => x.name);
+  if (!tags.length || tags.some(m => /^fake:/i.test(m))) return null;
+  const requested = CODER_STACK_RECOMMENDATIONS.slice(0, 6);
+  const has = (tag) => tags.includes(tag);
+  const missing = requested.filter(m => !has(m));
+  if (!missing.length) return { ok: true, alreadyInstalled: true };
+  const pullRes = await hardwareOpt.pullMissingProfileModels({
+   ollamaBaseUrl: base,
+   installedModels: tags,
+   modelsOverride: missing
+  });
+  await ensureRolesAutoAssigned(tags, true).catch(() => {});
+  return pullRes;
+ } catch {
+  return null;
+ }
+}
+
 async function triggerLocalTeamFastCycle(installedModels = [], { withLiveTeam = false } = {}) {
  if (localTeamBusy) return null;
  localTeamBusy = true;
@@ -3361,7 +3576,7 @@ async function autoScheduler() {
   } catch (e) {
    autoLastError = e.message || String(e);
   }
-  await sleep(120);
+  await sleep(60);
  }
 }
 
@@ -3633,7 +3848,15 @@ async function backgroundCoachLoop() {
    triggerGithubOssMine(false),
    triggerGithubMegaAbsorb({ batchSize: 1500, liveGithub: false }),
    triggerNexusFusionCycle([], { withLiveLlm: false }),
-   triggerHyperBotEvolveCycle()
+   triggerHyperBotEvolveCycle(),
+   runPrecisionAuditAuto(),
+   runHundredAiSolveAuto(),
+   runHundredAiEvolveAuto(),
+   runProjectLevelUpAuto(),
+   runNexusDevelopAuto([]),
+   autoApplyNexusProposals(),
+   autoPrepareTrainingData(true),
+   autoPullCoderStackAtBoot()
   ]);
   await sleep(200);
   while (!autoLoopStopping) {
@@ -3706,6 +3929,30 @@ async function backgroundCoachLoop() {
      parallelBgTasks.push(runTvgfbfScoutAndTriggerAll({
       enableLiveProbe: process.env.TEMPO_OFFLINE_ONLY !== '1' && process.env.TEMPO_ALLOW_REMOTE_FETCH === '1'
      }));
+    }
+    if (!precisionAuditBusy && Date.now() - lastPrecisionAuditAt >= 30_000) {
+     parallelBgTasks.push(runPrecisionAuditAuto());
+    }
+    if (!hundredAiBusy && Date.now() - lastHundredAiSolveAt >= 45_000) {
+     parallelBgTasks.push(runHundredAiSolveAuto());
+    }
+    if (!hundredAiEvolveBusy && Date.now() - lastHundredAiEvolveAt >= 90_000) {
+     parallelBgTasks.push(runHundredAiEvolveAuto());
+    }
+    if (!levelUpBusy && Date.now() - lastLevelUpAt >= 75_000) {
+     parallelBgTasks.push(runProjectLevelUpAuto());
+    }
+    if (!nexusDevelopBusy && Date.now() - lastNexusDevelopAt >= 240_000) {
+     parallelBgTasks.push(runNexusDevelopAuto(models));
+    }
+    if (!nexusBuildBusy && models.length && Date.now() - lastNexusBuildAt >= 300_000) {
+     parallelBgTasks.push(runNexusOllamaBuildAuto(models));
+    }
+    if (!nexusAutoApplyBusy && Date.now() - lastNexusAutoApplyAt >= 120_000) {
+     parallelBgTasks.push(autoApplyNexusProposals());
+    }
+    if (!coderPullBootAttempted && models.length) {
+     autoPullCoderStackAtBoot().catch(() => {});
     }
     if (parallelBgTasks.length) {
      await Promise.allSettled(parallelBgTasks);
@@ -3789,13 +4036,11 @@ async function backgroundCoachLoop() {
        }).catch(() => {});
       }
 
-      // 9) Sürekli Veri Hazırlama + Donanım Hazırsa Üretimi Durdurmadan Ağırlık Eğitimi
+      // 9) Sürekli SFT + DPO Veri Seti Hazırlığı (eski düğme kaldırıldı; hazır olunca kendiliğinden hazırlar) + Donanım Hazırsa Ağırlık Eğitimi
       const items = await load();
       const approvedNow = items.filter(x => x.status === 'approved').length;
-      if (approvedNow >= 50 && approvedNow - lastCoachTrainPrepCount >= 25) {
-       lastCoachTrainPrepCount = approvedNow;
-       const py = process.env.PYTHON || 'python3';
-       await execFileAsync(py, ['training/prepare.py', '--input', dataFile, '--study', studyFile, '--output', resolve(dataDir, 'training'), '--multitask', '--dpo', '--traces', tracesFile], { timeout: 30000 }).catch(() => {});
+      if (approvedNow >= 50) {
+       await autoPrepareTrainingData(false).catch(() => {});
       }
       if (jCfg.autoTrainWeights && !jarvis.trainingState.running && approvedNow - (jMem.lastTrainedApprovedCount || 0) >= jCfg.trainEveryNQuestions) {
        const env = await jarvis.inspectTrainingEnvironment();
@@ -5691,41 +5936,15 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/config') {
       const input = await body(req);
       const patch = {};
-      if (typeof input.turboQualityLock === 'boolean') {
-       patch.turboQualityLock = input.turboQualityLock;
-      }
-      if (typeof input.preset === 'string' && ['turbo', 'balanced', 'deep'].includes(input.preset)) {
-       patch.preset = input.preset;
-       if (input.preset === 'turbo') {
-        // Turbo modda kalite kilidi: selfCorrection ve smartDifficulty açık kalır ("turbo mod saçmalamasın")
-        Object.assign(patch, { batchPerCall: 6, fastThink: true, pipelineMode: 'batched', batchVerify: true, selfCorrection: true, smartDifficulty: true, passageMode: 'full-book', generateStudyMaterials: true, turboQualityLock: true });
-       } else if (input.preset === 'balanced') {
-        Object.assign(patch, { batchPerCall: 5, fastThink: true, pipelineMode: 'batched', batchVerify: true, selfCorrection: true, smartDifficulty: true, passageMode: 'full-book', generateStudyMaterials: true });
-       } else if (input.preset === 'deep') {
-        Object.assign(patch, { batchPerCall: 3, fastThink: false, pipelineMode: 'batched', batchVerify: true, selfCorrection: true, smartDifficulty: true, passageMode: 'full-book', generateStudyMaterials: true });
-       }
-      }
-      if (input.batchPerCall !== undefined) {
-       const n = Number(input.batchPerCall);
-       if (!Number.isFinite(n) || Math.round(n) !== n || n < 1 || n > 8) return respond(res, 400, { error: 'batchPerCall 1 ile 8 arasında olmalı.' });
-       patch.batchPerCall = n;
-      }
-      if (input.pipelineMode !== undefined) {
-       if (!['batched', 'direct'].includes(input.pipelineMode)) return respond(res, 400, { error: 'Geçersiz pipelineMode.' });
-       patch.pipelineMode = input.pipelineMode;
-      }
-      if (input.passageMode !== undefined) {
-       if (!['full-book', 'summary-only'].includes(input.passageMode)) return respond(res, 400, { error: 'Geçersiz passageMode.' });
-       patch.passageMode = input.passageMode;
-      }
-      for (const flag of ['fastThink', 'selfCorrection', 'smartDifficulty', 'batchVerify', 'generateStudyMaterials', 'autoEvolve', 'subSecondAllBots']) {
-       if (typeof input[flag] === 'boolean') patch[flag] = input[flag];
-      }
-      if (input.subSecondBudgetMs !== undefined) {
+      // TEK MOD = TURBO (Kalite Kilitli) — istemci ne gönderirse göndersin boru hattı daima 8 soru/çağrı + kuyruklu + kalite kilitli çalışır.
+      Object.assign(patch, { preset: 'turbo', batchPerCall: 8, fastThink: true, pipelineMode: 'batched', batchVerify: true, selfCorrection: true, smartDifficulty: true, passageMode: 'full-book', generateStudyMaterials: true, autoEvolve: true, turboQualityLock: true });
+      if (input?.passageMode === 'summary-only') patch.passageMode = 'summary-only';
+      if (input?.subSecondBudgetMs !== undefined) {
        const sb = Number(input.subSecondBudgetMs);
        if (!Number.isFinite(sb) || sb < 250 || sb > 980) return respond(res, 400, { error: 'subSecondBudgetMs 250 ile 980 (ms) arasında olmalı.' });
        patch.subSecondBudgetMs = Math.round(sb);
       }
+      if (typeof input?.subSecondAllBots === 'boolean') patch.subSecondAllBots = input.subSecondAllBots;
       await writeSettings(patch);
       return respond(res, 200, { settings: await getPipelineConfig() });
      }

@@ -687,8 +687,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  const [view, setView] = useState<'approved' | 'rejected'>('approved');
  const [concurrencyInput, setConcurrencyInput] = useState('');
  const [timeoutInput, setTimeoutInput] = useState('');
- const [externalModelName, setExternalModelName] = useState('');
- const [externalModelSource, setExternalModelSource] = useState('');
  const [githubSearchQuery, setGithubSearchQuery] = useState('');
  const [githubSearchResults, setGithubSearchResults] = useState<GithubMegaProject[]>([]);
  const [showCoverage, setShowCoverage] = useState(false);
@@ -863,73 +861,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const triggerJarvisReflect = async () => {
-  setBusyAction('jarvis-reflect');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/jarvis/reflect`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'JARVIS analiz turu başarısız.');
-   setError('');
-   setInfoMsg(`JARVIS Nesil #${data.memory?.generation} tamamlandı: +${data.addedLessons?.length || 0} yeni ders öğrenildi!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'JARVIS analiz hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerJarvisInnovate = async () => {
-  setBusyAction('jarvis-innovate');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/jarvis/innovate`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Qwen Code inovasyon turu başarısız.');
-   setError('');
-   setInfoMsg(`Qwen Code (${data.engine}) geliştirme turu tamamlandı! kolay/orta/zor sistemi korundu ve güçlendirildi.`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Qwen Code inovasyon hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerJarvisTrain = async () => {
-  setBusyAction('jarvis-train');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/jarvis/train-now`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Otonom ağırlık eğitimi başlatılamadı.');
-   setError('');
-   setInfoMsg(data.promoted ? `JARVIS yeni eğittiği "${data.model}" modeline sıcak geçiş yaptı!` : `Güvenlik kapısı yeni modeli terfi ettirmedi: ${data.reason}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Eğitim döngüsü hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerJarvisRollbackModel = async () => {
-  setBusyAction('jarvis-rollback');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/jarvis/rollback-model`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Model geri alınamadı.');
-   setError('');
-   setInfoMsg(`Aktif model "${data.restoredModel}" olarak güvenle geri alındı.`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Model geri alma hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
  const setProposalDecision = async (id: string, decision: 'accepted' | 'archived') => {
   try {
@@ -944,23 +878,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const triggerEvolve = async () => {
-  setBusyAction('evolve');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/evolve`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Öz-evrim başarısız.');
-   setError('');
-   if (data.accepted) setInfoMsg(`AI Öz-Evrim v${data.policy?.version} altın testleri geçti ve aktif oldu: ${data.policy?.rationale}`);
-   else setError(`AI Öz-Evrim önerisi güvenlik testinde reddedildi (sistem korundu): ${data.reason}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Öz-evrim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
  const triggerRollback = async () => {
   setBusyAction('rollback');
@@ -979,184 +896,15 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const prepareTraining = async () => {
-  setBusyAction('prepare');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/prepare-training`, {method: 'POST'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Eğitim verisi hazırlanamadı.');
-   setError('');
-   const m = data.manifest;
-   setInfoMsg(`Eğitim veri seti hazırlandı: ${m.train_count} eğitim + ${m.eval_count} doğrulama örneği, ${m.dpo_train_count || 0} DPO tercih çifti!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Eğitim verisi hazırlanamadı.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerJarvisResearch = async () => {
-  setBusyAction('jarvis-research');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/jarvis/research`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'İnternet araştırması başarısız.');
-   setError('');
-   setInfoMsg(`${data.unitResearch?.unit || 'Ünite'} araştırıldı (${data.webSources?.length || 0} web kaynağı, ${data.unitResearch?.examHypotheses?.length || 0} sınav tahmini)!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Araştırma hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerAutoAssignRoles = async () => {
-  setBusyAction('auto-roles');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/auto-assign-roles`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({createSpecialists: true})});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Otomatik rol atama başarısız.');
-   setError('');
-   setInfoMsg('Üretici, 1. Hakem, 2. Hakem, Evrimci ve Qwen Coder rolleri otomatik yerleştirildi.');
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Rol atama hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerCuratorScan = async () => {
-  setBusyAction('curator-scan');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/curator/scan`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Havuz taraması başarısız.');
-   setError('');
-   const rep = data.report;
-   setInfoMsg(`Havuz Tarama Botu #${rep?.totalScans || 1}: ${rep?.approvedCount || 0} onaylı soru tarandı (Ort. Puan ${rep?.avgCompositeScore || 0}/100, ${rep?.lastRunRemoved || 0} kalitesiz/tekrar temizlendi).`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Havuz taraması hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerEnhanceNextLesson = async () => {
-  setBusyAction('lesson-enhance');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/lessons/enhance`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({unitId: '0-0'})});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Konu anlatımı geliştirilemedi.');
-   setError('');
-   setInfoMsg(`${data.lesson?.unit || 'Ünite'} konu anlatımı v${data.lesson?.version || 1} olarak uzatıldı (püf noktalar + kodlamalar + 5 açı).`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Konu anlatımı hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerProduceNextVideo = async () => {
-  setBusyAction('video-produce');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/videos/generate`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({unitId: '0-0'})});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || '3D diyaloglu video üretilemedi.');
-   setError('');
-   setInfoMsg(`${data.video?.unit || 'Ünite'} için Morpa Kampüs 3D diyaloglu video (${data.video?.scenes?.length || 3} sahne, ${data.video?.situationMode}) + Google Flow promptu üretildi!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : '3D video üretim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerApexEvolve = async () => {
-  setBusyAction('apex-evolve');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/jarvis/apex-evolve`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Omega-4700x+ ApexArchitect evrimi başlatılamadı.');
-   setError('');
-   setInfoMsg(`20x Omega-4700x+ (+470,000%) ApexArchitect Tur #${data.state?.evolutionCycles} tamamlandı! Zekâ çarpanı: ${data.state?.intelligenceMultiplier}x · 48-Tuzak F1: %${data.stressResult?.f1Score} · Tüm 11 alt-sisteme direktifler enjekte edildi.`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Omega-4700x+ evrim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerUltraTrainTick = async () => {
-  setBusyAction('ultra-train');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/intelligence/train-tick`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({batchUnits: 8, mineGithub: true})});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || '20x (+160,000%) kesintisiz eğitim turu başlatılamadı.');
-   setError('');
-   const t = data.tick || {};
-   setInfoMsg(`20x (+160,000%) Kesintisiz Eğitim Tur #${t.ticksTotal || 1} tamamlandı (+470,000% Omega-4700x+ · ${t.curriculumStagesCompleted || 20} Aşama)! 48-Tuzak: ${t.trapReport?.passed || 48}/${t.trapReport?.total || 48} · Damıtılan ünite: ${t.distilledCount || 0}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : '20x eğitim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerParametersEvolve = async (withMultiLlm = false) => {
-  setBusyAction(withMultiLlm ? 'swarm-eval' : 'params-evolve');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/swarm-evaluate`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({withMultiLlm, source: withMultiLlm ? 'claude-swarm-multi-llm-ui' : 'claude-swarm-ui'})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Çok-milyarlı parametre evrimi başlatılamadı.');
-   setError('');
-   const s = data.summary || {};
-   const rep = data.report || {};
-   setInfoMsg(`Claude-Tarzı Çok-Zekâ & 5 Bilgi Seviyesi Öz-Doğrulama (${rep.postScore ?? 0}/100 · Kapı: ${rep.gateAccepted ? 'ONAY ✓' : 'GERİ ALINDI ↺'}) + 11 AI Parametre Evrimi (#${s.totalEvolutions ?? 1}): ${s.totalEcosystemParamsBillions ?? 0}B Toplam Parametre!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Parametre evrimi hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerParametersRollback = async () => {
-  setBusyAction('params-rollback');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/parameters/rollback`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Parametre adımı geri alınamadı.');
-   setError('');
-   setInfoMsg(`Parametre matrisi güvenle Döngü #${data.revertedToCycle} anlık görüntüsüne geri alındı.`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Parametre geri alma hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
  const applyHardwareProfile = async (profileId: string) => {
   setBusyAction(`hw-${profileId}`);
@@ -1200,185 +948,13 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const triggerCoderOvertrainSprint = async () => {
-  setBusyAction('coder-overtrain');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/coder-council/overtrain`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({epochsPerModel: 3})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Kodlama Konseyi aşırı eğitim sprinti başlatılamadı.');
-   setError('');
-   const s = data.summary || {};
-   setInfoMsg(`${s.totalModels ?? 44} Açık Kaynak Kodlama Modeli + 11 Bot (${s.combinedEcosystemFactoredQuadrillions ?? 114.8} Katrilyon Çarpanlı Tensör) ${data.durationMs}ms içinde aşırı eğitildi! Ort. Zekâ: ${s.councilIqAvg}/100 · DPO Çifti: ${s.totalDpoPairsDistilled}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Kodlama Konseyi aşırı eğitim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerNexusCycle = async () => {
-  setBusyAction('nexus-cycle');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/nexus-model/cycle`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({withLiveLlm: Boolean(status?.connected), includeUi: true, applyLiveUiTheme: true})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Nexus-Titan füzyon turu başlatılamadı.');
-   setError('');
-   const s = data.summary || {};
-   setInfoMsg(`Nexus-Titan Füzyon Tur #${s.fusionCycles ?? 1} (${data.durationMs}ms) tamamlandı! IQ: ${s.fusionIq} · 96-Tuzak F1: %${s.trapDefenseF1} · Arayüz İyileştirmeleri: ${s.uiEvolutionsApplied}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Nexus-Titan füzyon hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const buildNexusOllamaModel = async () => {
-  setBusyAction('nexus-build-ollama');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/nexus-model/build-ollama`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({baseModel: chosenModel || status?.model || ''})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'tempo-nexus-titan:latest oluşturulamadı.');
-   setError('');
-   setInfoMsg(data.created
-    ? `✓ "${data.modelName}" Ollama içinde oluşturuldu/güncellendi (Taban: ${data.baseModel})!`
-    : `Modelfile hazırlandı (${data.modelfilePath}): ${data.error || 'Ollama bağlandığında otomatik yüklenir.'}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Ollama model derleme hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const developEntireProjectWithUi = async () => {
-  setBusyAction('nexus-develop-all');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/nexus-model/develop-project`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({withLiveLlm: Boolean(status?.connected), includeUi: true, applyLiveUiTheme: true})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Tam proje + arayüz geliştirme turu başarısız.');
-   setError('');
-   const s = data.summary || {};
-   setInfoMsg(`Tüm Proje + Arayüz (src/, index.html, server/, training/) ${data.totalDurationMs}ms içinde geliştirildi! UI Skoru: %${s.uiAuditScore} · Arayüz Evrimi: ${s.uiEvolutionsApplied}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Tam proje geliştirme hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const pullExternalNexusModel = async (idOrTag: string) => {
-  setBusyAction(`nexus-pull-${idOrTag}`);
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/nexus-model/pull-external`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({idOrTag})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Dış model indirilemedi.');
-   setError('');
-   setInfoMsg(data.detail || `${idOrTag} işlendi (${data.status}).`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Harici model indirme hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const registerExternalNexusModel = async () => {
-  if (!externalModelName.trim() && !externalModelSource.trim()) return;
-  setBusyAction('nexus-register');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/nexus-model/register-external`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-     name: externalModelName.trim() || externalModelSource.trim(),
-     pathOrUrl: externalModelSource.trim() || externalModelName.trim()
-    })
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Harici model eklenemedi.');
-   setError('');
-   setExternalModelName('');
-   setExternalModelSource('');
-   setInfoMsg(`✓ "${data.entry?.name}" birleşik Nexus-Titan model füzyonuna eklendi!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Harici model kayıt hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const applyNexusProposal = async (proposalId: string) => {
-  setBusyAction(`nexus-apply-${proposalId}`);
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/nexus-model/apply-proposal`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({proposalId})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Öneri doğrulanıp uygulanamadı.');
-   setError('');
-   setInfoMsg(`✓ Doğrulandı & Uygulandı: ${data.proposal?.targetFile} (${data.patchOutcome?.verification?.verifiedBy || 'verified'})`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Öneri uygulama hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const triggerGithubMegaAbsorb = async () => {
-  setBusyAction('github-mega-absorb');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/github-mega/absorb`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({batchSize: 2500, liveGithub: true, q: githubSearchQuery.trim()})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'GitHub Mega Corpus emilimi başlatılamadı.');
-   setError('');
-   const s = data.summary || {};
-   setInfoMsg(`✓ 260.000+ GitHub Proje İndeksi (${s.absorbedProjectsCount?.toLocaleString('tr-TR')}/${s.indexedProjectsCount?.toLocaleString('tr-TR')} emildi · ${data.durationMs}ms): Tüm 11 bot & 64-katman MoE güncellendi!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'GitHub Mega emilim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
  const searchGithubMega = async () => {
   setBusyAction('github-mega-search');
@@ -1396,99 +972,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const triggerHyperEvolveBots = async () => {
-  setBusyAction('bots-hyper-evolve');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/bots/hyper-evolve`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({batchSize: 2500})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Bot Hyper-Evrimi başlatılamadı.');
-   setError('');
-   setInfoMsg(`🚀 Tüm 11 Bot (64-Katman MoE · Ort. IQ ${data.parameterMatrix?.avgBotIq ?? 97.8}/100) + ${data.coderCouncil?.totalModels ?? 64}-Model Konseyi ${data.durationMs}ms içinde aşırı geliştirildi!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Hyper-Evrim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const runVerifier100PrototypeGate = async () => {
-  setBusyAction('verifier-100-proto');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/qwen-lab/prototype`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({forceWebMine: true})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || '100-yollu doğrulama çalıştırılamadı.');
-   setError('');
-   const v = data.verification100;
-   setInfoMsg(
-    data.promoted
-     ? `✓ GitHub/İnternet Prototipi (${data.slug}) 100/100 farklı testten geçti (${data.durationMs}ms) ve projeye güvenle eklendi!`
-     : `🛡️ 100-Yollu Güvenlik Kapısı (${v?.passedCount ?? 0}/100) nedeniyle ${data.slug} projeye eklenmeden engellendi.`
-   );
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : '100-yollu doğrulama hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const runProjectLevelUp = async (allowUiEvolution = false) => {
-  setBusyAction('project-level-up');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/project-level/evolve`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({allowUiEvolution})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Tam proje seviye atlama turu başarısız.');
-   setError('');
-   setInfoMsg(
-    `🚀 Tüm Proje Seviye Atladı! Tur #${data.cycle} (${data.durationMs}ms): ` +
-    `${data.beforeScore} → ${data.afterScore}/100 · Seviye ${data.projectLevel} (${data.codename}) · ` +
-    `Hedeflenen Darboğaz: ${data.bottleneckTargeted?.name || '-'} · ` +
-    `100-Yollu Kapı: ${data.verification100?.passedCount ?? 100}/100`
-   );
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Tam proje seviye atlama hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const pullCoderCouncilModels = async () => {
-  setBusyAction('coder-pull');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/coder-council/pull-coders`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: '{}'
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Açık kaynak kodlama modelleri indirilemedi.');
-   setError('');
-   setInfoMsg(data.pullRes?.pullState?.message || 'RTX 3080 Ti açık kaynak kodlama modelleri indirildi ve Ollama konseyine bağlandı!');
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Kodlama modeli indirme hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
  const selectLocalVideoEngine = async (engineId: string) => {
   setBusyAction(`local-video-${engineId}`);
@@ -1524,102 +1010,10 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const triggerGithubMine = async () => {
-  setBusyAction('github-mine');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/jarvis/github-mine`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({force: true})});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Yasal GitHub açık kaynak araştırması başlatılamadı.');
-   setError('');
-   setInfoMsg(`0-API Yasal Açık Kaynak Madenciliği (MIT/Apache-2.0): ${data.discoveredThisCycle || 0} yeni teknik sentezlendi (Toplam ${data.state?.totalReposDiscovered || 0} açık kaynak repo)!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'GitHub OSS araştırma hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const runTvgfbfScoutCycle = async (enableLiveProbe = true) => {
-  setBusyAction('tvgfbf-swarm');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/tvgfbf-swarm/run`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({enableLiveProbe})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || '5-Ajan TVGFBF taraması çalıştırılamadı.');
-   setError('');
-   setInfoMsg(
-    `5-Ajan TVGFBF & Kitap Stili Taraması (Tur #${data.cyclesTotal}, ${data.lastCycleMs}ms): ` +
-    `${data.realBookQuestionsCount ?? 268} resmî kitap sorusu + ${data.verifiedPdfSourcesCount ?? 10} güvenilir PDF/forum kaynağı doğrulandı ve tüm ajanlar tetiklendi!`
-   );
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'TVGFBF swarm hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const runPrecisionAuditRefresh = async () => {
-  setBusyAction('precision-audit');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/precision-audit`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({scope: 'all'})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Hassasiyet denetimi çalıştırılamadı.');
-   setError('');
-   setInfoMsg(`29-Ünite Hassasiyet & Psikometri Denetimi: Ort. ${data.averagePrecisionScore}/100 · Elit DPO: ${data.dpoEliteCount}/${data.evaluatedCount}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Hassasiyet denetimi hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const runHundredAiSolvePool = async () => {
-  setBusyAction('100ai-solve');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/100-ai/solve-pool`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || '100-AI çözüm kalibrasyonu başarısız.');
-   setError('');
-   const tc = data.tierCounts || {};
-   setInfoMsg(`100 Yapay Zekâ Konseyi ${data.poolCalibratedCount} soruyu çözdü: Kolay ${tc.kolay ?? 0} · Orta ${tc.orta ?? 0} · Zor ${tc.zor ?? 0} · İmkânsız ${tc.imkansiz ?? 0}`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : '100-AI kalibrasyon hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
- const runHundredAiEvolveWithQwen = async () => {
-  setBusyAction('100ai-evolve');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/100-ai/evolve`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Qwen Code ile 100-AI evrimi başarısız.');
-   setError('');
-   setInfoMsg(`Qwen Code 100-AI Evrimi Tamamlandı: Seviye v${data.qwenEvolutionLevel} (${data.summary})`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Qwen Code evrim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
 
  const filtered = items.filter(q => q.status === view);
  const completedWithQuestions = new Set(items.filter(q => q.status === 'approved' && read.includes(q.unitId)).map(q => q.unitId)).size;
@@ -1647,7 +1041,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    <div className="telemetry-card">
     <div className="telemetry-head"><Zap size={16}/><span>ÜRETİM HIZI</span></div>
     <strong>{tel?.secondsPerItem ? `${tel.secondsPerItem} sn` : `${tel?.questionsPerMinute ?? 0}`} <small>{tel?.secondsPerItem ? '/ soru' : 'soru/dk'}</small></strong>
-    <p>{tel?.questionsPerMinute ?? 0} soru/dk · {tel?.tokensPerSecond ? `${tel.tokensPerSecond} tok/sn` : 'Veri bekleniyor'} · {cfg?.batchPerCall || 5}/çağrı</p>
+    <p>{tel?.questionsPerMinute ?? 0} soru/dk · {tel?.tokensPerSecond ? `${tel.tokensPerSecond} tok/sn` : 'Veri bekleniyor'} · {cfg?.batchPerCall || 8}/çağrı</p>
    </div>
    <div className="telemetry-card">
     <div className="telemetry-head"><Gauge size={16}/><span>KART &amp; ÇİFT-CEVAP KALKANI</span></div>
@@ -1676,20 +1070,12 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      Boru hattı: <b>{pipelinePhaseLabel[tel?.pipelinePhase || 'idle'] || tel?.pipelinePhase}</b>
     </p>
 
-    {/* HIZ & ZEKA PROFİLLERİ */}
+    {/* TEK MOD = TURBO (Kalite Kilidi AKTİF) — başka profil/mod yoktur, proje her zaman Turbo ile çalışır */}
     <div className="preset-bar">
-     <span className="preset-label"><Cpu size={14}/> Hız & Zeka Profili:</span>
-     {([
-      ['turbo', '⚡ Turbo (Varsayılan · Kalite Kilitli)', '6 soru/çağrı · Toplu kör hakem · Self-correction & kolay/orta/zor kilidi AKTİF'],
-      ['balanced', 'Dengeli', '5 soru/çağrı · Toplu kör hakem · Otomatik düzeltme'],
-      ['deep', 'Derin Zeka (Zor/Vaka)', '3 soru/çağrı · Tekil hakem · Think açık']
-     ] as const).map(([key, label, title]) => (
-      <button key={key} title={title} className={`preset-btn ${cfg?.preset === key ? 'active' : ''}`} onClick={() => updateConfig({preset: key})}>
-       {label}
-      </button>
-     ))}
+     <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
+     <span className="preset-btn active" title="8 soru/çağrı · Toplu kör hakem · Self-correction & kolay/orta/zor kilidi HER ZAMAN AKTİF">⚡ Turbo (Kalite Kilitli) — 8 soru/çağrı · Toplu kör hakem · Self-correction & kolay/orta/zor kilidi</span>
      <span className="jarvis-badge ok" style={{marginLeft: 8}}>
-      🔒 Turbo Kalite Kilidi: {status?.turboQualityLock !== false ? 'AKTİF (Sıfır Saçmalama)' : 'Kapalı'}
+      🔒 Turbo Kalite Kilidi: AKTİF (Sıfır Saçmalama)
      </span>
     </div>
 
@@ -1812,21 +1198,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      </div>
     )}
 
-    {/* İNCE HIZ & KAPSAM AYARLARI */}
+    {/* İNCE KAPSAM AYARI — hız/kalite Turbo kilidinde sabittir */}
     <div className="config-grid">
-     <div className="config-item">
-      <label htmlFor="batch-choice">Çağrı başına soru (1-8)</label>
-      <select id="batch-choice" value={cfg?.batchPerCall || 5} onChange={e => updateConfig({batchPerCall: Number(e.target.value)})}>
-       {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>{n} soru / çağrı</option>)}
-      </select>
-     </div>
-     <div className="config-item">
-      <label htmlFor="pipeline-choice">Boru hattı</label>
-      <select id="pipeline-choice" value={cfg?.pipelineMode || 'batched'} onChange={e => updateConfig({pipelineMode: e.target.value as 'batched' | 'direct'})}>
-       <option value="batched">Kuyruklu (VRAM swap önler — Hızlı)</option>
-       <option value="direct">Doğrudan (Anlık tekil)</option>
-      </select>
-     </div>
      <div className="config-item">
       <label htmlFor="passage-choice">Kaynak genişliği</label>
       <select id="passage-choice" value={cfg?.passageMode || 'full-book'} onChange={e => updateConfig({passageMode: e.target.value as 'full-book' | 'summary-only'})}>
@@ -1836,32 +1209,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      </div>
     </div>
 
-    <div className="toggle-row">
-     <label className="toggle-pill">
-      <input type="checkbox" checked={cfg?.batchVerify !== false} onChange={e => updateConfig({batchVerify: e.target.checked})}/>
-      <span>Toplu kör hakem (5x daha hızlı ~1sn/soru)</span>
-     </label>
-     <label className="toggle-pill">
-      <input type="checkbox" checked={cfg?.generateStudyMaterials !== false} onChange={e => updateConfig({generateStudyMaterials: e.target.checked})}/>
-      <span>Kart + Eşleştirme + Tekrar üret</span>
-     </label>
-     <label className="toggle-pill">
-      <input type="checkbox" checked={cfg?.autoEvolve !== false} onChange={e => updateConfig({autoEvolve: e.target.checked})}/>
-      <span>Arka planda güvenli Öz-Evrim</span>
-     </label>
-     <label className="toggle-pill">
-      <input type="checkbox" checked={cfg?.fastThink !== false} onChange={e => updateConfig({fastThink: e.target.checked})}/>
-      <span>Hızlı düşünme (think:false)</span>
-     </label>
-     <label className="toggle-pill">
-      <input type="checkbox" checked={cfg?.selfCorrection !== false} onChange={e => updateConfig({selfCorrection: e.target.checked})}/>
-      <span>Hakem eleştirisiyle düzeltme</span>
-     </label>
-     <label className="toggle-pill">
-      <input type="checkbox" checked={cfg?.smartDifficulty !== false} onChange={e => updateConfig({smartDifficulty: e.target.checked})}/>
-      <span>Akıllı zorluk dengeleme</span>
-     </label>
-    </div>
+    <p className="manifest-line" style={{margin: '4px 0 10px'}}>
+     🔒 Turbo Kalite Kilidi: <b>8 soru/çağrı · Toplu kör hakem (~1sn/soru) · Hızlı düşünme · Self-correction · Akıllı zorluk · Kart + Eşleştirme + Tekrar üretimi · Arka plan Öz-Evrim</b> — tümü kalıcı olarak açıktır, kapatılmaz.
+    </p>
 
     <div className="model-select">
      <label htmlFor="concurrency-choice">Eşzamanlı yuva (1-{status?.totalUnits || 29})</label>
@@ -2028,56 +1378,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       <div className="progress"><div style={{width: `${Math.min(100, Math.round((status.jarvis.sinceLastTrain / Math.max(1, status.jarvis.config.trainEveryNQuestions)) * 100))}%`, background: '#5b8f3d'}}/></div>
      </div>
 
-     <div className="training-actions">
-      <button className="outline" onClick={triggerAutoAssignRoles} disabled={!status?.connected || !!busyAction}>
-       <Wand2 size={15}/> {busyAction === 'auto-roles' ? 'Roller atanıyor...' : 'Modelleri Otomatik Ata & Uzmanlaştır'}
-      </button>
-      <button className="outline" onClick={triggerJarvisResearch} disabled={!status?.connected || !!busyAction}>
-       <Globe size={15}/> {busyAction === 'jarvis-research' ? 'İnternet taranıyor...' : 'Web Araştırması & Sınav Tahmini Yap'}
-      </button>
-      <button className="outline" onClick={triggerCuratorScan} disabled={!!busyAction}>
-       <ShieldCheck size={15}/> {busyAction === 'curator-scan' ? 'Havuz taranıyor...' : '20k+ Havuz Botunu Şimdi Tara'}
-      </button>
-      <button className="outline" onClick={triggerEnhanceNextLesson} disabled={!status?.connected || !!busyAction}>
-       <BookOpen size={15}/> {busyAction === 'lesson-enhance' ? 'Anlatım geliştiriliyor...' : 'Ünite Konu Anlatımını Geliştir'}
-      </button>
-      <button className="outline" onClick={triggerProduceNextVideo} disabled={!status?.connected || !!busyAction}>
-       <Sparkles size={15}/> {busyAction === 'video-produce' ? '3D Video Üretiliyor...' : '3D Diyaloglu Video & Flow Üret'}
-      </button>
-      <button className="outline" onClick={triggerJarvisReflect} disabled={!status?.connected || !!busyAction}>
-       <Brain size={15}/> {busyAction === 'jarvis-reflect' ? 'Analiz ediliyor...' : 'Şimdi Analiz Et & Öğren (Reflect)'}
-      </button>
-      <button className="outline" onClick={triggerJarvisInnovate} disabled={!status?.connected || !!busyAction}>
-       <Code2 size={15}/> {busyAction === 'jarvis-innovate' ? 'Qwen Code çalışıyor...' : 'Qwen Code ile Geliştir (Zorluk & Kural)'}
-      </button>
-       <button className="primary" onClick={triggerApexEvolve} disabled={!status?.connected || !!busyAction}>
-        <Zap size={15}/> {busyAction === 'apex-evolve' ? '11 Alt-Sistem Evrimleşiyor...' : '100x Ultra-Singularity: Tüm 11 Botu Evrimleştir'}
-       </button>
-       <button className="primary" onClick={triggerUltraTrainTick} disabled={!!busyAction}>
-        <Brain size={15}/> {busyAction === 'ultra-train' ? '100x Zekâ Eğitimi Çalışıyor...' : '🧠 100x Sürekli Zekâ Eğitimi & Bilgi Damıtma'}
-       </button>
-       <button className="primary" onClick={developEntireProjectWithUi} disabled={!!busyAction}>
-        <Sparkles size={15}/> {busyAction === 'nexus-develop-all' ? 'Tüm Proje + Arayüz Geliştiriliyor...' : '🚀 Nexus-Titan: Tüm Projeyi & Arayüzü Geliştir'}
-       </button>
-      <button className="outline" onClick={triggerGithubMine} disabled={!!busyAction}>
-       <Globe size={15}/> {busyAction === 'github-mine' ? 'GitHub OSS Taranıyor...' : '🐙 0-API Yasal GitHub OSS Ara (MIT/Apache)'}
-      </button>
-      <button className="primary" onClick={() => triggerParametersEvolve(false)} disabled={!!busyAction}>
-       <Cpu size={15}/> {busyAction === 'params-evolve' ? '11 AI & 5 Bilgi Seviyesi Test Edilip Evrimleşiyor...' : '🧬 Çok-Zekâ & 5 Seviyeyle Test Et + 11 AI Parametrelerini Geliştir'}
-      </button>
-      <button className="outline" onClick={() => triggerParametersEvolve(true)} disabled={!status?.connected || !!busyAction}>
-       <Brain size={15}/> {busyAction === 'swarm-eval' ? 'Çoklu-LLM Parçalama Çalışıyor...' : '🤖 Farklı Yapay Zekâlara Parçalayarak Canlı Test Et'}
-      </button>
-      <button className="outline" onClick={triggerParametersRollback} disabled={!(status.parameterMatrix?.rollbackDepth) || !!busyAction}>
-       <RotateCcw size={15}/> Parametre Adımını Geri Al ({status.parameterMatrix?.rollbackDepth ?? 0})
-      </button>
-      <button className="outline" onClick={triggerJarvisTrain} disabled={status.jarvis.trainingState.running || !!busyAction}>
-       <RefreshCw size={15}/> {status.jarvis.trainingState.running ? `Eğitiliyor (${status.jarvis.trainingState.stage})...` : 'Ağırlık Eğitimi Başlat (LoRA+DPO+Swap)'}
-      </button>
-      <button className="outline" onClick={triggerJarvisRollbackModel} disabled={!status.jarvis.memory.trainedModels?.length || !!busyAction}>
-       <RotateCcw size={15}/> Önceki Modele Dön
-      </button>
-     </div>
+     <p className="manifest-line" style={{marginTop: 10}}>
+      🤖 <b>Tamamen Otonom:</b> Rol atama, web araştırması, havuz taraması, konu anlatımı geliştirme, 3D video üretimi, ApexArchitect evrimi, sürekli zekâ eğitimi, Nexus-Titan tam proje geliştirme, GitHub OSS madenciliği, parametre evrimi, LoRA+DPO ağırlık eğitimi ve hot-swap — <b>tümü proje açıldığı andan itibaren arka planda kendiliğinden çalışır.</b> Hiçbir düğmeye basman gerekmez.
+     </p>
 
      {/* 20x OMEGA-4700x+ (+470,000%) APEXARCHITECT, +160,000% KESİNTİSİZ ZEKÂ EĞİTİMİ & 0-API YASAL GITHUB OSS PANELİ */}
      {(() => {
@@ -2343,11 +1646,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <b> Son Meta-Geliştirici:</b> {status.parameterMatrix.lastEvolutionSource || 'başlangıç kalibrasyonu'} ·
         <b> Güvenli Geri Alma:</b> {status.parameterMatrix.rollbackDepth} adım
        </p>
-       <div className="training-actions" style={{marginBottom: 8}}>
-        <button className="primary" onClick={triggerHyperEvolveBots} disabled={!!busyAction}>
-         <Zap size={14}/> {busyAction === 'bots-hyper-evolve' ? '11 Bot + 64-Katman MoE Geliştiriliyor...' : '⚡ Tüm Botları Hyper-Evrimleştir (64-Katman MoE + 260k GitHub Bilgisi)'}
-        </button>
-       </div>
+       <p className="manifest-line" style={{margin: '4px 0 8px'}}>
+        🤖 <b>Otonom Hyper-Evrim:</b> Tüm 11 bot + 64-Katman MoE, proje açıldığı andan itibaren arka planda sürekli evrimleşir (her ~14 sn); hiçbir düğmeye basman gerekmez.
+       </p>
        <div className="jarvis-diff-grid" style={{marginTop: 6}}>
         {(status.parameterMatrix.bots || []).map(bot => (
          <div className="jarvis-diff-card" key={bot.botId}>
@@ -2412,45 +1713,18 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <b>UI Denetim Skoru:</b> %{status.nexusModel.uiAuditScore} ({status.nexusModel.lastWorkspaceAudit?.uiFilesCount ?? 8} UI dosyası + sunucu + eğitim + testler)
        </p>
 
-       <div className="training-actions">
-        <button className="primary" onClick={triggerNexusCycle} disabled={!!busyAction}>
-         <Zap size={14}/> {busyAction === 'nexus-cycle' ? 'Füzyon & UI Evrimi Çalışıyor...' : '⚡ Sürekli Füzyon + Arayüz Evrim Turu (<1sn)'}
-        </button>
-        <button className="primary" onClick={developEntireProjectWithUi} disabled={!!busyAction}>
-         <Sparkles size={14}/> {busyAction === 'nexus-develop-all' ? 'Tüm Proje + Arayüz Geliştiriliyor...' : '🚀 Tüm Projeyi Geliştir (UI + Sunucu + Eğitim + Test)'}
-        </button>
-        <button className="outline" onClick={buildNexusOllamaModel} disabled={!!busyAction}>
-         <Cpu size={14}/> {busyAction === 'nexus-build-ollama' ? 'Ollama Modeli Derleniyor...' : '🧱 Ollama’da tempo-nexus-titan:latest Oluştur/Güncelle'}
-        </button>
-       </div>
+       <p className="manifest-line" style={{margin: '4px 0 2px'}}>
+        🤖 <b>Otonom Füzyon:</b> Sürekli füzyon turları, tüm projenin + arayüzün geliştirilmesi ve <code>tempo-nexus-titan:latest</code> modelinin oluşturulup güncellenmesi — <b>hepsi proje açıldığı andan itibaren arka planda kendiliğinden çalışır.</b> Hiçbir düğmeye basman gerekmez.
+       </p>
 
-       {/* HARİCİ YEREL / GITHUB / HUGGINGFACE MODEL KAYIT KUTUSU */}
-       <div className="model-select" style={{margin: '4px 0 0'}}>
-        <input
-         type="text"
-         placeholder="Model adı (örn. Özel Qwen3 GGUF)"
-         value={externalModelName}
-         onChange={e => setExternalModelName(e.target.value)}
-         aria-label="Harici model adı"
-         style={{maxWidth: 210}}
-        />
-        <input
-         type="text"
-         placeholder="Yerel GGUF yolu veya GitHub/HF repo"
-         value={externalModelSource}
-         onChange={e => setExternalModelSource(e.target.value)}
-         aria-label="Yerel dosya yolu veya GitHub/HF adresi"
-         style={{maxWidth: 280}}
-        />
-        <button className="outline" onClick={registerExternalNexusModel} disabled={!!busyAction || (!externalModelName.trim() && !externalModelSource.trim())}>
-         <Wand2 size={14}/> {busyAction === 'nexus-register' ? 'Ekleniyor...' : '+ Yerel / Dış Modeli Füzyona Ekle'}
-        </button>
-       </div>
+       {/* Yerel GGUF / Safetensors / HF / Ollama ağırlıkları ve GitHub·HF açık kaynak modeller arka planda otomatik taranıp füzyona dahil edilir */}
+       <p className="manifest-line" style={{margin: '4px 0 0'}}>
+        🔎 <b>Otomatik Keşif:</b> Yerel diskteki GGUF/Safetensors ağırlıkları (<code>.tempo-data/models</code>, <code>.tempo-data/external</code>, <code>~/.cache/huggingface</code>, <code>~/.ollama</code>) ve GitHub/HF katalogundaki açık kaynak modeller proje açılışında kendiliğinden taranıp füzyona eklenir; elle kayıt gerekmez.
+       </p>
 
        {/* İNDİRİLEBİLİR & KURULU MODEL KAYNAKLARI (OLLAMA + YEREL + GITHUB) */}
        <div className="nexus-source-grid">
         {(status.nexusModel.catalog || []).slice(0, 12).map(src => {
-         const pullKey = src.ollamaTag || src.githubRepo || src.id;
          return (
           <div className="nexus-source-card" key={src.id}>
            <div className="coverage-top">
@@ -2462,16 +1736,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
            <b style={{fontSize: 12}}>{src.name}</b>
            <small style={{color: '#5f7360'}}>{src.specialty}</small>
            {src.downloadState?.detail && <small style={{color: '#2e6b3f'}}>{src.downloadState.detail}</small>}
-           {!src.installed && (
-            <button
-             className="outline"
-             style={{padding: '6px 10px', marginTop: 4}}
-             onClick={() => pullExternalNexusModel(src.id)}
-             disabled={!!busyAction}
-            >
-             <RefreshCw size={12}/> {busyAction === `nexus-pull-${src.id}` ? 'İndiriliyor...' : (src.ollamaTag ? `Ollama’dan Çek (${src.ollamaTag})` : `GitHub/HF Eşitle (${pullKey})`)}
-            </button>
-           )}
           </div>
          );
         })}
@@ -2491,11 +1755,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
            </div>
            <p>{np.summary}</p>
            {np.status !== 'applied_verified' && (
-            <div className="training-actions">
-             <button className="outline" style={{padding: '5px 10px'}} onClick={() => applyNexusProposal(np.id)} disabled={!!busyAction}>
-              <Check size={13}/> {busyAction === `nexus-apply-${np.id}` ? 'Doğrulanıyor...' : 'Doğrula & Projeye Uygula (Otomatik Rollback Korumalı)'}
-             </button>
-            </div>
+            <small style={{color: '#5f7360'}}>⏳ 100/100 doğrulama kapısından kendiliğinden geçirilip projeye otomatik uygulanacak (otomatik rollback korumalı).</small>
            )}
           </div>
          ))}
@@ -2531,10 +1791,10 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <button className="outline" onClick={searchGithubMega} disabled={!!busyAction}>
          <Search size={14}/> {busyAction === 'github-mega-search' ? 'Aranıyor...' : '260k+ İndekste Ara'}
         </button>
-        <button className="primary" onClick={triggerGithubMegaAbsorb} disabled={!!busyAction}>
-         <Zap size={14}/> {busyAction === 'github-mega-absorb' ? 'GitHub Bilgisi Emiliyor...' : '🐙 2.500 GitHub Projesini Em & Tüm Botları Güçlendir'}
-        </button>
        </div>
+       <p className="manifest-line" style={{margin: '4px 0 8px'}}>
+        🤖 <b>Otonom Emilim:</b> GitHub 260k+ proje emilimi & tüm botların güçlendirilmesi proje açıldığı andan itibaren arka planda kesintisiz çalışır; hiçbir düğmeye basman gerekmez.
+       </p>
        {(githubSearchResults.length > 0 || status.githubMega.recentProjectsSample?.length > 0) && (
         <div className="jarvis-diff-grid">
          {(githubSearchResults.length ? githubSearchResults : status.githubMega.recentProjectsSample).slice(0, 6).map(gp => (
@@ -2564,11 +1824,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        <p style={{margin: '6px 0'}}>
         • Projenin 8 çekirdek katmanını eşzamanlı ölçer, en zayıf darboğazı ({status.projectLevel.bottleneckPillar?.name || 'otomatik'}) hedefleyip yükseltir ve her adımı <b>100-Yollu Doğrulama Kapısından</b> (&lt;1sn, 0-API) geçirir.
        </p>
-       <div className="training-actions" style={{marginBottom: 8}}>
-        <button className="primary" onClick={() => runProjectLevelUp(false)} disabled={!!busyAction}>
-         <Zap size={14}/> {busyAction === 'project-level-up' ? '8 Katman Yükseltiliyor...' : '🚀 Tüm Projeye Seviye Atlat (8 Katman + 100/100 Doğrulama <1sn)'}
-        </button>
-       </div>
+       <p className="manifest-line" style={{margin: '0 0 8px'}}>
+        🤖 <b>Otonom Seviye Atlama:</b> 8 çekirdek katman (BM25 arama, Türkçe ÖSYM & 96-Tuzak, 64-Katman MoE konseyi, 260k+ GitHub emilimi, 100-yollu doğrulama kapısı, eğitim hattı, 3D/video stüdyosu, Python QLoRA/DPO) proje açıldığı andan itibaren arka planda sürekli ölçülüp zayıfa odaklanılarak yükseltilir; her adım 100/100 kapısından geçer. Hiçbir düğmeye basman gerekmez.
+       </p>
        <div className="jarvis-diff-grid">
         {(status.projectLevel.pillars || []).map(p => (
          <div className="jarvis-diff-card" key={p.id}>
@@ -2596,11 +1854,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        <p style={{margin: '6px 0'}}>
         • GitHub’dan, İnternetten veya Kod Konseyinden öğrenilen her bilgi/modül/yama projeye eklenmeden önce <b>100 farklı yöntemle</b> (AST, sandbox kaçışı, Türkçe ÖSYM, 96-tuzak, fuzzing, birim test, performans, UI/WCAG ve regresyon) denenir; yalnız <b>100/100 çalışanlar</b> projeye geçirilir.
        </p>
-       <div className="training-actions" style={{marginBottom: 8}}>
-        <button className="primary" onClick={runVerifier100PrototypeGate} disabled={!!busyAction}>
-         <Zap size={14}/> {busyAction === 'verifier-100-proto' ? '100 Farklı Yolla Test Ediliyor...' : '🧪 GitHub/İnternet Öğrenimini 100 Yolla Test Et & Çalışırsa Projeye Ekle'}
-        </button>
-       </div>
+       <p className="manifest-line" style={{margin: '0 0 8px'}}>
+        🤖 <b>Otonom 100/100 Kapısı:</b> GitHub/internet/kütüphane öğrenimleri projeye alınmadan önce arka planda 100 farklı yöntemle test edilir; yalnız 100/100 geçenler eklenir. Hiçbir düğmeye basman gerekmez.
+       </p>
        {status.verifier100.lastVerification?.suites && (
         <div className="jarvis-diff-grid">
          {status.verifier100.lastVerification.suites.map(s => (
@@ -2635,14 +1891,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
          <b>Yerel Kurulu Kodlayıcılar:</b> {status.coderCouncil.installedLocalCount}/{status.coderCouncil.totalModels} · <b>Sprint #</b>{status.coderCouncil.totalSprints} (&lt;1sn: {status.coderCouncil.subSecondPassCount})
         </small>
        </p>
-       <div className="training-actions" style={{marginTop: 6, marginBottom: 8}}>
-        <button className="primary" onClick={triggerCoderOvertrainSprint} disabled={!!busyAction}>
-         <Zap size={14}/> {busyAction === 'coder-overtrain' ? `${status.coderCouncil.totalModels} Kodlayıcı + 11 Bot Aşırı Eğitiliyor...` : `🔥 ${status.coderCouncil.totalModels} Kodlayıcı + DPO Damıtma Aşırı Eğitim Turu (<1sn)`}
-        </button>
-        <button className="outline" onClick={pullCoderCouncilModels} disabled={!status.connected || !!busyAction}>
-         <RefreshCw size={14}/> {busyAction === 'coder-pull' ? 'RTX 3080 Ti Kodlayıcılar İndiriliyor...' : '⬇️ Güçlü Açık Kaynak Kodlayıcıları Ollama’ya Kur'}
-        </button>
-       </div>
+       <p className="manifest-line" style={{margin: '6px 0 8px'}}>
+        🤖 <b>Otonom Aşırı Eğitim:</b> {status.coderCouncil.totalModels} kodlayıcı + 11 botun DPO damıtma aşırı-eğitim turu <b>proje açılışından itibaren arka planda kesintisiz çalışır</b>; güçlü açık kaynak kodlayıcılar da Ollama bağlandığında kendiliğinden kurulur (indirme komutları README'de). Hiçbir düğmeye basman gerekmez.
+       </p>
        <div className="jarvis-diff-grid">
         {(status.coderCouncil.models || []).map(cm => (
          <div className="jarvis-diff-card" key={cm.id}>
@@ -2682,14 +1933,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
          <> · <b>Havuz Hassasiyet Ort.:</b> {status.precisionQuality.averagePrecisionScore}/100 ({status.precisionQuality.dpoEliteCount ?? 0} Elit)</>
         ) : null}
        </p>
-       <div className="training-actions" style={{marginBottom: 8}}>
-        <button className="primary" onClick={() => runTvgfbfScoutCycle(true)} disabled={!!busyAction}>
-         <Zap size={14}/> {busyAction === 'tvgfbf-swarm' ? '5 TVGFBF Ajanı Tarıyor & Tetikliyor...' : '🛰️ 5 TVGFBF Ajanını Çalıştır & Tüm Ajanları Tetikle'}
-        </button>
-        <button className="outline" onClick={runPrecisionAuditRefresh} disabled={!!busyAction}>
-         <ShieldCheck size={14}/> {busyAction === 'precision-audit' ? 'Denetleniyor...' : '29-Ünite Kitap/TVGFBF Hassasiyet Denetimi'}
-        </button>
-       </div>
+       <p className="manifest-line" style={{margin: '0 0 8px'}}>
+        🤖 <b>Otonom Tarama:</b> 5-ajan TVGFBF + Güvenilir PDF &amp; Kitap İçi taraması ve 29-ünite hassasiyet denetimi proje açıldığı andan itibaren arka planda kesintisiz çalışır; hiçbir düğmeye basman gerekmez.
+       </p>
        <div className="jarvis-diff-grid">
         {(status.tvgfbfSwarm.agents || []).map(ag => (
          <div className="jarvis-diff-card" key={ag.id}>
@@ -2722,14 +1968,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        {status.hundredAiCouncil.lastEvolutionSummary && (
         <p style={{margin: '4px 0'}}><small><b>Son Qwen Code Evrimi:</b> {status.hundredAiCouncil.lastEvolutionSummary}</small></p>
        )}
-       <div className="training-actions" style={{marginBottom: 8}}>
-        <button className="primary" onClick={runHundredAiSolvePool} disabled={!!busyAction}>
-         <Gauge size={14}/> {busyAction === '100ai-solve' ? '100 AI Konseyi Soruları Çözüyor...' : '🧠 100 AI Konseyi ile Tüm Havuzu Çöz & Etiketle'}
-        </button>
-        <button className="outline" onClick={runHundredAiEvolveWithQwen} disabled={!!busyAction}>
-         <Code2 size={14}/> {busyAction === '100ai-evolve' ? 'Qwen Code Evrimleştiriyor...' : '⚡ Qwen Code ile 100 AI Zekâsını Evrimleştir'}
-        </button>
-       </div>
+       <p className="manifest-line" style={{margin: '0 0 8px'}}>
+        🤖 <b>Otonom Konsey:</b> 100 Yapay Zekâ Konseyi havuzu proje açıldığı andan itibaren arka planda sürekli çözer, etiketler ve Qwen Code ile kendini evrimleştirir; hiçbir düğmeye basman gerekmez.
+       </p>
       </div>
      )}
 
@@ -2872,10 +2113,10 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        <code>{status.evolution.activePolicy.customRuleCode}</code>
       </div>
      )}
+     <p className="manifest-line" style={{margin: '4px 0'}}>
+      🤖 <b>Otonom Öz-Evrim:</b> Proje açıldığı andan itibaren her ~35 denemede bir altın testli kendini geliştirme turu arka planda kendiliğinden çalışır; bağlantı varsa Ollama modelleriyle, yoksa 0-API yerel kurallarla evrimleşir.
+     </p>
      <div className="training-actions">
-      <button className="outline" onClick={triggerEvolve} disabled={!status?.connected || !!busyAction}>
-       <Brain size={15}/> {busyAction === 'evolve' ? 'Kum havuzunda deneniyor...' : 'Şimdi Kendini Geliştir (Altın Testli)'}
-      </button>
       <button className="outline" onClick={triggerRollback} disabled={status.evolution.historyCount < 2 || !!busyAction}>
        <RotateCcw size={15}/> Önceki Sürüme Geri Al (v{Math.max(1, status.evolution.activePolicy.version - 1)})
       </button>
@@ -2923,13 +2164,11 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    <div className="training-panel">
     <p>
      Model eğitimi için en az <b>50 geçerli onaylı soru ve 5 ünite</b> gerekir. Şu an: <b>{trn?.approvedCount || 0} onaylı soru</b>, <b>{trn?.unitCount || 0} ünite</b>, <b>{trn?.dpoTracesCount || 0} reddedilen/eleştiri izi (DPO tercihi için)</b>.
-     {trn?.readyForTraining ? ' Veri eşiği aşıldı — aşağıdaki düğme ile çok görevli eğitim + DPO veri setini anında hazırlayabilirsin!' : ` Eşik için ${Math.max(0, 50 - (trn?.approvedCount || 0))} soru daha bekleniyor.`}
+     {trn?.readyForTraining ? ' Veri eşiği aşıldı — çok görevli SFT + DPO veri seti arka planda KENDİLİĞİNDEN hazırlanır (proje açılışında ve her +25 onaylı soruda güncellenir).' : ` Eşik için ${Math.max(0, 50 - (trn?.approvedCount || 0))} soru daha bekleniyor.`}
     </p>
-    <div className="training-actions">
-     <button className="outline" onClick={prepareTraining} disabled={!trn?.readyForTraining || !!busyAction}>
-      <Database size={15}/> {busyAction === 'prepare' ? 'Hazırlanıyor...' : 'Çok Görevli SFT + DPO Verisini Hazırla'}
-     </button>
-    </div>
+    <p className="manifest-line" style={{margin: '4px 0 0'}}>
+     🤖 <b>Otonom SFT + DPO Hazırlığı:</b> <code>training/prepare.py --multitask --dpo</code> eşiği geçer geçmez proje açılışından itibaren arka planda otomatik çalışır ve <code>.tempo-data/training</code> klasörünü günceller; elle çalıştırman gerekmez.
+    </p>
     {trn?.manifest && (
      <p className="manifest-line">
       Son veri seti: <b>{trn.manifest.train_count}</b> eğitim, <b>{trn.manifest.eval_count}</b> doğrulama, <b>{trn.manifest.dpo_train_count || 0}</b> DPO çifti
