@@ -1,0 +1,20 @@
+- name: ollama_chat/qwen2.5-coder:14b
+  edit_format: diff
+  use_repo_map: true
+  extra_params:
+    num_ctx: 16384
+    temperature: 0.15
+
+- name: ollama_chat/qwen3:8b
+  edit_format: whole
+  use_repo_map: true
+  extra_params:
+    num_ctx: 12288
+    temperature: 0.2
+
+- name: ollama_chat/qwen2.5-coder:7b
+  edit_format: diff
+  use_repo_map: true
+  extra_params:
+    num_ctx: 16384
+    temperature: 0.15

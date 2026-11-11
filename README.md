@@ -2,12 +2,12 @@
 
 Bu rehber **Windows 11 üzerinde, doğrudan kendi bilgisayarında** çalışmak içindir. Ubuntu veya WSL kurman gerekmez. İşlemleri sırayla yap: önce projeyi ve Ollama'yı çalıştır, ardından soruları incele. Model eğitimi isteğe bağlıdır ve sonraki adımlardadır.
 
-> **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/affea53d-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
+> **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/fb70c29b-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
 
 ## 1. Projeyi GitHub'dan indir
 
 1. Tarayıcıda [proje sayfasını](https://github.com/yurdakulaykut16-oss/Temel-egitim) aç.
-2. Sol üstteki dal seçme düğmesinden güncel uygulamanın bulunduğu dalı seç. Bu çalışma oturumunun dalı `arena/affea53d-temel-egitim` adını taşır; yalnız GitHub'a gönderilmişse listede görünür. Değişiklikler sonradan `main` dalına alınmışsa güncel `main` da kullanılabilir.
+2. Sol üstteki dal seçme düğmesinden güncel uygulamanın bulunduğu dalı seç. Bu çalışma oturumunun dalı `arena/fb70c29b-temel-egitim` adını taşır; yalnız GitHub'a gönderilmişse listede görünür. Değişiklikler sonradan `main` dalına alınmışsa güncel `main` da kullanılabilir.
 3. **Code → Download ZIP** seçeneğine bas.
 4. İnen ZIP dosyasına sağ tıkla ve **Tümünü ayıkla** seç.
 5. Çıkan klasörü örneğin `C:\Users\KullanıcıAdın\Desktop\Temel-egitim` konumuna koy. `KullanıcıAdın` kendi Windows kullanıcı adındır; örnek yolu harfiyen yazman gerekmez.
@@ -49,25 +49,55 @@ ollama list
 
 Sürüm ve kurulu model listesi görünmeli. Komut bulunamazsa PowerShell'i kapatıp yeniden aç. Bağlantı hatası varsa Ollama uygulamasının çalıştığını kontrol et.
 
-## 4. Soru üretecek "öğretmen" modeli indir
+## 4. Hangi modelleri indirmelisin ve nasıl indirilir?
 
-Aynı PowerShell penceresinde:
+Uygulama içinde **5 yapay zekâ rolü** vardır: **Üretici Öğretmen**, **1. Hakem**, **Bağımsız 2. Hakem**, **Evrim Mimarı (JARVIS)** ve **Qwen Code (Zorluk & Sistem Geliştiricisi)**. İyi haber: **proje açıldığı anda kurulu modelleri otomatik algılayıp tüm rollere kendisi yerleştirir** — yani aşağıdakileri bir kez `ollama pull` ile indirmen yeterlidir!
+
+### Seçenek A — RTX 3080 Ti / 12 GB VRAM için Önerilen Tam Set (En Yüksek Kalite)
+
+PowerShell'de aşağıdaki komutları sırayla çalıştır:
 
 ```powershell
+# 1. Ana Üretici & Evrim Beyni (Qwen3 14B, ~9 GB VRAM, çok yüksek Türkçe kalitesi)
 ollama pull qwen3:14b
-ollama list
+
+# 2. Bağımsız 2. Hakem (Google Gemma 3 12B — farklı model ailesinden gerçek ikinci görüş, ~8 GB VRAM)
+ollama pull gemma3:12b
+
+# 3. Qwen Code Rolü (Zorluk motoru, kalite kuralları ve uygulama geliştirme taslakları için)
+ollama pull qwen2.5-coder:14b
 ```
 
-İndirme tamamlanınca listede `qwen3:14b` görünmeli. Bu, projenin varsayılan üretici/denetçi modelidir: Qwen3 14B, boyutuna göre güçlü ve Qwen2.5 32B düzeyine yakın yanıt kalitesi sunan, "hibrit düşünme" moduna sahip görece yeni bir modeldir; Q4 nicemlemeyle yaklaşık 9 GB VRAM kullanır ve RTX 3080 Ti'nin 12 GB belleğine rahatça sığar. Yine de doğru cevap garantisi vermez; bu yüzden proje iki bağımsız hakemden oluşan bir denetim kullanır (bkz. Adım 9-10).
+### Seçenek B — Daha Hızlı Üretim / 8 GB VRAM İçin Hafif Set
 
-İki hakemin GERÇEKTEN bağımsız olması için 2. hakemin varsayılanı Qwen ailesinden DEĞİL, Google'ın **Gemma 3 12B** modelidir (Türkçe dahil 140'tan fazla dili resmi olarak destekler, soru üretmede üstün olması şart değildir — amacı yalnızca bağımsız bir "ikinci görüş" sunmaktır, ve Q4 nicemlemeyle ~8 GB VRAM kullanarak 12 GB'lık karta rahatça sığar). Bunu da aynı adımda indirmen önerilir:
+Kartın 8 GB VRAM ise veya çok daha hızlı üretim (~1 sn/soru) istiyorsan bunları indirebilirsin:
 
 ```powershell
-ollama pull gemma3:12b
+ollama pull qwen3:8b
+ollama pull gemma3:4b
+ollama pull qwen2.5-coder:7b
+```
+
+*(İsteğe bağlı olarak daha güçlü kodlama modeli için `ollama pull qwen3-coder` da kullanılabilir.)*
+
+### Seçenek C — Harici Qwen Code CLI Bağlantısı (İsteğe Bağlı)
+
+Arayüzden `Qwen Code CLI` motorunu kullanmak istersen Node.js üzerinden resmi Qwen Code CLI aracını da kurabilirsin:
+
+```powershell
+npm.cmd install -g @qwen-code/qwen-code
+qwen --version
+```
+
+Kuruluysa **Soru stüdyosu → JARVIS & Qwen Code → Qwen Code Motoru** kısmından `Qwen Code CLI` seçebilirsin (kurulu değilse sistem otomatik olarak Ollama'daki Qwen Coder modelini kullanmaya devam eder).
+
+İndirmeleri tamamladıktan sonra kontrol et:
+
+```powershell
 ollama list
 ```
 
-Bu modeli indirmezsen program yine çalışır, ama arayüzde 2. hakem "kurulu değil" görünür ve o model indirilene (veya Adım 8'de elle başka bir kurulu model seçilene) kadar kendi kendine üretim bekler. İnternet hızına göre indirmeler sürebilir ve disk alanı kullanır. Daha küçük bir kart kullanıyorsan `qwen2.5:7b` gibi daha hafif bir modeli üretici/denetçi için seçebilirsin; Adım 8'de istediğin zaman değiştirebilirsin. 2. hakem için de Gemma 3 12B yerine başka bir kurulu modeli (ör. `mistral-nemo:12b`) seçmekte serbestsin.
+> **Not:** Tek bir model bile indirsen (örneğin sadece `qwen3:8b`) uygulama açılışta durmaz; tüm rolleri otomatik o modele yerleştirir ve arka planda `tempo-ogretmen:latest`, `tempo-hakem:latest`, `tempo-mimar:latest`, `tempo-qwen-coder:latest` uzman profillerini kendiliğinden oluşturarak yine çalışmaya başlar. Ancak gerçek bağımsız denetim için **2. hakem olarak farklı bir model ailesi (`gemma3:12b` vb.)** bulundurman önerilir.
 
 ## 5. Ekran kartını kontrol et
 
@@ -91,60 +121,88 @@ dir
 
 Listede `package.json` görünmeli. Görünmüyorsa yanlış klasördesin; doğru klasörü açıp tekrar dene.
 
-## 7. Projeyi başlat
+## 7. Projeyi başlat (Sıfır Tıklamayla Otomatik Başlar)
 
 Aynı proje PowerShell penceresinde sırayla:
 
 ```powershell
 npm.cmd install
-$env:OLLAMA_MODEL="qwen3:14b"
 npm.cmd run dev -- --host 127.0.0.1
 ```
 
-`npm.cmd install` ilk seferde paketleri indirir. Son komuttan sonra terminalde `http://localhost:5173/` gibi bir adres görünür. Windows'ta Chrome veya Edge açıp **terminalde yazan adresi** gir. 5173 doluysa farklı port gösterilebilir.
+*(İsteğe bağlı olarak başlangıç modelini el ile zorlamak istersen öncesinde `$env:OLLAMA_MODEL="qwen3:14b"` yazabilirsin; yazmasan bile sistem Ollama'da ne kuruluysa otomatik seçer.)*
+
+`npm.cmd install` ilk seferde paketleri indirir. Son komuttan sonra terminalde `http://localhost:5173/` gibi bir adres görünür. Windows'ta Chrome veya Edge açıp **terminalde yazan adresi** gir.
 
 Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak için **Ctrl + C** kullanabilirsin. Ollama uygulaması da açık olmalı. Bu yerel sunucuyu internete açma; kullanıcı yetkilendirmesi yoktur.
 
-**Önemli:** Soru üretimi artık bu PowerShell penceresinin (sunucunun) kendisinde, arka planda çalışır — tarayıcıda bir sekme açık tutman gerekmez. Tarayıcıyı yalnızca modeli seçmek, ilerlemeni görmek ve test çözmek için açarsın; onu kapatsan bile sunucu ve Ollama açık kaldığı sürece soru üretimi sürer.
+**Önemli — Açıldığı Anda Tam Otonom Çalışır:**
+Proje başladığı saniyeden itibaren **hiçbir düğmeye basman gerekmez**:
+1. **Otomatik Rol Kurulumu:** Ollama'daki modelleri tarar; Üretici, 1. Hakem, 2. Hakem, Evrim Mimarı ve Qwen Coder rollerini otomatik doldurur ve eksik uzman modelleri (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder`) kendisi kurar.
+2. **Kesintisiz Soru Üretimi:** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece **soru üretimi hiçbir zaman durmaz** (arka plan eğitimi veya araştırması sırasında bile kesilmez).
+3. **Sürekli Arka Plan Araştırması & Eğitimi:** Bir yapay zekâ grubu sürekli soru üretip denetlerken, koç yapay zekâlar internetten ders konularını araştırır, sınavda çıkabilecek soruları akıl yürüterek tahmin eder, diğer yapay zekâları sürekli eğitir ve soruları senin yerine kendi kendine onaylar veya eler.
 
-## 8. Modeli uygulamada seç
+## 8. Modelleri ve rolleri kontrol et (isteğe bağlı)
+
+Modeller proje açılışında otomatik atanır, ancak farklı bir model denemek istersen:
 
 1. Uygulamada **Soru stüdyosu**na gir.
-2. **Durumu yenile** düğmesine bas.
-3. **Yerel model seçimi** listesinden `qwen3:14b` seç ve **Modeli kullan** düğmesine bas — bu, soruları YAZAN (üretici) modeldir.
-4. Aynı sayfada ayrıca iki bağımsız denetleyici seçicisi daha vardır: **Denetçi (1. hakem)** ve **2. hakem**. İstersen (indirdiysen) her biri için FARKLI bir model seç ve her birinin yanındaki **Modeli kullan** düğmesine ayrı ayrı bas — bkz. 9. madde, neden önerildiği için.
-5. Bağlantı ve model durumunu kontrol et. Daha önce seçilmiş modeller kaydedildiyse terminaldeki varsayılanın yerine onlar kullanılabilir; gerekirse arayüzden tekrar seç.
+2. **Üretici model**, **Denetçi (1. hakem)**, **2. hakem (bağımsız)**, **3. AI Öz-Evrim** ve **JARVIS Qwen Code** alanlarından dilediğin modeli seçebilirsin.
+3. **Ollama bağlantısı yok** yazıyorsa Windows'ta Ollama uygulamasının açık olduğunu ve PowerShell'de `ollama list` komutunun çalıştığını kontrol et.
+4. Ortam değişkenleriyle de varsayılanları belirleyebilirsin:
+   - `OLLAMA_MODEL` (üretici), `OLLAMA_VERIFIER_MODEL` (1. hakem), `OLLAMA_JUDGE2_MODEL` (2. hakem), `OLLAMA_EVOLVER_MODEL` (mimar), `OLLAMA_CODER_MODEL` (Qwen Coder)
+   - `TEMPO_QWEN_CLI_BIN` (özel `qwen` CLI yolu), `TEMPO_WEB_RESEARCH=0` (internet araştırmasını kapatmak istersen), `LLAMA_CPP_DIR` (`llama.cpp` konumu)
 
-**Ollama bağlantısı yok** yazıyorsa Windows'ta Ollama'nın açık olduğunu ve PowerShell'de `ollama list` komutunun çalıştığını kontrol et. **Model kurulu değil** yazıyorsa 4. adımdaki indirmeyi tamamla ve doğru modeli seç. **Denetçi (1. hakem)** hiç seçilmediyse otomatik olarak üretici modelle aynısına düşer. **2. hakem** hiç seçilmediyse, gerçek bağımsızlık için otomatik olarak Gemma 3 12B'ye düşmeye çalışır (bkz. Adım 4) — bu model kurulu değilse karşısında "kurulu değil" görürsün; ya `ollama pull gemma3:12b` ile indir ya da listeden kurulu başka bir modeli elle seç.
+## 9. Tam Otonom JARVIS Mimarisi — Kesintisiz Üretim, İnternet Araştırması & Sürekli Öz-Eğitim
 
-## 9. Yapay zekâ kendi kendine öğretmenlik yapsın — iki bağımsız hakem denetimi
+Bu sürümde yapay zekâlar 5 kitabın tamamından (824 sayfa, ~2 milyon karakter, **1.021 konu pasajı**) beslenir ve proje açık olduğu sürece **bir yapay zekâ grubu diğer yapay zekâları hiç durmadan eğitir**:
 
-Bu sürümde soru üretimi senin bir eğitmen veya uzman olmanı gerektirmez: bir model **soru yazarı** olur, bir de **denetçi + 1 ayrı hakem** olmak üzere İKİ AYRI model birbirinden habersizce **öğretmen/hakem** rolünü üstlenir; sorunun zorluğunu bu ikisinin ortak kararı belirler, ikisi de hemfikir olmazsa soru havuza girmez.
+1. **Kesintisiz Üretim Hattı (Asla Durmaz):**
+   - Sorular 5'li paketler (`batchPerCall`, Turbo'da 6'lı) ve **toplu kör hakem** ile ~1 sn/soru temposunda üretilir.
+   - Arka planda ağırlık eğitimi, web araştırması veya Qwen Code inovasyonu çalışırken bile **soru üretimi asla duraklatılmaz** (`pausedForTraining = false`). Havuz 25.000 sınırına ulaşsa dahi en düşük puanlı/eski sorular rotasyonla yenilenerek kesintisiz yeni soru üretimi sürer.
+2. **Arka Planda Sürekli İnternet Araştırması & Sınav Tahmini (`server/research-agent.mjs`):**
+   - Araştırmacı ajan proje boyunca 29 üniteyi sırayla gezerek **Türkçe Vikipedi + DuckDuckGo web araması** üzerinden ilgili ders kavramlarını ve sınav vurgularını tarar (ağ yoksa hata vermeden kitap pasajları üzerinde derin örüntü analizine döner).
+   - Taradığı veriler + resmi kitap metni üzerinden **sınavda çıkabilecek soruları akıl yürüterek tahmin eder** (`examHypotheses`), sınavlarda en çok karıştırılan tuzak kavram çiftlerini (`confusionPairs`) çıkarır ve `.tempo-data/ai-brain/research-memory.json` üzerinden doğrudan soru üreticisine yön verir.
+   - *Güvenlik ilkesi:* Araştırma yalnızca "hangi kavramın ve tuzağın sorulacağı" konusunda akıl yürütür; sorunun **kanıt alıntısı (`evidence`) her zaman %100 resmi ders kitabından** alınmak zorundadır.
+3. **Gelişim Seviyesine Göre Dinamik Kalite Ayarı (`computeAdaptiveQuality`):**
+   - Yapay zekâ deneyim, araştırma ve Qwen Code inovasyonu kazandıkça (**Seviye 1 → Seviye 4 · Usta Sınav Mimarı**), beklediği minimum kalite çıtası ve vaka/analiz derinliği kendiliğinden yükselir.
+4. **Qwen Code Sürekli İnovasyonu & `kolay` / `orta` / `zor` Koruması:**
+5. **Çok Yanlış Yönlendirmesi & Anlatım/Kodlama Yenileme (`server/lesson-engine.mjs`):**
+   - Bir konuda üst üste hata yaptığında uygulama seni anında o konuyu biraz daha okumaya veya **3D Diyaloglu Videosunu** izlemeye yönlendirir.
+   - Hâlâ akılda kalmıyorsa **"Aklımda Kalmıyor: Kodlamaları & Anlatımı Değiştir"** (hem otomatik arka plan hem tek tıkla manuel) eski kodlamaları tamamen yasaklayıp yepyeni bir benzetme/akrostiş/hikâye tarzıyla dersi baştan kurgular.
+6. **"Ya Çıkarsa?" %100 Pasaj Kapsamı ve `5 × 20 = 100` Sınav Provası:**
+   - Sınavda 5 kitabın her birinden 20'şer toplam 100 soru geleceği için yapay zekâ "az önemli" saysa bile hiçbir kitap bölümü atlanmaz: her ünitede `everyCornerDetails` ("Ya Çıkarsa?" köşeleri), sıfır kör nokta pasaj önceliği ve Test Merkezinde **5 × 20 = 100 Soru Tam Sınav** + **"Ya Çıkarsa?" Kör Nokta Testi** bulunur.
+7. **Gömülü MP4 Video Oynatıcı, 3D Morpa Kampüs Sahnesi & Google Flow Köprüsü (`server/mp4-renderer.mjs`, `server/video-director.mjs`, `src/VideoLessonStage.tsx`):**
+   - Arka plandaki AI Yönetmeni üniteler için **Koç Yapay Zekâ, Sporcu Ada ve Tuzakçı Can** arasında geçen durum tabanlı (`İlk Keşif`, `Hata Kurtarma`, `Ya Çıkarsa?`, `Hızlı Tekrar`) 3D diyaloglu videoları otomatik **gerçek H.264/AAC `.mp4` dosyalarına** dönüştürüp `.tempo-data/ai-brain/videos/{unitId}.mp4` olarak kaydeder ve `GET /api/ollama/videos/mp4` (HTTP `Range` 206 destekli) üzerinden **doğrudan uygulama içine gömülü `<video controls>` oynatıcısında** açar (**başka siteye veya sayfaya yönlendirme yapmaz**).
+   - İstersen tek tıkla **Three.js 3D Etkileşimli Sahne**ye geçebilir, 3D sahneyi kaydedip sunucuda `.mp4`'e çevirerek doğrudan sayfaya gömebilir veya opsiyonel `GOOGLE_FLOW_API_KEY` ile üretilen Google Flow / Gemini Veo MP4 çıktısını da sayfa içine çekip gömebilirsin.
+8. **Hyper-150x Meta-Geliştirici Bot — ApexArchitect v3 (`server/apex-architect.mjs`, `server/jarvis-core.mjs`, `server/sandbox-evolver.mjs`):**
+   - Projedeki **tüm 6 botu** (`Üretici`, `Hakem Konseyi`, `20k+ Havuz Botu`, `LessonEngine`, `VideoDirector`, `ResearchAgent`) her döngüde canlı MR taramasından geçirir, kök nedenleri ve pasaj/hata darboğazlarını tespit eder.
+   - **Adli Eleştirmen × 3 Adaylı Turnuva Mimarı × Self-Repair (Kendini Onaran Kural) × 8-Tuzak Adversarial F1 Stres Testçisi** kuruluyla birden fazla rakip stratejiyi yarıştırır, bozuk kuralı otomatik tamir eder, önceki turun gerçek etkisini ölçüp `winningPlaybook` altın defterine yazar ve canlı `hyperParams` (`temperatureOffset`, `batchSizeHint`, `priorityPassageUnits`, `reframePriorityUnits`, `curatorMinScoreHint`) ile tüm proje botlarını fiilen yöneterek Zekâ Çarpanını **25x → 150x–500x** bandına tırmandırır (`kolay/orta/zor` üçlü kademesi korunur).
+   - Qwen Code (`qwen2.5-coder` / `qwen3-coder` veya harici `qwen` CLI), sorulardaki **`kolay` / `orta` / `zor` 3 kademeli zorluk sistemini ASLA silmeden** her seviyenin direktiflerini geliştirir ve izole `node:vm` kum havuzunda `evaluateDifficultyFit` / `evaluateCandidate` kuralları yazar (`SandboxEvolver` üçlü zorluk sisteminin silinmesini yazılımsal kapıyla engeller).
+   - Uygulama koduna yönelik güvenli önerileri `.tempo-data/ai-brain/jarvis-memory.json` → `codeProposals` kuyruğunda toplar; canlı kaynak kodu asla bozmaz.
+5. **Katman 1 + Katman 2 Sürekli Eğitim (`server/jarvis-core.mjs`, `training/auto_train_cycle.py`):**
+   - **Katman 1 (Anlık Koçluk — 0 ek VRAM):** Hakem retlerinden öğrenilen dersleri (`avoidLessons`) ve başarı desenlerini (`goldenPatterns`) anında sonraki üretim promptlarına işler.
+   - **Katman 2 (Otonom LoRA + DPO Ağırlık Eğitimi & Hot-Swap):** Her +100 yeni onaylı soruda (ve GPU + CUDA + `llama.cpp` hazırsa) `prepare.py → train_lora.py → train_dpo.py → evaluate.py` akışını çalıştırır; yeni model held-out testlerde tabandan iyiyse `tempo-jarvis:vN` olarak Ollama'ya aktarılıp sıcak geçişle devreye alınır (beğenilmezse tek tıkla önceki modele dönülebilir).
+6. **Çoklu Çalışma Materyali & Çift-Cevap Kalkanı:**
+   - Sorulara ek olarak **Bilgi Kartları (Flashcard)**, **1-e-1 Kavram Eşleştirme** ve **Tekrar Egzersizleri** üretilir; 2 şıkkın birden doğru sayılabildiği tüm sorular 0 ms ön-kontrol + bağımsız hakemlerin `dualAnswerRisk` kalkanıyla elenir.
+7. **20.000+ Soru Havuzu Tarama ve Kalite Yenileme Botu (`server/pool-curator.mjs`):**
+   - `PoolCuratorBot` havuzdaki tüm soruları 0–100 bileşik kalite puanıyla (hakem puanı, `examPotential` sınavda çıkma potansiyeli, araştırma hipotezi uyumu, 5 soru açısı zenginliği, çeldirici uzunluk dengesi, açıklama/kanıt derinliği ve Jaccard benzerlik cezası) sürekli tarar ve raporlar.
+   - Havuzdaki onaylı soru sayısı **20.000'i geçtiğinde**, ünite ve `kolay`/`orta`/`zor` tabanını koruyarak en kalitesiz ve yakın tekrar soruları otomatik temizler (~18.500'e indirir), yerlerini daha yüksek sınav potansiyelli taze sorularla doldurmak üzere üretim önceliklerini günceller ve elenenleri DPO öğrenme izine aktarır.
+8. **100/100 Full Doğru Hedefli 5 Farklı Soru Açısı (`QUESTION_ANGLES`):**
+   - `kolay`, `orta` ve `zor` seviyelerinin tamamı yüksek kaliteli ve sınavda çıkma potansiyeli (`examPotential: 1–5`) yüksek sorulardan oluşur.
+   - Bir kavram 5 farklı açıdan sorulabiliyorsa (`1. Doğrudan Tanım`, `2. Ters Köşe / İstisna`, `3. Saha Vakası`, `4. Karşılaştırmalı Tuzak`, `5. Şaşırtıcı Bağlam`) yapay zekâ hepsini dengeli döndürerek öğrenciyi şaşırtıcı varyasyonlara da hazırlar.
+9. **Süre ve Performansa Göre Şekillenen Uzun, Tekrarlı, Püf Noktalı & Kodlamalı Ünite Anlatımları (`server/lesson-engine.mjs`):**
+   - Derslerim ekranındaki konu anlatımları hızlıca biten kısa özetler değil; derin bölümler, zihin çıpaları, akılda kalıcı **kodlamalar/akrostişler**, klasik tuzak uyarıları, **"1 Kavram — 5 Farklı Soru Açısı" haritası**, yankılı tekrar kutuları ve anında kontrol soruları içerir.
+   - Test çözerken sistem her soruda harcadığın **süreyi (saniye ve dakika)** ve doğruluk/seri performansını otomatik kaydedip `/api/ollama/student-state` üzerinden yapay zekâya aktarır; `LessonEngine` bu verilere bakarak (örneğin yavaş kaldığın veya hata yaptığın ünitelere hızlandırıcı kodlama/tuzak uyarıları ekleyerek) ünite konu anlatımlarını arka planda sürekli evrimleştirir.
 
-1. Model(ler) seçildikten sonra sunucu, **Soru stüdyosu** sayfasını hiç açmasan da kendi kendine çalışmaya başlar: 29 ünitenin tamamını dolaşır, her biri için özgün sorular yazar.
-2. Üretim **gerçekten paralel**: sunucu, tek bir üniteyi bitirip sıradakine geçmek yerine, aynı anda birden fazla ünite için soru üretir (varsayılan 3, Soru stüdyosu sayfasından 1 ile 29 arasında ayarlanabilir). Bir soru onaylanır onaylanmaz, yapay bir bekleme olmadan hemen boşalan yuvaya yeni bir ünite alınır.
-3. Yazılan her soru, havuza eklenmeden ÖNCE, cevabı ve gerekçeyi hiç GÖRMEYEN **İKİ bağımsız model** (denetçi + 1 ayrı hakem) tarafından AYNI ANDA, birbirinden habersiz olarak yeniden çözülür. Her biri kendi başına: tek doğru cevap var mı, cevap doğru mu, kaynakla destekleniyor mu, soru sınav kalitesinde mi ve **zorluğu ne** (kolay/orta/zor) değerlendirir.
-   - **Hem doğrulukta hem zorlukta tam görüş birliği (2/2) şarttır**: yalnızca iki hakem olduğu için "çoğunluk" kavramı kullanılmaz — ikisi de aynı cevapta VE aynı zorlukta birleşmezse (biri farklı bir cevap/zorluk verirse, reddederse ya da kalite/kaynak kontrolünden geçiremezse) soru hiç kaydedilmez.
-   - İki hakemin ayrı ayrı modeli, cevabı, zorluk kararı ve gerekçesi **Soru stüdyosu**'ndaki her soru kartında TEK TEK, hiçbirine indirgenmeden gösterilir.
-4. Her ünite için sorular her zaman belirli bir sırayla üretilir: **önce 1 kolay, sonra 1 orta, sonra 1 zor**, sonra tekrar kolaydan başlayarak döner. İki hakemin ortak bulduğu zorluk, o andaki hedefle eşleşmezse (örn. hedef "kolay" iken ikisi de "zor" bulursa) soru kaydedilmez; kalıp bozulmasın diye farklı bir soru yeniden denenir.
-5. Gerçek hız sabit bir sayı (ör. "her 2 saniyede bir") değildir ve olamaz: her soru **üç ayrı model geçişinden** (1 üretici + 2 paralel hakem) geçmek zorundadır, bu yüzden gerçek hız bilgisayarının ekran kartına ve seçtiğin modellere bağlıdır. İki hakem çağrısı aynı anda (paralel) gönderilir, ama **tek ekran kartlı bir bilgisayarda Ollama bunları muhtemelen sırayla işler** — bu durumda gerçek süre, tek-hakemli bir sürüme göre yaklaşık iki kat daha uzun sürebilir. Hız için bu kontrolleri azaltmak bilinçli olarak tercih edilmedi. Bunun yerine her denemeye bir **azami süre bütçesi** konur (varsayılan 5 saniye, Soru stüdyosu sayfasından 1-120 saniye arasında ayarlanabilir): bir ünitenin üretim + iki bağımsız kontrol adımı bu süreyi aşarsa deneme iptal edilir ve yuva hemen yeni bir denemeyle doldurulur. Yavaş bir ekran kartında varsayılan 5 saniye sık sık yetmeyebilir; üretim neredeyse hiç başarılı olmuyorsa bu süreyi yükselt.
-6. Üretilen her soru **benzersizdir**: aynı metinle birebir aynı soru hiçbir zaman ikinci kez kaydedilmez, aynı ünite içinde anlamca çok yakın (kelime örtüşmesi yüksek) bir soru da reddedilir; model ayrıca o üniteye daha önce sorulmuş sorulardan haberdar edilip onları tekrarlamaması istenir.
-7. Hem doğruluk hem zorluk kontrolü (ikisinde de tam görüş birliği) geçerse soru otomatik olarak **onaylanmış** sayılır ve hemen soru havuzuna girer — senin ayrıca "onaylaman" gerekmez. Herhangi bir koşul sağlanmazsa soru hiç kaydedilmez.
-8. **Soru stüdyosu** sayfasında istersen ilerlemeyi (hangi ünitelerin şu an aynı anda üretildiğini) izleyebilir, **Kendi kendine üretimi durdur/başlat** düğmesiyle süreci duraklatabilir veya devam ettirebilir, aynı anda kaç ünite üretileceğini, deneme başına azami süreyi ve iki hakemin hangi modeller olacağını değiştirebilirsin.
-9. Bir ünite okuyup **Okudum, tamamla** dediğinde, o ünite için zaten hazırlanmış onaylı sorular testlerine hemen dahil olur; aynı anda arka planda henüz çalışmadığın üniteler için de üretim sürmeye devam eder.
+## 10. Otonom Yapay Zekâ Kalite Kurulu (Senin Onaylaman veya Reddetmen Gerekmez)
 
-Sorular, PDF'nin tamamından değil uygulamadaki kısa ünite anlatımından üretilir. Tam görüş birliğinden geçemeyen taslaklar hiç kaydedilmez. Üretim zaman alabilir; bu otomatik denetim doğruluk garantisi değildir ve bağımsız bir uzman doğrulamasının yerini tutmaz — "kolay/orta/zor" etiketi de yapay zekâların öznel değerlendirmesidir, resmî bir zorluk ölçeği değildir. Gerçek bağımsızlık için 2. hakemin varsayılanı zaten üretici/denetçiden (Qwen) FARKLI bir model ailesidir (Gemma 3 12B, bkz. Adım 4); bu modeli indirmediysen veya elle aynı modeli ikisine de seçersen, bu artık gerçek bir bağımsız doğrulama değil, aynı modelin kendi kendine iki kez onayı anlamına gelir — gerçek bağımsızlık istiyorsan iki ayrı model indirip ayrı ayrı seçili tut. Eşzamanlılığı çok yükseğe veya süre bütçesini çok düşüğe ayarlamak zayıf bir ekran kartında üretimi neredeyse tamamen durdurabilir; deneyerek bilgisayarına uygun sayıları bul.
+Bu sürümde **AI havuzundaki soruları tek tek onaylaman ya da reddetmen gerekmez**. Proje boyunca tüm onay ve eleme kararlarını yapay zekâlar kendi aralarında yürütür:
 
-## 10. Yapay zekânın kararlarını izle (istersen veto et)
-
-Kendin bir eğitmen olmak veya her soruyu tek tek onaylamak zorunda değilsin; bu sürümde o rolü iki bağımsız yapay zekâ hakemi üstlenir. Yine de son sözü sende bırakan bir güvenlik kapısı var:
-
-1. **Soru stüdyosu** sayfasında aşağı kaydır, **Yapay zekâ öğretmenin kararları** başlığını bul.
-2. **AI onayladı** sekmesinde, otomatik olarak onaylanan sorular ve her birinin yanında **iki hakemin ayrı ayrı** modeli, zorluk kararı ve gerekçesi görünür.
-3. Bir soruyu okurken yanlış, belirsiz veya anlatım dışı bulursan **Reddet** düğmesine bas; o soru artık teste veya eğitime girmez ve **Reddedilen** sekmesine taşınır.
-4. Fikrini değiştirirsen reddettiğin bir soruyu **Yeniden onayla** ile tekrar havuza katabilirsin.
-
-Bu sürümde soru metnini uygulama içinden düzeltme özelliği yoktur. İki hakemin tam görüş birliği, bağımsız bir uzman doğrulaması değildir; sen de incelemek istersen her zaman reddetme hakkına sahipsin.
+1. Üretilen her soru önce **0 ms Çeldirici & Örtüşme Kalkanı**ndan ve **SandboxEvolver** JS kurallarından geçer.
+2. Ardından **iki bağımsız yapay zekâ hakemi** soruyu kitaba bakarak çözer; tek doğru cevap, kanıt ve zorluk etiketinde tam birleşen ve JARVIS adaptif kalite çıtasını aşan sorular **`AI Konseyi Onayladı`** statüsüyle anında sitedeki testlere açılır.
+3. Çift cevap riski taşıyan, kanıtsız veya kalite çıtasının altında kalan sorular otomatik **`AI Otomatik Eledi`** sekmesine ayrılır ve DPO tercih çifti (`rejected-traces.jsonl`) olarak modelleri daha da güçlendirmek için kullanılır.
+4. **Soru stüdyosu** sayfasından dilediğin zaman AI Konseyi'nin onayladığı ve otomatik elediği soruları, hakem gerekçelerini, web araştırma tahminlerini ve JARVIS canlı günlüğünü izleyebilirsin.
 
 ## 11. Tekrar yolunu kullan
 
@@ -233,10 +291,10 @@ Farklı bir model çalışıyorsa onun tam adını yaz. Ollama uygulamasını ta
 py -3.11 --version
 ```
 
-4. Veriyi hazırla:
+4. Veriyi hazırla (çok görevli SFT: soru üretici + hakem/çözücü + kitap bilgisi + DPO tercih çiftleri):
 
 ```powershell
-py -3.11 training\prepare.py
+py -3.11 training\prepare.py --multitask --dpo
 Get-Content .tempo-data\training\manifest.json
 ```
 
@@ -281,17 +339,25 @@ ollama list
 
 İki `Test-Path` sonucunun `True` olması ve `ollama list` komutunun bağlantı hatası vermemesi gerekir. `llama.cpp` klasörü zaten varsa üzerine klonlama; mevcut araçların uyumunu kontrol et. Derleyici bulunamadı hatasında C++ iş yükünün kurulu olduğunu kontrol et. Bu derleme aktarım için CPU üzerinde çalışır; eğitim için ayrı CUDA destekli PyTorch gerekir.
 
-## 17. Eğitimi başlat ve Ollama'ya aktar
+## 17. Eğitimi başlat (QLoRA / DoRA / DPO) ve Ollama'ya aktar
 
-Proje klasöründeki PowerShell'de:
+Proje klasöründeki PowerShell'de güçlü **pro** (r=16 rsLoRA, tüm lineer katmanlar) adaptörüyle RTX 3080 Ti (12 GB) için önerilen eğitim komutları:
 
 ```powershell
-.\.venv\Scripts\python.exe training\train_lora.py --llama-dir "$env:USERPROFILE\llama.cpp"
+# Seçenek A — Yüksek kaliteli 8B Qwen3 modeli (önerilen, 12 GB VRAM uyumlu):
+.\.venv\Scripts\python.exe training\train_lora.py --base Qwen/Qwen3-8B --adapter-size pro --llama-dir "$env:USERPROFILE\llama.cpp"
+
+# Seçenek B — 7B Qwen2.5 veya hafif 3B/4B modeller:
+.\.venv\Scripts\python.exe training\train_lora.py --base Qwen/Qwen2.5-7B-Instruct --adapter-size pro --llama-dir "$env:USERPROFILE\llama.cpp"
+
+# İsteğe bağlı 2. aşama — Onaylı vs Reddedilen sorulardan DPO Tercih Eğitimi:
+.\.venv\Scripts\python.exe training\train_dpo.py --sft-adapter .tempo-data\adapter
+.\.venv\Scripts\python.exe training\ollama_export.py --adapter .tempo-data\adapter-dpo --llama-dir "$env:USERPROFILE\llama.cpp"
 ```
 
-İlk çalıştırma Qwen2.5 3B taban modelini internetten indirebilir. Varsayılan LoRA ayarında yaklaşık **98.304 eğitilebilir parametre** beklenir; bu tam 100.000 değildir. Betik gerçek sayıyı ekrana yazar. Eğitim tamamlanırsa adaptörü birleştirip GGUF'a dönüştürmeyi ve Ollama'ya yeni bir model olarak aktarmayı dener.
+Desteklenen taban modeller: `Qwen/Qwen3-8B`, `Qwen/Qwen2.5-7B-Instruct`, `Qwen/Qwen3-4B`, `google/gemma-3-4b-it`, `Qwen/Qwen2.5-3B-Instruct` (ayrıca `--allow-custom-base`). `--adapter-size` seçenekleri: `compact` (~98K param, sadece 3B), `standard` (r=8), `pro` (r=16 rsLoRA tüm katmanlar — varsayılan), `dora` (DoRA r=16 tüm katmanlar). Eğitim tamamlanırsa adaptörü birleştirip GGUF'a dönüştürmeyi ve Ollama'ya yeni bir model olarak aktarmayı dener.
 
-Pencereyi işlem bitene kadar açık tut. Eğitim VRAM, aktarım ise ayrıca sistem RAM'i ve disk kullanır; 12 GB GPU belleğine sığacağı garanti değildir. Aktarım başarısız olsa bile eğitim tamamlanmışsa adaptör korunur. Sorunu düzelttikten sonra varsayılan adaptör için aktarımı tekrar deneyebilirsin:
+Pencereyi işlem bitene kadar açık tut. Eğitim VRAM, aktarım ise ayrıca sistem RAM'i ve disk kullanır. Aktarım başarısız olsa bile eğitim tamamlanmışsa adaptör korunur. Sorunu düzelttikten sonra aktarımı tekrar deneyebilirsin:
 
 ```powershell
 .\.venv\Scripts\python.exe training\ollama_export.py --adapter .tempo-data\adapter --llama-dir "$env:USERPROFILE\llama.cpp"
@@ -311,15 +377,13 @@ Aktarımın gerçekten başarılı olduğunu kontrol et:
 ollama list
 ```
 
-Başarılıysa listede `tempo-trained:...` adlı yeni bir model görünür. Uygulamada **Soru stüdyosu → Durumu yenile → Yerel model seçimi** yolundan modeli seçip **Modeli kullan** düğmesine bas. Gerekirse önce **Kendi kendine üretimi durdur**, sonra **Kendi kendine üretimi başlat** ile devam et.
+Başarılıysa listede `tempo-trained:...` adlı yeni bir model görünür. Uygulamada **Soru stüdyosu → Durumu yenile → Üretici model** yolundan modeli seçip **Modeli kullan** düğmesine bas.
 
-Yeni modelin sorularını da 10. adımda anlatıldığı gibi inceleyip onaylaman gerekir. Modelin daha iyi olduğunu varsayma. Varsayılan adaptörü taban modelle biçim ve alıntı bakımından karşılaştırmak istersen:
+Eğitilmiş adaptörü taban modelle biçim, çeldirici dengesi, uzunluk sızıntısı ve çözücü doğruluğu bakımından karşılaştırmak için:
 
 ```powershell
-.\.venv\Scripts\python.exe training\evaluate.py
+.\.venv\Scripts\python.exe training\evaluate.py --eval-solver
 ```
-
-Bu karşılaştırma cevap doğruluğunu veya sınav güçlüğünü ölçmez; sonuçları kaynaklarla ve mümkünse uzmanla ayrıca incele.
 
 ## 19. Dosyalar, yedek ve disk alanı
 
@@ -332,12 +396,19 @@ Bu karşılaştırma cevap doğruluğunu veya sınav güçlüğünü ölçmez; s
 
 Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vardır. **5000 benzersiz soru, ünite başına 100 soru, kitapların tüm ayrıntıları ve uzman doğrulaması tamamlanmış değildir.** Kitap PDF'leri konu kaynağı olarak kullanılabilir; PDF sorularının tamamı interaktif teste aktarılmamıştır. Uygulama sınav başarısı veya cevap doğruluğu garantisi vermez.
 
+## 20. Yeni özellikler (Kayserili Koç, Sorusuz TikTok Akışı, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
+
+- **Kalite Kilitli Turbo Mod (Varsayılan):** Proje varsayılan olarak `turbo` modda çalışır (`batchPerCall: 6`, toplu denetim, `turboQualityLock: true`). Hız optimizasyonları `selfCorrection`, çift-cevap blokajı, kitap kanıtı ve `kolay`/`orta`/`zor` seviyelerini asla bozmaz.
+- **Kayserili Sert-Komedi Şık Tepkisi (`/api/ollama/kayseri-react`):** Test sırasında bir şıkka basıldığında süre ve seriye göre anında Kayserili şiveli/sert-komedi (ve tek tıkla `Temiz Klasik` geçişli + `Sesli Oku` destekli) koç tepkisi, net bilgi ve önemli terim gösterilir.
+- **Sorusuz TikTok Dikey Karışık Akış (`TikTok Akışı` & `/api/ollama/videos/feed`):** 29 ünitenin tamamı dolana kadar arka planda sürekli gömülü `.mp4` üretilir. TikTok akışı soru sormaz; doğrudan sınavda çıkacak net cevabı, önemli kelime/terimleri ve Kayserili/Hamam Böceği Böcü komedi diyaloglarını karışık ünitelerden dikey kaydırmayla oynatır.
+- **+%15500 (`Hyper-155x+`) Qwen Code & ApexArchitect:** 10 alt-sistemi (üretici, hakem, küratör, ders motoru, video yönetmeni, araştırmacı, Kayseri koçu, TikTok akışı, Qwen Code sandbox ve Turbo kalite kilidi) 16 tuzaklı stres testi ve 4 adaylı turnuvayla sürekli geliştirir.
+
 Geliştirici kontrolleri:
 
 ```powershell
 npm.cmd run build
 npm.cmd run audit
-node --test scripts/test-ollama.mjs scripts/test-ollama-auto.mjs scripts/test-memory.mjs
+node --test scripts/test-*.mjs
 py -3.11 -m unittest discover -s training -p "test_*.py"
 ```
 

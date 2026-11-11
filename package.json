@@ -4,19 +4,26 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:voicestudio": "node scripts/dev-with-voicestudio.mjs",
+    "dev:videostudio": "node scripts/dev-with-videostudio.mjs",
     "build": "tsc --noEmit && vite build",
     "audit": "esbuild scripts/audit.ts --bundle --platform=node --outfile=node_modules/.tempo-audit.cjs --log-level=error && node node_modules/.tempo-audit.cjs",
-    "contexts": "esbuild scripts/build-context.ts --bundle --platform=node --outfile=node_modules/.tempo-context.cjs --log-level=error && node node_modules/.tempo-context.cjs"
+    "contexts": "esbuild scripts/build-context.ts --bundle --platform=node --outfile=node_modules/.tempo-context.cjs --log-level=error && node node_modules/.tempo-context.cjs",
+    "books": "python3 scripts/extract-books.py"
   },
   "dependencies": {
-    "vite": "^6.1.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "lucide-react": "^0.468.0",
+    "mp4-muxer": "^5.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "lucide-react": "^0.468.0"
+    "three": "^0.187.0",
+    "vite": "^6.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.187.0",
+    "typescript": "^5.7.0"
   }
 }

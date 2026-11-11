@@ -1,0 +1,16 @@
+# Aider Yerel Ollama + RAG Konfigürasyonu (Tek Localhost: http://127.0.0.1:5173)
+model: ollama_chat/qwen2.5-coder:14b
+weak-model: ollama_chat/qwen3:8b
+editor-model: ollama_chat/qwen2.5-coder:14b
+edit-format: diff
+auto-commits: false
+dirty-commits: true
+encoding: utf-8
+map-tokens: 2048
+map-refresh: auto
+stream: true
+pretty: true
+read:
+  - .continuerules
+  - README.md
+  - .tempo-data/rag-context.md

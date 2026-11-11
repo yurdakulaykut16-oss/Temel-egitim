@@ -1,0 +1,4 @@
+- Bu proje Türkiye Spor Antrenörlüğü Temel Eğitimi (5 kitap, 29 ünite, 1.021 PDF pasajı) ve yerel QLoRA/DPO + 3D + AutoGen/LangGraph/CrewAI platformudur.
+- Yanıtlarda ve kodlamalarda mutlaka `TemelEgitimRAG` bağlam sağlayıcısından gelen kaynak kitap pasajlarına ve yerel dosya yollarına sadık kal.
+- Dışarıya ücretli API anahtarı isteme; tüm çalışma yerel Ollama (`http://127.0.0.1:11434`) ve tek localhost (`http://127.0.0.1:5173`) üzerinden yürür.
+- Soru ve eğitim çiftleri üretirken 4 seçenekli ÖSYM kalitesi ve DPO (`chosen` / `rejected`) tercih kurallarını koru.

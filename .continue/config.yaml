@@ -1,0 +1,44 @@
+name: Temel Egitim Yerel RAG & QLoRA Workspace
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Qwen3 8B (Ollama Yerel)
+    provider: ollama
+    model: qwen3:8b
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - chat
+      - edit
+      - apply
+  - name: Qwen2.5 Coder 14B (Ollama Yerel)
+    provider: ollama
+    model: qwen2.5-coder:14b
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - chat
+      - edit
+  - name: Qwen2.5 Coder 1.5B Autocomplete
+    provider: ollama
+    model: qwen2.5-coder:1.5b
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - autocomplete
+  - name: Nomic Embed Text (Yerel RAG Embeddings)
+    provider: ollama
+    model: nomic-embed-text
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - embed
+
+context:
+  - provider: http
+    params:
+      url: http://127.0.0.1:5173/api/ollama/rag/continue-provider
+      title: TemelEgitimRAG
+      displayTitle: Temel Egitim 5-Kitap + Kod Hibrit RAG
+      description: 1021 sayfa Spor Bilimleri kitap pasaji, onayli soru havuzu ve kod tabaninda BM25+Vektor RAG aramasi
+  - provider: codebase
+  - provider: file
+  - provider: diff
+  - provider: problems
