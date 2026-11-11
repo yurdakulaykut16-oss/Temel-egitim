@@ -74,7 +74,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(status.settings.preset,'turbo');
   assert.equal(status.settings.turboQualityLock,true);
   assert.equal(status.settings.selfCorrection,true);
-  assert.equal(status.settings.batchPerCall,6);
+  assert.equal(status.settings.batchPerCall,8);
   assert.equal(status.settings.batchVerify,true);
   assert.equal(status.settings.generateStudyMaterials,true);
   assert.equal(status.settings.autoEvolve,true);
@@ -177,7 +177,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   const cfgRes=await fetch(`${base}/api/ollama/config`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({preset:'turbo'})});
   assert.equal(cfgRes.status,200);
   const cfgData=(await cfgRes.json()).settings;
-  assert.equal(cfgData.batchPerCall,6);assert.equal(cfgData.preset,'turbo');
+  assert.equal(cfgData.batchPerCall,8);assert.equal(cfgData.preset,'turbo');
 
   const specRes=await fetch(`${base}/api/ollama/create-specialist`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({role:'generator',baseModel:'fake:1',name:'tempo-ogretmen:latest'})});
   assert.equal(specRes.status,200);

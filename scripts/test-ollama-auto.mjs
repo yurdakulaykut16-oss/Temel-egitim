@@ -92,12 +92,12 @@ test('otomatik havuz: çoklu paket, kuyruklu boru hattı, kitap kapsamı, zorluk
 
   let status=await (await fetch(`${base}/api/ollama/status`)).json();
   assert.equal(status.autoRunning,true);
-  assert.equal(status.autoConcurrency,3);
+  assert.equal(status.autoConcurrency,6);
   assert.equal(status.autoTimeoutMs,45000);
   assert.equal(status.settings.preset,'turbo');
   assert.equal(status.settings.turboQualityLock,true);
   assert.equal(status.settings.selfCorrection,true);
-  assert.equal(status.settings.batchPerCall,6);
+  assert.equal(status.settings.batchPerCall,8);
   assert.equal(status.settings.batchVerify,true);
   assert.equal(status.settings.pipelineMode,'batched');
   assert.equal(status.verifierModel,'fake:1');assert.equal(status.judge2Model,'fake:1');

@@ -2,12 +2,14 @@
 
 Bu rehber **Windows 11 üzerinde, doğrudan kendi bilgisayarında** çalışmak içindir. Ubuntu veya WSL kurman gerekmez. İşlemleri sırayla yap: önce projeyi ve Ollama'yı çalıştır, ardından soruları incele. Model eğitimi isteğe bağlıdır ve sonraki adımlardadır.
 
-> **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/fb70c29b-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
+> **SIFIR DÜĞME — TAM OTONOM:** Proje açıldığı andan itibaren **hiçbir düğmeye basman gerekmez**. Soru üretimi, hakem denetimi, havuz temizliği, 100-AI Konseyi kalibrasyonu, TVGFBF taraması, hassasiyet denetimi, GitHub 260k+ emilimi, 8-katman seviye atlama, Nexus-Titan tam proje geliştirme, arayüz evrimi, SFT+DPO veri seti hazırlığı, LoRA+DPO ağırlık eğitimi ve model kurulumu — **hepsi arka planda kendiliğinden çalışır.** Turbo mod tek moddur; kapatılmaz.
+
+> **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/b582fa34-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
 
 ## 1. Projeyi GitHub'dan indir
 
 1. Tarayıcıda [proje sayfasını](https://github.com/yurdakulaykut16-oss/Temel-egitim) aç.
-2. Sol üstteki dal seçme düğmesinden güncel uygulamanın bulunduğu dalı seç. Bu çalışma oturumunun dalı `arena/fb70c29b-temel-egitim` adını taşır; yalnız GitHub'a gönderilmişse listede görünür. Değişiklikler sonradan `main` dalına alınmışsa güncel `main` da kullanılabilir.
+2. Sol üstteki dal seçme düğmesinden güncel uygulamanın bulunduğu dalı seç. Bu çalışma oturumunun dalı `arena/b582fa34-temel-egitim` adını taşır; yalnız GitHub'a gönderilmişse listede görünür. Değişiklikler sonradan `main` dalına alınmışsa güncel `main` da kullanılabilir.
 3. **Code → Download ZIP** seçeneğine bas.
 4. İnen ZIP dosyasına sağ tıkla ve **Tümünü ayıkla** seç.
 5. Çıkan klasörü örneğin `C:\Users\KullanıcıAdın\Desktop\Temel-egitim` konumuna koy. `KullanıcıAdın` kendi Windows kullanıcı adındır; örnek yolu harfiyen yazman gerekmez.
@@ -49,28 +51,26 @@ ollama list
 
 Sürüm ve kurulu model listesi görünmeli. Komut bulunamazsa PowerShell'i kapatıp yeniden aç. Bağlantı hatası varsa Ollama uygulamasının çalıştığını kontrol et.
 
-## 4. Hangi modelleri indirmelisin ve nasıl indirilir?
+## 4. İndirmen gereken TÜM modeller ve nasıl indirilir?
 
-Uygulama içinde **5 yapay zekâ rolü** vardır: **Üretici Öğretmen**, **1. Hakem**, **Bağımsız 2. Hakem**, **Evrim Mimarı (JARVIS)** ve **Qwen Code (Zorluk & Sistem Geliştiricisi)**. İyi haber: **proje açıldığı anda kurulu modelleri otomatik algılayıp tüm rollere kendisi yerleştirir** — yani aşağıdakileri bir kez `ollama pull` ile indirmen yeterlidir!
+Uygulama içinde **5 ana yapay zekâ rolü** vardır: **Üretici Öğretmen**, **1. Hakem**, **Bağımsız 2. Hakem**, **Evrim Mimarı (JARVIS)** ve **Qwen Code (Zorluk & Sistem Geliştiricisi)**. İyi haber: **proje açıldığı anda kurulu modelleri otomatik algılayıp tüm rollere kendisi yerleştirir** ve eksik uzman profillerini (`tempo-ogretmen:latest`, `tempo-hakem:latest`, `tempo-mimar:latest`, `tempo-qwen-coder:latest`) ile birleşik model `tempo-nexus-titan:latest`'i **kendiliğinden oluşturur** — bunları elle indirmene gerek yoktur.
 
-### Seçenek A — RTX 3080 Ti / 12 GB VRAM için Önerilen Tam Set (En Yüksek Kalite)
+Aşağıdaki komutları **tek tek** PowerShell'de çalıştır. Hepsini indirmen şart değil; kendine uygun **bir set** yeterlidir. (İnternet hızına göre her model 1-10 GB arası sürer.)
 
-PowerShell'de aşağıdaki komutları sırayla çalıştır:
+### Seçenek A — RTX 3080 Ti / 12 GB VRAM · Önerilen Tam Set (En Yüksek Kalite + Hız)
 
 ```powershell
-# 1. Ana Üretici & Evrim Beyni (Qwen3 14B, ~9 GB VRAM, çok yüksek Türkçe kalitesi)
+# 1) Ana üretici & evrim beyni — Qwen3 14B (~9 GB, Türkçe kalitesi çok yüksek)
 ollama pull qwen3:14b
 
-# 2. Bağımsız 2. Hakem (Google Gemma 3 12B — farklı model ailesinden gerçek ikinci görüş, ~8 GB VRAM)
+# 2) Bağımsız 2. hakem — Google Gemma 3 12B (farklı aileden gerçek ikinci görüş, ~8 GB)
 ollama pull gemma3:12b
 
-# 3. Qwen Code Rolü (Zorluk motoru, kalite kuralları ve uygulama geliştirme taslakları için)
+# 3) Qwen Code rolü — zorluk motoru & kalite kuralları (~9 GB)
 ollama pull qwen2.5-coder:14b
 ```
 
-### Seçenek B — Daha Hızlı Üretim / 8 GB VRAM İçin Hafif Set
-
-Kartın 8 GB VRAM ise veya çok daha hızlı üretim (~1 sn/soru) istiyorsan bunları indirebilirsin:
+### Seçenek B — 8 GB VRAM / Daha hızlı üretim (önerilen hafif set)
 
 ```powershell
 ollama pull qwen3:8b
@@ -78,26 +78,95 @@ ollama pull gemma3:4b
 ollama pull qwen2.5-coder:7b
 ```
 
-*(İsteğe bağlı olarak daha güçlü kodlama modeli için `ollama pull qwen3-coder` da kullanılabilir.)*
+### Seçenek C — Ekstrem hız (~0.5-1 sn/soru) · Minimum VRAM (~7.8 GB)
 
-### Seçenek C — Harici Qwen Code CLI Bağlantısı (İsteğe Bağlı)
+```powershell
+ollama pull qwen3:4b
+ollama pull gemma3:4b
+ollama pull qwen2.5-coder:3b
+```
 
-Arayüzden `Qwen Code CLI` motorunu kullanmak istersen Node.js üzerinden resmi Qwen Code CLI aracını da kurabilirsin:
+### Seçenek D — Kodlama konseyi TAM YIĞIN (opsiyonel · otomatik kurulum da var)
+
+Proje açılışında Ollama bağlıysa şu 6 kodlayıcı **eksikse kendiliğinden indirilir** (`TEMPO_NO_AUTO_PULL=1` ile kapatılabilir):
+
+```powershell
+ollama pull qwen2.5-coder:1.5b
+ollama pull qwen2.5-coder:3b
+ollama pull qwen2.5-coder:7b
+ollama pull qwen3-coder:7b
+ollama pull qwen3:4b
+ollama pull qwen3:8b
+```
+
+Daha geniş konsey istersen (her biri Ayrı indir; toplam ~120 GB — 3080 Ti 12 GB için gerekmez):
+
+```powershell
+ollama pull qwen3:14b; ollama pull qwen3-coder:14b; ollama pull qwen3-coder:30b-a3b
+ollama pull deepseek-r1:8b; ollama pull deepseek-r1:14b
+ollama pull deepseek-coder-v2:lite; ollama pull deepseek-coder-v2:16b
+ollama pull starcoder2:7b; ollama pull starcoder2:15b
+ollama pull granite-code:8b; ollama pull opencoder:8b; ollama pull olympiccoder:7b
+ollama pull codegemma:7b; ollama pull codestral:7b; ollama pull phi4:14b
+ollama pull yi-coder:9b; ollama pull aya-expanse:8b; ollama pull command-r7b:latest
+ollama pull devstral:24b; ollama pull cogito:14b
+```
+
+### Seçenek E — Bulut video modelleri (0-API, Ollama hesabınla · opsiyonel)
+
+Video yönetmeni yalnızca **Kimi ve Ollama** modelleriyle çalışır (başka site/anahtar yok). Ollama aboneliğin varsa:
+
+```powershell
+ollama pull kimi-k3.1-pro:cloud
+ollama pull glm-5.3-flash:cloud
+ollama pull deepseek-v4.1-flash:cloud
+```
+
+Yoksa uygulama yerel 0-API MP4 boru hattıyla üretimine devam eder; hiçbir şey indirmene gerek yoktur.
+
+### Seçenek F — Harici Qwen Code CLI (opsiyonel)
 
 ```powershell
 npm.cmd install -g @qwen-code/qwen-code
 qwen --version
 ```
 
-Kuruluysa **Soru stüdyosu → JARVIS & Qwen Code → Qwen Code Motoru** kısmından `Qwen Code CLI` seçebilirsin (kurulu değilse sistem otomatik olarak Ollama'daki Qwen Coder modelini kullanmaya devam eder).
+Kuruluysa **Soru stüdyosu → JARVIS & Qwen Code → Qwen Code Motoru** kısmından `Qwen Code CLI` seçebilirsin (kurulu değilse sistem otomatik olarak Ollama'daki Qwen Coder modelini kullanır).
 
-İndirmeleri tamamladıktan sonra kontrol et:
+### Seçenek G — Yerel eğitim (isteğe bağlı) için taban modeller
+
+Bunları Ollama değil **Hugging Face**'ten indirir (eğitim adımlarında otomatik iner): `Qwen/Qwen3-8B`, `Qwen/Qwen2.5-7B-Instruct`, `Qwen/Qwen3-4B`, `google/gemma-3-4b-it`, `Qwen/Qwen2.5-3B-Instruct`. Ayrıntılar 13-18. adımlarda.
+
+### Kurulumu doğrula
 
 ```powershell
 ollama list
 ```
 
-> **Not:** Tek bir model bile indirsen (örneğin sadece `qwen3:8b`) uygulama açılışta durmaz; tüm rolleri otomatik o modele yerleştirir ve arka planda `tempo-ogretmen:latest`, `tempo-hakem:latest`, `tempo-mimar:latest`, `tempo-qwen-coder:latest` uzman profillerini kendiliğinden oluşturarak yine çalışmaya başlar. Ancak gerçek bağımsız denetim için **2. hakem olarak farklı bir model ailesi (`gemma3:12b` vb.)** bulundurman önerilir.
+Listede indirdiğin modeller görünmeli. Uygulama açılışında **Durumu yenile**'ye veya hiçbir şeye basmadan bekledikten sonra modellerin otomatik atandığını göreceksin.
+
+> **Not:** Tek bir model bile indirsen (örneğin sadece `qwen3:8b`) uygulama açılışta durmaz; tüm rolleri otomatik o modele yerleştirir ve arka planda `tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder` uzman profillerini + `tempo-nexus-titan:latest` birleşik modelini kendiliğinden oluşturur. Gerçek bağımsız denetim için **2. hakem olarak farklı bir model ailesi** (`gemma3:12b` / `gemma3:4b`) bulundurman önerilir.
+
+### 4.1 Soru üretim hızını en yükseğe çıkar (Turbo motor · ~1 sn/soru)
+
+Proje varsayılan olarak **yalnızca Turbo modda** çalışır (8 soru/çağrı, kuyruklu boru hattı, toplu kör hakem, kalite kilidi). En yüksek hız için bir kez PowerShell'de Ollama'yı şu ortam değişkenleriyle başlat:
+
+```powershell
+# Kalıcı olsun (yeni PowerShell pencereleri için):
+setx OLLAMA_FLASH_ATTENTION "1"
+setx OLLAMA_KV_CACHE_TYPE "q8_0"
+setx OLLAMA_MAX_LOADED_MODELS "3"
+setx OLLAMA_NUM_PARALLEL "6"
+# Ollama'yı kapatıp yeniden aç
+```
+
+*(Alternatif, o pencere için geçici: `$env:OLLAMA_FLASH_ATTENTION="1"; $env:OLLAMA_NUM_PARALLEL="6"`.)*
+
+- RTX 3080 Ti 12 GB'de **Seçenek A** ile ~1 sn/soru; **Seçenek C** ile ~0.5 sn/soru mümkündür.
+- `OLLAMA_NUM_PARALLEL` değerini GPU belleğin taşarsa 4'e düşür (14B modelde 6 idealdir).
+- Uygulamadaki **Eşzamanlı yuva** ayarı varsayılan **6**'ya yükseltilmiştir; 12 GB'de 14B kullanıyorsan aradaki üretimin kaynamaması için 4'e de düşürebilirsin (Arayüzde "Uygula" düğmesi).
+- `keep_alive=-1` olduğundan modeller VRAM'de sabit kalır (her soruda yeniden yükleme yoktur).
+- Daha büyük `num_batch` (512) ve GPU'ya tam offload (`num_gpu=99`) Turbo profilde otomatik uygulanır.
 
 ## 5. Ekran kartını kontrol et
 
@@ -130,17 +199,25 @@ npm.cmd install
 npm.cmd run dev -- --host 127.0.0.1
 ```
 
-*(İsteğe bağlı olarak başlangıç modelini el ile zorlamak istersen öncesinde `$env:OLLAMA_MODEL="qwen3:14b"` yazabilirsin; yazmasan bile sistem Ollama'da ne kuruluysa otomatik seçer.)*
+*(Başlangıç modelini el ile zorlamak istersen öncesinde `$env:OLLAMA_MODEL="qwen3:14b"` yazabilirsin; yazmasan bile sistem Ollama'da ne kuruluysa otomatik seçer.)*
 
 `npm.cmd install` ilk seferde paketleri indirir. Son komuttan sonra terminalde `http://localhost:5173/` gibi bir adres görünür. Windows'ta Chrome veya Edge açıp **terminalde yazan adresi** gir.
 
 Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak için **Ctrl + C** kullanabilirsin. Ollama uygulaması da açık olmalı. Bu yerel sunucuyu internete açma; kullanıcı yetkilendirmesi yoktur.
 
-**Önemli — Açıldığı Anda Tam Otonom Çalışır:**
+**Önemli — Açıldığı Anda Tam Otonom Çalışır (Turbo Mod):**
 Proje başladığı saniyeden itibaren **hiçbir düğmeye basman gerekmez**:
-1. **Otomatik Rol Kurulumu:** Ollama'daki modelleri tarar; Üretici, 1. Hakem, 2. Hakem, Evrim Mimarı ve Qwen Coder rollerini otomatik doldurur ve eksik uzman modelleri (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder`) kendisi kurar.
-2. **Kesintisiz Soru Üretimi:** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece **soru üretimi hiçbir zaman durmaz** (arka plan eğitimi veya araştırması sırasında bile kesilmez).
+1. **Otomatik Rol Kurulumu:** Ollama'daki modelleri tarar; Üretici, 1. Hakem, 2. Hakem, Evrim Mimarı ve Qwen Coder rollerini otomatik doldurur; eksik uzman modelleri (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder`) ve `tempo-nexus-titan:latest` birleşik modelini kendisi kurar; eksik güçlü açık kaynak kodlayıcıları (6'lı hafif istif) açılışta kendiliğinden indirir.
+2. **Kesintisiz Soru Üretimi:** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece **soru üretimi hiçbir zaman durmaz** (arka plan eğitimi veya araştırması sırasında bile kesilmez). Turbo mod tek moddur: 8 soru/çağrı, kuyruklu boru hattı, toplu kör hakem, kalite kilidi — kapatılmaz.
 3. **Sürekli Arka Plan Araştırması & Eğitimi:** Bir yapay zekâ grubu sürekli soru üretip denetlerken, koç yapay zekâlar internetten ders konularını araştırır, sınavda çıkabilecek soruları akıl yürüterek tahmin eder, diğer yapay zekâları sürekli eğitir ve soruları senin yerine kendi kendine onaylar veya eler.
+4. **Otomatik Çalışan Koç Katmanı (proje açılışından itibaren hiç durmaz):**
+   - 5-Ajan TVGFBF & Kitap İçi "neler öğrendik?" taraması + 29-ünite **hassasiyet (psikometri) denetimi** (her ~30 sn),
+   - **100 Yapay Zekâ Konseyi**: havuzun tamamını kendiliğinden çözer/etiketler (her ~45 sn) + **Qwen Code ile 100-AI evrimi** (her ~90 sn),
+   - **260k+ GitHub Proje Mega-Emilim** (her ~6 sn) + **Tüm Botlar Hyper-Evrimi** (64-Katman MoE, her ~14 sn),
+   - **Nexus-Titan**: sürekli füzyon & arayüz evrimi (her ~8 sn) + **TÜM PROJEYİ & Arayüzü geliştirme** (her ~4 dk) + `tempo-nexus-titan:latest` Ollama modeli oluşturma/güncelleme (her ~5 dk) + doğrulanmış önerileri **100/100 kapısından geçirip projeye otomatik uygulama** (her ~2 dk, otomatik rollback korumalı),
+   - **Tüm Proje 8-Katman Seviye Atlama** (her ~75 sn; her adım 100-yollu doğrulama kapısından geçer),
+   - **Qwen 100-yöntem turnuvası**, **GitHub/internet prototip laboratuvarı** (100/100 kapılı otomatik projeye ekleme), **havuz küratörü**, **konu anlatımı/video motorları**, **RAG & Aider bağlam yenileme**, **Axolotl/LLaMA-Factory senkronizasyonu** — hepsi arka planda kesintisiz çalışır.
+5. **Otomatik SFT + DPO Veri Seti Hazırlığı:** 50 onaylı soruya ulaşıldığında proje açılışından itibaren `training/prepare.py --multitask --dpo` kendiliğinden çalışır ve her +25 onaylı soruda `.tempo-data/training` klasörünü günceller. Donanım hazırsa LoRA+DPO ağırlık eğitimi de üretimi durdurmadan kendiliğinden başlar.
 
 ## 8. Modelleri ve rolleri kontrol et (isteğe bağlı)
 
@@ -158,7 +235,7 @@ Modeller proje açılışında otomatik atanır, ancak farklı bir model denemek
 Bu sürümde yapay zekâlar 5 kitabın tamamından (824 sayfa, ~2 milyon karakter, **1.021 konu pasajı**) beslenir ve proje açık olduğu sürece **bir yapay zekâ grubu diğer yapay zekâları hiç durmadan eğitir**:
 
 1. **Kesintisiz Üretim Hattı (Asla Durmaz):**
-   - Sorular 5'li paketler (`batchPerCall`, Turbo'da 6'lı) ve **toplu kör hakem** ile ~1 sn/soru temposunda üretilir.
+   - Sorular Turbo modda **8'li paketler** (`batchPerCall: 8`) ve **toplu kör hakem** ile ~1 sn/soru temposunda üretilir.
    - Arka planda ağırlık eğitimi, web araştırması veya Qwen Code inovasyonu çalışırken bile **soru üretimi asla duraklatılmaz** (`pausedForTraining = false`). Havuz 25.000 sınırına ulaşsa dahi en düşük puanlı/eski sorular rotasyonla yenilenerek kesintisiz yeni soru üretimi sürer.
 2. **Arka Planda Sürekli İnternet Araştırması & Sınav Tahmini (`server/research-agent.mjs`):**
    - Araştırmacı ajan proje boyunca 29 üniteyi sırayla gezerek **Türkçe Vikipedi + DuckDuckGo web araması** üzerinden ilgili ders kavramlarını ve sınav vurgularını tarar (ağ yoksa hata vermeden kitap pasajları üzerinde derin örüntü analizine döner).
@@ -283,6 +360,8 @@ Farklı bir model çalışıyorsa onun tam adını yaz. Ollama uygulamasını ta
 
 ## 14. Python kur ve eğitim verisini hazırla
 
+> **Otomatik:** 50 onaylı soru eşiği geçildiğinde proje, SFT + DPO veri setini **açılışta ve her +25 onaylı soruda kendiliğinden** `.tempo-data/training` klasörüne hazırlar; aşağıdaki elle komut yalnızca zorlamak/yeniden üretmek istersen gerekir (eski düğme kaldırıldı, tamamen arka plan işidir).
+
 1. [python.org/downloads/windows](https://www.python.org/downloads/windows/) adresinden **64 bit Python 3.11** indir ve kur. Kurulumda Python'u PATH'e ekleme seçeneğini işaretle.
 2. Yeni PowerShell aç; 6. adımdaki gibi proje klasörüne gir.
 3. Python sürümünü kontrol et:
@@ -398,7 +477,7 @@ Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vard
 
 ## 20. Yeni özellikler (Kayserili Koç, Sorusuz TikTok Akışı, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
 
-- **Kalite Kilitli Turbo Mod (Varsayılan):** Proje varsayılan olarak `turbo` modda çalışır (`batchPerCall: 6`, toplu denetim, `turboQualityLock: true`). Hız optimizasyonları `selfCorrection`, çift-cevap blokajı, kitap kanıtı ve `kolay`/`orta`/`zor` seviyelerini asla bozmaz.
+- **Kalite Kilitli Turbo Mod (Tek Mod):** Proje daima `turbo` modda çalışır (`batchPerCall: 8`, kuyruklu boru hattı, toplu denetim, `turboQualityLock: true`). Başka profil/mod yoktur; Turbo kalite kilidi `selfCorrection`, çift-cevap blokajı, kitap kanıtı ve `kolay`/`orta`/`zor` seviyelerini asla gevşetmez. Soru üretim hızı ~0.5-1 sn/soru'dur; daha da hızlandırmak için 4.1 adımındaki `OLLAMA_NUM_PARALLEL` ve `OLLAMA_FLASH_ATTENTION` ayarlarını uygula.
 - **Kayserili Sert-Komedi Şık Tepkisi (`/api/ollama/kayseri-react`):** Test sırasında bir şıkka basıldığında süre ve seriye göre anında Kayserili şiveli/sert-komedi (ve tek tıkla `Temiz Klasik` geçişli + `Sesli Oku` destekli) koç tepkisi, net bilgi ve önemli terim gösterilir.
 - **Sorusuz TikTok Dikey Karışık Akış (`TikTok Akışı` & `/api/ollama/videos/feed`):** 29 ünitenin tamamı dolana kadar arka planda sürekli gömülü `.mp4` üretilir. TikTok akışı soru sormaz; doğrudan sınavda çıkacak net cevabı, önemli kelime/terimleri ve Kayserili/Hamam Böceği Böcü komedi diyaloglarını karışık ünitelerden dikey kaydırmayla oynatır.
 - **+%15500 (`Hyper-155x+`) Qwen Code & ApexArchitect:** 10 alt-sistemi (üretici, hakem, küratör, ders motoru, video yönetmeni, araştırmacı, Kayseri koçu, TikTok akışı, Qwen Code sandbox ve Turbo kalite kilidi) 16 tuzaklı stres testi ve 4 adaylı turnuvayla sürekli geliştirir.
