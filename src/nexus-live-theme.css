@@ -1,0 +1,63 @@
+/* Tempo-Nexus-Titan Otonom Arayuz Evrimi · Tur #300 · IQ 99.98 · Otomatik CSS Dogrulamali */
+:root {
+ --nexus-accent: #2e6b3f;
+ --nexus-accent-soft: #eef6e8;
+ --nexus-border-glow: #c8dfc0;
+ --nexus-card-shadow: 0 4px 14px rgba(34, 58, 40, 0.045);
+ --nexus-surface-tint: hsl(98, 28%, 96%);
+ --nexus-focus-ring: 0 0 0 3px rgba(79, 134, 67, 0.58);
+}
+.nexus-titan-panel {
+ border: 1.5px solid var(--nexus-border-glow);
+ background: linear-gradient(180deg, var(--nexus-surface-tint) 0%, #ffffff 100%);
+ box-shadow: var(--nexus-card-shadow);
+ border-radius: 14px;
+ padding: 16px 18px;
+ display: grid;
+ gap: 10px;
+ transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.nexus-titan-panel:hover {
+ border-color: #9ec58e;
+ box-shadow: 0 8px 22px rgba(34, 58, 40, 0.09);
+}
+.nexus-topbar-pill {
+ display: inline-flex;
+ align-items: center;
+ gap: 7px;
+ background: var(--nexus-accent-soft);
+ border: 1px solid var(--nexus-border-glow);
+ color: var(--nexus-accent);
+ border-radius: 999px;
+ padding: 5px 12px;
+ font-size: 11px;
+ font-weight: 700;
+ letter-spacing: 0.2px;
+}
+.nexus-topbar-pill .nexus-pulse {
+ width: 7px;
+ height: 7px;
+ border-radius: 50%;
+ background: #4f9d47;
+ box-shadow: 0 0 0 3px rgba(79, 157, 71, 0.18);
+}
+.nexus-source-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+ gap: 10px;
+}
+.nexus-source-card {
+ background: #fff;
+ border: 1px solid #e1ecda;
+ border-radius: 10px;
+ padding: 11px 13px;
+ display: grid;
+ gap: 5px;
+}
+.nexus-source-card:focus-within {
+ box-shadow: var(--nexus-focus-ring);
+}
+@media (max-width: 760px) {
+ .nexus-topbar-pill { display: none; }
+ .nexus-source-grid { grid-template-columns: 1fr; }
+}

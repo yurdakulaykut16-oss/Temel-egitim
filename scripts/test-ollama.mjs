@@ -8,101 +8,137 @@ import {join} from 'node:path';
 const listen=server=>new Promise(resolve=>server.listen(0,'127.0.0.1',()=>resolve(server.address().port)));
 const close=server=>new Promise(resolve=>server.close(resolve));
 
-test('soru üretimi: kör denetim, hata ve tekrar kontrolleri',async()=>{
- let calls=[], mismatch=false, wrongDifficulty=false, judge2DisagreesAnswer=false, judge2Difficulty='kolay';
+test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, çalışma paketi, think fallback, uzman model ve evrim API uçları',async()=>{
+ let calls=[], mismatch=false, wrongDifficulty=false, judge2DisagreesAnswer=false, judge2Difficulty='kolay', dualAnswerRisk=false, overlapOptions=false, numericOptions=false;
+ let rejectThinkOnce=true, sendBannedOption=false, createdModels=[];
  const fake=http.createServer(async(req,res)=>{
   res.setHeader('Content-Type','application/json');
-  if(req.url==='/api/tags')return res.end(JSON.stringify({models:[{name:'fake:1'},{name:'fake:2'}]}));
-  let body='';for await(const chunk of req)body+=chunk;const data=JSON.parse(body);calls.push(data);
-  // 0-1 ünitesi, 1 kolay/1 orta/1 zor sıralı üretimdeki "bağımsız denetçiler, hedeflenen zorlukla
-  // eşleşmeyen bir sonuç verirse soru kaydedilmez" davranışını test etmek için ayrı bir metin kullanır
-  // (0-0 ile aynı soru metnini kullanırsa global "aynı soru" kontrolüne takılırdı).
+  if(req.url==='/api/tags')return res.end(JSON.stringify({models:[{name:'fake:1'},{name:'fake:2'},...createdModels.map(n=>({name:n}))]}));
+  let body='';for await(const chunk of req)body+=chunk;const data=JSON.parse(body);
+  if(req.url==='/api/create'){
+   createdModels.push(data.model);
+   return res.end(JSON.stringify({status:'success'}));
+  }
+  // Eski Ollama sürümü veya think desteklemeyen model senaryosu
+  if(rejectThinkOnce && data.think===false){
+   rejectThinkOnce=false;
+   res.statusCode=400;
+   return res.end(JSON.stringify({error:'think parameter not supported'}));
+  }
+  calls.push(data);
   const isUnit01=data.prompt.includes('Antrenmanı oluşturan ögeler');
-  // 0-2 ünitesi, İKİ bağımsız denetçinin (verifier=fake:1, judge2=fake:2) birbirinden FARKLI
-  // modeller olarak ayrı ayrı çağrıldığını ve yalnız ikisi de TAM hemfikir olursa (hem cevapta
-  // hem zorlukta) sorunun kaydedildiğini test eder — iki hakemle "çoğunluk" anlamlı olmadığı için
-  // tam oy birliği aranır.
   const isUnit02=data.prompt.includes('Bireyselleştirme, süreklilik');
   let evidence='Egzersiz planlı ve tekrarlıdır';
   if(isUnit01)evidence='Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri';
   if(isUnit02)evidence='Bireyselleştirme, süreklilik, çeşitlilik ve branşa özgülük temel ilkelerdir';
   let result;
-  if(data.prompt.includes('soru denetçisisin')){
-   if(isUnit01)result={answer:'Kondisyonel ve teknik hazırlık',singleCorrect:true,supported:true,qualityOk:true,difficulty:wrongDifficulty?'zor':'kolay',evidence,reason:'Anlatım kondisyonel ve teknik hazırlığı birlikte sayar.'};
+  if(data.prompt.includes('Baş Stratejisti')){
+   result={reason:'0-1 ünitesine öncelik ver ve uzun şıkları dengeli tut',focusUnits:['0-1'],generatorAddendum:'Tüm şıklar aynı terim sınıfından olsun ama tek doğru kalsın',judgeAddendum:'İki şık birden doğruysa dualAnswerRisk=true ver',customRuleCode:'function evaluateCandidate(candidate, unit){ if (candidate.question.length < 15) return {ok:false, reason:"Soru kökü çok kısa"}; return {ok:true}; }'};
+  }else if(data.prompt.includes('"flashcards":')){
+   const textMatch=data.prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
+   const studyEv=(textMatch?textMatch[1]:'').trim().split(/\s+/).slice(0,8).join(' ')||evidence;
+   result={
+    flashcards:[{front:'Düzenli fiziksel egzersiz hangi iki temel özellikle tanımlanır?',back:'Planlı ve tekrarlı olmasıyla tanımlanır.',mnemonic:'P-T: Planlı ve Tekrarlı',evidence:studyEv,difficulty:'kolay'}],
+    matchings:[{title:'Egzersiz Özellikleri',pairs:[{left:'Planlılık',right:'Program dahilinde yapma'},{left:'Tekrarlılık',right:'Düzenli aralıklarla uygulama'},{left:'Hareket',right:'Kas kasılmasıyla enerji harcama'}],explanation:'Temel egzersiz ögeleri',evidence:studyEv,difficulty:'kolay'}],
+    drills:[{type:'fill_blank',prompt:'Egzersiz fiziksel uygunluğu korumaya yönelik ___ ve tekrarlı etkinliktir.',answer:'planlı',hint:'Programlı anlamına gelir',explanation:'Egzersiz planlıdır.',evidence:studyEv,difficulty:'kolay'}]
+   };
+  }else if(data.prompt.includes('soru denetçisisin')){
+   if(isUnit01)result={answer:'Kondisyonel ve teknik hazırlık',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty:wrongDifficulty?'zor':'kolay',evidence,reason:'Anlatım kondisyonel ve teknik hazırlığı birlikte sayar.'};
    else if(isUnit02){
-    // fake:1 (verifier) her zaman sabit kalır; fake:2 (judge2) bayraklara göre ayrışabilir.
     const isJudge2=data.model==='fake:2';
     const answer=(isJudge2&&judge2DisagreesAnswer)?'İlke yok':'Bireysel ve sürekli ilkeler';
     const difficulty=isJudge2?judge2Difficulty:'kolay';
-    result={answer,singleCorrect:true,supported:true,qualityOk:true,difficulty,evidence,reason:`${data.model} bağımsız değerlendirmesi.`};
+    result={answer,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:4,difficulty,evidence,reason:`${data.model} bağımsız değerlendirmesi.`};
    }
-   else result={answer:mismatch?'İhmal':'Planlama ve tekrar',singleCorrect:true,supported:true,qualityOk:true,difficulty:'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
+   else result={answer:numericOptions?'20 dakika egzersiz':mismatch?'İhmal':'Planlama ve tekrar',singleCorrect:!dualAnswerRisk,dualAnswerRisk,secondBestOption:dualAnswerRisk?'Tahkim':'',supported:true,qualityOk:true,qualityScore:5,difficulty:numericOptions?'orta':'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
   }else{
    if(isUnit01)result={question:'Antrenmanı oluşturan ögelerden hangileri birlikte sayılır?',options:['Kondisyonel ve teknik hazırlık','İhmal','Tahkim','Bürokrasi'],answer:'Kondisyonel ve teknik hazırlık',explanation:'Kondisyonel ve teknik hazırlık birlikte sayılır.',evidence,topic:'Antrenmanın ögeleri'};
    else if(isUnit02)result={question:'Antrenman yükü planlanırken hangi temel ilkeler gözetilir?',options:['Bireysel ve sürekli ilkeler','İlke yok','Tahkim','Bürokrasi'],answer:'Bireysel ve sürekli ilkeler',explanation:'Bireyselleştirme ve süreklilik temel ilkelerdendir.',evidence,topic:'Antrenman ilkeleri'};
-   else result={question:'Düzenli hareketin planlama niteliği hangi iki özellikle belirlenir?',options:['Planlama ve tekrar','İhmal','Tahkim','Bürokrasi'],answer:'Planlama ve tekrar',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Egzersizin özellikleri'};
+   else if(numericOptions)result={question:'Haftalık başlangıç egzersiz süresi ne kadar olmalıdır?',options:['20 dakika egzersiz','30 dakika egzersiz','45 dakika egzersiz','60 dakika egzersiz'],answer:'20 dakika egzersiz',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Süre planlaması'};
+   else result={question:'Düzenli hareketin planlama niteliği hangi iki özellikle belirlenir?',options:overlapOptions?['Planlama ve tekrar etkinliği','Tekrar ve planlama etkinliği','Tahkim kurulu','Bürokrasi yaklaşımı']:['Planlama ve tekrar','İhmal','Tahkim',sendBannedOption?'Yukarıdakilerin hepsi':'Bürokrasi'],answer:overlapOptions?'Planlama ve tekrar etkinliği':'Planlama ve tekrar',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Egzersizin özellikleri'};
   }
-  res.end(JSON.stringify({response:JSON.stringify(result)}));
+  res.end(JSON.stringify({response:JSON.stringify(result),eval_count:120,eval_duration:400_000_000,load_duration:50_000_000}));
  });
  const fakePort=await listen(fake);const dir=await mkdtemp(join(tmpdir(),'tempo-test-'));
  process.env.OLLAMA_BASE_URL=`http://127.0.0.1:${fakePort}`;process.env.OLLAMA_MODEL='fake:1';process.env.OLLAMA_VERIFIER_MODEL='fake:1';process.env.TEMPO_DATA_DIR=dir;
- process.env.TEMPO_DISABLE_AUTOLOOP='1'; // testte sunucunun kendi kendine çalışan döngüsünü kapat; determinizm için
+ process.env.TEMPO_DISABLE_AUTOLOOP='1';
  const {ollamaPlugin}=await import('../server/ollama.mjs');let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
  const app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});const port=await listen(app);const base=`http://127.0.0.1:${port}`;
  const post=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-0']})});
  try{
   const status=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(status.verifierInstalled,true);
-  // Judge2 açıkça seçilmediyse (ve OLLAMA_JUDGE2_MODEL ortam değişkeni de ayarlanmadıysa) GERÇEK
-  // bağımsızlık için denetçiden FARKLI, önceden tanımlı bir model (gemma3:12b) varsayılan olur;
-  // bu test ortamında kurulu olmadığı için judge2Installed=false görünmesi beklenir — arayüz de
-  // kullanıcıya bunu "kurulu değil" olarak gösterecektir.
   assert.equal(status.verifierModel,'fake:1');assert.equal(status.judge2Model,'gemma3:12b');
   assert.equal(status.judge2Installed,false);
+  assert.ok(status.coverage.totalPassages>=500,'tam kitap pasajları yüklenmiş olmalı');
+  assert.equal(status.settings.preset,'turbo');
+  assert.equal(status.settings.turboQualityLock,true);
+  assert.equal(status.settings.selfCorrection,true);
+  assert.equal(status.settings.batchPerCall,6);
+  assert.equal(status.settings.batchVerify,true);
+  assert.equal(status.settings.generateStudyMaterials,true);
+  assert.equal(status.settings.autoEvolve,true);
   const audit=await (await fetch(`${base}/api/ollama/audit`)).json();assert.equal(audit.invalid,0);assert.equal(audit.duplicates,0);
+
+  // Pasaj listesi uç noktası
+  const passages=await (await fetch(`${base}/api/ollama/passages?unitId=0-0`)).json();
+  assert.ok(passages.passages.length>=20,'0-0 ünitesi kitaptan onlarca pasaj içermeli');
+
+  // İki seçenek aynı kelimeleri içerip örtüşüyorsa hakeme bile gitmeden reddedilmeli
+  overlapOptions=true;
+  let overlapRes=await post();
+  assert.equal(overlapRes.status,502);
+  assert.match((await overlapRes.json()).error,/aşırı örtüşüyor|çift doğru/);
+  overlapOptions=false;
+
+  // Çift doğru cevap riski algılandığında hakem kesin reddetmeli!
+  dualAnswerRisk=true;
+  let dualRes=await post();
+  assert.equal(dualRes.status,502);
+  assert.match((await dualRes.json()).error,/ikinci bir doğru|dualAnswerRisk|tekil/);
+  dualAnswerRisk=false;
+
+  // Yasaklı çeldirici ("Yukarıdakilerin hepsi") hakemlere bile gitmeden reddedilmeli
+  sendBannedOption=true;
+  let bannedRes=await post();
+  assert.equal(bannedRes.status,502);
+  assert.match((await bannedRes.json()).error,/kalitesiz ifade/);
+  sendBannedOption=false;
+
+  // think:false desteklemeyen modelde otomatik fallback ile sorunsuz devam etmeli
+  assert.equal(rejectThinkOnce,false,'think:false 400 yanıtı sonrası fallback tetiklenmiş olmalı');
+
   mismatch=true;let response=await post();assert.equal(response.status,502);
-  // Her iki bağımsız denetçi de (aynı sahte sunucu olduğu için) AYNI yanlış cevapta hemfikir olur;
-  // bu da "aynı doğru cevapta birleşmedi" (üreticinin cevabından farklı) hatasını tetikler.
   assert.match((await response.json()).error,/birleşmedi/);
   assert.equal((await (await fetch(`${base}/api/ollama/questions`)).json()).items.length,0);
   mismatch=false;response=await post();assert.equal(response.status,200);const result=await response.json();assert.equal(result.item.status,'approved');assert.equal(result.item.verification.answer,result.item.answer);
-  // Bu ünite için havuzda henüz zorluk etiketli soru yokken ilk soru her zaman "kolay" hedeflenir;
-  // İKİ bağımsız denetçinin de hemfikir olduğu zorluk, kaydedilen soruya da aynen yansır.
   assert.equal(result.item.difficulty,'kolay');assert.equal(result.item.verification.difficulty,'kolay');
-  // Her biri ayrı bir "yapay zekâ" rolünü temsil eden iki bağımsız denetçinin kararı da ayrı ayrı saklanır.
   assert.equal(result.item.verification.judges.length,2);
-  for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlama ve tekrar');assert.equal(j.difficulty,'kolay');assert.ok(j.reason)}
-  // Her başarılı denemede: 1 üretim + 2 PARALEL bağımsız denetim = 3 model çağrısı.
-  assert.equal(calls.length,6);// mismatch denemesi (3) + başarılı deneme (3)
+  for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlama ve tekrar');assert.equal(j.difficulty,'kolay');assert.ok(j.reason);assert.ok(j.qualityScore>=1)}
   assert.ok(calls.some(c=>c.prompt.includes('SORU:')));
   assert.ok(!calls.some(c=>c.prompt.includes('Egzersiz düzenli ve planlı etkinliktir.')));
+
   response=await post();assert.equal(response.status,502);assert.match((await response.json()).error,/zaten kayıtlı|benzer/);
   let selected=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({model:'fake:2'})});assert.equal(selected.status,200);assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).model,'fake:2');
   selected=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({model:'not-installed'})});assert.equal(selected.status,400);
   selected=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json','Origin':'https://evil.invalid'},body:JSON.stringify({model:'fake:1'})});assert.equal(selected.status,403);
   selected=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({model:'fake:2',role:'nope'})});assert.equal(selected.status,400);
 
-  // Yapay zekâ "öğretmen" kendi kendine onaylar: kullanıcı ayrıca onaylamadan soru havuzda approved olarak durur.
   const afterSave=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(afterSave.approved,1);assert.equal(afterSave.rejected,0);
-  assert.equal(afterSave.autoRunning,true); // varsayılan: kendi kendine üretim açık
+  assert.ok(afterSave.telemetry.tokensPerSecond>0,'token/sn telemetrisi ölçülmüş olmalı');
+  assert.equal(afterSave.autoRunning,true);
   let stopped=await fetch(`${base}/api/ollama/stop`,{method:'POST',headers:{Origin:base}});assert.equal(stopped.status,200);assert.equal((await stopped.json()).autoRunning,false);
-  assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).autoRunning,false);
   let started=await fetch(`${base}/api/ollama/start`,{method:'POST',headers:{Origin:base}});assert.equal(started.status,200);assert.equal((await started.json()).autoRunning,true);
-  // Kullanıcı yine de bir AI onaylı soruyu reddedebilir (veto); bu durumda 'rejected' olur.
+
   const savedId=result.item.id;
   let reviewed=await fetch(`${base}/api/ollama/review`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({id:savedId,status:'rejected'})});
   assert.equal(reviewed.status,200);assert.equal((await reviewed.json()).item.status,'rejected');
   assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).rejected,1);
 
-  // Zorluk sıralaması: 0-1 ünitesi henüz hiç zorluk etiketli soru içermediği için hedef "kolay"dır.
-  // Bağımsız denetçiler farklı bir zorlukta anlaşırsa (burada "zor"), soru kalıbı bozulmasın diye hiç
-  // kaydedilmez; aynı istek daha sonra denetçiler "kolay" derse normal şekilde kaydedilir.
   const post01=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-1']})});
   wrongDifficulty=true;let mismatchResponse=await post01();assert.equal(mismatchResponse.status,502);assert.match((await mismatchResponse.json()).error,/hedef zorluk/);
   wrongDifficulty=false;let okResponse=await post01();assert.equal(okResponse.status,200);const item01=(await okResponse.json()).item;assert.equal(item01.difficulty,'kolay');
 
-  // 0-2 ünitesi: judge2'yi AYRI bir (gerçekten farklı model adına sahip) model olarak seç, böylece
-  // "iki bağımsız AI" gerçekten iki farklı model geçişiyle test edilmiş olur.
   let roleSel=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({model:'fake:1',role:'verifier'})});
   assert.equal(roleSel.status,200);
   roleSel=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({model:'fake:2',role:'judge2'})});
@@ -111,28 +147,71 @@ test('soru üretimi: kör denetim, hata ve tekrar kontrolleri',async()=>{
   assert.equal(statusAfterRoles.verifierModel,'fake:1');assert.equal(statusAfterRoles.judge2Model,'fake:2');
 
   const post02=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-2']})});
-  // Cevapta TAM birleşme şart: judge2 farklı bir CEVAP verirse soru reddedilir. Bu denemeyi İLK
-  // önce yapıyoruz çünkü başarısız olduğu için havuza hiçbir şey kaydetmez; aksi hâlde sonraki
-  // denemede aynı (sabit) soru metni "zaten kayıtlı" kontrolüne takılırdı.
   judge2DisagreesAnswer=true;judge2Difficulty='kolay';
   let disagreeResponse=await post02();assert.equal(disagreeResponse.status,502);
   assert.match((await disagreeResponse.json()).error,/birleşmedi/);
 
-  // Cevapta hemfikir ama zorlukta değiller: iki hakemle "çoğunluk" anlamlı olmadığından (1-1 berabere),
-  // zorlukta da TAM oy birliği aranır; anlaşamazlarsa soru yine kaydedilmez.
   judge2DisagreesAnswer=false;judge2Difficulty='orta';
   let difficultySplit=await post02();assert.equal(difficultySplit.status,502);
   assert.match((await difficultySplit.json()).error,/görüş birliğine varamadı/);
 
-  // Hem cevapta hem zorlukta (ikisi de "kolay") TAM hemfikir olunca soru KAYDEDİLMELİ.
   judge2DisagreesAnswer=false;judge2Difficulty='kolay';
   let agreedOk=await post02();assert.equal(agreedOk.status,200);
   const item02=(await agreedOk.json()).item;assert.equal(item02.difficulty,'kolay');
   assert.deepEqual(item02.verification.judges.map(j=>j.difficulty),['kolay','kolay']);
   assert.deepEqual(item02.verification.judges.map(j=>j.model).sort(),['fake:1','fake:2']);
 
-  // Üretim hızı ayarı: varsayılan 5000ms, API ile 1000-120000 arasına ayarlanabilir, dışı reddedilir.
-  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,5000);
+  // Sayısal düşündürücü çeldiriciler ("20 dakika" vs "30 dakika") ASLA yanlışlıkla elenmemeli!
+  // 0-0'da ilk soru kolay idi, sonraki 0-0 sorusu orta zorluk hedefleyecek; mock orta döndürsün
+  numericOptions=true;
+  const oldCallsLen=calls.length;
+  const resNum=await fetch(`${base}/api/ollama/config`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({smartDifficulty:true})});
+  assert.equal(resNum.status,200);
+  let numericRes=await post();
+  const numericBody=await numericRes.json();
+  assert.equal(numericRes.status,200,JSON.stringify(numericBody));
+  assert.ok(calls.length>oldCallsLen);
+  numericOptions=false;
+
+  // Gelişmiş /config preset ve /create-specialist testleri
+  const cfgRes=await fetch(`${base}/api/ollama/config`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({preset:'turbo'})});
+  assert.equal(cfgRes.status,200);
+  const cfgData=(await cfgRes.json()).settings;
+  assert.equal(cfgData.batchPerCall,6);assert.equal(cfgData.preset,'turbo');
+
+  const specRes=await fetch(`${base}/api/ollama/create-specialist`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({role:'generator',baseModel:'fake:1',name:'tempo-ogretmen:latest'})});
+  assert.equal(specRes.status,200);
+  assert.ok(createdModels.includes('tempo-ogretmen:latest'));
+
+  const evolverSel=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({model:'fake:2',role:'evolver'})});
+  assert.equal(evolverSel.status,200);
+  assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).evolverModel,'fake:2');
+
+  // Çalışma materyalleri (Kart + Eşleştirme + Tekrar) üretimi ve listesi
+  const studyGen=await fetch(`${base}/api/ollama/generate-study`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({unitId:'0-0'})});
+  assert.equal(studyGen.status,200);
+  assert.equal((await studyGen.json()).added,3);
+  const studyMat=await (await fetch(`${base}/api/ollama/study-materials`)).json();
+  assert.equal(studyMat.flashcards.length,1);
+  assert.equal(studyMat.matchings.length,1);
+  assert.equal(studyMat.drills.length,1);
+
+  // Öğrenci profil sinyali + izole AI öz-evrim + geri alma
+  const stRes=await fetch(`${base}/api/ollama/student-state`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({readUnits:['0-0','0-1'],weakUnits:['0-1']})});
+  assert.equal(stRes.status,200);
+  const evRes=await fetch(`${base}/api/ollama/evolve`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:'{}'});
+  assert.equal(evRes.status,200);
+  const evData=await evRes.json();
+  assert.equal(evData.accepted,true);
+  assert.equal(evData.policy.version,2);
+  const rbRes=await fetch(`${base}/api/ollama/rollback-evolution`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:'{}'});
+  assert.equal(rbRes.status,200);
+  const rbJson=await rbRes.json();
+  assert.equal(rbJson.policy.source,'rollback');
+  assert.equal(rbJson.policy.customRuleCode,'');
+
+  // Timeout ayarı: varsayılan 45000ms, 1000-300000 aralığında ayarlanabilir
+  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,45000);
   let timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:8000})});
   assert.equal(timeoutRes.status,200);assert.equal((await timeoutRes.json()).autoTimeoutMs,8000);
   assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).autoTimeoutMs,8000);
