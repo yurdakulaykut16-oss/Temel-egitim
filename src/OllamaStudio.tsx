@@ -1483,7 +1483,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <code>{status.hardware.activeProfile.primaryModel}</code> (Üretici/ÖSYM/Mimar) +{' '}
         <code>{status.hardware.activeProfile.judgeModel}</code> (Hakem/Çeldirici/Psikometri) +{' '}
         <code>{status.hardware.activeProfile.coderModel}</code> (Qwen-Code) ·{' '}
-        <b>ctx={status.hardware.activeProfile.numCtx ?? 3072}</b> · <code>keep_alive=-1</code>
+        <b>ctx={status.hardware.activeProfile.numCtx ?? 3072}</b> · <code>keep_alive=5m</code>
        </p>
        <p style={{margin: '4px 0'}}>
         <small>

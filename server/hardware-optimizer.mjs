@@ -19,7 +19,7 @@ export const HARDWARE_PROFILES = {
   coder16GbVramUpgrade: 'qwen2.5-coder:7b',
   estimatedVramGb: 10.2,
   estimatedVram16Gb: 13.0,
-  keepAlive: -1,
+  keepAlive: '5m',
   numCtx: 2560,
   judgeNumCtx: 2048,
   numPredictGenerate: 280,
@@ -42,7 +42,7 @@ export const HARDWARE_PROFILES = {
   coder16GbVramUpgrade: 'qwen2.5-coder:3b',
   estimatedVramGb: 7.8,
   estimatedVram16Gb: 7.8,
-  keepAlive: -1,
+  keepAlive: '5m',
   numCtx: 3072,
   judgeNumCtx: 2048,
   numPredictGenerate: 280,
@@ -65,7 +65,7 @@ export const HARDWARE_PROFILES = {
   coder16GbVramUpgrade: 'qwen2.5-coder:7b',
   estimatedVramGb: 14.0,
   estimatedVram16Gb: 14.0,
-  keepAlive: '30m',
+  keepAlive: '5m',
   numCtx: 4096,
   judgeNumCtx: 3072,
   numPredictGenerate: 650,
@@ -88,7 +88,7 @@ export const HARDWARE_PROFILES = {
   coder16GbVramUpgrade: 'qwen3-coder:7b',
   estimatedVramGb: 10.1,
   estimatedVram16Gb: 12.8,
-  keepAlive: -1,
+  keepAlive: '5m',
   numCtx: 3072,
   judgeNumCtx: 2560,
   numPredictGenerate: 380,
@@ -138,7 +138,7 @@ export const OLLAMA_GPU_ENV_RECOMMENDATIONS = {
  OLLAMA_KV_CACHE_TYPE: 'q8_0',
  OLLAMA_MAX_LOADED_MODELS: '3',
  OLLAMA_NUM_PARALLEL: '4',
- OLLAMA_KEEP_ALIVE: '-1'
+ OLLAMA_KEEP_ALIVE: '5m'
 };
 
 export class HardwareTeamOptimizer {
@@ -434,7 +434,7 @@ export class HardwareTeamOptimizer {
   }
  }
 
- // Modelleri Ollama VRAM'de önceden ısıtıp kilitler (keep_alive: -1 -> ilk sorguda 0 soğuk yükleme!)
+ // Modelleri Ollama VRAM'de önceden ısıtır (keep_alive: profil değeri, artık ~5dk; sığmayan model için istek beklemede kalmaz, boşalır)
  async warmupTeamModelsInVram({ ollamaBaseUrl, installedModels = [], profile = null } = {}) {
   if (!ollamaBaseUrl || !installedModels.length) return { warmed: [] };
   const active = profile || this.resolveActiveProfile(await this.loadState(), await this.detectLocalHardware());

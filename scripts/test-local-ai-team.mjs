@@ -275,14 +275,14 @@ test('HardwareTeamOptimizer: RTX 3080 Ti (12GB/16GB VRAM) + 16GB RAM için <1sn 
   assert.equal(sum16.activeProfile.coderModel, 'qwen2.5-coder:7b');
   assert.equal(sum16.activeProfile.estimatedVramGb, 13.0);
 
-  // 3) Eksik modellerin otomatik indirilmesi & VRAM kilitlemesi (keep_alive: -1, num_gpu: 99, low_vram: false)
+  // 3) Eksik modellerin otomatik indirilmesi & kısa keep_alive (5dk) ile VRAM yönetimi (num_gpu: 99, low_vram: false)
   const pullRes = await hw12.pullMissingProfileModels({ ollamaBaseUrl: ollamaUrl, installedModels: [] });
   assert.equal(pullRes.ok, true);
   assert.deepEqual(pulled, ['qwen3:8b', 'gemma3:4b', 'qwen2.5-coder:3b']);
 
   const warmRes = await hw12.warmupTeamModelsInVram({ ollamaBaseUrl: ollamaUrl, installedModels: pulled, profile: sum12.activeProfile });
   assert.equal(warmRes.warmed.length, 3);
-  assert.ok(warmed.every(w => w.keep_alive === -1 && w.options.num_gpu === 99 && w.options.low_vram === false));
+  assert.ok(warmed.every(w => w.keep_alive === '5m' && w.options.num_gpu === 99 && w.options.low_vram === false));
 
   const runtimeOpts = hw12.buildRuntimeOptions(sum12.activeProfile, { num_ctx: 12288, num_predict: 900 }, { role: 'judge', isSprint: true });
   assert.ok(runtimeOpts.num_ctx <= 2560, '<1sn modda KV cache taşmaması için num_ctx sınırlandırılmalı');
