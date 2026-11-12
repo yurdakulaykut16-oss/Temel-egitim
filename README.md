@@ -165,7 +165,7 @@ setx OLLAMA_NUM_PARALLEL "6"
 - RTX 3080 Ti 12 GB'de **Seçenek A** ile ~1 sn/soru; **Seçenek C** ile ~0.5 sn/soru mümkündür.
 - `OLLAMA_NUM_PARALLEL` değerini GPU belleğin taşarsa 4'e düşür (14B modelde 6 idealdir).
 - Uygulamadaki **Eşzamanlı yuva** ayarı varsayılan **6**'ya yükseltilmiştir; 12 GB'de 14B kullanıyorsan aradaki üretimin kaynamaması için 4'e de düşürebilirsin (Arayüzde "Uygula" düğmesi).
-- `keep_alive=-1` olduğundan modeller VRAM'de sabit kalır (her soruda yeniden yükleme yoktur).
+- Modeller Ollama'ya `keep_alive=5m` ile bağlanır: VRAM boşlukları dolunca hakem/kodlayıcı otomatik bırakılır, büyük üretici modeli yüklemek için yer açılır (süresiz `-1` pini olan eski sürümlerde GPU tıkanıyordu).
 - Daha büyük `num_batch` (512) ve GPU'ya tam offload (`num_gpu=99`) Turbo profilde otomatik uygulanır.
 
 ## 5. Ekran kartını kontrol et

@@ -1140,7 +1140,7 @@ async function runModel(which, input, temperature, signal, numPredict = 900, { f
   prompt: input,
   stream: false,
   format: 'json',
-  keep_alive: cachedHardwareProfile?.keepAlive ?? -1,
+  keep_alive: cachedHardwareProfile?.keepAlive ?? '5m',
   options: hwAdjusted
  };
  if (fastThink && !unsupportedThinkModels.has(which)) {
@@ -4119,6 +4119,34 @@ async function getTrainingReadiness(items) {
  };
 }
 
+
+// Açılışta önceki oturumdan kalan süresiz ("Forever") GPU pinlerini temizler.
+// Eski sürümler keep_alive=-1 ile modelleri VRAM'de kilitliyordu; 12 GB kartta bu
+// yüzden büyük üretici modeli asla yüklenemiyordu ("0 soru/dk · Yeni dalga bekleniyor").
+// Boşaltma kapıları: TEMPO_UNLOAD_STALE_PINS=0 ile kapatılabilir.
+async function unloadStalePinnedModelsAtBoot() {
+ try {
+  if (process.env.TEMPO_UNLOAD_STALE_PINS === '0') return { ok: false, skipped: true };
+  const r = await fetch(`${base}/api/ps`, { signal: AbortSignal.timeout(2500) });
+  if (!r.ok) return { ok: false };
+  const loaded = ((await r.json()).models || []).map(m => m?.name || m?.model).filter(Boolean);
+  if (!loaded.length) return { ok: true, unloaded: [] };
+  const results = await Promise.allSettled(loaded.map(name =>
+   fetch(`${base}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: name, prompt: '', stream: false, keep_alive: 0 }),
+    signal: AbortSignal.timeout(5000)
+   }).then(() => name)
+  ));
+  const unloaded = results.filter(x => x.status === 'fulfilled').map(x => x.value);
+  console.log(`[tempo] Açılış: ${unloaded.length} sıkışmış GPU modeli boşaltıldı${unloaded.length ? ` (${unloaded.slice(0, 4).join(', ')})` : ''}`);
+  return { ok: true, unloaded };
+ } catch {
+  return { ok: false };
+ }
+}
+
 export function ollamaPlugin() {
  return {
   name: 'tempo-ollama',
@@ -4127,6 +4155,7 @@ export function ollamaPlugin() {
    server?.httpServer?.once?.('close', stopOllamaLoops);
    if (!autoLoopStarted && process.env.TEMPO_DISABLE_AUTOLOOP !== '1') {
     autoLoopStarted = true;
+    unloadStalePinnedModelsAtBoot().catch(() => {});
     autoScheduler();
     backgroundCoachLoop();
    }

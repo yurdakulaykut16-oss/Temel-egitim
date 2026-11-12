@@ -132,7 +132,7 @@ export const GITHUB_OSS_DOMAINS = [
   query: 'llama.cpp gguf quantization ollama vram inference license:mit',
   targetBots: ['turboQualityGuard', 'localAiTeam', 'nexusTitanFusion'],
   flagshipRepos: ['ggml-org/llama.cpp', 'ollama/ollama', 'turboderp/exllamav2', 'casper-hansen/AutoAWQ', 'PanQiWei/AutoGPTQ', 'ggerganov/ggml'],
-  techniques: ['Q4_K_M / IQ4_XS VRAM sabitleme', 'keep_alive=-1 sıfır disk takaslı model ön-ısınma', 'Batch + paralel istek <1000ms zaman bütçesi', 'Kısa bağlam (ctx=2048..4096) turbo profili', 'Ollama Modelfile sıcak değiştirme (hot-swap)'],
+  techniques: ['Q4_K_M / IQ4_XS VRAM sabitleme', 'kısa keep_alive ile sığmayan modelde VRAM boşaltma', 'Batch + paralel istek <1000ms zaman bütçesi', 'Kısa bağlam (ctx=2048..4096) turbo profili', 'Ollama Modelfile sıcak değiştirme (hot-swap)'],
   paramFocus: { subSecondLatency: 0.998, speedToQualityFloor: 0.99 }
  },
  {
