@@ -455,3 +455,11 @@
 /* Paragraf (parçaya dayalı) sorular: parça alıntı bloğu */
 .quiz-paragraph,.question-paragraph{margin:10px 0 12px;padding:12px 14px;border-left:4px solid #7aa25f;background:#f7faf3;border-radius:0 10px 10px 0;color:#243a26;font-size:13.5px;line-height:1.62;font-style:normal}
 .question-paragraph{margin:8px 0 10px;font-size:13px}
+
+/* ---- Kaynak temellendirme filtresi (konu anlatım özetinde olmayan soru çıkmasın) ---- */
+.source-filter-bar{display:flex;flex-direction:column;gap:6px;background:linear-gradient(120deg,rgba(34,197,94,.10),rgba(59,130,246,.08));border:1px solid rgba(34,197,94,.28);border-radius:14px;padding:12px 14px;margin:14px 0}
+.source-filter-bar .switch-row{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px;line-height:1.45}
+.source-filter-bar .switch-row input[type="checkbox"]{width:18px;height:18px;margin-top:2px;accent-color:#16a34a;cursor:pointer;flex:0 0 auto}
+.source-filter-bar .sfb-note{font-size:12px;opacity:.72;margin-left:28px}
+.mj-hint{display:block;font-size:12.5px;line-height:1.5;opacity:.8;margin-top:4px}
+@media (max-width:640px){.source-filter-bar .sfb-note{margin-left:0}}

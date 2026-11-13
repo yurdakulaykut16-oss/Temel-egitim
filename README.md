@@ -201,6 +201,7 @@ Havuzda iki soru asla aynı kalıbın tekrarı olmasın diye üç katman çalı�
 1. **Üretim öncesi (prompt):** modele son 18 sorunun kökü, son 16 doğru cevap ve son çeldiriciler verilir; "bunlara benzer bir soru kurma" kuralı açıkça yazılır. Ek olarak **kavram kapsama yönlendirmesi** yapılır: ünitenin kitap anahtar kavramlarından hangilerinin az sorulduğu hesaplanır ve model o turda az işlenmiş kavrama yönlendirilir, yeterince sorulmuş kavramlardan kaçınması istenir.
 2. **Üretim sonrası (sıkı tekrar kapısı):** yeni taslak; soru kökü benzerliği, **şık takımı örtüşmesi** ve **doğru cevap** birlikte değerlendirilerek havuzdaki ve kitap bankasındaki tüm sorularla karşılaştırılır. Aynı soru, kökü %78'in üzerinde benzer olan soru, **dört şıkkı da aynı olan** soru, aynı cevabı paylaşıp kökü %62'nin üzerinde örtüşen soru, aynı cevabı ve şıklarının çoğunu paylaşan soru reddedilir. Böylece yalnızca kökü/birkaç sözcüğü değiştirilmiş "aynı sorunun kopyası" havuza giremez.
 3. **Havuz botu (sürekli ayıklama):** `PoolCuratorBot` her taramada yakın tekrarları siler; benzerlik yalnızca köke değil, şık takımına ve doğru cevaba da bakılarak ölçülür (aynı cevabı paylaşan sorularda eşik daha esnektir).
+4. **Kitabın kendi soruları da havuza dahil:** tekrar karşılaştırması artık yalnızca üretilen havuza ve sabit bankaya değil, kitapların kendi resmî "Neler Öğrendik?" sorularına karşı da yapılır. Yani yapay zekâ, kitaptaki bir sorunun kopyasını üretemez.
 
 Sabit soru bankasının kendisi de temiz: `npm run contexts` çalıştırıldığında banka yeniden kurulurken aynı kalıptan en fazla 2 soru bırakılır, kök benzerliği yüksek ve aynı cevabı paylaşan tekrarlar ayıklanır. Bu temizlik, ünitedeki 100 adet "X kg ve Y m için VKİ kaçtır?" sorusunu da **farklı kalıplarda (değer bulma, sınıf belirleme, aralık seçme, ters hesaplama) ve farklı vücut ağırlığı sınıflarını kapsayan 18 alıştırmaya** indirger.
 
@@ -214,6 +215,50 @@ Sınavda uzun köklü/parçaya dayalı soru çıkma ihtimaline karşı havuza se
 - Test ekranında ve AI stüdyosunda paragraf alıntı bloğu olarak gösterilir; soru tipi etiketi **Paragraf (Parçaya Dayalı)**'dır.
 
 **Not:** Antrenörlük Temel Eğitimi sınavının resmî soruları paylaşılmadığı için paragraf tipinin sınavda çıkıp çıkmadığı kamuya açık kaynaklardan doğrulanamaz; bu yüzden bu tip varsayılan olarak seyrek üretilir ve tek tıkla kapatılabilir.
+
+### 4.5 Kitaptan üretim: resmî kitap soruları, paralelleri ve kaynak sınırı
+
+**1) Kitabın kendi soruları birebir havuzda.** 5 resmî ders kitabının her ünitesinin sonundaki "Neler Öğrendik?" değerlendirme soruları PDF'lerden otomatik çıkarılır:
+
+```powershell
+npm run books:questions   # -> server/book-style-questions.json  (29 ünite x 10 = 290 soru)
+```
+
+Her soruda kitabın kendi 5 şıkkı, doğru cevap harfi ve "yanlışsa şu konuyu tekrar oku" ipucu bulunur. Test merkezindeki **Kitaptan "Neler Öğrendik?" + TVGFBF** sınavı ve karma testler bu soruları kullanır.
+
+**2) Aynı bilgiyi ölçen "kitap paraleli" sorular.** Kitap sorusunu ezberlemek yetmesin diye, her kitap sorusundan **aynı kavramı ve kitabın kendi çeldiricilerini kullanan, ama kökü yeniden yazılmış** bir paralel soru üretilir:
+
+```powershell
+npm run parallels         # -> server/book-parallel-questions.json (259 paralel)
+```
+
+Yeniden yazım kuralları (`server/book-parallel-engine.mjs`): olumsuz kökler anlamı koruyarak yeniden kurulur ("... değildir?" → "... kapsamında yer almaz?"), kalıp ve eş anlamlı sözcük değişimi yapılır, şık sırası karıştırılır. Üretilen paralel, kaynak sorunun **kopyası olamaz**; ayrıca aynı testte hem kitap sorusu hem onun paraleli çıkmaz.
+
+**3) Üretim kitabı okuyarak yapılır.** Üretici modele her turda, o ünitenin gerçek kitap pasajı (sayfa numarası ve alt bölüm başlığıyla) verilir; ayrıca prompt'ta **KİTAP SORUSU ÖRNEĞİ** bloğu yer alır: ünitenin en az işlenmiş resmî kitap sorusu gösterilip "aynısını yazma ama aynı kavram ailesinden, aynı sınav tadında kur" denir.
+
+**4) Konu anlatım özetlerinde olmayan hiçbir şey sorulmaz (kaynak temellendirme).** `server/summary-grounding.mjs`, her soruyu iki kaynağa göre ölçer:
+
+| Kaynak | Dosya |
+|---|---|
+| Konu anlatım özeti | `server/contexts.json` (ünite anlatımı + genişletmeler + kitap notları) |
+| Kitabın o ünitesindeki gerçek pasajlar | `server/book-passages.json` |
+
+Puan = `0.4 x doğru cevabın kapsanması + 0.6 x soru kökünün kapsanması`. Eşik **%55** (`TEMPO_SUMMARY_GROUNDING_MIN` ile değiştirilebilir).
+
+- **Yapay zekâ üretiminde sert kapı:** eşiğin altında kalan taslak doğrudan reddedilir ("Soru konu anlatım özetinde ve kitap pasajlarında yeterince karşılığı olmayan kavramlar içeriyor..."). Alakasız/uydurma deneme soruları ölçekte 0.00–0.52 alır, yani tamamı elenir.
+- **Hazır havuzda etiketleme:** statik banka, kitap soruları ve paraleller de puanlanır (`npm run contexts` + `npm run parallels`), `src/groundingIndex.json` dosyasına yazılır.
+- **Test merkezinde tek anahtar:** "**Konu anlatım özetlerimde olmayan soru çıkmasın**" anahtarı açıkken (varsayılan) kaynak dışı işaretlenen sorular hiçbir teste girmez. Şu anda 894 sorudan yalnızca **8'i** kaynak dışıdır (günlük Türkçeyle yazılmış senaryo soruları); anahtarı kapatırsan bunlar da gelir.
+- Paragraf sorularında parçanın kendisi de ölçüme katılır (zaten kaynaktan birebir alındığı için).
+
+### 4.6 Yanlış yaptığın soru değiştirilerek, rastgele tekrar karşına çıkar
+
+Hata defterine düşen soru bir daha **birebir** sorulmaz; `src/questionVariants.ts` onu yeniden yazar:
+
+- **Aynı bilgi, farklı lafız:** doğru cevap ve ünitenin/kitabın kendi çeldiricileri korunur, yalnızca soru kökü değişir ve **şık sırası karıştırılır** (şık yerinin ezberlenmesi boşa çıkar).
+- **Her yanlışta yeni yazım:** varyant, hata sayısıyla tohumlanır; yani aynı soruyu 2. kez yanlış yaptığında farklı bir kalıpla karşına gelir.
+- **Rastgele serpiştirme:** "Hata Defterimden Çöz"ü beklemen gerekmez; karma/tekrar testlerinde havuza **rastgele konumlara** enjekte edilir (test uzunluğunun en fazla %20'si, en çok 4 soru).
+- **Doğru yapınca orijinal hata kapanır:** varyantı doğru yanıtladığında, varyantın türediği asıl hata kaydı "ustalaşmış" sayılır; asıl soruyu tekrar görmezsin.
+- Yerel model açıksa `/api/ollama/rephrase` uç noktası kökü **modelle** yeniden yazar; model yoksa aynı deterministik motor devreye girer (sonuç her zaman aynı kalır).
 
 ## 5. Ekran kartını kontrol et
 

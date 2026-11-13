@@ -46,6 +46,8 @@ import { PrecisionQualityEngine } from './precision-quality-engine.mjs';
 import { TvgfbfScoutSwarm, TVGFBF_VERIFIED_PATTERNS } from './tvgfbf-scout-swarm.mjs';
 import { HundredAiCouncil, DIFFICULTY_TIERS_4 } from './hundred-ai-council.mjs';
 import { SerialTaskQueue } from './model-inference-queue.mjs';
+import { createSummaryGrounding, SUMMARY_GROUNDING_DEFAULT_MIN } from './summary-grounding.mjs';
+import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
 
 const execFileAsync = promisify(execFile);
 const modelInferenceQueue = new SerialTaskQueue();
@@ -60,6 +62,14 @@ try {
  bookStyleQuestionsRaw = null;
 }
 const bookStyleQuestions = Array.isArray(bookStyleQuestionsRaw?.questions) ? bookStyleQuestionsRaw.questions : [];
+
+let bookParallelRaw = null;
+try {
+ bookParallelRaw = JSON.parse(await readFile(new URL('./book-parallel-questions.json', import.meta.url), 'utf8'));
+} catch {
+ bookParallelRaw = null;
+}
+const bookParallelQuestions = Array.isArray(bookParallelRaw?.questions) ? bookParallelRaw.questions : [];
 
 let bookPassagesRaw = null;
 try {
@@ -85,6 +95,17 @@ for (const ctx of contexts) {
 }
 
 const totalBookPassages = [...passagesByUnit.values()].reduce((sum, arr) => sum + arr.length, 0);
+
+/**
+ * KAYNAK TEMELLENDİRME: Havuza giren her soru, öğrencinin konu anlatım özetinde
+ * ve/veya kitabın ilgili pasajında geçen kavramlardan kurulmak zorundadır.
+ * Özetlerde ve kitapta karşılığı olmayan (uydurma) soru doğrudan reddedilir.
+ */
+const summaryGrounding = createSummaryGrounding({
+ contexts,
+ passagesByUnit,
+ minScore: Number(process.env.TEMPO_SUMMARY_GROUNDING_MIN ?? SUMMARY_GROUNDING_DEFAULT_MIN)
+});
 
 const dataDir = resolve(process.env.TEMPO_DATA_DIR || '.tempo-data');
 const dataFile = resolve(dataDir, 'questions.json');
@@ -217,7 +238,7 @@ async function triggerAllAgentsCascade(scoutState = null) {
    qwenCodeLab.loadState().then(() => 'qwenCodeLab'),
    lessonEngine.listSummary(contexts.length).then(() => 'lessonEngine'),
    Promise.resolve().then(() => {
-    const fullAudit = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...items]);
+    const fullAudit = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
     lastPrecisionAuditSummary = {
      evaluatedCount: fullAudit.evaluatedCount,
      averagePrecisionScore: fullAudit.averagePrecisionScore,
@@ -230,7 +251,7 @@ async function triggerAllAgentsCascade(scoutState = null) {
     };
     return 'precisionQualityEngine';
    }),
-   hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]).then(async summary => {
+   hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]).then(async summary => {
     await hundredAiCouncil.evolveWithQwenCode(summary).catch(() => {});
     lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
     return 'hundredAiCouncil(100-AI)';
@@ -721,11 +742,13 @@ const telemetry = {
  loadNs: 0,
  recentApprovedTimestamps: [],
  recentStudyTimestamps: [],
- rejectionReasons: {}
+ rejectionReasons: {},
+ groundingRejected: 0
 };
 
 function recordRejection(reasonKey, detail) {
  telemetry.rejectionReasons[reasonKey] = (telemetry.rejectionReasons[reasonKey] || 0) + 1;
+ if (reasonKey === 'grounding') telemetry.groundingRejected++;
  if (detail) autoLastError = detail;
 }
 
@@ -1150,11 +1173,24 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
  if (!groundRes.ok) {
   throw Error(groundRes.reason || 'Kaynak alıntısı ünite anlatımında veya kitap pasajında bulunamadı.');
  }
+ // --- KAYNAK TEMELLENDİRME KAPISI: özetlerde/kitapta olmayan bilgi sorulamaz ---
+ // Parçaya dayalı sorularda parçanın kendisi de sorunun parçasıdır ve kaynaktan
+ // birebir alındığı zaten doğrulanmıştır; bu yüzden kapsama ölçümüne o da katılır.
+ const groundingRes = summaryGrounding.evaluate({
+  unitId: ctx.id,
+  question: paragraph ? `${question} ${paragraph}` : question,
+  options,
+  answer
+ });
+ if (!groundingRes.ok) {
+  recordRejection('grounding', groundingRes.reason);
+  throw Error(groundingRes.reason);
+ }
  const fullPrec = precisionEngine.evaluateDraftFull({ question, options, answer, explanation, evidence }, ctx, passage);
  if (!fullPrec.ok && fullPrec.firstError) {
   throw Error(fullPrec.firstError);
  }
- const duplicateReason = findDuplicateReason({ question, options, answer }, ctx, [...questionBank, ...existing]);
+ const duplicateReason = findDuplicateReason({ question, options, answer }, ctx, [...questionBank, ...bookStyleQuestions, ...existing]);
  if (duplicateReason) throw Error(duplicateReason);
  // Evolver AI tarafından kum havuzunda doğrulanan özel JS kuralını uygula
  if (policy?.customRuleCode) {
@@ -1210,6 +1246,9 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
   ...(fullPrec.styleSignals?.length ? { styleSignals: fullPrec.styleSignals } : {}),
   precisionTier: fullPrec.precisionScore >= 90 ? 'elite_osym' : fullPrec.precisionScore >= 78 ? 'strong' : 'standard',
   evidenceTier: groundRes.tier || 'direct',
+  ...(groundingRes.score !== null && groundingRes.score !== undefined
+   ? { grounding: { score: Number(groundingRes.score.toFixed(3)), inSource: true } }
+   : {}),
   ...(fullPrec.warnings?.length ? { precisionWarnings: fullPrec.warnings.slice(0, 4) } : {}),
   ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : {}),
   ...(typeof o.questionType === 'string' && QUESTION_TYPES.includes(o.questionType) ? { questionType: o.questionType } : {}),
@@ -1464,6 +1503,29 @@ function buildConceptCoverageSnippet(ctx, items, passage = null) {
  return `\nKAVRAM KAPSAMA YÖNLENDİRMESİ (tekrarı önlemek için): ${parts.join(' ')}`;
 }
 
+/**
+ * Bu ünitenin resmî kitap ("Neler Öğrendik?") sorularından, havuzda en az karşılanmış
+ * olanı örnek olarak gösterir: model aynı kavram ailesinden, aynı sınav tadında ama
+ * FARKLI yazılmış bir soru kurar. Böylece üretim kitabın kendi sorusuna yakın kalır.
+ */
+function buildBookSeedSnippet(ctx, items) {
+ const unitBook = bookStyleQuestions.filter(q => q.unitId === ctx?.id);
+ if (!unitBook.length) return '';
+ const pool = [...questionBank, ...items].filter(x => x && x.unitId === ctx?.id);
+ const scored = unitBook.map(q => {
+  let best = 0;
+  for (const p of pool) {
+   const sim = similarity(p.question || '', q.question || '');
+   if (sim > best) best = sim;
+  }
+  return { q, used: best };
+ });
+ scored.sort((a, b) => a.used - b.used);
+ const seeds = scored.slice(0, 2);
+ const lines = seeds.map(({ q }) => `Soru="${q.question}" | Doğru="${q.answer}" | Konu=${q.topic || ctx.unit}`);
+ return `\nKİTAP SORUSU ÖRNEĞİ (bu ünitenin gerçek kitap sorusu; AYNISINI YAZMA ama aynı kavram ailesinden, aynı ÖSYM tadında ve kitabın ölçtüğü bilgiyi ölçen bir soru kur): ${lines.join(' || ')}`;
+}
+
 function buildExemplarsSnippet(ctx, items) {
  const unitApproved = [...items.filter(x => x.unitId === ctx.id && x.status === 'approved'), ...questionBank.filter(x => x.unitId === ctx.id)]
   .sort((a, b) => ((b.qualityScore || 4) * 20 + (b.precisionScore || 90)) - ((a.qualityScore || 4) * 20 + (a.precisionScore || 90)));
@@ -1528,12 +1590,14 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
   const typeHint = QUESTION_TYPE_HINTS[qType] || '';
   const angleHint = QUESTION_ANGLE_HINTS[qAngle] || '';
   const coverageHint = buildConceptCoverageSnippet(ctx, items, passage);
+  const bookSeedHint = buildBookSeedSnippet(ctx, items);
   return `Sen ÖSYM sınav komisyonunda görevli uzman Türkçe antrenörlük soru yazarısın. KENDİNE ŞUNU SOR: "Ben ÖSYM'de soru hazırlayan bir uzman olsaydım bu konudan adayı gerçekten ayırt edecek nasıl bir soru hazırlardım?" HEDEF: Öğrenciyi sınavda 5 kitaptan çıkacak 100 sorunun tamamında 100/100 FULL DOĞRU seviyesine çıkarmak! Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, KESİNLİKLE TEK doğru cevaplı dört seçenekli, SINAVDA ÇIKMA POTANSİYELİ YÜKSEK ve ÖSYM TÜRKÇESİYLE ÖRÜLMÜŞ BİR özgün soru üret (I-II-III öncüllü, saha vakalı veya ince kavram ayrımlı kur!).
 Sorunun zorluk seviyesi: ${diffMap[diff]}
 Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
 ${DISTRACTOR_ENGINEERING_RULES}
 ${qType === PARAGRAPH_QUESTION_TYPE ? PARAGRAPH_QUESTION_RULES : ''}
+KAYNAK SINIRI (ÇOK ÖNEMLİ): YALNIZCA aşağıdaki konu anlatımında ve bu ünitenin kitap pasajlarında GEÇEN kavramlarla soru kur; özetlerde/kitapta bulunmayan hiçbir bilgi, terim veya sayı uydurma.${bookSeedHint}
 TEKRAR YASAĞI (ÇOK ÖNEMLİ): Aşağıda listelenen sorulara BENZER bir soru kurma. Aynı kavramı soracaksan bile soru kökünü, kalıbı, şıkları ve doğru cevabı değiştir; iki soru asla tıpatıp aynı veya tek kelime farklı olmasın.${coverageHint}
 JSON döndür: question (soru)${qType === PARAGRAPH_QUESTION_TYPE ? ', paragraph (KONU ANLATIMINDAN birebir alınmış 3-5 cümlelik parça)' : ''}, options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kalıcı ezber için kısa özlü öğretici gerekçe + püf noktası), evidence (anlatımdan birebir en az 15 karakter alıntı), topic (kısa konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint} Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.${recentAnswers ? ` FARKLI CEVAPLAR SEÇ: ${recentAnswers}.` : ''}${recentOptionSets ? ` YAKIN ZAMANDA KULLANILAN ÇELDİRİCİLERİ TEKRAR KULLANMA: ${recentOptionSets}.` : ''}${exemplars}${avoidErr} KONU ANLATIMI: ${sourceText}`;
  }
@@ -1548,6 +1612,7 @@ ${specs}
 - Her sorunun "evidence" alanı KONU ANLATIMI içinden kelime kelime alınmış en az 15 karakterlik bir alıntı olsun.
 - Kısa ama püf noktasını öğreten explanation yaz.
 - Sorular birbirinin aynısı veya tek kelime farklısı OLMAMALI; her soru farklı kavram, farklı kalıp ve farklı doğru cevap kullanmalı.${buildConceptCoverageSnippet(ctx, items, passage)}
+- KAYNAK SINIRI: Yalnızca konu anlatımında ve bu ünitenin kitap pasajlarında geçen kavramlar kullanılmalı; kaynakta olmayan terim, sayı veya bilgi UYDURULMAMALI.${buildBookSeedSnippet(ctx, items)}
 ${DISTRACTOR_ENGINEERING_RULES}
 ${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? PARAGRAPH_QUESTION_RULES : ''}
 JSON döndür: {"questions": [ {question, options, answer, explanation, evidence, topic, questionType, questionAngle, bloomLevel${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? ', paragraph (yalnızca paragraf tipinde)' : ''}}, ... ]}${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint}
@@ -3485,7 +3550,7 @@ async function runPrecisionAuditAuto() {
  precisionAuditBusy = true;
  try {
   const items = await load().catch(() => []);
-  const report = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...items]);
+  const report = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
   lastPrecisionAuditSummary = {
    evaluatedCount: report.evaluatedCount,
    averagePrecisionScore: report.averagePrecisionScore,
@@ -3509,7 +3574,7 @@ async function runHundredAiSolveAuto() {
  hundredAiBusy = true;
  try {
   const items = await load().catch(() => []);
-  const pool = [...questionBank, ...bookStyleQuestions, ...items];
+  const pool = [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items];
   const summary = await hundredAiCouncil.calibratePoolWith100AIs(pool);
   lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
   lastHundredAiSolveAt = Date.now();
@@ -3525,7 +3590,7 @@ async function runHundredAiEvolveAuto() {
  hundredAiEvolveBusy = true;
  try {
   const items = await load().catch(() => []);
-  const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]);
+  const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
   const evolved = await hundredAiCouncil.evolveWithQwenCode(summary);
   lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
   lastHundredAiEvolveAt = Date.now();
@@ -4636,7 +4701,7 @@ export function ollamaPlugin() {
       }
       const items = await load();
       const scope = String(input?.scope ?? urlObj.searchParams.get('scope') ?? 'all');
-      const targetItems = scope === 'generated' ? items : [...questionBank, ...bookStyleQuestions, ...items];
+      const targetItems = scope === 'generated' ? items : [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items];
       const report = precisionEngine.auditPool(targetItems);
       lastPrecisionAuditSummary = {
        evaluatedCount: report.evaluatedCount,
@@ -4685,10 +4750,70 @@ export function ollamaPlugin() {
       });
      }
 
+     if (req.method === 'GET' && path === '/book-parallels') {
+      const unitFilter = urlObj.searchParams.get('unitId');
+      const filtered = unitFilter ? bookParallelQuestions.filter(q => q.unitId === unitFilter) : bookParallelQuestions;
+      return respond(res, 200, {
+       ok: true,
+       total: filtered.length,
+       unitsCovered: new Set(filtered.map(q => q.unitId)).size,
+       sourceTotal: bookParallelQuestions.length,
+       questions: filtered
+      });
+     }
+
+     /**
+      * Hata defterindeki yanlış soruyu "değiştirerek" yeniden sormak için: soru kökü
+      * yeniden yazılır, doğru cevap ve çeldiriciler korunur, şık sırası karıştırılır.
+      * Yerel model erişilebilirse modelle, değilse deterministik motorla üretir.
+      */
+     if (req.method === 'POST' && path === '/rephrase') {
+      const input = await body(req);
+      const question = typeof input?.question === 'string' ? input.question.trim() : '';
+      const answer = typeof input?.answer === 'string' ? input.answer.trim() : '';
+      const options = Array.isArray(input?.options) ? input.options.filter(o => typeof o === 'string' && o.trim()).map(o => o.trim()) : [];
+      if (question.length < 10 || !answer || options.length < 4) {
+       return respond(res, 400, { error: 'Yeniden yazmak için soru, doğru cevap ve 4 seçenek gerekli.' });
+      }
+      const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '';
+      const ctx = contexts.find(c => c.id === unitId) || null;
+      const fallbackSeed = String(input?.seed || question);
+      const deterministic = (() => {
+       const seedNum = [...fallbackSeed].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7);
+       const { text, strategy } = rephraseStem(question, seedNum);
+       const shuffled = [...new Set([answer, ...options.filter(o => o !== answer)])];
+       const rot = seedNum % Math.max(1, shuffled.length);
+       const rotated = [...shuffled.slice(rot), ...shuffled.slice(0, rot)];
+       return { question: text, options: rotated, answer, strategy, source: 'deterministic' };
+      })();
+      if (input?.useAi !== true || !ctx) {
+       return respond(res, 200, { ok: true, ...deterministic });
+      }
+      try {
+       const prompt = `Aşağıdaki dört seçenekli çoktan seçmeli sorunun YALNIZCA SORU KÖKÜNÜ, aynı bilgiyi ölçecek biçimde farklı ve doğal Türkçeyle yeniden yaz. Kurallar:\n- Doğru cevabı ve seçeneklerin METNİNİ asla değiştirme, yeni seçenek uydurma.\n- Soru kökündeki anlamı, kavramı ve olumsuzluk/olumsuzluk yokluğunu birebir koru.\n- Farklı kalıp kullan: "Aşağıdakilerden hangisi X?" yerine "X aşağıdakilerden hangisidir?" gibi.\n- SADECE JSON döndür: {"question": "..."}\n\nSoru: ${question}\nDoğru cevap: ${answer}\nSeçenekler: ${JSON.stringify(options)}`;
+       const raw = await runModel(model, prompt, 0.3, AbortSignal.timeout(20000), 220);
+       const parsed = extractJsonLoose(raw);
+       const rewritten = typeof parsed?.question === 'string' ? parsed.question.trim() : '';
+       const normRewritten = norm(rewritten);
+       if (
+        rewritten.length >= 15 && rewritten.length <= 700 &&
+        normRewritten !== norm(question) &&
+        // Model, kökü değil de seçenek metnini döndürdüyse kullanma.
+        !options.some(o => normRewritten === norm(o))
+       ) {
+        const guard = summaryGrounding.evaluate({ unitId: ctx.id, question: rewritten, options, answer });
+        if (guard.ok || guard.skipped) {
+         return respond(res, 200, { ok: true, question: rewritten, options: deterministic.options, answer, strategy: 'ai_model', source: model });
+        }
+       }
+      } catch {}
+      return respond(res, 200, { ok: true, ...deterministic });
+     }
+
      if (req.method === 'GET' && path === '/100-ai') {
       const items = await load().catch(() => []);
       if (!lastHundredAiSummary) {
-       await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]).catch(() => {});
+       await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]).catch(() => {});
        lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
       }
       return respond(res, 200, {
@@ -4703,7 +4828,7 @@ export function ollamaPlugin() {
       const items = await load().catch(() => []);
       const input = await body(req);
       const unitFilter = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : null;
-      const pool = [...questionBank, ...bookStyleQuestions, ...items].filter(q => !unitFilter || q.unitId === unitFilter);
+      const pool = [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items].filter(q => !unitFilter || q.unitId === unitFilter);
       const summary = await hundredAiCouncil.calibratePoolWith100AIs(pool);
       lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
       return respond(res, 200, { ok: true, ...summary, status: lastHundredAiSummary });
@@ -4712,7 +4837,7 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/100-ai/evolve') {
       if (!safeOrigin(req)) return respond(res, 403, { error: 'Bu işlem yalnız aynı kaynaktan yapılabilir.' });
       const items = await load().catch(() => []);
-      const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]);
+      const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
       const evolved = await hundredAiCouncil.evolveWithQwenCode(summary);
       lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
       return respond(res, 200, { ok: true, ...evolved, status: lastHundredAiSummary });
@@ -4722,7 +4847,7 @@ export function ollamaPlugin() {
       const unitFilter = urlObj.searchParams.get('unitId');
       const tierFilter = urlObj.searchParams.get('tier');
       const items = await load().catch(() => []);
-      const pool = [...questionBank, ...bookStyleQuestions, ...items].filter(q => q && q.status !== 'rejected' && (!unitFilter || q.unitId === unitFilter));
+      const pool = [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items].filter(q => q && q.status !== 'rejected' && (!unitFilter || q.unitId === unitFilter));
       const fullCalibrated = pool.map(q => {
        const cal = hundredAiCouncil.solveQuestionWith100AIs(q);
        return {

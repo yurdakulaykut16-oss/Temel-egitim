@@ -55,15 +55,39 @@ def extract_test_text(doc, start_page_1based: int, end_page_1based: int) -> str:
     return '\n'.join(chunks)
 
 
+# Yanıt anahtarı satırları "1. C" biçimindedir; kitapta konu ipucu ("Yanıtınız yanlış ise
+# "..." konusunu yeniden gözden geçiriniz.") anahtarın ÜSTÜNDE/ÖNÜNDE yer alır. Eski sürüm
+# ipucunu anahtarın ARDINDAN yakalamaya çalışıyor ve kitapların kullandığı ‘ ’ ’’ gibi
+# farklı tırnak işaretlerinde ipucu grubu birden çok soruyu yutuyordu (bu yüzden her ünitenin
+# 10 sorusundan yalnızca 7-9'u eşleşiyordu). Yeni sürüm: anahtarı ve ipucunu ayrı ayrı
+# bulur, her ipucunu yalnızca bir kez kullanır.
+ANSWER_KEY_RE = re.compile(r'(?:^|(?<=[\s.\u00a0]))(\d{1,2})\s*[.)]\s*([A-Ea-e])(?![\wÇĞİÖŞÜçğıöşü])')
+HINT_RE = re.compile(
+    "Yan[ıi]t[ıi]n[ıi]z\\s+yanl[ıi][sş]\\s+ise\\s+[“\"'‘’‹«]([^”\"'‘’›»]{3,110})[”\"'‘’›»]",
+    re.IGNORECASE,
+)
+
+
 def parse_answer_key(text: str) -> dict[int, tuple[str, str]]:
     answers: dict[int, tuple[str, str]] = {}
     flat = re.sub(r'\s+', ' ', text)
-    for m in re.finditer(r'(?:^|\s)(\d{1,2})\.\s*([A-E])\b\s*(?:Yanıtınız\s+yanlış\s+ise\s+[“"]([^”"]+)[”"])?', flat):
+    hints = [(m.start(), m.end(), re.sub(r'\s+', ' ', m.group(1)).strip(' .,;:')) for m in HINT_RE.finditer(flat)]
+    used_hints: set[int] = set()
+    for m in ANSWER_KEY_RE.finditer(flat):
         qnum = int(m.group(1))
         letter = m.group(2).upper()
-        topic_hint = (m.group(3) or '').strip()
-        if 1 <= qnum <= 20 and qnum not in answers:
-            answers[qnum] = (letter, topic_hint)
+        if not (1 <= qnum <= 20) or qnum in answers:
+            continue
+        topic_hint = ''
+        best_idx = -1
+        best_end = -1
+        for i, (h_start, h_end, h_text) in enumerate(hints):
+            if h_end <= m.start() and h_end > best_end and i not in used_hints:
+                best_idx, best_end = i, h_end
+        if best_idx >= 0:
+            used_hints.add(best_idx)
+            topic_hint = hints[best_idx][2]
+        answers[qnum] = (letter, topic_hint)
     return answers
 
 
@@ -188,7 +212,7 @@ def main():
             per_unit_counts[uid] = unit_added
 
     payload = {
-        'version': 2,
+        'version': 3,
         'totalQuestions': len(all_items),
         'unitsCovered': sum(1 for v in per_unit_counts.values() if v > 0),
         'perUnitCounts': per_unit_counts,

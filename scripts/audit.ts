@@ -9,6 +9,8 @@ import {newQuestions} from '../src/newQuestions';
 import {bookQuestions} from '../src/bookNotes';
 import {challenge} from '../src/challenge';
 import {bmiExercises} from '../src/calculations';
+import {readFileSync} from 'node:fs';
+import groundingIndex from '../src/groundingIndex.json';
 const norm=(s:string)=>s.toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9]+/g,' ').trim();
 let errors:string[]=[];let count=0;let repeatedStems=0;let answerGroups=0;let seenStems=new Map<string,string>();
 books.forEach((b,bi)=>b.units.forEach((u,ui)=>{
@@ -21,5 +23,14 @@ books.forEach((b,bi)=>b.units.forEach((u,ui)=>{
 }));
 const bmi=bmiExercises(books[3].units[4]);const bmiStems=new Set(bmi.map(x=>norm(x.question)));if(bmiStems.size!==bmi.length)errors.push('VKİ soru kökleri tekrarlı');for(const q of bmi){if(new Set([q.answer,...q.wrong].map(norm)).size!==4)errors.push(`VKİ tekrarlı seçenek: ${q.question}`)}
 console.log(`${count} kavram/senaryo sorusu, ${bmi.length} sayısal alıştırma; ${repeatedStems} birebir eşleşen soru kökü; ünite başına normalize doğru yanıta göre ${answerGroups} grup.`);
+// --- Kaynak temellendirme (konu anlatımı + kitap pasajı) raporu ---
+const gi=groundingIndex as Record<string,number>;
+const giVals=Object.values(gi);
+const lowGrounding=giVals.filter(v=>Number(v)<0.55).length;
+console.log(`Kaynak temellendirme: ${giVals.length} soru dizinlendi, ${lowGrounding} tanesi konu anlatım özeti + kitap pasajı dışında (eşik %55).`);
+if(lowGrounding>0){
+ const lowStems=Object.entries(gi).filter(([,v])=>Number(v)<0.55).slice(0,10);
+ for(const [stem,v] of lowStems)console.log(`   · ${v} :: ${stem.slice(0,90)}`);
+}
 console.log('UYARI: Aynı cevap her zaman aynı kavram değildir; farklı cevap da kavramsal benzersizliği garanti etmez. Anlamsal ve bilimsel uzman incelemesi gereklidir.');
 if(errors.length){console.error(errors.join('\n'));process.exitCode=1}

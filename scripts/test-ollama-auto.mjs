@@ -16,13 +16,30 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   let inFlight=0, peak=0, calls=0;
  // Şıklar aynı kavram ailesinden, birbirine yakın uzunlukta ve "az kalsın doğru" niteliğinde.
  // Her çağrıda farklı bir takım üretilir (havuz tekrar koruması aynı 4 şıkkı reddeder).
- const makeOptions=tag=>[
-  `Doğru kavram ${tag}: planlı ve tekrarlı uygulama`,
-  `Eksik yaklaşım ${tag}: programsız tekrar düzeni`,
-  `Yanlış bağlam ${tag}: tek seferlik maksimal yüklenme`,
-  `Aşırı yorum ${tag}: ölçütü tümden yok sayma`
- ];
+ // Taslaklar artık kaynak temellendirme kapısından geçmek zorunda: soru kökü ve
+ // seçenekler, modelin gördüğü KONU ANLATIMI / kitap pasajı metninden türetilir.
+ // (Aksi hâlde uydurma taslak haklı olarak reddedilir.)
+ const makeOptions=(tag,text='')=>{
+  const words=String(text).trim().split(/\s+/).filter(w=>w.length>=5&&/^[a-zçğıöşüA-ZÇĞİÖŞÜ]+$/.test(w));
+  const pick=i=>words.length?words[(Math.abs(hash(tag))*3+i*7)%words.length]:'kavram';
+  return [
+   `Doğru kavram ${tag}: ${pick(0)} ile ${pick(1)} birlikte uygulanması`,
+   `Eksik yaklaşım ${tag}: ${pick(1)} olmadan yalnız ${pick(2)} uygulanması`,
+   `Yanlış bağlam ${tag}: ${pick(2)} yerine ${pick(3)} ile sınırlandırılması`,
+   `Aşırı yorum ${tag}: ${pick(3)} ölçütünün tümden yok sayılması`
+  ];
+ };
+ const hash=str=>{let h=0;for(const ch of String(str))h=(h*31+ch.charCodeAt(0))|0;return h};
  const PLAUSIBLE_OPTIONS=makeOptions('X');
+ // Her çağrıda pasajın FARKLI bir dilimini kullanır: hem kaynakta karşılığı olur
+ // (temellendirme kapısını geçer) hem de tekrar korumasına takılmaz.
+ const makeQuestion=(tag,text='')=>{
+  const words=String(text).trim().split(/\s+/).filter(w=>w.length>=3);
+  if(words.length<14)return `Otomatik sorusu #${tag} hangi kavramla ilişkilidir?`;
+  const start=(Math.abs(hash(tag))*5)%(words.length-12);
+  const phrase=words.slice(start,start+10).join(' ');
+  return `${phrase} — bu anlatımdaki temel kavram hangisidir? (#${tag})`;
+ };
   const difficultyByQuestion=new Map();
   fake=http.createServer(async(req,res)=>{
    res.setHeader('Content-Type','application/json');
@@ -78,17 +95,17 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
     if(batchMatches.length>0){
      result={questions:batchMatches.map((m,i)=>{
       const diff=m[1].toLocaleLowerCase('tr-TR');
-      const question=`Otomatik paket sorusu #${calls}-${i}-${Math.random().toString(36).slice(2)} hangi kavramla ilişkilidir?`;
+      const question=makeQuestion(`${calls}-${i}`,text);
       difficultyByQuestion.set(question,diff);
-      const opts=makeOptions(`${calls}-${i}`);
+      const opts=makeOptions(`${calls}-${i}`,text);
       return {question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu',questionType:'kavram'};
      })};
     }else{
      const difficultyMatch=prompt.match(/tam olarak şöyle olmalı: (KOLAY|ORTA|ZOR):/);
      const difficulty=difficultyMatch?difficultyMatch[1].toLocaleLowerCase('tr-TR'):'kolay';
-     const question=`Otomatik tekli sorusu #${calls}-${Math.random().toString(36).slice(2)}`;
+     const question=makeQuestion(`${calls}`,text);
      difficultyByQuestion.set(question,difficulty);
-     const opts=makeOptions(`${calls}`);
+     const opts=makeOptions(`${calls}`,text);
      result={question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu'};
     }
    }

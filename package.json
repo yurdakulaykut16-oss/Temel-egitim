@@ -9,7 +9,10 @@
     "build": "tsc --noEmit && vite build",
     "audit": "esbuild scripts/audit.ts --bundle --platform=node --outfile=node_modules/.tempo-audit.cjs --log-level=error && node node_modules/.tempo-audit.cjs",
     "contexts": "esbuild scripts/build-context.ts --bundle --platform=node --outfile=node_modules/.tempo-context.cjs --log-level=error && node node_modules/.tempo-context.cjs",
-    "books": "python3 scripts/extract-books.py"
+    "books": "python3 scripts/extract-books.py",
+    "books:questions": "python3 scripts/extract-book-questions.py",
+    "parallels": "node scripts/build-book-parallels.mjs",
+    "all:questions": "npm run contexts && npm run books:questions && npm run parallels && npm run contexts"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

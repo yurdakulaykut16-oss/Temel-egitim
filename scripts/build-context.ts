@@ -1,4 +1,5 @@
-import {writeFileSync} from 'node:fs';
+import {writeFileSync,readFileSync} from 'node:fs';
+import {createSummaryGrounding} from '../server/summary-grounding.mjs';
 import {bmiExercises} from '../src/calculations';
 import {expanded} from '../src/expanded';
 import {books} from '../src/data';
@@ -13,6 +14,22 @@ import {newQuestions} from '../src/newQuestions';
 import {bookNotes,bookQuestions} from '../src/bookNotes';
 const contexts=books.flatMap((b,bi)=>b.units.map((u,ui)=>{const id=`${bi}-${ui}`;return {id,book:b.title,unit:u.title,text:[u.lesson,...expanded[bi][ui],deepDive[bi][ui],unique[id]?.lesson,advanced[id]?.lesson,newQuestions[id]?.lesson,bookNotes[id]?.text].filter(Boolean).join(' ')};}));
 writeFileSync('server/contexts.json',JSON.stringify(contexts,null,2));
+
+// --- Kaynak temellendirme dizini -------------------------------------------------
+// Her sorunun "konu anlatım özeti + kitap pasajı" kapsama puanı, normalleştirilmiş
+// soru köküne göre dizinlenir ve istemciye gönderilir. Böylece kullanıcı "özetlerimde
+// olmayan hiçbir şey soru olarak çıkmasın" dediğinde test havuzu tek anahtarla
+// kaynak dışı sorulardan arındırılabilir.
+const bookPassages=JSON.parse(readFileSync('server/book-passages.json','utf8'));
+const passagesByUnit=new Map<string,{text:string}[]>(bookPassages.units.map((u:any)=>[u.id as string,(u.passages||[]) as {text:string}[]]));
+const grounding=createSummaryGrounding({contexts,passagesByUnit});
+const stemKey=(s:string)=>s.toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ').slice(0,120);
+const groundingIndex:Record<string,number>={};
+const addGrounding=(unitId:string,question:string,answer:string)=>{
+ const res=grounding.scoreItem({unitId,question,answer});
+ if(!res)return;
+ groundingIndex[stemKey(question)]=Number(res.score.toFixed(3));
+};
 
 const questions=books.flatMap((b,bi)=>b.units.flatMap((u,ui)=>{const unitId=`${bi}-${ui}`;const lines=[...extra[bi][ui],...scenarios[bi][ui],...practice[bi][ui],reinforcement[bi][ui],...(unique[unitId]?.questions||[]),...(advanced[unitId]?.questions||[]),...(newQuestions[unitId]?.questions||[]),...(challenge[unitId]||[]),...(bookQuestions[unitId]||[])];return [{unitId,question:u.question,answer:u.answer,options:[u.answer,...u.wrong]},...lines.map(l=>{const [question,answer,...rest]=l.split('|');return {unitId,question,answer,options:[answer,...rest.slice(0,3)]}})];}));
 questions.push(...bmiExercises(books[3].units[4]).map(q=>({unitId:'3-4',question:q.question,answer:q.answer,options:[q.answer,...q.wrong]})));
@@ -41,6 +58,21 @@ const dedupeQuestions=(list:typeof questions)=>{
   }
   return kept;
 };
+for(const q of questions) addGrounding(q.unitId,q.question,q.answer);
+// Kitabın kendi "Neler Öğrendik?" soruları ve onlardan üretilen paralel sorular
+// (puanları scripts/build-book-parallels.mjs hesaplar; burada dizine eklenir).
+for(const file of ['server/book-style-questions.json','server/book-parallel-questions.json']){
+ try{
+  const payload=JSON.parse(readFileSync(file,'utf8'));
+  for(const q of payload.questions||[]){
+   const score=Number(q?.grounding?.score);
+   if(Number.isFinite(score)) groundingIndex[stemKey(q.question)]=score;
+  }
+ }catch{}
+}
 const deduped=dedupeQuestions(questions);
 console.log(`Soru bankası: ${questions.length} → ${deduped.length} soru (${questions.length-deduped.length} benzer/tekrar ayıklandı).`);
 writeFileSync('server/question-bank.json',JSON.stringify(deduped,null,2));
+writeFileSync('src/groundingIndex.json',JSON.stringify(groundingIndex,null,0));
+const lowGrounding=Object.values(groundingIndex).filter(v=>v<0.55).length;
+console.log(`Kaynak temellendirme dizini: ${Object.keys(groundingIndex).length} soru, ${lowGrounding} tanesi kaynak dışı (eşik %55) -> src/groundingIndex.json`);
