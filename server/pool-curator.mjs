@@ -110,7 +110,7 @@ export class PoolCuratorBot {
   }
 
   // 3) Soru tipi ve açı zenginliği (0..18)
-  const typeBonus = { vaka: 10, istisna: 10, karsilastirma: 9, neden_sonuc: 9, uygulama: 8, kavram: 6 };
+  const typeBonus = { vaka: 10, istisna: 10, en_iyi_secim: 10, karsilastirma: 9, neden_sonuc: 9, uygulama: 8, kavram: 6 };
   score += typeBonus[q.questionType] || 5;
   const angleBonus = { surpriz_baglam: 8, karsilastirmali_tuzak: 8, ters_eleme_istisna: 7, saha_vakasi: 7, dogrudan_tanim: 5 };
   score += angleBonus[q.questionAngle] || 3;

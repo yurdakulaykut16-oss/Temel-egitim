@@ -357,6 +357,21 @@ export class PrecisionQualityEngine {
   this.ragEngine = ragEngine;
   this.tvgfbfSwarm = tvgfbfSwarm;
   this.contextMap = new Map(contexts.map(c => [c.id, c]));
+  this._unitVocab = null;
+ }
+
+ /** Tüm üniteler için kök söz varlığı + ünite sıklığı (bir kez hesaplanır). */
+ get unitVocabulary() {
+  if (this._unitVocab) return this._unitVocab;
+  const vocabByUnit = new Map();
+  const docFreq = new Map();
+  for (const [unitId, text] of (this.fullUnitTextNorm || new Map())) {
+   const set = new Set(stemTokensTr(text || '').filter(t => t.length >= 4));
+   vocabByUnit.set(unitId, set);
+   for (const tok of set) docFreq.set(tok, (docFreq.get(tok) || 0) + 1);
+  }
+  this._unitVocab = { vocabByUnit, docFreq, unitCount: Math.max(1, vocabByUnit.size) };
+  return this._unitVocab;
  }
 
  setTvgfbfSwarm(swarm) {
@@ -446,7 +461,7 @@ export class PrecisionQualityEngine {
  /**
   * 8 Boyutlu ÖSYM Çeldirici Hijyeni, Simetri, Polarite & Kök Sızıntısı Analizi
   */
- auditDistractorPsychometrics({ question = '', options = [], answer = '', explanation = '', evidence = '', unitId = '' } = {}) {
+ auditDistractorPsychometrics({ question = '', options = [], answer = '', explanation = '', evidence = '', unitId = '', sourceText = '' } = {}) {
   const errors = [];
   const warnings = [];
   let score = 100;
@@ -461,7 +476,19 @@ export class PrecisionQualityEngine {
    score -= 40;
   }
 
-  // 2. Uzunluk simetrisi (doğru şık çeldiricilerden belirgin şekilde uzun veya kısa olmamalı)
+  // 2. Şık uzunluklarının birbirine yakınlığı (4 şık aynı aileden görünmeli)
+  const allLens = options.map(o => o.trim().length);
+  const minOptLen = Math.min(...allLens);
+  const maxOptLen = Math.max(...allLens);
+  if (minOptLen >= 8 && maxOptLen / minOptLen >= 2.8) {
+   errors.push(`Seçenek uzunlukları birbirine çok uzak (en kısa ${minOptLen}, en uzun ${maxOptLen} karakter); dört şık aynı kavram ailesinden ve benzer uzunlukta olmalı.`);
+   score -= 22;
+  } else if (minOptLen >= 8 && maxOptLen / minOptLen >= 2.1) {
+   warnings.push('Seçenek uzunlukları arasında belirgin fark var; şıkları aynı kalıpta dengele.');
+   score -= 7;
+  }
+
+  // 2b. Uzunluk simetrisi (doğru şık çeldiricilerden belirgin şekilde uzun veya kısa olmamalı)
   const wrong = options.filter(o => o !== answer);
   const ansLen = answer.trim().length;
   const wrongLens = wrong.map(w => w.trim().length);
@@ -585,6 +612,42 @@ export class PrecisionQualityEngine {
    }
   }
 
+  // 9. Alakasız / saçma çeldirici taraması: ünite söz varlığıyla, soru köküyle ve diğer
+  //    şıklarla hiçbir ortak kelimesi olmayan "dolgu" şık (örn. antrenman sorusunda
+  //    "İhmal", "Bürokrasi" gibi şıklar). Yalnızca bariz durumlarda tetiklenir.
+  const { vocabByUnit } = this.unitVocabulary;
+  const unitVocab = vocabByUnit.get(unitId);
+  if (unitVocab && unitVocab.size >= 40) {
+   const contextVocab = new Set(stemTokensTr(`${sourceText} ${question} ${explanation} ${evidence}`).filter(t => t.length >= 4));
+   const stemVocab = new Set(stemTokensTr(question).filter(t => t.length >= 4));
+   const optTokenSets = options.map(o => new Set(stemTokensTr(o).filter(t => t.length >= 4)));
+   const offTopic = [];
+   for (let i = 0; i < options.length; i++) {
+    if (options[i] === answer) continue; // yalnızca çeldiriciler taranır
+    const toks = [...optTokenSets[i]];
+    if (!toks.length) continue;
+    // a) Ünite/pasaj söz varlığında hiç karşılığı yok
+    const grounded = toks.filter(t => unitVocab.has(t) || contextVocab.has(t)).length;
+    // b) Soru köküyle hiç ortak kelimesi yok
+    const stemHits = toks.filter(t => stemVocab.has(t)).length;
+    // c) Diğer şıklarla neredeyse hiç örtüşmüyor
+    let peerMax = 0;
+    for (let j = 0; j < options.length; j++) {
+     if (i === j) continue;
+     const other = optTokenSets[j];
+     if (!other.size) continue;
+     let inter = 0;
+     for (const t of toks) if (other.has(t)) inter++;
+     peerMax = Math.max(peerMax, inter / (toks.length + other.size - inter));
+    }
+    if (grounded === 0 && stemHits === 0 && peerMax <= 0.15) offTopic.push({ text: options[i] });
+   }
+   if (offTopic.length >= 1) {
+    errors.push(`Şıklardan en az biri ünite içeriğiyle, soru köküyle ve diğer şıklarla tamamen ilgisiz (alakasız/saçma çeldirici): "${String(offTopic[0].text).slice(0, 60)}". Dört şık da aynı kavram ailesinden, "az kalsın doğru" niteliğinde olmalı.`);
+    score -= 30;
+   }
+  }
+
   // Doğru şıkkın kaynak/açıklama destek yoğunluğu
   const supTokens = new Set(stemTokensTr(`${explanation} ${evidence}`));
   const ansHits = ansTokens.filter(t => supTokens.has(t)).length;
@@ -621,7 +684,8 @@ export class PrecisionQualityEngine {
    answer: draft?.answer || '',
    explanation: draft?.explanation || '',
    evidence: draft?.evidence || '',
-   unitId
+   unitId,
+   sourceText: passage?.text || ctx?.text || ''
   });
   const styleAlignment = this.tvgfbfSwarm?.scoreBookAndTvgfbfStyleAlignment
    ? this.tvgfbfSwarm.scoreBookAndTvgfbfStyleAlignment(draft, unitId)

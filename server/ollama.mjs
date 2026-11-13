@@ -458,10 +458,15 @@ const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:4b';
 const defaultConcurrency = 1;
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
 const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 180000;
+// Hedef üretim temposu: her 5 saniyede bir yeni soru. Model çağrıları tek kuyruktan
+// sırayla geçtiği için bu bir "en az bekleme" süresidir; üretim daha uzun sürerse
+// sıradaki soru hemen peşine gelir (asla üst üste binmez).
+const envInterval = Number(process.env.TEMPO_QUESTION_INTERVAL_MS);
+const QUESTION_INTERVAL_MS = Number.isFinite(envInterval) && envInterval >= 500 ? Math.round(envInterval) : 5_000;
 const defaultKeepAlive = process.env.TEMPO_OLLAMA_KEEP_ALIVE ?? '0';
 
 const DIFFICULTIES = ['kolay', 'orta', 'zor'];
-const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama'];
+const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama', 'en_iyi_secim'];
 const QUESTION_ANGLES = ['dogrudan_tanim', 'ters_eleme_istisna', 'saha_vakasi', 'karsilastirmali_tuzak', 'surpriz_baglam'];
 const QUESTION_ANGLE_HINTS = {
  dogrudan_tanim: '1. DOĞRUDAN TANIM AÇISI: Temel mekanizmayı, ölçütü veya kuralı net ve tam doğru hedefiyle sor.',
@@ -476,9 +481,20 @@ const QUESTION_TYPE_HINTS = {
  karsilastirma: 'KARŞILAŞTIRMA: Birbirine yakın iki kavram, dönem, yaklaşım veya sistem arasındaki ayırt edici farkı sor.',
  neden_sonuc: 'NEDEN-SONUÇ: Bir mekanizmanın, uygulamanın veya hatanın fizyolojik/psikolojik/yönetsel sonucunu ya da nedenini sor.',
  istisna: 'İSTİSNA (HANGİSİ DEĞİLDİR / YANLIŞTIR): 3 tamamen doğru, 1 kesin yanlış ifade kurarak istisnayı buldur.',
- uygulama: 'UYGULAMA: Bir kuralı, protokolü, ilkeyi veya hesaplamayı somut bir karar anına uygulat.'
+ uygulama: 'UYGULAMA: Bir kuralı, protokolü, ilkeyi veya hesaplamayı somut bir karar anına uygulat.',
+ en_iyi_secim: 'EN İYİ / EN UYGUN SEÇİM (ÇELDİRİCİ SORU): Dört şık da makul ve konuyla ilgili olsun; ancak yalnızca biri kaynağa göre tam ve en kapsamlı doğru olsun. "En uygun yaklaşım hangisidir?" kalıbını kullan; şıkları yaygın hatalı uygulamalardan ve eksik doğru yaklaşımlardan kur.'
 };
 const BANNED_OPTION_PATTERN = /\b(yukarıdakilerin hepsi|aşağıdakilerin hepsi|hiçbiri|tümü birden|hepsi doğrudur|yalnız a ve b|a ve b birlikte|her ikisi de)\b/i;
+
+// Çeldirici mühendisliği: dört şık da aynı kavram ailesinden, "az kalsın doğru" niteliğinde
+// ve birbirine yakın olmalı; alakasız/komik dolgu şıklar kesinlikle yasak.
+const DISTRACTOR_ENGINEERING_RULES = `ÇELDİRİCİ MÜHENDİSLİĞİ (EN KRİTİK KURAL — BU KURALA UYMAYAN SORU REDDEDİLİR):
+1) Dört şık da AYNI KAVRAM AİLESİNDEN olmalı: aynı ünitenin terimleri, aynı dilbilgisi kalıbı, birbirine çok yakın uzunluk (±%20) ve aynı ifade biçimi (hepsi isim tamlaması ya da hepsi cümle).
+2) Her çeldirici "AZ KALSIN DOĞRU" olmalı: yaygın yanılgı, birbirine karıştırılan iki kavramın yer değiştirmesi, bir koşulun/adımın eksik ya da fazla olması, yakın sayı/süre/değer, kısmen doğru ama eksik ifade, doğru kavramın yanlış bağlama uygulanması.
+3) KESİNLİKLE YASAK ŞIKLAR: konuyla alakasız veya komik dolgu şıklar ("Tahkim kurulu", "Bürokrasi", "İhmal" gibi), alay/mizah içeren ifadeler, "hepsi/hiçbiri" kalıpları, soru kökündeki ayırt edici kelimeyi aynen taşıyan şık, bariz şekilde diğerlerinden uzun/kısa şık.
+4) Doğru şık KAYNAKTA AÇIKÇA desteklenen TEK ifade olmalı; çeldiriciler kaynaktaki başka kavramlardan türetilmeli (uydurma değil) ama doğru kabul edilemeyecek kadar net biçimde yanlış/eksik olmalı.
+5) Şıkları yazmadan önce son kontrol: "Cevabı bilmeyen bir aday bu dört şık arasında gerçekten zorlanır mı? Dört şıktan biri bariz alakasız mı?" — Cevap hayırsa şıkları yeniden yaz.
+6) Çeldirici ağırlıklı soru kalıplarını da kullan: "hangisi yanlıştır/söylenemez", "hangisi ... dışında kalır", "en uygun/en kapsamlı yaklaşım hangisidir" (dört şık da makul ama yalnızca biri tam doğru).`;
 
 const unsupportedThinkModels = new Set();
 
@@ -1002,10 +1018,21 @@ function checkDistractorHygiene(options, answer, meta = {}) {
   answer,
   explanation: meta.explanation || '',
   evidence: meta.evidence || '',
-  unitId: meta.unitId || ''
+  unitId: meta.unitId || '',
+  sourceText: meta.sourceText || ''
  });
  if (!psy.ok && psy.firstError) return psy.firstError;
  return null;
+}
+
+/**
+ * Şık kalitesi (çeldirici/simetri/uzunluk/kaynak sızıntısı) kaynaklı red mesajlarını
+ * ayırt eder; tekrar veya kaynak eksikliği gibi hatalarda model boşa yorulmasın.
+ */
+function isDistractorQualityError(message) {
+ const msg = String(message || '');
+ if (/zaten kayıtlı|benzer bir soru|Kaynak alıntısı|kaynak alıntısı/.test(msg)) return false;
+ return /çeldirici|alakasız|kalitesiz ifade|uzunluk|sızdırıyor|örtüşüyor|kapsadığı|simetri|çift doğru/i.test(msg);
 }
 
 function evidenceExists(evidence, ctx, passage) {
@@ -1025,7 +1052,7 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
  if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) {
   throw Error('Seçenekler veya cevap geçersiz.');
  }
- const hygieneErr = checkDistractorHygiene(options, answer, { question, explanation, evidence, unitId: ctx?.id || '' });
+ const hygieneErr = checkDistractorHygiene(options, answer, { question, explanation, evidence, unitId: ctx?.id || '', sourceText: passage?.text || ctx?.text || '' });
  if (hygieneErr) throw Error(hygieneErr);
  const groundRes = precisionEngine.verifyEvidenceGrounding(evidence, ctx, passage);
  if (!groundRes.ok) {
@@ -1380,7 +1407,8 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
 Sorunun zorluk seviyesi: ${diffMap[diff]}
 Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
-ÖSYM Çeldirici ve Simetri Kuralı: 4 seçeneğin tamamı aynı üniteden mantıklı, birbirine çok yakın uzunlukta (±%25), aynı dilbilgisi/ek yapısında ve düşündürücü olsun; doğru şık asla diğerlerinden belirgin biçimde uzun olmasın; "hepsi/hiçbiri" yasak; doğru cevabı soru kökünde kelime olarak ele verme! Kaynakta bulunmayan bilgi isteme. JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kalıcı ezber için kısa özlü öğretici gerekçe + püf noktası), evidence (anlatımdan birebir en az 15 karakter alıntı), topic (kısa konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint} Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (tekrarlama): ${avoidQuestions}.${recentAnswers ? ` FARKLI CEVAPLAR SEÇ: ${recentAnswers}.` : ''}${exemplars}${avoidErr} KONU ANLATIMI: ${sourceText}`;
+${DISTRACTOR_ENGINEERING_RULES}
+JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kalıcı ezber için kısa özlü öğretici gerekçe + püf noktası), evidence (anlatımdan birebir en az 15 karakter alıntı), topic (kısa konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint} Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (tekrarlama): ${avoidQuestions}.${recentAnswers ? ` FARKLI CEVAPLAR SEÇ: ${recentAnswers}.` : ''}${exemplars}${avoidErr} KONU ANLATIMI: ${sourceText}`;
  }
 
  const specs = targetDifficulties.map((d, i) => `Soru ${i + 1}: zorluk=${d.toUpperCase()} (${diffMap[d]}), tip=${targetTypes[i]}, açı=${angles[i]} (${QUESTION_ANGLE_HINTS[angles[i]] || ''})`).join('\n');
@@ -1388,10 +1416,11 @@ Soru tipi: ${typeHint}
 ${specs}
 ÖSYM Komisyonu Kuralları:
 - Kolay da olsa orta da olsa zor da olsa her soru gerçek ÖSYM seçiciliğinde ve kalıcı öğretici olmalı (sığ ezber sorma).
-- Tüm 4 şık birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; "hepsi/hiçbiri" yasak.
+- Tüm 4 şık aynı kavram ailesinden, birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; konuyla alakasız/komik dolgu şık KESİNLİKLE yasak; "hepsi/hiçbiri" yasak.
 - Her yanlış şık anlatıma göre kesinlikle YANLIŞ olmalı; soru kökünde doğru cevaba kelime sızıntısı olmamalı.
 - Her sorunun "evidence" alanı KONU ANLATIMI içinden kelime kelime alınmış en az 15 karakterlik bir alıntı olsun.
 - Kısa ama püf noktasını öğreten explanation yaz.
+${DISTRACTOR_ENGINEERING_RULES}
 JSON döndür: {"questions": [ {question, options, answer, explanation, evidence, topic, questionType, questionAngle, bloomLevel}, ... ]}${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint}
 Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}.
 TEKRARLAMA: ${avoidQuestions}.${recentAnswers ? ` FARKLI KAVRAMLAR: ${recentAnswers}.` : ''}${exemplars}${avoidErr}
@@ -1404,7 +1433,7 @@ function buildVerifierPrompt(ctx, draft, passage = null, policy = null, apexStat
  const apexJudge = apex.getBotDirectiveBlock(apexState, 'judge');
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
  const tvgfbfStyleBlock = tvgfbfSwarm.getUnitStylePromptBlock(ctx.id);
- return `Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin ve psikometri uzmanısın ("ÖSYM bu soruyu iptal etmeden yayımlar mıydı?" ölçütüyle denetle). Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, BİRDEN FAZLA SEÇENEK DOĞRU VEYA KISMEN DOĞRU KABUL EDİLEBİLİRSE, doğru şık belirgin biçimde uzun/ipuçlu ise, Türkçe dilbilgisi bozuksa veya ÖSYM seçiciliği taşımıyorsa reddet (singleCorrect=false ve dualAnswerRisk=true yap). Zorluğu kendi başına sınıflandır: "kolay", "orta" veya "zor"; ayrıca ÖSYM sınavında çıkma potansiyelini (examPotential: 1-5) puanla.${policyRule}${apexJudge}${axiomBlock}${tvgfbfStyleBlock} Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean: YALNIZCA TEK doğru şık kesin ise true), dualAnswerRisk (boolean: ikinci bir şıkkın kısmen de olsa doğru sayılma riski varsa true), secondBestOption (varsa en yakın çeldirici metni, yoksa boş), supported (boolean), qualityOk (boolean), qualityScore (1-5), examPotential (1-5), difficulty ("kolay"|"orta"|"zor"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz"), evidence (anlatımdan birebir >15 karakter), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${sourceText}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
+ return `Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin ve psikometri uzmanısın ("ÖSYM bu soruyu iptal etmeden yayımlar mıydı?" ölçütüyle denetle). Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, BİRDEN FAZLA SEÇENEK DOĞRU VEYA KISMEN DOĞRU KABUL EDİLEBİLİRSE, doğru şık belirgin biçimde uzun/ipuçlu ise, Türkçe dilbilgisi bozuksa, şıklardan biri konuyla tamamen alakasız/komik bir dolgu şık ise, şıklar aynı kavram ailesinden değilse veya ÖSYM seçiciliği taşımıyorsa reddet (singleCorrect=false ve qualityOk=false yap; gerekçeyi reason alanında belirt). Zorluğu kendi başına sınıflandır: "kolay", "orta" veya "zor"; ayrıca ÖSYM sınavında çıkma potansiyelini (examPotential: 1-5) puanla.${policyRule}${apexJudge}${axiomBlock}${tvgfbfStyleBlock} Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean: YALNIZCA TEK doğru şık kesin ise true), dualAnswerRisk (boolean: ikinci bir şıkkın kısmen de olsa doğru sayılma riski varsa true), secondBestOption (varsa en yakın çeldirici metni, yoksa boş), supported (boolean), qualityOk (boolean), qualityScore (1-5), examPotential (1-5), difficulty ("kolay"|"orta"|"zor"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz"), distractorPlausible (boolean: dört şık da aynı kavram ailesinden, birbirine yakın ve "az kalsın doğru" niteliğinde mi; alakasız/saçma şık varsa false), evidence (anlatımdan birebir >15 karakter), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${sourceText}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
 }
 
 function buildBatchVerifierPrompt(ctx, itemsList, passage = null, policy = null, apexState = null) {
@@ -1425,6 +1454,11 @@ function parseJudgeVerdict(check, jm, draft, ctx, passage) {
  if (check?.dualAnswerRisk === true) {
   telemetry.dualAnswerBlocked++;
   throw Error(`Bağımsız denetçi (${jm}) soruda ikinci bir doğru şık riski (dualAnswerRisk) tespit etti${check.secondBestOption ? ` (${check.secondBestOption})` : ''}; soru kaydedilmedi.`);
+ }
+ if (check?.distractorPlausible === false) {
+  telemetry.rejectedPreflight++;
+  recordRejection('distractor_hygiene', 'Hakem çeldiricileri alakasız/zayıf buldu');
+  throw Error(`Bağımsız denetçi (${jm}) çeldiricilerin aynı kavram ailesinden ve "az kalsın doğru" niteliğinde olmadığını bildirdi (distractorPlausible=false); soru kaydedilmedi.`);
  }
  if (!check || check.singleCorrect !== true || check.supported !== true || check.qualityOk !== true || typeof check.answer !== 'string' || !draft.options.includes(check.answer) || typeof check.evidence !== 'string' || !evidenceExists(check.evidence, ctx, passage) || typeof check.reason !== 'string' || !check.reason.trim() || !DIFFICULTIES.includes(check.difficulty)) {
   throw Error(`Bağımsız denetçilerden biri (${jm}) soruyu, tek doğru cevabı, kaliteyi, zorluk etiketini veya kaynak dayanağını doğrulayamadı; soru kaydedilmedi.`);
@@ -1676,8 +1710,23 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   draft = validate(parsed, ctx, items, model, passage, policy);
  } catch (e) {
   telemetry.rejectedPreflight++;
-  recordRejection(e.message.includes('örtüş') || e.message.includes('uzun') || e.message.includes('kalitesiz') ? 'distractor_hygiene' : e.message.includes('Kaynak') ? 'evidence' : 'duplicate');
-  throw e;
+  recordRejection(e.message.includes('örtüş') || e.message.includes('uzun') || e.message.includes('kalitesiz') || e.message.includes('alakasız') ? 'distractor_hygiene' : e.message.includes('Kaynak') ? 'evidence' : 'duplicate');
+  // Çeldirici kalitesi/simetrisi yüzünden elenen taslaklar hemen çöpe gitmesin:
+  // model şıkları aynı kavram ailesinden, birbirine yakın ve "az kalsın doğru"
+  // olacak şekilde bir kez daha yazmayı denesin (kalite korunur, soru kaybolmaz).
+  if (selfCorrection && isDistractorQualityError(e.message)) {
+   try {
+    const fixed = await trySelfCorrect(parsed, e.message, ctx, model, targetDifficulty, passage, signal, fastThink);
+    const fixedDraft = validate(fixed, ctx, items, model, passage, policy);
+    parsed = fixed;
+    draft = fixedDraft;
+    telemetry.refinedSucceeded++;
+   } catch {
+    throw e;
+   }
+  } else {
+   throw e;
+  }
  }
 
  onPhase?.('verifying');
@@ -2245,7 +2294,7 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg) 
  const ctrl = new AbortController();
  autoControllers.set(ctrl, entry);
  const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
- generateAndVerify(ctx, model, verifierModel, judge2Model, ctrl.signal, p => { entry.phase = p; }, {
+ const run = generateAndVerify(ctx, model, verifierModel, judge2Model, ctrl.signal, p => { entry.phase = p; }, {
   passageMode: cfg.passageMode,
   smartDifficulty: cfg.smartDifficulty,
   selfCorrection: cfg.selfCorrection,
@@ -2253,6 +2302,7 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg) 
  })
   .catch(e => { autoLastError = e.name === 'AbortError' ? 'Üretim zaman aşımına uğradı veya durduruldu.' : e.message; })
   .finally(() => { clearTimeout(timeout); autoControllers.delete(ctrl); });
+ return run;
 }
 
 async function triggerJarvisReflect(evolverModel) {
@@ -3634,7 +3684,11 @@ async function autoScheduler() {
        const a = audit(items);
        if (!a.invalid && !a.duplicates) {
         const ctx = contexts[autoCursor++ % contexts.length];
-        launchAutoUnit(ctx, model, verifierModel, judge2Model, await autoTimeoutMs(), cfg);
+        const waveStart = Date.now();
+        await launchAutoUnit(ctx, model, verifierModel, judge2Model, await autoTimeoutMs(), cfg);
+        // Her 5 saniyede bir yeni soru: üretim erken biterse kalan süre kadar dinlen.
+        const restMs = QUESTION_INTERVAL_MS - (Date.now() - waveStart);
+        if (restMs > 0) await sleep(restMs);
        }
       }
      }
@@ -4786,6 +4840,7 @@ export function ollamaPlugin() {
        subSecondAllBots: pipelineConfig.subSecondAllBots,
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
+       questionIntervalMs: QUESTION_INTERVAL_MS,
        modelInferenceConcurrency: 1,
        modelInferenceQueue: modelInferenceQueue.snapshot(),
        autoActive: autoPhases.length,

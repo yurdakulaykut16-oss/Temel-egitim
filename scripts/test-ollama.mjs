@@ -44,19 +44,19 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
     drills:[{type:'fill_blank',prompt:'Egzersiz fiziksel uygunluğu korumaya yönelik ___ ve tekrarlı etkinliktir.',answer:'planlı',hint:'Programlı anlamına gelir',explanation:'Egzersiz planlıdır.',evidence:studyEv,difficulty:'kolay'}]
    };
   }else if(data.prompt.includes('soru denetçisisin')){
-   if(isUnit01)result={answer:'Kondisyonel ve teknik hazırlık',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty:wrongDifficulty?'zor':'kolay',evidence,reason:'Anlatım kondisyonel ve teknik hazırlığı birlikte sayar.'};
+   if(isUnit01)result={answer:'Kondisyonel ve teknik hazırlık',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:wrongDifficulty?'zor':'kolay',evidence,reason:'Anlatım kondisyonel ve teknik hazırlığı birlikte sayar.'};
    else if(isUnit02){
     const isJudge2=data.model==='fake:2';
-    const answer=(isJudge2&&judge2DisagreesAnswer)?'İlke yok':'Bireysel ve sürekli ilkeler';
+    const answer=(isJudge2&&judge2DisagreesAnswer)?'Süreklilik ve aşırı yüklenme ilkeleri':'Bireysel ve sürekli ilkeler';
     const difficulty=isJudge2?judge2Difficulty:'kolay';
-    result={answer,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:4,difficulty,evidence,reason:`${data.model} bağımsız değerlendirmesi.`};
+    result={answer,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:4,distractorPlausible:true,difficulty,evidence,reason:`${data.model} bağımsız değerlendirmesi.`};
    }
-   else result={answer:numericOptions?'20 dakika egzersiz':mismatch?'İhmal':'Planlama ve tekrar',singleCorrect:!dualAnswerRisk,dualAnswerRisk,secondBestOption:dualAnswerRisk?'Tahkim':'',supported:true,qualityOk:true,qualityScore:5,difficulty:numericOptions?'orta':'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
+   else result={answer:numericOptions?'20 dakika egzersiz':mismatch?'Tekrarlı fakat programsız olması':'Planlı ve tekrarlı olması',singleCorrect:!dualAnswerRisk,dualAnswerRisk,secondBestOption:dualAnswerRisk?'Tekrarlı fakat programsız olması':'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:numericOptions?'orta':'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
   }else{
-   if(isUnit01){result={question:'Antrenmanı oluşturan ögelerden hangileri birlikte sayılır?',options:['Kondisyonel ve teknik hazırlık','İhmal','Tahkim','Bürokrasi'],answer:'Kondisyonel ve teknik hazırlık',explanation:'Kondisyonel ve teknik hazırlık birlikte sayılır.',evidence,topic:'Antrenmanın ögeleri'};}
-   else if(isUnit02)result={question:'Antrenman yükü planlanırken hangi temel ilkeler gözetilir?',options:['Bireysel ve sürekli ilkeler','İlke yok','Tahkim','Bürokrasi'],answer:'Bireysel ve sürekli ilkeler',explanation:'Bireyselleştirme ve süreklilik temel ilkelerdendir.',evidence,topic:'Antrenman ilkeleri'};
+   if(isUnit01){result={question:'Antrenmanı oluşturan ögelerden hangileri birlikte sayılır?',options:['Kondisyonel ve teknik hazırlık','Kondisyonel ve taktik hazırlık','Teknik ve zihinsel hazırlık','Yalnızca kondisyonel hazırlık'],answer:'Kondisyonel ve teknik hazırlık',explanation:'Kondisyonel ve teknik hazırlık birlikte sayılır.',evidence,topic:'Antrenmanın ögeleri'};}
+   else if(isUnit02)result={question:'Antrenman yükü planlanırken hangi temel ilkeler gözetilir?',options:['Bireysel ve sürekli ilkeler','Süreklilik ve aşırı yüklenme ilkeleri','Çeşitlilik ve branşa özgülük ilkeleri','Bireysellik ve çeşitlilik ilkeleri'],answer:'Bireysel ve sürekli ilkeler',explanation:'Bireyselleştirme ve süreklilik temel ilkelerdendir.',evidence,topic:'Antrenman ilkeleri'};
    else if(numericOptions)result={question:'Haftalık başlangıç egzersiz süresi ne kadar olmalıdır?',options:['20 dakika egzersiz','30 dakika egzersiz','45 dakika egzersiz','60 dakika egzersiz'],answer:'20 dakika egzersiz',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Süre planlaması'};
-   else result={question:'Düzenli hareketin planlama niteliği hangi iki özellikle belirlenir?',options:overlapOptions?['Planlama ve tekrar etkinliği','Tekrar ve planlama etkinliği','Tahkim kurulu','Bürokrasi yaklaşımı']:['Planlama ve tekrar','İhmal','Tahkim',sendBannedOption?'Yukarıdakilerin hepsi':'Bürokrasi'],answer:overlapOptions?'Planlama ve tekrar etkinliği':'Planlama ve tekrar',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Egzersizin özellikleri'};
+   else result={question:'Düzenli hareketin planlama niteliği hangi iki özellikle belirlenir?',options:overlapOptions?['Planlama ve tekrar etkinliği','Tekrar ve planlama etkinliği','Programlı fakat tekrarsız etkinlik','Düzensiz ve programsız etkinlik']:['Planlı ve tekrarlı olması','Tekrarlı fakat programsız olması','Yalnızca yüksek şiddette yapılması',sendBannedOption?'Yukarıdakilerin hepsi':'Günlük yaşam akışında kendiliğinden oluşması'],answer:overlapOptions?'Planlama ve tekrar etkinliği':'Planlı ve tekrarlı olması',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Egzersizin özellikleri'};
   }
   res.end(JSON.stringify({response:JSON.stringify(result),eval_count:120,eval_duration:400_000_000,load_duration:50_000_000}));
  });
@@ -123,7 +123,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   mismatch=false;response=await post();assert.equal(response.status,200);const result=await response.json();assert.equal(result.item.status,'approved');assert.equal(result.item.verification.answer,result.item.answer);
   assert.equal(result.item.difficulty,'kolay');assert.equal(result.item.verification.difficulty,'kolay');
   assert.equal(result.item.verification.judges.length,2);
-  for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlama ve tekrar');assert.equal(j.difficulty,'kolay');assert.ok(j.reason);assert.ok(j.qualityScore>=1)}
+  for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlı ve tekrarlı olması');assert.equal(j.difficulty,'kolay');assert.ok(j.reason);assert.ok(j.qualityScore>=1)}
   assert.ok(calls.some(c=>c.prompt.includes('SORU:')));
   assert.ok(!calls.some(c=>c.prompt.includes('Egzersiz düzenli ve planlı etkinliktir.')));
 

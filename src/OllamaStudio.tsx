@@ -618,6 +618,7 @@ type Status = {
  studyCounts?: StudyCounts;
  autoRunning: boolean; autoConcurrency: number; autoTimeoutMs: number;
  questionCapacity?: number; maxQuestionsStored?: number;
+ questionIntervalMs?: number;
  modelInferenceConcurrency?: number;
  modelInferenceQueue?: {maxConcurrent: number; active: {label: string; startedAt: number} | null; queued: number};
  autoActive: number; autoPhases: {unit: string; phase: string}[]; autoLastError: string; totalUnits: number;
@@ -1194,7 +1195,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · ilgili kitap pasajı · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · kolay/orta/zor dengesi.</b> Ek çalışma materyali ve evrim ajanları varsayılan olarak kapalıdır.
+     🔒 Kalite hattı: <b>1 soru/çağrı · ilgili kitap pasajı · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · kolay/orta/zor dengesi.</b> Her soruda dört şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">
@@ -1215,6 +1216,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     <p>
      Havuz: <b>{status?.count || 0}</b> üretildi ({status?.approved || 0} onaylı, {status?.rejected || 0} reddedilmiş) ·
      Sınır: onaylı havuz {(status?.questionCapacity || 20000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 20000).toLocaleString('tr-TR')} ·
+     Hedef tempo: {(status?.questionIntervalMs || 5000) / 1000} sn/soru ·
      Zorluk: Kolay {status?.difficultyCounts?.kolay || 0} · Orta {status?.difficultyCounts?.orta || 0} · Zor {status?.difficultyCounts?.zor || 0} ·
      Tamamlanan {read.length} ünitenin {completedWithQuestions} tanesinde hazır soru var.
     </p>

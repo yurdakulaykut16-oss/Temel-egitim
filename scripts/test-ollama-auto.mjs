@@ -14,6 +14,13 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
  let failure=null;
  try{
   let inFlight=0, peak=0, calls=0;
+ // Şıklar aynı kavram ailesinden, birbirine yakın uzunlukta ve "az kalsın doğru" niteliğinde.
+ const PLAUSIBLE_OPTIONS=[
+  'Doğru kavramın tam ve eksiksiz uygulanması',
+  'Yanlış kavramın doğru sanılması',
+  'Kısmen doğru ama eksik uygulama',
+  'Doğru kavramın yanlış bağlamda kullanılması'
+ ];
   const difficultyByQuestion=new Map();
   fake=http.createServer(async(req,res)=>{
    res.setHeader('Content-Type','application/json');
@@ -38,7 +45,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
      const id=Number(m[1]);
      const question=m[2].trim();
      const difficulty=difficultyByQuestion.get(question)||'kolay';
-     return {id,answer:'Doğru seçenek',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Toplu kör hakem onayı.'};
+     return {id,answer:PLAUSIBLE_OPTIONS[0],singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Toplu kör hakem onayı.'};
     })};
    }else if(isVerify){
     const qMatch=prompt.match(/SORU: ([\s\S]*?)\nSEÇENEKLER:/);
@@ -47,7 +54,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*?)\nSORU:/);
     const text=textMatch?textMatch[1]:'';
     const evidence=text.trim().split(/\s+/).slice(0,8).join(' ')||'yeterince uzun bir kanit metni';
-    result={answer:'Doğru seçenek',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Anlatımda bu bilgi doğrudan geçer.'};
+    result={answer:PLAUSIBLE_OPTIONS[0],singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Anlatımda bu bilgi doğrudan geçer.'};
    }else if(isStudy){
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
     const text=textMatch?textMatch[1]:'';
@@ -68,14 +75,14 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
       const diff=m[1].toLocaleLowerCase('tr-TR');
       const question=`Otomatik paket sorusu #${calls}-${i}-${Math.random().toString(36).slice(2)} hangi kavramla ilişkilidir?`;
       difficultyByQuestion.set(question,diff);
-      return {question,options:['Doğru seçenek','Pasif dinlenme','Tahkim kurulu','Bürokrasi yaklaşımı'],answer:'Doğru seçenek',explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu',questionType:'kavram'};
+      return {question,options:[...PLAUSIBLE_OPTIONS],answer:PLAUSIBLE_OPTIONS[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu',questionType:'kavram'};
      })};
     }else{
      const difficultyMatch=prompt.match(/tam olarak şöyle olmalı: (KOLAY|ORTA|ZOR):/);
      const difficulty=difficultyMatch?difficultyMatch[1].toLocaleLowerCase('tr-TR'):'kolay';
      const question=`Otomatik tekli sorusu #${calls}-${Math.random().toString(36).slice(2)}`;
      difficultyByQuestion.set(question,difficulty);
-     result={question,options:['Doğru seçenek','Pasif dinlenme','Tahkim kurulu','Bürokrasi yaklaşımı'],answer:'Doğru seçenek',explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu'};
+     result={question,options:[...PLAUSIBLE_OPTIONS],answer:PLAUSIBLE_OPTIONS[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu'};
     }
    }
    res.end(JSON.stringify({response:JSON.stringify(result),eval_count:160,eval_duration:200_000_000}));
@@ -105,8 +112,16 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   assert.equal(status.judge2Installed,true);
 
   let approved=0;
-  for(let i=0;i<400 && approved<9;i++){await sleep(100);status=await (await fetch(`${base}/api/ollama/status`)).json();approved=status.approved}
-  assert.ok(approved>=9,`en az 9 soru onaylanmalıydı, görülen: ${approved}, tel: ${JSON.stringify(status.telemetry)}, err: ${status.autoLastError}`);
+  for(let i=0;i<600 && approved<4;i++){await sleep(100);status=await (await fetch(`${base}/api/ollama/status`)).json();approved=status.approved}
+  assert.ok(approved>=4,`en az 4 soru onaylanmalıydı, görülen: ${approved}, tel: ${JSON.stringify(status.telemetry)}, err: ${status.autoLastError}`);
+  assert.equal(status.questionIntervalMs,5000,'hedef üretim temposu 5 sn olmalı');
+
+  // Üretim temposu: sorular 5 saniyelik hedef tempodan hızlı üst üste bindirilmemeli
+  const tempoQuestions=await (await fetch(`${base}/api/ollama/questions`)).json();
+  const createdTimes=tempoQuestions.items.map(x=>Date.parse(x.createdAt)).sort((a,b)=>a-b);
+  const gaps=createdTimes.slice(1).map((t,i)=>t-createdTimes[i]);
+  assert.ok(gaps.length>=1,`tempo ölçümü için en az 2 soru gerekli, görülen: ${createdTimes.length}`);
+  assert.ok(Math.min(...gaps)>=4500,`sorular arası süre en az ~5 sn olmalı, görülen en kısa aralık: ${Math.min(...gaps)}ms`);
   assert.ok(peak<=1,`modeller asla üst üste binmemeli; görülen eşzamanlı istek tepe değeri: ${peak}`);
   assert.ok(calls>=approved*3,`her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}, soru: ${approved}`);
   assert.ok(status.coverage.coveredPassages>=2,'birden fazla kitap pasajı taranmış olmalı');

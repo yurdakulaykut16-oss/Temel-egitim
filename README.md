@@ -152,6 +152,7 @@ Listede indirdiğin modeller görünmeli. Uygulama açılışında **Durumu yeni
 Uygulama varsayılan olarak **az yakan ve sıralı** çalışır:
 
 - **Tek model kuyruğu:** Üretici ve iki hakemin Ollama çağrıları ortak bir FIFO kuyruğundan geçer; aynı anda **yalnızca bir** model çağrısı yapılır, dolayısıyla modeller birbiriyle çakışmaz. Uygulamadaki eşzamanlılık 1'e sabitlenmiştir.
+- **Her 5 saniyede bir yeni soru:** Üretim döngüsü her turdan sonra 5 saniyelik hedef tempoya göre bekler (üretim daha uzun sürerse sıradaki soru hemen peşine gelir; asla üst üste binmez). Tempo `TEMPO_QUESTION_INTERVAL_MS` ile değiştirilebilir (ms).
 - **Tek soru / çağrı:** Her turda 1 soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi korunur.
 - **20.000 kayıt havuz sınırı:** Onaylı havuz 20.000'e ulaşınca küratör en zayıf ve tekrar soruları ayıklayıp havuzu ~18.500 civarına indirir; üretim hiç durmaz.
 - **Hafif varsayılanlar:** üretici `qwen3:8b`, 2. hakem `gemma3:4b`, istek zaman aşımı 180 sn, `keep_alive=0` (model çağrıdan sonra boşaltılır; VRAM'de üst üste model birikmez). Çalışma materyali üretimi, otomatik evrim ve alt-saniye tüm-bot sürüsü kapalıdır.
@@ -180,6 +181,17 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_ENABLE_BACKGROUND_AGENTS` | `0` | `1` yapılınca araştırma/eğitim/video/Nexus arka plan ajanları da çalışır |
 | `TEMPO_UNLOAD_STALE_PINS` | `0` | `1` yapılınca açılışta VRAM'deki eski modeller boşaltılır |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
+| `TEMPO_QUESTION_INTERVAL_MS` | `5000` | Hedef üretim temposu (ms); model yavaşsa tempo kendiliğinden uzar |
+
+### 4.2 Soru ve çeldirici kalitesi
+
+Her soruda dört şık da **aynı kavram ailesinden**, birbirine yakın uzunlukta ve "az kalsın doğru" niteliğinde olur. Model bu kuralı her üretimde açıkça alır; ayrıca üç ayrı kapıdan geçer:
+
+1. **Yerel psikometri denetimi:** alakasız/komik dolgu şık ("Tahkim kurulu", "Bürokrasi", "İhmal" gibi), "hepsi/hiçbiri" kalıpları, birbirinin kopyası ya da birbirini kapsayan şıklar, cevabı ele veren uzun/kısa şık, kök sızıntısı ve şık uzunluk asimetrisi otomatik olarak reddedilir.
+2. **İki bağımsız hakem:** her iki hakem de şıkların aynı kavram ailesinden ve makul olduğunu onaylamazsa (`distractorPlausible`) soru kaydedilmez.
+3. **Öz-düzeltme:** şık kalitesi yüzünden elenen taslak çöpe gitmez; modele eleştiri geri beslenip şıklar aynı kavram ailesinden yeniden yazdırılır (tur başına bir deneme).
+
+Soru tipleri arasında klasik çeldirici kalıpları da vardır: *hangisi yanlıştır/söylenemez*, *hangisi ... dışında kalır*, *en uygun/en kapsamlı yaklaşım hangisidir* (`en_iyi_secim`); bu kalıplarda dört şık da makul görünür, yalnızca biri tam doğrudur.
 
 ## 5. Ekran kartını kontrol et
 
@@ -221,7 +233,7 @@ Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak i
 **Önemli — Açıldığı Anda Sürekli Soru Üretir (Sıralı Model Kuyruğu):**
 Proje başladığı saniyeden itibaren **hiçbir düğmeye basman gerekmez**:
 1. **Otomatik Rol Kurulumu:** Ollama'daki modelleri tarar; Üretici, 1. Hakem, 2. Hakem, Evrim Mimarı ve Qwen Coder rollerini otomatik doldurur. Eksik uzman modeller (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder`) ve `tempo-nexus-titan:latest` birleşik modeli açılışta oluşturulur.
-2. **Kesintisiz Soru Üretimi (her zaman açık):** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece **soru üretimi hiçbir zaman durmaz**. Her turda tek soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi uygulanır.
+2. **Kesintisiz Soru Üretimi (her zaman açık):** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece **soru üretimi hiçbir zaman durmaz**; hedef tempo **5 saniyede 1 soru**dur. Her turda tek soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, çeldirici kalite kapısı, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi uygulanır.
 3. **Havuz 20.000 ile sınırlı:** Onaylı soru sayısı 20.000'e ulaşınca küratör bot en zayıf ve birbirine benzeyen soruları ayıklayıp havuzu ~18.500'e indirir; üretim devam eder. Toplam kayıt sayısı da 20.000'i geçmez.
 4. **Modeller asla çakışmaz:** Tüm model çağrıları uygulama içindeki tek kuyruktan sırayla geçer; aynı anda yalnızca bir model çalışır, eş zamanlı yuva sayısı 1'e sabittir.
 5. **Otomatik Çalışan Koç Katmanı (varsayılan olarak kapalı — `TEMPO_ENABLE_BACKGROUND_AGENTS=1` ile açılır):**
