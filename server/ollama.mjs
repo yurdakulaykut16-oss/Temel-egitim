@@ -1080,6 +1080,7 @@ function findDuplicateReason(draft, ctx, pool) {
   if (optSim >= 1) return 'Bu şıkların tamamıyla aynı olduğu bir soru zaten kayıtlı.';
   if (sameUnit && stemSim >= 0.78) return 'Bu ünite için çok benzer bir soru bulundu.';
   if (sameUnit && stemSim >= 0.62 && norm(x.answer) === answerNorm) return 'Aynı cevabı ve kavramı paylaşan benzer bir soru bulundu.';
+  if (sameUnit && norm(x.answer) === answerNorm && optSim >= 0.5) return 'Aynı cevabı ve şıklarının çoğunu paylaşan bir soru zaten kayıtlı.';
   if (sameUnit && stemSim >= 0.70 && optSim >= 0.5) return 'Kökü ve şıkları büyük ölçüde örtüşen bir soru bulundu.';
   if (sameUnit && optSim >= 0.9) return 'Şıkları neredeyse aynı olan bir soru zaten kayıtlı.';
  }
@@ -1432,6 +1433,37 @@ async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage =
  }).catch(() => {});
 }
 
+/**
+ * Ünitede hangi kavramların çok/az sorulduğunu çıkarır; modeli az işlenmiş kavrama
+ * yönlendirerek arka planda üretilen soruların aynı kavram etrafında dönmesini engeller.
+ */
+function buildConceptCoverageSnippet(ctx, items, passage = null) {
+ const unitEntry = passagesByUnit.get(ctx?.id) || [];
+ const rawKeywords = [
+  ...(passage?.keywords || []),
+  ...(unitEntry[0]?.keywords || [])
+ ];
+ const keywords = [...new Set(rawKeywords.map(k => String(k || '').trim()).filter(k => k.length >= 4))];
+ if (!keywords.length) return '';
+ const pool = [...questionBank, ...items].filter(x => x && x.unitId === ctx?.id);
+ const coverage = new Map(keywords.map(k => [k, 0]));
+ for (const q of pool) {
+  const hay = norm(`${q.question || ''} ${q.answer || ''} ${(q.options || []).join(' ')} ${q.explanation || ''}`);
+  if (!hay) continue;
+  for (const k of coverage.keys()) {
+   if (hay.includes(norm(k))) coverage.set(k, coverage.get(k) + 1);
+  }
+ }
+ const sorted = [...coverage.entries()].sort((a, b) => a[1] - b[1]);
+ const fresh = sorted.filter(([, n]) => n <= 1).slice(0, 4).map(([k]) => k);
+ const saturated = sorted.filter(([, n]) => n >= 2).slice(-5).map(([k]) => k);
+ if (!fresh.length && !saturated.length) return '';
+ const parts = [];
+ if (fresh.length) parts.push(`Bu turda ŞU AZ İŞLENMİŞ KAVRAM(LAR)DAN BİRİNİ sor: ${fresh.join(', ')}.`);
+ if (saturated.length) parts.push(`Şu kavramlar bu ünitede yeterince soruldu, mümkünse FARKLI BİR KAVRAM seç: ${saturated.join(', ')}.`);
+ return `\nKAVRAM KAPSAMA YÖNLENDİRMESİ (tekrarı önlemek için): ${parts.join(' ')}`;
+}
+
 function buildExemplarsSnippet(ctx, items) {
  const unitApproved = [...items.filter(x => x.unitId === ctx.id && x.status === 'approved'), ...questionBank.filter(x => x.unitId === ctx.id)]
   .sort((a, b) => ((b.qualityScore || 4) * 20 + (b.precisionScore || 90)) - ((a.qualityScore || 4) * 20 + (a.precisionScore || 90)));
@@ -1495,13 +1527,14 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
   const qAngle = angles[0] || 'dogrudan_tanim';
   const typeHint = QUESTION_TYPE_HINTS[qType] || '';
   const angleHint = QUESTION_ANGLE_HINTS[qAngle] || '';
+  const coverageHint = buildConceptCoverageSnippet(ctx, items, passage);
   return `Sen ÖSYM sınav komisyonunda görevli uzman Türkçe antrenörlük soru yazarısın. KENDİNE ŞUNU SOR: "Ben ÖSYM'de soru hazırlayan bir uzman olsaydım bu konudan adayı gerçekten ayırt edecek nasıl bir soru hazırlardım?" HEDEF: Öğrenciyi sınavda 5 kitaptan çıkacak 100 sorunun tamamında 100/100 FULL DOĞRU seviyesine çıkarmak! Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, KESİNLİKLE TEK doğru cevaplı dört seçenekli, SINAVDA ÇIKMA POTANSİYELİ YÜKSEK ve ÖSYM TÜRKÇESİYLE ÖRÜLMÜŞ BİR özgün soru üret (I-II-III öncüllü, saha vakalı veya ince kavram ayrımlı kur!).
 Sorunun zorluk seviyesi: ${diffMap[diff]}
 Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
 ${DISTRACTOR_ENGINEERING_RULES}
 ${qType === PARAGRAPH_QUESTION_TYPE ? PARAGRAPH_QUESTION_RULES : ''}
-TEKRAR YASAĞI (ÇOK ÖNEMLİ): Aşağıda listelenen sorulara BENZER bir soru kurma. Aynı kavramı soracaksan bile soru kökünü, kalıbı, şıkları ve doğru cevabı değiştir; iki soru asla tıpatıp aynı veya tek kelime farklı olmasın.
+TEKRAR YASAĞI (ÇOK ÖNEMLİ): Aşağıda listelenen sorulara BENZER bir soru kurma. Aynı kavramı soracaksan bile soru kökünü, kalıbı, şıkları ve doğru cevabı değiştir; iki soru asla tıpatıp aynı veya tek kelime farklı olmasın.${coverageHint}
 JSON döndür: question (soru)${qType === PARAGRAPH_QUESTION_TYPE ? ', paragraph (KONU ANLATIMINDAN birebir alınmış 3-5 cümlelik parça)' : ''}, options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kalıcı ezber için kısa özlü öğretici gerekçe + püf noktası), evidence (anlatımdan birebir en az 15 karakter alıntı), topic (kısa konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint} Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.${recentAnswers ? ` FARKLI CEVAPLAR SEÇ: ${recentAnswers}.` : ''}${recentOptionSets ? ` YAKIN ZAMANDA KULLANILAN ÇELDİRİCİLERİ TEKRAR KULLANMA: ${recentOptionSets}.` : ''}${exemplars}${avoidErr} KONU ANLATIMI: ${sourceText}`;
  }
 
@@ -1514,7 +1547,7 @@ ${specs}
 - Her yanlış şık anlatıma göre kesinlikle YANLIŞ olmalı; soru kökünde doğru cevaba kelime sızıntısı olmamalı.
 - Her sorunun "evidence" alanı KONU ANLATIMI içinden kelime kelime alınmış en az 15 karakterlik bir alıntı olsun.
 - Kısa ama püf noktasını öğreten explanation yaz.
-- Sorular birbirinin aynısı veya tek kelime farklısı OLMAMALI; her soru farklı kavram, farklı kalıp ve farklı doğru cevap kullanmalı.
+- Sorular birbirinin aynısı veya tek kelime farklısı OLMAMALI; her soru farklı kavram, farklı kalıp ve farklı doğru cevap kullanmalı.${buildConceptCoverageSnippet(ctx, items, passage)}
 ${DISTRACTOR_ENGINEERING_RULES}
 ${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? PARAGRAPH_QUESTION_RULES : ''}
 JSON döndür: {"questions": [ {question, options, answer, explanation, evidence, topic, questionType, questionAngle, bloomLevel${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? ', paragraph (yalnızca paragraf tipinde)' : ''}}, ... ]}${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint}

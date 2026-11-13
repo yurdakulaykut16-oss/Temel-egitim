@@ -4,6 +4,7 @@ import http from 'node:http';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { PoolCuratorBot } from '../server/pool-curator.mjs';
 
 const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 
@@ -12,6 +13,9 @@ const STOP = new Set(['bir', 've', 'ile', 'için', 'gibi', 'olan', 'hangisidir',
 const stemq = s => normq(s).split(' ').filter(w => w.length >= 3 && !STOP.has(w));
 const template = s => normq(s).replace(/\d+([.,]\d+)?/g, '#');
 const jacq = (a, b) => { const A = new Set(stemq(a)), B = new Set(stemq(b)); if (!A.size || !B.size) return 0; let i = 0; for (const w of A) if (B.has(w)) i++; return i / (A.size + B.size - i); };
+// Soru kökü benzerliği (sunucudaki similarity() ile aynı mantık: kapsama tabanlı)
+const simq = (a, b) => { const A = new Set(stemq(a)), B = new Set(stemq(b)); if (!A.size || !B.size) return 0; let i = 0; for (const w of A) if (B.has(w)) i++; return i / Math.max(A.size, B.size); };
+const optOverlap = (a, b) => { const A = new Set((a.options || []).map(x => normq(x))); const B = (b.options || []).map(x => normq(x)); if (!A.size || !B.size) return 0; let i = 0; for (const o of B) if (A.has(o)) i++; return i / Math.max(4, B.size); };
 
 test('Soru bankasında birbirinin aynısı / tıpatıp benzeri soru kalmadı', () => {
  const bank = JSON.parse(readFileSync(resolve(process.cwd(), 'server/question-bank.json'), 'utf8'));
@@ -324,6 +328,198 @@ test('Paragraf (parçaya dayalı) sorular: kitaptan birebir parça kabul edilir,
   if (prevData === undefined) delete process.env.TEMPO_DATA_DIR; else process.env.TEMPO_DATA_DIR = prevData;
   if (prevBase === undefined) delete process.env.OLLAMA_BASE_URL; else process.env.OLLAMA_BASE_URL = prevBase;
   delete process.env.TEMPO_DISABLE_AUTOLOOP;
+  rmSync(dir, { recursive: true, force: true });
+ }
+});
+
+test('Arka plan üretimi: art arda üretilen sorular birbirinin aynısı/çok benzeri olmaz', async () => {
+ const dir = mkdtempSync(join(tmpdir(), 'tempo-autodedup-'));
+ const prevData = process.env.TEMPO_DATA_DIR;
+ const prevBase = process.env.OLLAMA_BASE_URL;
+ process.env.TEMPO_DATA_DIR = dir;
+ process.env.TEMPO_DISABLE_AUTOLOOP = '1';
+
+ // Model her çağrıda FARKLI bir kavram + farklı cevap + farklı şıklar döner.
+ const drafts = [
+  {
+   question: 'Sürantrenman riskini artıran temel yüklenme hatası aşağıdakilerden hangisidir?',
+   options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli artırmak', 'Dinlenme günlerini planlamak', 'Şiddeti bireysel yanıta göre ayarlamak'],
+   answer: 'Yetersiz toparlanmayla yükü sürekli artırmak'
+  },
+  {
+   question: 'Akut yanıt ile kronik uyum arasındaki temel ayrım nedir?',
+   options: ['Akut yanıt tek seansa, kronik uyum tekrarlanan çalışmalara bağlıdır', 'İkisi de yalnızca tek seansta oluşur', 'Kronik uyum bir haftada tamamlanır', 'Akut yanıt kalıcıdır, kronik uyum geçicidir'],
+   answer: 'Akut yanıt tek seansa, kronik uyum tekrarlanan çalışmalara bağlıdır'
+  },
+  {
+   question: 'Fazla tamamlama (süperkompansasyon) hangi koşulda ortaya çıkar?',
+   options: ['Yeterli toparlanmayla kapasitenin başlangıç düzeyini aşmasıyla', 'Yüklenmenin tamamen kesilmesiyle', 'Toparlanma olmadan yükün artmasıyla', 'Antrenman sıklığının azaltılmasıyla'],
+   answer: 'Yeterli toparlanmayla kapasitenin başlangıç düzeyini aşmasıyla'
+  }
+ ];
+ let cursor = 0;
+ const fake = http.createServer(async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  if (req.url === '/api/tags') return res.end(JSON.stringify({ models: [{ name: 'fake:1' }] }));
+  let raw = '';
+  for await (const chunk of req) raw += chunk;
+  const data = JSON.parse(raw || '{}');
+  const prompt = data.prompt || '';
+  const evidence = 'Egzersiz planlı ve tekrarlıdır';
+  if (prompt.includes('soru denetçisisin')) {
+   const optsMatch = prompt.match(/SEÇENEKLER: ([\[\s\S]*?\])/);
+   let answer = '';
+   try { if (optsMatch) answer = JSON.parse(optsMatch[1])[0]; } catch {}
+   return res.end(JSON.stringify({
+    response: JSON.stringify({
+     answer, singleCorrect: true, dualAnswerRisk: false, secondBestOption: '', supported: true,
+     qualityOk: true, qualityScore: 4.8, examPotential: 4.8, distractorPlausible: true,
+     difficulty: 'kolay', bloomLevel: 'Kavrama', evidence, reason: 'Anlatım bu bilgiyi destekliyor.'
+    })
+   }));
+  }
+  const draft = drafts[cursor % drafts.length];
+  cursor++;
+  return res.end(JSON.stringify({
+   response: JSON.stringify({
+    question: draft.question, options: draft.options, answer: draft.answer,
+    explanation: 'Konu anlatımında bu bilgi doğrudan geçer ve kalıcı ezber için püf noktası içerir.',
+    evidence, topic: 'Antrenman yüklenmesi', questionType: 'kavram',
+    questionAngle: 'dogrudan_tanim', bloomLevel: 'Kavrama'
+   })
+  }));
+ });
+
+ await listen(fake);
+ process.env.OLLAMA_BASE_URL = `http://127.0.0.1:${fake.address().port}`;
+ process.env.OLLAMA_MODEL = 'fake:1';
+ process.env.OLLAMA_VERIFIER_MODEL = 'fake:1';
+ process.env.OLLAMA_JUDGE2_MODEL = 'fake:1';
+
+ const { ollamaPlugin, stopOllamaLoops } = await import(`../server/ollama.mjs?autodedup=${Date.now()}`);
+ let middleware;
+ ollamaPlugin().configureServer({ middlewares: { use(_p, h) { middleware = h; } } });
+ const app = http.createServer((req, res) => {
+  req.url = req.url.replace(/^\/api\/ollama/, '');
+  middleware(req, res, () => { res.statusCode = 404; res.end(); });
+ });
+ await listen(app);
+ const origin = `http://127.0.0.1:${app.address().port}`;
+ const base = `${origin}/api/ollama`;
+ const headers = { 'Content-Type': 'application/json', Origin: origin };
+
+ try {
+  // Aynı üniteden art arda 3 + 1 üretim: son tur model tekrar ilk soruya dönse bile kabul edilmemeli.
+  for (let i = 0; i < 3; i++) {
+   const res = await fetch(`${base}/generate`, { method: 'POST', headers, body: JSON.stringify({ units: ['0-0'] }) });
+   assert.equal(res.status, 200, JSON.stringify(await res.json()));
+  }
+  const repeat = await fetch(`${base}/generate`, { method: 'POST', headers, body: JSON.stringify({ units: ['0-0'] }) });
+  assert.equal(repeat.status, 502, 'Model aynı soruya dönünce tekrar koruması reddetmeli');
+  assert.match((await repeat.json()).error || '', /benzer|kayıtlı/);
+
+  const list = await (await fetch(`${base}/questions`)).json();
+  const saved = list.items.filter(x => x.status === 'approved');
+  assert.equal(saved.length, 3, `3 özgün soru kaydedilmeli, gelen: ${saved.length}`);
+
+  // Kaydedilen sorular birbirinin aynısı/çok benzeri değil
+  for (let i = 0; i < saved.length; i++) {
+   for (let j = i + 1; j < saved.length; j++) {
+    assert.ok(simq(saved[i].question, saved[j].question) < 0.78, `Soru kökleri çok benzer: "${saved[i].question}" / "${saved[j].question}"`);
+    assert.ok(optOverlap(saved[i], saved[j]) < 0.75, `Şık takımları çok benzer: "${saved[i].question}" / "${saved[j].question}"`);
+    assert.notEqual(normq(saved[i].answer), normq(saved[j].answer), 'Doğru cevaplar farklı olmalı');
+   }
+  }
+ } finally {
+  stopOllamaLoops?.();
+  app.closeAllConnections?.();
+  fake.closeAllConnections?.();
+  await new Promise(r => app.close(r));
+  await new Promise(r => fake.close(r));
+  if (prevData === undefined) delete process.env.TEMPO_DATA_DIR; else process.env.TEMPO_DATA_DIR = prevData;
+  if (prevBase === undefined) delete process.env.OLLAMA_BASE_URL; else process.env.OLLAMA_BASE_URL = prevBase;
+  delete process.env.TEMPO_DISABLE_AUTOLOOP;
+  rmSync(dir, { recursive: true, force: true });
+ }
+});
+
+test('Havuz botu: yapay zekânın ürettiği tıpatıp benzeri soruları havuzdan ayıklar', async () => {
+ const dir = mkdtempSync(join(tmpdir(), 'tempo-curator-dedup-'));
+ try {
+  const bot = new PoolCuratorBot(dir, { minKeepPerUnit: 2, minKeepPerTier: 3 });
+  const items = [];
+  // 20 gerçekten farklı soru: farklı kavram, farklı kalıp, farklı doğru cevap
+  const uniq = [
+   ['Antrenman yüklenmesinde şiddet hangi ölçütü ifade eder?', 'Çalışmanın yoğunluğu'],
+   ['Haftalık toplam tekrar sayısı hangi yüklenme ögesidir?', 'Hacim'],
+   ['Aynı programın her sporcuya uygulanmaması hangi ilkeyi anlatır?', 'Bireyselleştirme'],
+   ['Antrenmanın yıl boyu düzenli sürdürülmesi hangi ilkedir?', 'Süreklilik'],
+   ['Farklı egzersizlerle zenginleştirilen program hangi ilkeye örnektir?', 'Çeşitlilik'],
+   ['Branşın gerektirdiği özelliklere odaklanma hangi ilkedir?', 'Branşa özgülük'],
+   ['Yüklenme sonrası kısa süreli kapasite düşüşü hangi kavramdır?', 'Akut yorgunluk'],
+   ['Tekrarlanan çalışmalarla oluşan kalıcı uyum hangi kavramdır?', 'Kronik uyum'],
+   ['Toparlanmayla kapasitenin başlangıç düzeyini aşması hangi kavramdır?', 'Süperkompansasyon'],
+   ['Antrenman bırakıldığında uyumun kaybı hangi kavramdır?', 'Detraining'],
+   ['Uzun süreli performans düşüşü ve birikmiş yorgunluk hangi durumu düşündürür?', 'Sürantrenman'],
+   ['Tek bir antrenman seansının hedefi hangi döngüde planlanır?', 'Birim antrenman'],
+   ['Haftalık antrenman planı hangi döngü olarak adlandırılır?', 'Mikro döngü'],
+   ['Sezon ölçeğindeki antrenman planı hangi düzeydedir?', 'Makro plan'],
+   ['Sporcu gelişim modelinde erken yaşta çok yönlü spor hangi evrededir?', 'Çeşitlilik evresi'],
+   ['Uzmanlaşma dönemine geçiş hangi modelin evresidir?', 'Sporcu gelişim modeli'],
+   ['Isınma bölümünün temel amacı aşağıdakilerden hangisidir?', 'Vücudu yüklenmeye hazırlamak'],
+   ['Bitiriş (soğuma) bölümü hangi işlevi görür?', 'Toparlanmayı hızlandırmak'],
+   ['Kuvvet ölçümünde dikey sıçrama hangi özelliğe örnektir?', 'Patlayıcı kuvvet'],
+   ['Mekik koşusu testi hangi kapasitenin tahmininde kullanılır?', 'Aerobik kapasite']
+  ];
+  const distractorSets = [
+   ['Yalnızca tek seferlik maksimum yük uygulamak', 'Ölçütü tamamen antrenör sezgisine bırakmak', 'Hedef özelliği dikkate almadan sabit program'],
+   ['Haftalık düzene bakmadan günlük karar vermek', 'Yüklenmeyi yalnızca yarışma gününe bırakmak', 'Blok sıralamasını rastgele değiştirmek'],
+   ['Ölçümü hiç kaydetmemek', 'Sonucu yalnızca gözle değerlendirmek', 'Testi her antrenmanda tekrarlamak'],
+   ['Kademeli artış yerine ani sıçrama yapmak', 'Toparlanmayı planın dışında tutmak', 'Bireysel yanıtı yok saymak'],
+   ['Dönem hedefini göz ardı etmek', 'Bloğu sezon sonuna bırakmak', 'Aynı bloğu tüm sezon tekrarlamak']
+  ];
+  uniq.forEach(([question, answer], i) => {
+   items.push({
+    id: `uniq-${i}`,
+    unitId: '0-0',
+    difficulty: ['kolay', 'orta', 'zor'][i % 3],
+    status: 'approved',
+    question,
+    options: [answer, ...distractorSets[i % distractorSets.length]],
+    answer,
+    explanation: 'Antrenmanda kalıcı gelişim için ölçüt hedef özelliğe uygun seçilmelidir.',
+    evidence: 'Antrenmanda ölçüt hedefe göre seçilir.',
+    qualityScore: 4.6,
+    examPotential: 4.6
+   });
+  });
+  // 20 adet neredeyse aynı soru (modelin aynı kavramı tekrar tekrar sorması)
+  for (let i = 0; i < 20; i++) {
+   const filler = ['A', 'B', 'C', 'D', 'E'][i % 5];
+   items.push({
+    id: `dup-${i}`,
+    unitId: '0-0',
+    difficulty: ['kolay', 'orta', 'zor'][i % 3],
+    status: 'approved',
+    question: `Antrenman yüklenmesinde ${filler} değişkeni için toparlanma dengesi nasıl kurulmalıdır?`,
+    options: ['Progresif yüklenme ve yeterli toparlanma dengesi kurularak', 'Tamamen dinlenmeden sürekli maksimal yüklenme', 'Bireysel farklılıkları göz ardı eden sabit şablon', 'Isınma ve soğumayı kaldıran yoğunluk modeli'],
+    answer: 'Progresif yüklenme ve yeterli toparlanma dengesi kurularak',
+    explanation: 'Antrenmanda kalıcı gelişim için yüklenme ile toparlanma dengesi kurulmalıdır.',
+    evidence: 'Antrenmanda progresif yüklenme ve toparlanma dengesi temel ilkedir.',
+    qualityScore: 4.6,
+    examPotential: 4.6
+   });
+  }
+
+  const res = await bot.scanAndPrune({ items });
+  const remaining = res.items.filter(x => x.status === 'approved');
+  assert.ok(res.report.nearDuplicatesFound >= 12, `Yakın tekrarların çoğu yakalanmalı, gelen: ${res.report.nearDuplicatesFound}`);
+  assert.ok(remaining.length <= 30, `Tekrarlar ayıklandıktan sonra havuz küçülmeli, gelen: ${remaining.length}`);
+  const dupLeft = remaining.filter(x => String(x.id).startsWith('dup-')).length;
+  assert.ok(dupLeft <= 8, `Aynı kalıptan en fazla birkaç soru kalmalı, gelen: ${dupLeft}`);
+  const uniqLeft = remaining.filter(x => String(x.id).startsWith('uniq-')).length;
+  assert.ok(uniqLeft >= 14, `Özgün sorular korunmalı, gelen: ${uniqLeft}`);
+ } finally {
   rmSync(dir, { recursive: true, force: true });
  }
 });
