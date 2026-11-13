@@ -452,3 +452,6 @@
 .acv-quotes p{margin:0;color:#273b56;line-height:1.45}
 .acv-traps{background:#fff8f0;border:1px solid #eed2b4;border-radius:8px;padding:8px 10px;color:#6d3917;font-size:12.5px;line-height:1.45}
 
+/* Paragraf (parçaya dayalı) sorular: parça alıntı bloğu */
+.quiz-paragraph,.question-paragraph{margin:10px 0 12px;padding:12px 14px;border-left:4px solid #7aa25f;background:#f7faf3;border-radius:0 10px 10px 0;color:#243a26;font-size:13.5px;line-height:1.62;font-style:normal}
+.question-paragraph{margin:8px 0 10px;font-size:13px}

@@ -182,6 +182,7 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_UNLOAD_STALE_PINS` | `0` | `1` yapılınca açılışta VRAM'deki eski modeller boşaltılır |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
 | `TEMPO_QUESTION_INTERVAL_MS` | `5000` | Hedef üretim temposu (ms); model yavaşsa tempo kendiliğinden uzar |
+| `TEMPO_PARAGRAPH_QUESTION_RATIO` | `0.12` | Paragraf (parçaya dayalı) soruların sıklığı; `0` yapılınca hiç üretilmez |
 
 ### 4.2 Soru ve çeldirici kalitesi
 
@@ -192,6 +193,27 @@ Her soruda dört şık da **aynı kavram ailesinden**, birbirine yakın uzunlukt
 3. **Öz-düzeltme:** şık kalitesi yüzünden elenen taslak çöpe gitmez; modele eleştiri geri beslenip şıklar aynı kavram ailesinden yeniden yazdırılır (tur başına bir deneme).
 
 Soru tipleri arasında klasik çeldirici kalıpları da vardır: *hangisi yanlıştır/söylenemez*, *hangisi ... dışında kalır*, *en uygun/en kapsamlı yaklaşım hangisidir* (`en_iyi_secim`); bu kalıplarda dört şık da makul görünür, yalnızca biri tam doğrudur.
+
+### 4.3 Birbirinin aynısı / tıpatıp benzeri soru olmasın
+
+Havuzda iki soru asla aynı kalıbın tekrarı olmasın diye üç katman çalışır:
+
+1. **Üretim öncesi (prompt):** modele son 18 sorunun kökü, son 16 doğru cevap ve son çeldiriciler verilir; "bunlara benzer bir soru kurma" kuralı açıkça yazılır.
+2. **Üretim sonrası (sıkı tekrar kapısı):** yeni taslak; soru kökü benzerliği, **şık takımı örtüşmesi** ve **doğru cevap** birlikte değerlendirilerek havuzdaki ve kitap bankasındaki tüm sorularla karşılaştırılır. Aynı soru, kökü %78'in üzerinde benzer olan soru, **dört şıkkı da aynı olan** soru, aynı cevabı paylaşıp kökü %62'nin üzerinde örtüşen soru reddedilir. Böylece yalnızca kökü değiştirilmiş "aynı sorunun kopyası" havuza giremez.
+3. **Havuz botu (sürekli ayıklama):** `PoolCuratorBot` her taramada yakın tekrarları siler; benzerlik yalnızca köke değil, şık takımına ve doğru cevaba da bakılarak ölçülür (aynı cevabı paylaşan sorularda eşik daha esnektir).
+
+Sabit soru bankasının kendisi de temiz: `npm run contexts` çalıştırıldığında banka yeniden kurulurken aynı kalıptan en fazla 2 soru bırakılır, kök benzerliği yüksek ve aynı cevabı paylaşan tekrarlar ayıklanır. Bu temizlik, ünitedeki 100 adet "X kg ve Y m için VKİ kaçtır?" sorusunu da **farklı kalıplarda (değer bulma, sınıf belirleme, aralık seçme, ters hesaplama) ve farklı vücut ağırlığı sınıflarını kapsayan 18 alıştırmaya** indirger.
+
+### 4.4 Paragraf (parçaya dayalı) sorular
+
+Sınavda uzun köklü/parçaya dayalı soru çıkma ihtimaline karşı havuza seyrek olarak **paragraf soruları** da girer (varsayılan: her ~8 soruda bir, `TEMPO_PARAGRAPH_QUESTION_RATIO` ile ayarlanır, `0` yapılınca kapanır):
+
+- Paragraf, konu anlatımından **birebir (kelimesi kelimesine)** alınır; cümlelerin en az %70'i kaynakta aynen geçmek zorundadır, aksi hâlde soru reddedilir. Yani paragraf uydurma değil, kitabın kendi metnidir.
+- Soru kökü parçaya gönderme yapar ("Bu parçaya göre ...", "Parçada vurgulanan ...", "Bu parçadan hangi yargıya ulaşılabilir?") ve parça okunmadan yanıtlanamaz.
+- Dört şık da parçayla ilişkilidir: doğru şık parçadaki bilginin doğru yorumu, çeldiriciler parçada geçmeyen ama ünitenin başka yerlerinde duran ifadelerdir.
+- Test ekranında ve AI stüdyosunda paragraf alıntı bloğu olarak gösterilir; soru tipi etiketi **Paragraf (Parçaya Dayalı)**'dır.
+
+**Not:** Antrenörlük Temel Eğitimi sınavının resmî soruları paylaşılmadığı için paragraf tipinin sınavda çıkıp çıkmadığı kamuya açık kaynaklardan doğrulanamaz; bu yüzden bu tip varsayılan olarak seyrek üretilir ve tek tıkla kapatılabilir.
 
 ## 5. Ekran kartını kontrol et
 

@@ -1,4 +1,4 @@
-export type Unit = {title:string; lesson:string; key:string; example:string; question:string; answer:string; wrong:string[]; topic?:string; source?:string};
+export type Unit = {title:string; lesson:string; key:string; example:string; question:string; answer:string; wrong:string[]; topic?:string; source?:string; paragraph?:string};
 export type Book = {title:string; short:string; color:string; units:Unit[]};
 const u=(title:string,lesson:string,key:string,example:string,question:string,answer:string,...wrong:string[]):Unit=>({title,lesson,key,example,question,answer,wrong});
 export const books:Book[]=[

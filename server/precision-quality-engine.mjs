@@ -67,7 +67,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['fiziksel aktivite', 'egzersiz'], ['egzersiz', 'antrenman'], ['yüklenme', 'toparlanma']],
   forbiddenClaims: [
-   { pattern: /fiziksel\s+aktivite.*?(?:her\s+zaman|mutlaka)\s+planlı/i, reason: 'Fiziksel aktivite günlük yaşam hareketlerini de kapsar; planlı/tekrarlı olan egzersizdir.' }
+   { pattern: /fiziksel\s+aktivite[^.;]{0,70}(?:her\s+zaman|mutlaka)\s+planlı/i, reason: 'Fiziksel aktivite günlük yaşam hareketlerini de kapsar; planlı/tekrarlı olan egzersizdir.' }
   ]
  },
  '0-1': {
@@ -78,7 +78,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['teknik hazırlık', 'taktik hazırlık'], ['kondisyonel hazırlık', 'psikolojik hazırlık']],
   forbiddenClaims: [
-   { pattern: /teknik\s+hazırlık.*?(?:rakibe|müsabaka\s+durumuna)\s+göre\s+karar/i, reason: 'Rakibe göre karar/strateji seçimi taktik hazırlıktır; teknik hareketin uygulanışıdır.' }
+   { pattern: /teknik\s+hazırlık[^.;]{0,70}(?:rakibe|müsabaka\s+durumuna)\s+göre\s+karar/i, reason: 'Rakibe göre karar/strateji seçimi taktik hazırlıktır; teknik hareketin uygulanışıdır.' }
   ]
  },
  '0-2': {
@@ -89,7 +89,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['şiddet', 'hacim'], ['hacim', 'sıklık'], ['çeşitlilik', 'branşa özgülük']],
   forbiddenClaims: [
-   { pattern: /hacim.*?yoğunluktur|şiddet.*?toplam\s+iş\s+miktarı/i, reason: 'Şiddet yoğunluğu, hacim toplam iş miktarını ifade eder (kavramlar ters çevrilmiş).' }
+   { pattern: /hacim(?![\s\S]{0,45}toplam)[^.;]{0,60}yoğunlu|şiddet(?![\s\S]{0,45}yoğunlu)[^.;]{0,60}toplam\s+iş\s+miktarı/i, reason: 'Şiddet yoğunluğu, hacim toplam iş miktarını ifade eder (kavramlar ters çevrilmiş).' }
   ]
  },
  '0-3': {
@@ -100,7 +100,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['maksimal kuvvet', 'çabuk kuvvet'], ['kuvvette devamlılık', 'dayanıklılık'], ['reaksiyon sürati', 'esneklik']],
   forbiddenClaims: [
-   { pattern: /bir\s+motorik\s+özellik.*?diğerlerinin\s+de\s+otomatik\s+iyi/i, reason: 'Bir motorik özellikte iyi olmak otomatik olarak diğerlerinin de iyi olduğunu göstermez.' }
+   { pattern: /bir\s+motorik\s+özellik[^.;]{0,70}diğerlerinin\s+de\s+otomatik\s+iyi/i, reason: 'Bir motorik özellikte iyi olmak otomatik olarak diğerlerinin de iyi olduğunu göstermez.' }
   ]
  },
  '0-4': {
@@ -129,7 +129,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['ölçme', 'değerlendirme'], ['dikey sıçrama', 'mekik koşusu'], ['antropometri', 'çeviklik testi']],
   forbiddenClaims: [
-   { pattern: /dikey\s+sıçrama.*?aerobik|mekik\s+koşusu.*?patlayıcı\s+kuvvet/i, reason: 'Dikey sıçrama patlayıcı kuvvet, mekik koşusu aerobik kapasite içindir.' }
+   { pattern: /dikey\s+sıçrama(?![\s\S]{0,60}patlay)[^.;]{0,70}aerobik|mekik\s+koşusu(?![\s\S]{0,60}aerobik)[^.;]{0,70}patlay/i, reason: 'Dikey sıçrama patlayıcı kuvvet, mekik koşusu aerobik kapasite içindir.' }
   ]
  },
  '0-7': {
@@ -140,7 +140,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['erken belirleme', 'gelişimin izlenmesi'], ['tek ölçüm', 'uzun süreli yanıt']],
   forbiddenClaims: [
-   { pattern: /yetenek\s+seçimi.*?(?:yalnız|sadece)\s+tek\s+bir\s+ölçüme/i, reason: 'Yetenek seçimi yalnız o günün tek skoruna göre yapılmaz.' }
+   { pattern: /yetenek\s+seçimi[^.;]{0,70}(?:yalnız|sadece)\s+tek\s+bir\s+ölçüme/i, reason: 'Yetenek seçimi yalnız o günün tek skoruna göre yapılmaz.' }
   ]
  },
  '1-0': {
@@ -153,7 +153,7 @@ export const UNIT_AXIOM_ATLAS = {
   confusionPairs: [['medial', 'lateral'], ['proksimal', 'distal'], ['sagittal', 'frontal'], ['fleksiyon', 'ekstansiyon'], ['abduksiyon', 'adduksiyon'], ['eksantrik', 'konsantrik']],
   forbiddenClaims: [
    { pattern: /anatomik\s+duruşta\s+avuçlar\s+(?:arkaya|içe|aşağı)/i, reason: 'Anatomik duruşta avuçlar öne bakar.' },
-   { pattern: /sagittal.*?abduksiyon|frontal.*?fleksiyon/i, reason: 'Sagittal düzlem fleksiyon/ekstansiyon, frontal düzlem abduksiyon/adduksiyon ile ilişkilidir.' }
+   { pattern: /sagittal(?![\s\S]{0,50}fleksi)[^.;]{0,60}abduksi|frontal(?![\s\S]{0,50}abduksi)[^.;]{0,60}fleksi/i, reason: 'Sagittal düzlem fleksiyon/ekstansiyon, frontal düzlem abduksiyon/adduksiyon ile ilişkilidir.' }
   ]
  },
  '1-1': {
@@ -163,8 +163,8 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['fosfajen (ATP-CP)', 'aerobik sistem'], ['mitokondri', 'ribozom'], ['sarkoplazmik retikulum', 'mitokondri']],
   forbiddenClaims: [
-   { pattern: /enerji\s+sistemleri.*?sırayla\s+tek\s+başına|önce\s+biri\s+tamamen\s+biter/i, reason: 'Enerji sistemleri aynı anda çalışır; baskın katkı süre ve şiddete göre değişir.' },
-   { pattern: /(?:atp[-\s]*(?:cp|pc)|fosfajen).*?laktik\s+asit/i, reason: 'ATP-CP (fosfajen) sistemi alaktik bir yoldur; laktik asit üretmez.' }
+   { pattern: /enerji\s+sistemleri[^.;]{0,70}sırayla\s+tek\s+başına|önce\s+biri\s+tamamen\s+biter/i, reason: 'Enerji sistemleri aynı anda çalışır; baskın katkı süre ve şiddete göre değişir.' },
+   { pattern: /(?:atp[-\s]*(?:cp|pc)|fosfajen)[^.;]{0,70}laktik\s+asit/i, reason: 'ATP-CP (fosfajen) sistemi alaktik bir yoldur; laktik asit üretmez.' }
   ]
  },
  '1-2': {
@@ -186,7 +186,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['içsel risk', 'dışsal risk'], ['TOTAPS', 'POLICE']],
   forbiddenClaims: [
-   { pattern: /totaps.*?dokunma\s+ile\s+başlar/i, reason: 'TOTAPS değerlendirmesi konuşma (Talk) ile başlar.' }
+   { pattern: /totaps[^.;]{0,70}dokunma\s+ile\s+başlar/i, reason: 'TOTAPS değerlendirmesi konuşma (Talk) ile başlar.' }
   ]
  },
  '1-4': {
@@ -215,7 +215,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['finans', 'muhasebe'], ['pazarlama', 'halkla ilişkiler'], ['satın alma', 'AR-GE']],
   forbiddenClaims: [
-   { pattern: /muhasebe.*?yalnız\s+bütçe\s+planlaması|finans\s+ile\s+muhasebe\s+(?:birebir\s+)?aynı/i, reason: 'Finans fon/bütçe yönetimi, muhasebe finansal kayıt ve raporlama işlevidir.' }
+   { pattern: /muhasebe[^.;]{0,70}yalnız\s+bütçe\s+planlaması|finans\s+ile\s+muhasebe\s+(?:birebir\s+)?aynı/i, reason: 'Finans fon/bütçe yönetimi, muhasebe finansal kayıt ve raporlama işlevidir.' }
   ]
  },
  '2-2': {
@@ -261,7 +261,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['açık beceri', 'kapalı beceri'], ['kesikli beceri', 'seri beceri'], ['performans', 'öğrenme']],
   forbiddenClaims: [
-   { pattern: /kapalı\s+beceri.*?değişken\s+çevrede|açık\s+beceri.*?sabit\s+koşul/i, reason: 'Açık beceri değişken çevrede, kapalı beceri sabit koşullarda uygulanır.' }
+   { pattern: /kapalı\s+beceri(?![\s\S]{0,50}sabit)[^.;]{0,60}değişken\s+çevrede|açık\s+beceri(?![\s\S]{0,50}değişken)[^.;]{0,60}sabit\s+koşul/i, reason: 'Açık beceri değişken çevrede, kapalı beceri sabit koşullarda uygulanır.' }
   ]
  },
  '3-2': {
@@ -326,7 +326,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['durumluk kaygı', 'sürekli kaygı'], ['ustalık iklimi', 'performans iklimi']],
   forbiddenClaims: [
-   { pattern: /ustalık\s+iklimi.*?sosyal\s+karşılaştırmayı/i, reason: 'Sosyal karşılaştırma performans ikliminin özelliğidir; ustalık iklimi çaba ve gelişimi öne çıkarır.' }
+   { pattern: /ustalık\s+iklimi[^.;]{0,70}sosyal\s+karşılaştırmayı/i, reason: 'Sosyal karşılaştırma performans ikliminin özelliğidir; ustalık iklimi çaba ve gelişimi öne çıkarır.' }
   ]
  },
  '4-3': {
@@ -336,7 +336,7 @@ export const UNIT_AXIOM_ATLAS = {
   ],
   confusionPairs: [['formal fair play', 'informal fair play']],
   forbiddenClaims: [
-   { pattern: /formal\s+fair\s+play.*?(?:kuralların\s+ötesinde|gönüllü)/i, reason: 'Yazılı kurallara uyma formal, kuralların ötesindeki gönüllü erdemli davranış informal fair playdir.' }
+   { pattern: /formal\s+fair\s+play(?![\s\S]{0,70}informal)[^.;]{0,70}(?:kuralların\s+ötesinde|gönüllü)/i, reason: 'Yazılı kurallara uyma formal, kuralların ötesindeki gönüllü erdemli davranış informal fair playdir.' }
   ]
  },
  '4-4': {

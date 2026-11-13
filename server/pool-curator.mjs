@@ -7,6 +7,9 @@ function tokenSet(text) {
  return new Set(norm(text).split(' ').filter(w => w.length >= 3));
 }
 
+// Yakın tekrar eşiği: bu oranın üzerindeki benzerlik "tıpatıp benzeri soru" sayılır.
+const DUP_LIMIT = 0.80;
+
 function jaccardSim(aSet, bSet) {
  if (!aSet.size || !bSet.size) return 0;
  let inter = 0;
@@ -167,38 +170,58 @@ export class PoolCuratorBot {
    const prelim = unitList.map(q => ({ q, raw: this.scoreQuestion(q, researchMemory, 0) }))
     .sort((a, b) => b.raw - a.raw);
 
-   // Hızlı tam/yüksek örtüşme tespiti için normalize edilmiş n-gram parmak izi + Jaccard penceresi
+   // Benzerlik: soru kökü + doğru cevap Jaccard'ı VE seçenek takımı örtüşmesi.
+   // Böylece yalnızca kökü benzeyen değil, aynı şıklarla yeniden yazılmış "tıpatıp
+   // benzeri" sorular da yakın tekrar sayılır. Aynı doğru cevabı paylaşanlarda eşik
+   // biraz daha esnektir (aynı kavramın tekrarı da tekrardır).
    const keptFingerprints = new Map();
    const keptSampleSets = [];
    for (const { q, raw } of prelim) {
     const tokens = tokenSet(`${q.question} ${q.answer}`);
+    const optSet = new Set((q.options || []).map(o => norm(o)));
+    const answerNorm = norm(q.answer);
     const sig = [...tokens].sort().slice(0, 6).join('|');
     let maxSim = 0;
 
+    const compareTo = other => {
+     const jac = jaccardSim(tokens, other.tokens);
+     let inter = 0;
+     if (optSet.size && other.optSet.size) for (const o of optSet) if (other.optSet.has(o)) inter++;
+     const optRatio = optSet.size ? inter / Math.max(4, optSet.size) : 0;
+     let sim = jac;
+     // Aynı doğru cevabı paylaşan iki soru: kökü bir miktar benziyorsa aynı kavramın
+     // tekrarıdır (yalnızca kalıp sözleri ortak olduğu için eşik düşük tutulur).
+     if (answerNorm && answerNorm === other.answerNorm && jac >= 0.45) sim = Math.max(sim, DUP_LIMIT);
+     // Şık takımı neredeyse tamamen aynıysa soru fiilen aynıdır.
+     if (optRatio >= 0.9) sim = Math.max(sim, DUP_LIMIT);
+     return sim;
+    };
+
     if (sig && keptFingerprints.has(sig)) {
-     maxSim = Math.max(maxSim, jaccardSim(tokens, keptFingerprints.get(sig)));
+     maxSim = Math.max(maxSim, compareTo(keptFingerprints.get(sig)));
     }
-    if (maxSim < 0.80 && tokens.size > 0) {
-     // Son 48 tutulmuş soru içinde tarama + uzunluk alt sınırı (|A|/|B| < 0.75 ise Jaccard >= 0.80 olamaz)
-     const startIdx = Math.max(0, keptSampleSets.length - 48);
+    if (maxSim < DUP_LIMIT && tokens.size > 0) {
+     // Son 64 tutulmuş soru içinde tarama (pencere maliyeti sınırlı tutulur)
+     const startIdx = Math.max(0, keptSampleSets.length - 64);
      for (let k = startIdx; k < keptSampleSets.length; k++) {
       const other = keptSampleSets[k];
-      if (other.size * 4 < tokens.size * 3 || tokens.size * 4 < other.size * 3) continue;
-      const s = jaccardSim(tokens, other);
+      if (other.tokens.size * 4 < tokens.size * 3 || tokens.size * 4 < other.tokens.size * 3) continue;
+      const s = compareTo(other);
       if (s > maxSim) {
        maxSim = s;
-       if (maxSim >= 0.80) break;
+       if (maxSim >= DUP_LIMIT) break;
       }
      }
     }
 
     const penalty = maxSim >= 0.78 ? 35 : maxSim >= 0.65 ? 15 : 0;
-    const isDup = maxSim >= 0.80 && unitList.length > 6;
+    const isDup = maxSim >= DUP_LIMIT && unitList.length > 6;
     if (isDup) {
      nearDuplicateIds.add(q.id);
     } else {
-     if (sig && !keptFingerprints.has(sig)) keptFingerprints.set(sig, tokens);
-     keptSampleSets.push(tokens);
+     const entry = { tokens, optSet, answerNorm };
+     if (sig && !keptFingerprints.has(sig)) keptFingerprints.set(sig, entry);
+     keptSampleSets.push(entry);
     }
     const composite = Math.max(0, Math.min(100, Math.round(raw - penalty)));
     q.curatorScore = composite;

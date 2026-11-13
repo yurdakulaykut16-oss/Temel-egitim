@@ -15,12 +15,14 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
  try{
   let inFlight=0, peak=0, calls=0;
  // Şıklar aynı kavram ailesinden, birbirine yakın uzunlukta ve "az kalsın doğru" niteliğinde.
- const PLAUSIBLE_OPTIONS=[
-  'Doğru kavramın tam ve eksiksiz uygulanması',
-  'Yanlış kavramın doğru sanılması',
-  'Kısmen doğru ama eksik uygulama',
-  'Doğru kavramın yanlış bağlamda kullanılması'
+ // Her çağrıda farklı bir takım üretilir (havuz tekrar koruması aynı 4 şıkkı reddeder).
+ const makeOptions=tag=>[
+  `Doğru kavram ${tag}: planlı ve tekrarlı uygulama`,
+  `Eksik yaklaşım ${tag}: programsız tekrar düzeni`,
+  `Yanlış bağlam ${tag}: tek seferlik maksimal yüklenme`,
+  `Aşırı yorum ${tag}: ölçütü tümden yok sayma`
  ];
+ const PLAUSIBLE_OPTIONS=makeOptions('X');
   const difficultyByQuestion=new Map();
   fake=http.createServer(async(req,res)=>{
    res.setHeader('Content-Type','application/json');
@@ -36,6 +38,9 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
    const isStudy=prompt.includes('"flashcards":');
    const isVerify=prompt.includes('soru denetçisisin')&&!isBatchVerify;
    let result;
+   const optsMatch=prompt.match(/SEÇENEKLER: (\[[\s\S]*?\])/);
+   let opts0=PLAUSIBLE_OPTIONS[0];
+   try{ if(optsMatch) opts0=JSON.parse(optsMatch[1])[0]; }catch{}
    if(isBatchVerify){
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*?)\nSORU #0:/);
     const text=textMatch?textMatch[1]:'';
@@ -45,7 +50,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
      const id=Number(m[1]);
      const question=m[2].trim();
      const difficulty=difficultyByQuestion.get(question)||'kolay';
-     return {id,answer:PLAUSIBLE_OPTIONS[0],singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Toplu kör hakem onayı.'};
+     return {id,answer:opts0,answerSource:'first',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Toplu kör hakem onayı.'};
     })};
    }else if(isVerify){
     const qMatch=prompt.match(/SORU: ([\s\S]*?)\nSEÇENEKLER:/);
@@ -54,7 +59,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*?)\nSORU:/);
     const text=textMatch?textMatch[1]:'';
     const evidence=text.trim().split(/\s+/).slice(0,8).join(' ')||'yeterince uzun bir kanit metni';
-    result={answer:PLAUSIBLE_OPTIONS[0],singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Anlatımda bu bilgi doğrudan geçer.'};
+    result={answer:opts0,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Anlatımda bu bilgi doğrudan geçer.'};
    }else if(isStudy){
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
     const text=textMatch?textMatch[1]:'';
@@ -75,14 +80,16 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
       const diff=m[1].toLocaleLowerCase('tr-TR');
       const question=`Otomatik paket sorusu #${calls}-${i}-${Math.random().toString(36).slice(2)} hangi kavramla ilişkilidir?`;
       difficultyByQuestion.set(question,diff);
-      return {question,options:[...PLAUSIBLE_OPTIONS],answer:PLAUSIBLE_OPTIONS[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu',questionType:'kavram'};
+      const opts=makeOptions(`${calls}-${i}`);
+      return {question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu',questionType:'kavram'};
      })};
     }else{
      const difficultyMatch=prompt.match(/tam olarak şöyle olmalı: (KOLAY|ORTA|ZOR):/);
      const difficulty=difficultyMatch?difficultyMatch[1].toLocaleLowerCase('tr-TR'):'kolay';
      const question=`Otomatik tekli sorusu #${calls}-${Math.random().toString(36).slice(2)}`;
      difficultyByQuestion.set(question,difficulty);
-     result={question,options:[...PLAUSIBLE_OPTIONS],answer:PLAUSIBLE_OPTIONS[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu'};
+     const opts=makeOptions(`${calls}`);
+     result={question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu'};
     }
    }
    res.end(JSON.stringify({response:JSON.stringify(result),eval_count:160,eval_duration:200_000_000}));

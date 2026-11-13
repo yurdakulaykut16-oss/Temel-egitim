@@ -4,7 +4,7 @@ import {AlertCircle, BookOpen, Brain, Check, Code2, Cpu, Database, Gauge, Globe,
 type JudgeVerdict = {model: string; answer: string; difficulty?: 'kolay' | 'orta' | 'zor'; qualityScore?: number; examPotential?: number; bloomLevel?: string; dualAnswerRisk?: boolean; secondBestOption?: string; evidence: string; reason: string};
 export type GeneratedQuestion = {
  id: string; unitId: string; book: string; unit: string; topic: string;
- question: string; options: string[]; answer: string; explanation: string; evidence: string;
+ question: string; options: string[]; answer: string; explanation: string; evidence: string; paragraph?: string;
  status: 'approved' | 'rejected'; model: string; createdAt: string;
  difficulty?: 'kolay' | 'orta' | 'zor';
  curatedBy?: string; curationReason?: string;
@@ -652,7 +652,8 @@ const judgeLabel = (i: number) => (i === 0 ? 'Denetçi (1. hakem)' : '2. hakem')
 const difficultyLabel: Record<string, string> = {kolay: 'Kolay', orta: 'Orta', zor: 'Zor'};
 const typeLabel: Record<string, string> = {
  kavram: 'Kavram', vaka: 'Vaka Analizi', karsilastirma: 'Karşılaştırma',
- neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama'
+ neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama',
+ en_iyi_secim: 'En İyi Seçim', paragraf: 'Paragraf (Parçaya Dayalı)'
 };
 const angleLabel: Record<string, string> = {
  dogrudan_tanim: '1. Doğrudan Tanım',
@@ -2211,6 +2212,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        {q.styleScore !== undefined && <span className="precision-pill style">Kitap/TVGFBF %{q.styleScore}</span>}
        <span className={`jarvis-badge ${q.status === 'approved' ? 'ok' : 'warn'}`}>{q.status === 'approved' ? 'Otonom Onaylı' : 'Otonom Elendi'}</span>
       </div>
+      {q.paragraph && <blockquote className="question-paragraph">{q.paragraph}</blockquote>}
       <h3>{q.question}</h3>
       <ol>
        {q.options.map((o, i) => (

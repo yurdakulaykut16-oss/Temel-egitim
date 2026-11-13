@@ -161,7 +161,8 @@ test('ollamaPlugin exposes /book-questions and /tvgfbf-swarm endpoints and casca
 
   const auditRes = await callApi('POST', '/precision-audit', { scope: 'all' });
   assert.equal(auditRes.status, 200);
-  assert.ok(auditRes.json.evaluatedCount >= 700, `Expected >=700 evaluated items across bank+book, got ${auditRes.json.evaluatedCount}`);
+  // Soru bankası tekrar/ayıklama sonrası küçüldüğü için eşik 700'ten 550'ye çekildi (kitap bankası + resmî kitap soruları).
+  assert.ok(auditRes.json.evaluatedCount >= 550, `Expected >=550 evaluated items across bank+book, got ${auditRes.json.evaluatedCount}`);
   assert.ok(auditRes.json.averageStyleScore >= 70, `Expected averageStyleScore >=70, got ${auditRes.json.averageStyleScore}`);
   assert.equal(Object.keys(auditRes.json.perBook || {}).length, 5);
  } finally {

@@ -312,7 +312,7 @@ function App(){
   const rawPool=sourceUnits.filter(x=>(filter===undefined||x.bi===filter)&&(!onlyId||x.id===onlyId)&&(!weak||((progress.results[x.id]?.wrong||0)>0&&(progress.results[x.id]?.streak||0)<MASTERY_STREAK))).flatMap(x=>{
    const officialRows=bookOfficialQs.filter(bq=>bq.unitId===x.id).map(bq=>({...x,u:{...x.u,question:bq.question,answer:bq.answer,wrong:bq.options.filter(o=>o!==bq.answer),key:`${bq.book} · ${bq.unit} ünitesi "neler öğrendik?" değerlendirme sorusu (Sayfa ${bq.testPage||'-'}).`,topic:bq.topic||x.u.title,source:`Resmî Kitap "Neler Öğrendik?" · s.${bq.testPage||'-'}`}}));
    if(bookOfficial){
-    const aiTvgfbf=generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(q.tvgfbfAligned!==false)).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,source:`TVGFBF & Kitap Stili · ${q.model}`}}));
+    const aiTvgfbf=generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(q.tvgfbfAligned!==false)).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,paragraph:q.paragraph,source:`TVGFBF & Kitap Stili · ${q.model}`}}));
     const localBookQ=(bookQuestions[x.id]||[]).map(line=>{const [question,answer,...rest]=line.split('|'); const explanation=rest.pop()!; return {...x,u:{...x.u,question,answer,wrong:rest,key:explanation,source:'Kitap Değerlendirme Stili'}}});
     return [...officialRows,...localBookQ,...aiTvgfbf];
    }
@@ -321,7 +321,7 @@ function App(){
     ...officialRows,
     ...[...(hard||uncovered?[]:(extra[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(scenarios[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(practice[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:[reinforcement[x.bi][x.ui],...(unique[x.id]?.questions||[]),...(advanced[x.id]?.questions||[]),...(newQuestions[x.id]?.questions||[]),...(bookQuestions[x.id]||[])]),...(hard?(challenge[x.id]||[]):[])].map(line=>{const [question,answer,...rest]=line.split('|'); const explanation=rest.pop()!; return {...x,u:{...x.u,question,answer,wrong:rest,key:explanation}}}),
     ...(!hard&&!uncovered&&x.id==='3-4'?calculated.map(u=>({...x,u})):[]),
-    ...(!hard?generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(!uncovered||Boolean(q.passageId)||q.questionAngle==='surpriz_baglam')).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,source:`Ollama · ${q.model}${q.difficulty?` · ${q.difficulty.toUpperCase()}`:''}${q.questionAngle?` · ${q.questionAngle.replace('_',' ')}`:''}${q.examPotential?` · Sınav ★${q.examPotential}/5`:''}${q.pages?.length?` · s.${q.pages.join(',')}`:''}`}})):[])
+    ...(!hard?generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(!uncovered||Boolean(q.passageId)||q.questionAngle==='surpriz_baglam')).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,paragraph:q.paragraph,source:`Ollama · ${q.model}${q.difficulty?` · ${q.difficulty.toUpperCase()}`:''}${q.questionAngle?` · ${q.questionAngle.replace('_',' ')}`:''}${q.examPotential?` · Sınav ★${q.examPotential}/5`:''}${q.pages?.length?` · s.${q.pages.join(',')}`:''}`}})):[])
    ];
   }).filter(x=>{
    if(x.id==='0-5'&&/mezo döngü|makro döngü/i.test(x.u.question+' '+x.u.answer))return false;
@@ -651,6 +651,7 @@ function App(){
    <span className="xp-combo-pill">⚡ <b>{xpEarned} XP</b>{combo>=2?` · 🔥 x${combo} Seri`:''}</span>
   </div>
   <div className="eyebrow muted">KONU: {quiz[qi].u.topic || quiz[qi].u.title} · {quiz[qi].u.source || 'ÖZGÜN ÇALIŞMA SORUSU'}</div>
+  {quiz[qi].u.paragraph && <blockquote className="quiz-paragraph">{quiz[qi].u.paragraph}</blockquote>}
   <h2>{quiz[qi].u.question}</h2>
   {!choice&&<div className="joker-bar">
    <button type="button" className="joker-btn" onClick={triggerFiftyFifty} disabled={curElim.length>0}>✂️ %50 İki Şık Ele</button>
