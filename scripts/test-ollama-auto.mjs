@@ -9,7 +9,7 @@ const listen=server=>new Promise(resolve=>server.listen(0,'127.0.0.1',()=>resolv
 const close=server=>new Promise(resolve=>server.close(resolve));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-test('otomatik havuz: çoklu paket, kuyruklu boru hattı, kitap kapsamı, zorluk sıralaması ve eşzamanlılık',async()=>{
+test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kitap kapsamı, zorluk sıralaması ve sabit eşzamanlılık',async()=>{
  let app, fake, dir, base, stopOllamaLoops;
  let failure=null;
  try{
@@ -92,24 +92,26 @@ test('otomatik havuz: çoklu paket, kuyruklu boru hattı, kitap kapsamı, zorluk
 
   let status=await (await fetch(`${base}/api/ollama/status`)).json();
   assert.equal(status.autoRunning,true);
-  assert.equal(status.autoConcurrency,6);
-  assert.equal(status.autoTimeoutMs,45000);
-  assert.equal(status.settings.preset,'turbo');
-  assert.equal(status.settings.turboQualityLock,true);
+  assert.equal(status.autoConcurrency,1);
+  assert.equal(status.autoTimeoutMs,180000);
+  assert.equal(status.settings.preset,'balanced');
+  assert.equal(status.settings.turboQualityLock,false);
   assert.equal(status.settings.selfCorrection,true);
-  assert.equal(status.settings.batchPerCall,8);
-  assert.equal(status.settings.batchVerify,true);
-  assert.equal(status.settings.pipelineMode,'batched');
+  assert.equal(status.settings.batchPerCall,1);
+  assert.equal(status.settings.batchVerify,false);
+  assert.equal(status.settings.pipelineMode,'direct');
+  assert.equal(status.modelInferenceConcurrency,1);
   assert.equal(status.verifierModel,'fake:1');assert.equal(status.judge2Model,'fake:1');
   assert.equal(status.judge2Installed,true);
 
   let approved=0;
-  for(let i=0;i<100 && approved<9;i++){await sleep(100);status=await (await fetch(`${base}/api/ollama/status`)).json();approved=status.approved}
+  for(let i=0;i<400 && approved<9;i++){await sleep(100);status=await (await fetch(`${base}/api/ollama/status`)).json();approved=status.approved}
   assert.ok(approved>=9,`en az 9 soru onaylanmalıydı, görülen: ${approved}, tel: ${JSON.stringify(status.telemetry)}, err: ${status.autoLastError}`);
-  assert.ok(peak>=2,`eşzamanlı istek sayısı en az 2 olmalıydı, görülen tepe: ${peak}`);
+  assert.ok(peak<=1,`modeller asla üst üste binmemeli; görülen eşzamanlı istek tepe değeri: ${peak}`);
+  assert.ok(calls>=approved*3,`her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}, soru: ${approved}`);
   assert.ok(status.coverage.coveredPassages>=2,'birden fazla kitap pasajı taranmış olmalı');
   assert.ok(status.telemetry.questionsPerMinute>0,'soru/dk hız metriği ölçülmüş olmalı');
-  assert.ok((status.studyCounts?.total||0)>=1,'arka planda kart/eşleştirme/tekrar da üretilmiş olmalı');
+  assert.equal(status.studyCounts?.total||0,0,'çalışma materyali üretimi varsayılan olarak kapalı olmalı');
 
   const questions=await (await fetch(`${base}/api/ollama/questions`)).json();
   const units=new Set(questions.items.map(x=>x.unitId));

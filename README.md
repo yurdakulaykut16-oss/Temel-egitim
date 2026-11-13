@@ -2,7 +2,7 @@
 
 Bu rehber **Windows 11 üzerinde, doğrudan kendi bilgisayarında** çalışmak içindir. Ubuntu veya WSL kurman gerekmez. İşlemleri sırayla yap: önce projeyi ve Ollama'yı çalıştır, ardından soruları incele. Model eğitimi isteğe bağlıdır ve sonraki adımlardadır.
 
-> **SIFIR DÜĞME — TAM OTONOM:** Proje açıldığı andan itibaren **hiçbir düğmeye basman gerekmez**. Soru üretimi, hakem denetimi, havuz temizliği, 100-AI Konseyi kalibrasyonu, TVGFBF taraması, hassasiyet denetimi, GitHub 260k+ emilimi, 8-katman seviye atlama, Nexus-Titan tam proje geliştirme, arayüz evrimi, SFT+DPO veri seti hazırlığı, LoRA+DPO ağırlık eğitimi ve model kurulumu — **hepsi arka planda kendiliğinden çalışır.** Turbo mod tek moddur; kapatılmaz.
+> **SIFIR DÜĞME — SORU ÜRETİMİ SÜREKLİ:** Proje açıldığı andan itibaren **hiçbir düğmeye basman gerekmez**. Soru üretimi, iki hakem denetimi ve havuz bakımı arka planda kendiliğinden ve **kesintisiz** çalışır; soru havuzu **20.000 kayıtla** sınırlı tutulur (sınıra gelince en zayıf/tekrar sorular ayıklanır, üretim durmaz). Model çağrıları tek bir kuyruktan sırayla geçer, bu yüzden **iki yapay zekâ modeli asla aynı anda çakışmaz**. Araştırma, eğitim, video ve Nexus geliştirme gibi ek arka plan ajanları sistem yükünü artırmamak için **varsayılan olarak kapalıdır**; istersen `TEMPO_ENABLE_BACKGROUND_AGENTS=1` ile açarsın (bkz. bölüm 7).
 
 > **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/b582fa34-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
 
@@ -147,26 +147,39 @@ Listede indirdiğin modeller görünmeli. Uygulama açılışında **Durumu yeni
 
 > **Not:** Tek bir model bile indirsen (örneğin sadece `qwen3:8b`) uygulama açılışta durmaz; tüm rolleri otomatik o modele yerleştirir ve arka planda `tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder` uzman profillerini + `tempo-nexus-titan:latest` birleşik modelini kendiliğinden oluşturur. Gerçek bağımsız denetim için **2. hakem olarak farklı bir model ailesi** (`gemma3:12b` / `gemma3:4b`) bulundurman önerilir.
 
-### 4.1 Soru üretim hızını en yükseğe çıkar (Turbo motor · ~1 sn/soru)
+### 4.1 Düşük yükte çalışma ayarları (sıralı model kuyruğu · 20k havuz)
 
-Proje varsayılan olarak **yalnızca Turbo modda** çalışır (8 soru/çağrı, kuyruklu boru hattı, toplu kör hakem, kalite kilidi). En yüksek hız için bir kez PowerShell'de Ollama'yı şu ortam değişkenleriyle başlat:
+Uygulama varsayılan olarak **az yakan ve sıralı** çalışır:
+
+- **Tek model kuyruğu:** Üretici ve iki hakemin Ollama çağrıları ortak bir FIFO kuyruğundan geçer; aynı anda **yalnızca bir** model çağrısı yapılır, dolayısıyla modeller birbiriyle çakışmaz. Uygulamadaki eşzamanlılık 1'e sabitlenmiştir.
+- **Tek soru / çağrı:** Her turda 1 soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi korunur.
+- **20.000 kayıt havuz sınırı:** Onaylı havuz 20.000'e ulaşınca küratör en zayıf ve tekrar soruları ayıklayıp havuzu ~18.500 civarına indirir; üretim hiç durmaz.
+- **Hafif varsayılanlar:** üretici `qwen3:8b`, 2. hakem `gemma3:4b`, istek zaman aşımı 180 sn, `keep_alive=0` (model çağrıdan sonra boşaltılır; VRAM'de üst üste model birikmez). Çalışma materyali üretimi, otomatik evrim ve alt-saniye tüm-bot sürüsü kapalıdır.
+
+Daha hızlı/yoğun çalışmak istersen (opsiyonel):
 
 ```powershell
 # Kalıcı olsun (yeni PowerShell pencereleri için):
 setx OLLAMA_FLASH_ATTENTION "1"
 setx OLLAMA_KV_CACHE_TYPE "q8_0"
-setx OLLAMA_MAX_LOADED_MODELS "3"
-setx OLLAMA_NUM_PARALLEL "6"
+setx OLLAMA_MAX_LOADED_MODELS "1"
+setx OLLAMA_NUM_PARALLEL "1"
 # Ollama'yı kapatıp yeniden aç
 ```
 
-*(Alternatif, o pencere için geçici: `$env:OLLAMA_FLASH_ATTENTION="1"; $env:OLLAMA_NUM_PARALLEL="6"`.)*
+*(Modellerin üst üste binmemesi için Ollama tarafında da tek model/tek istek önerilir.)*
 
-- RTX 3080 Ti 12 GB'de **Seçenek A** ile ~1 sn/soru; **Seçenek C** ile ~0.5 sn/soru mümkündür.
-- `OLLAMA_NUM_PARALLEL` değerini GPU belleğin taşarsa 4'e düşür (14B modelde 6 idealdir).
-- Uygulamadaki **Eşzamanlı yuva** ayarı varsayılan **6**'ya yükseltilmiştir; 12 GB'de 14B kullanıyorsan aradaki üretimin kaynamaması için 4'e de düşürebilirsin (Arayüzde "Uygula" düğmesi).
-- Modeller Ollama'ya `keep_alive=5m` ile bağlanır: VRAM boşlukları dolunca hakem/kodlayıcı otomatik bırakılır, büyük üretici modeli yüklemek için yer açılır (süresiz `-1` pini olan eski sürümlerde GPU tıkanıyordu).
-- Daha büyük `num_batch` (512) ve GPU'ya tam offload (`num_gpu=99`) Turbo profilde otomatik uygulanır.
+Ortam değişkenleriyle ince ayar:
+
+| Değişken | Varsayılan | Açıklama |
+| --- | --- | --- |
+| `OLLAMA_MODEL` | `qwen3:8b` | Üretici model |
+| `OLLAMA_JUDGE2_MODEL` | `gemma3:4b` | 2. hakem modeli |
+| `OLLAMA_AUTO_TIMEOUT_MS` | `180000` | Tek model çağrısı zaman aşımı (ms) |
+| `TEMPO_OLLAMA_KEEP_ALIVE` | `0` | `0` = model çağrıdan sonra boşaltılır; `5m` gibi bir süre de verilebilir |
+| `TEMPO_ENABLE_BACKGROUND_AGENTS` | `0` | `1` yapılınca araştırma/eğitim/video/Nexus arka plan ajanları da çalışır |
+| `TEMPO_UNLOAD_STALE_PINS` | `0` | `1` yapılınca açılışta VRAM'deki eski modeller boşaltılır |
+| `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
 
 ## 5. Ekran kartını kontrol et
 
@@ -205,19 +218,22 @@ npm.cmd run dev -- --host 127.0.0.1
 
 Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak için **Ctrl + C** kullanabilirsin. Ollama uygulaması da açık olmalı. Bu yerel sunucuyu internete açma; kullanıcı yetkilendirmesi yoktur.
 
-**Önemli — Açıldığı Anda Tam Otonom Çalışır (Turbo Mod):**
+**Önemli — Açıldığı Anda Sürekli Soru Üretir (Sıralı Model Kuyruğu):**
 Proje başladığı saniyeden itibaren **hiçbir düğmeye basman gerekmez**:
-1. **Otomatik Rol Kurulumu:** Ollama'daki modelleri tarar; Üretici, 1. Hakem, 2. Hakem, Evrim Mimarı ve Qwen Coder rollerini otomatik doldurur; eksik uzman modelleri (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder`) ve `tempo-nexus-titan:latest` birleşik modelini kendisi kurar; eksik güçlü açık kaynak kodlayıcıları (6'lı hafif istif) açılışta kendiliğinden indirir.
-2. **Kesintisiz Soru Üretimi:** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece **soru üretimi hiçbir zaman durmaz** (arka plan eğitimi veya araştırması sırasında bile kesilmez). Turbo mod tek moddur: 8 soru/çağrı, kuyruklu boru hattı, toplu kör hakem, kalite kilidi — kapatılmaz.
-3. **Sürekli Arka Plan Araştırması & Eğitimi:** Bir yapay zekâ grubu sürekli soru üretip denetlerken, koç yapay zekâlar internetten ders konularını araştırır, sınavda çıkabilecek soruları akıl yürüterek tahmin eder, diğer yapay zekâları sürekli eğitir ve soruları senin yerine kendi kendine onaylar veya eler.
-4. **Otomatik Çalışan Koç Katmanı (proje açılışından itibaren hiç durmaz):**
+1. **Otomatik Rol Kurulumu:** Ollama'daki modelleri tarar; Üretici, 1. Hakem, 2. Hakem, Evrim Mimarı ve Qwen Coder rollerini otomatik doldurur. Eksik uzman modeller (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder`) ve `tempo-nexus-titan:latest` birleşik modeli açılışta oluşturulur.
+2. **Kesintisiz Soru Üretimi (her zaman açık):** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece **soru üretimi hiçbir zaman durmaz**. Her turda tek soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi uygulanır.
+3. **Havuz 20.000 ile sınırlı:** Onaylı soru sayısı 20.000'e ulaşınca küratör bot en zayıf ve birbirine benzeyen soruları ayıklayıp havuzu ~18.500'e indirir; üretim devam eder. Toplam kayıt sayısı da 20.000'i geçmez.
+4. **Modeller asla çakışmaz:** Tüm model çağrıları uygulama içindeki tek kuyruktan sırayla geçer; aynı anda yalnızca bir model çalışır, eş zamanlı yuva sayısı 1'e sabittir.
+5. **Otomatik Çalışan Koç Katmanı (varsayılan olarak kapalı — `TEMPO_ENABLE_BACKGROUND_AGENTS=1` ile açılır):**
    - 5-Ajan TVGFBF & Kitap İçi "neler öğrendik?" taraması + 29-ünite **hassasiyet (psikometri) denetimi** (her ~30 sn),
    - **100 Yapay Zekâ Konseyi**: havuzun tamamını kendiliğinden çözer/etiketler (her ~45 sn) + **Qwen Code ile 100-AI evrimi** (her ~90 sn),
    - **260k+ GitHub Proje Mega-Emilim** (her ~6 sn) + **Tüm Botlar Hyper-Evrimi** (64-Katman MoE, her ~14 sn),
    - **Nexus-Titan**: sürekli füzyon & arayüz evrimi (her ~8 sn) + **TÜM PROJEYİ & Arayüzü geliştirme** (her ~4 dk) + `tempo-nexus-titan:latest` Ollama modeli oluşturma/güncelleme (her ~5 dk) + doğrulanmış önerileri **100/100 kapısından geçirip projeye otomatik uygulama** (her ~2 dk, otomatik rollback korumalı),
    - **Tüm Proje 8-Katman Seviye Atlama** (her ~75 sn; her adım 100-yollu doğrulama kapısından geçer),
    - **Qwen 100-yöntem turnuvası**, **GitHub/internet prototip laboratuvarı** (100/100 kapılı otomatik projeye ekleme), **havuz küratörü**, **konu anlatımı/video motorları**, **RAG & Aider bağlam yenileme**, **Axolotl/LLaMA-Factory senkronizasyonu** — hepsi arka planda kesintisiz çalışır.
-5. **Otomatik SFT + DPO Veri Seti Hazırlığı:** 50 onaylı soruya ulaşıldığında proje açılışından itibaren `training/prepare.py --multitask --dpo` kendiliğinden çalışır ve her +25 onaylı soruda `.tempo-data/training` klasörünü günceller. Donanım hazırsa LoRA+DPO ağırlık eğitimi de üretimi durdurmadan kendiliğinden başlar.
+6. **Otomatik SFT + DPO Veri Seti Hazırlığı:** 50 onaylı soruya ulaşıldığında proje açılışından itibaren `training/prepare.py --multitask --dpo` kendiliğinden çalışır ve her +25 onaylı soruda `.tempo-data/training` klasörünü günceller.
+
+> Not: Araştırma, eğitim, video ve Nexus geliştirme döngüleri de model çağırır; bu yüzden sistem yükünü ve model çakışmasını azaltmak için **varsayılan olarak kapalıdır**. Açmak için PowerShell'de `setx TEMPO_ENABLE_BACKGROUND_AGENTS "1"` yazıp sunucuyu yeniden başlat.
 
 ## 8. Modelleri ve rolleri kontrol et (isteğe bağlı)
 
@@ -235,8 +251,8 @@ Modeller proje açılışında otomatik atanır, ancak farklı bir model denemek
 Bu sürümde yapay zekâlar 5 kitabın tamamından (824 sayfa, ~2 milyon karakter, **1.021 konu pasajı**) beslenir ve proje açık olduğu sürece **bir yapay zekâ grubu diğer yapay zekâları hiç durmadan eğitir**:
 
 1. **Kesintisiz Üretim Hattı (Asla Durmaz):**
-   - Sorular Turbo modda **8'li paketler** (`batchPerCall: 8`) ve **toplu kör hakem** ile ~1 sn/soru temposunda üretilir.
-   - Arka planda ağırlık eğitimi, web araştırması veya Qwen Code inovasyonu çalışırken bile **soru üretimi asla duraklatılmaz** (`pausedForTraining = false`). Havuz 25.000 sınırına ulaşsa dahi en düşük puanlı/eski sorular rotasyonla yenilenerek kesintisiz yeni soru üretimi sürer.
+   - Sorular **tek tek** (`batchPerCall: 1`) üretilir; ilgili kitap pasajı, tek-doğru ön kontrolü, iki ardışık hakem ve gerekirse öz-düzeltmeden geçer. Model çağrıları ortak kuyrukta sıraya girer, böylece modeller çakışmaz.
+   - **Soru üretimi asla duraklatılmaz.** Havuz 20.000 sınırına ulaşsa dahi en düşük puanlı/tekrar sorular ayıklanarak kesintisiz yeni soru üretimi sürer.
 2. **Arka Planda Sürekli İnternet Araştırması & Sınav Tahmini (`server/research-agent.mjs`):**
    - Araştırmacı ajan proje boyunca 29 üniteyi sırayla gezerek **Türkçe Vikipedi + DuckDuckGo web araması** üzerinden ilgili ders kavramlarını ve sınav vurgularını tarar (ağ yoksa hata vermeden kitap pasajları üzerinde derin örüntü analizine döner).
    - Taradığı veriler + resmi kitap metni üzerinden **sınavda çıkabilecek soruları akıl yürüterek tahmin eder** (`examHypotheses`), sınavlarda en çok karıştırılan tuzak kavram çiftlerini (`confusionPairs`) çıkarır ve `.tempo-data/ai-brain/research-memory.json` üzerinden doğrudan soru üreticisine yön verir.
@@ -477,7 +493,7 @@ Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vard
 
 ## 20. Yeni özellikler (Kayserili Koç, Sorusuz TikTok Akışı, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
 
-- **Kalite Kilitli Turbo Mod (Tek Mod):** Proje daima `turbo` modda çalışır (`batchPerCall: 8`, kuyruklu boru hattı, toplu denetim, `turboQualityLock: true`). Başka profil/mod yoktur; Turbo kalite kilidi `selfCorrection`, çift-cevap blokajı, kitap kanıtı ve `kolay`/`orta`/`zor` seviyelerini asla gevşetmez. Soru üretim hızı ~0.5-1 sn/soru'dur; daha da hızlandırmak için 4.1 adımındaki `OLLAMA_NUM_PARALLEL` ve `OLLAMA_FLASH_ATTENTION` ayarlarını uygula.
+- **Dengeli kalite modu (tek mod):** Soru üretimi daima kalite hattından geçer: 1 soru/çağrı, kitaptan ilgili pasaj, tek-doğru ve kaynak kanıtı kontrolü, iki ardışık hakem, gerekirse öz-düzeltme, `kolay`/`orta`/`zor` dengesi. Tüm model çağrıları tek kuyrukta sıraya girer (eşzamanlılık 1), böylece **iki model aynı anda çalışmaz** ve sistem yükü düşük kalır. Havuz 20.000 kayıtla sınırlıdır.
 - **Kayserili Sert-Komedi Şık Tepkisi (`/api/ollama/kayseri-react`):** Test sırasında bir şıkka basıldığında süre ve seriye göre anında Kayserili şiveli/sert-komedi (ve tek tıkla `Temiz Klasik` geçişli + `Sesli Oku` destekli) koç tepkisi, net bilgi ve önemli terim gösterilir.
 - **Sorusuz TikTok Dikey Karışık Akış (`TikTok Akışı` & `/api/ollama/videos/feed`):** 29 ünitenin tamamı dolana kadar arka planda sürekli gömülü `.mp4` üretilir. TikTok akışı soru sormaz; doğrudan sınavda çıkacak net cevabı, önemli kelime/terimleri ve Kayserili/Hamam Böceği Böcü komedi diyaloglarını karışık ünitelerden dikey kaydırmayla oynatır.
 - **+%15500 (`Hyper-155x+`) Qwen Code & ApexArchitect:** 10 alt-sistemi (üretici, hakem, küratör, ders motoru, video yönetmeni, araştırmacı, Kayseri koçu, TikTok akışı, Qwen Code sandbox ve Turbo kalite kilidi) 16 tuzaklı stres testi ve 4 adaylı turnuvayla sürekli geliştirir.

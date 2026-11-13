@@ -45,8 +45,10 @@ import { MultiFrameworkAgentOrchestrator } from './agent-frameworks.mjs';
 import { PrecisionQualityEngine } from './precision-quality-engine.mjs';
 import { TvgfbfScoutSwarm, TVGFBF_VERIFIED_PATTERNS } from './tvgfbf-scout-swarm.mjs';
 import { HundredAiCouncil, DIFFICULTY_TIERS_4 } from './hundred-ai-council.mjs';
+import { SerialTaskQueue } from './model-inference-queue.mjs';
 
 const execFileAsync = promisify(execFile);
+const modelInferenceQueue = new SerialTaskQueue();
 
 const contexts = JSON.parse(await readFile(new URL('./contexts.json', import.meta.url), 'utf8'));
 const questionBank = JSON.parse(await readFile(new URL('./question-bank.json', import.meta.url), 'utf8'));
@@ -91,8 +93,9 @@ const settingsFile = resolve(dataDir, 'settings.json');
 const ledgerFile = resolve(dataDir, 'ollama-created.json');
 const tracesFile = resolve(dataDir, 'rejected-traces.jsonl');
 const storageLimit = 100_000_000_000;
-const QUESTION_POOL_CAPACITY = 40000;
-const MAX_QUESTIONS = 45000;
+const QUESTION_POOL_CAPACITY = 20_000;
+const QUESTION_POOL_REFILL_TARGET = 18_500;
+const MAX_QUESTIONS = 20_000;
 const MAX_STUDY_ITEMS = 50000;
 const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
 
@@ -100,7 +103,10 @@ const verifier100 = new HundredWayVerifier(dataDir, process.cwd());
 const evolver = new SandboxEvolver(dataDir);
 const jarvis = new JarvisCore(dataDir, process.cwd());
 const researchAgent = new ResearchAgent(dataDir, { verifier100 });
-const poolCurator = new PoolCuratorBot(dataDir);
+const poolCurator = new PoolCuratorBot(dataDir, {
+ pruneThreshold: QUESTION_POOL_CAPACITY,
+ targetAfterPrune: QUESTION_POOL_REFILL_TARGET
+});
 const lessonEngine = new LessonEngine(dataDir);
 const videoDirector = new VideoDirector(dataDir);
 const apex = new ApexArchitect(dataDir);
@@ -422,6 +428,7 @@ let lastCoderSprintAt = 0;
 let lastNexusFusionAt = 0;
 let lastHyperBotEvolveAt = 0;
 let lastCuratorScanAt = 0;
+let lastPoolCapCheckAt = 0;
 let lastLessonEnhanceAt = 0;
 let lastVideoProduceAt = 0;
 let lastTrainerTickAt = 0;
@@ -446,11 +453,12 @@ let lastNexusDevelopAt = 0;
 let lastNexusBuildAt = 0;
 let lastNexusAutoApplyAt = 0;
 
-const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:14b';
-const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:12b';
-const defaultConcurrency = 6;
+const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:8b';
+const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:4b';
+const defaultConcurrency = 1;
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
-const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 45000;
+const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 180000;
+const defaultKeepAlive = process.env.TEMPO_OLLAMA_KEEP_ALIVE ?? '0';
 
 const DIFFICULTIES = ['kolay', 'orta', 'zor'];
 const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama'];
@@ -551,12 +559,12 @@ async function selectedVideoModel(fallback) {
 }
 async function autoRunningEnabled() {
  const v = await readSettings();
+ // Sürekli soru üretimi varsayılan olarak açık; kullanıcı durdurursa kapalı kalır.
  return v.autoRunning !== false;
 }
 async function autoConcurrencyLimit() {
- const v = await readSettings();
- const n = Number.isFinite(v.autoConcurrency) ? Math.round(v.autoConcurrency) : defaultConcurrency;
- return Math.max(1, Math.min(contexts.length, n));
+ // Uygulama genelinde Ollama'ya aynı anda yalnızca tek istek gönderilir.
+ return defaultConcurrency;
 }
 async function autoTimeoutMs() {
  const v = await readSettings();
@@ -564,21 +572,21 @@ async function autoTimeoutMs() {
  return Math.max(1000, Math.min(300000, n));
 }
 async function getPipelineConfig() {
- // TEK MOD = TURBO (Kalite Kilidi AKTİF). Dengeli/Derin profilleri kaldırıldı; her çağrı 8 soru, kuyruklu boru hattı,
- // toplu kör hakem, self-correction, akıllı zorluk ve hızlı düşünme HER ZAMAN açıktır.
+ // Hafif ama kaliteyi koruyan varsayılan: tek soru, kitap pasajı, self-correction
+ // ve iki hakem. Model çağrıları ayrıca ortak kuyruktan sırayla geçirilir.
  const v = await readSettings();
- const preset = 'turbo';
- const turboQualityLock = true;
- const batchPerCall = 8;
- const pipelineMode = 'batched';
+ const preset = 'balanced';
+ const turboQualityLock = false;
+ const batchPerCall = 1;
+ const pipelineMode = 'direct';
  const fastThink = true;
  const selfCorrection = true;
  const passageMode = v.passageMode === 'summary-only' ? 'summary-only' : 'full-book';
  const smartDifficulty = true;
- const batchVerify = true;
- const generateStudyMaterials = true;
- const autoEvolve = true;
- const subSecondAllBots = v.subSecondAllBots !== false;
+ const batchVerify = false;
+ const generateStudyMaterials = false;
+ const autoEvolve = false;
+ const subSecondAllBots = v.subSecondAllBots === true;
  const subSecondBudgetMs = Number.isFinite(v.subSecondBudgetMs) ? Math.max(250, Math.min(980, Math.round(v.subSecondBudgetMs))) : SUBSECOND_BOT_BUDGET_MS;
  return {
   batchPerCall, pipelineMode, fastThink, selfCorrection,
@@ -1109,7 +1117,11 @@ function extractJsonLoose(rawText) {
  throw Error('JSON ayrıştırılamadı');
 }
 
-async function runModel(which, input, temperature, signal, numPredict = 900, { fastThink = true, numCtx = 4096, botRole = null, isSprint = false } = {}) {
+async function runModel(which, input, temperature, signal, numPredict = 900, opts = {}) {
+ return modelInferenceQueue.run(which, () => runModelRequest(which, input, temperature, signal, numPredict, opts), { signal });
+}
+
+async function runModelRequest(which, input, temperature, signal, numPredict = 900, { fastThink = true, numCtx = 4096, botRole = null, isSprint = false } = {}) {
  const start = Date.now();
  const roleInferred = botRole || (
   /hakem|judge|psikometri/i.test(String(which)) ? 'judge'
@@ -1140,7 +1152,9 @@ async function runModel(which, input, temperature, signal, numPredict = 900, { f
   prompt: input,
   stream: false,
   format: 'json',
-  keep_alive: cachedHardwareProfile?.keepAlive ?? '5m',
+  // Ollama unloads this model after the request by default, avoiding several
+  // role models staying resident in a small GPU's VRAM at once.
+  keep_alive: defaultKeepAlive,
   options: hwAdjusted
  };
  if (fastThink && !unsupportedThinkModels.has(which)) {
@@ -1189,7 +1203,7 @@ async function runVideoDirectorModel(which, input, temperature, signal, numPredi
 
 async function finalize(parsed, ctx, model, verification, passage = null, policy = null, adaptiveQuality = null, targetAngle = null) {
  return withSaveLock(async () => {
-  const latest = await load();
+  let latest = await load();
   const record = validate(parsed, ctx, latest, model, passage, policy);
   record.verification = verification;
   record.difficulty = verification.difficulty;
@@ -1199,33 +1213,23 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   if (verification.bloomLevel && !record.bloomLevel) record.bloomLevel = verification.bloomLevel;
   record.curatedBy = 'ai-council';
 
-  // Adaptif kalite eşiği: JARVIS seviyesi yükseldikçe kalitesi eşik altında kalan soruyu AI kendi kendine eler!
+  // Adaptif kalite eşiği: düşük kaliteli taslaklar onay havuzuna alınmaz.
   const minQ = Number(adaptiveQuality?.minQualityScore || 3);
   if (Number.isFinite(record.qualityScore) && record.qualityScore < minQ) {
    record.status = 'rejected';
    record.curationReason = `AI Konseyi Kalite Eşiği (${adaptiveQuality?.title || 'Gelişmiş'}: ${record.qualityScore}/${minQ} altında)`;
+   latest = await makeRoomForQuestion(latest);
    latest.push(record);
-   await save(pruneRejectedTail(latest));
+   await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
    telemetry.rejectedJudges++;
    recordRejection('adaptive_quality_floor', record.curationReason);
    return record;
   }
 
   record.curationReason = `2 hakem + ${adaptiveQuality?.title || 'AI Konseyi'} tarafından otomatik onaylandı`;
-  // Havuz tavanına gelirse bile durma: en eski ve en düşük skorlu eski onaylıyı arşivle, kesintisiz yeni soru ekle!
-  if (latest.length >= MAX_QUESTIONS) {
-   let victimIdx = -1;
-   let worstScore = Infinity;
-   for (let i = 0; i < latest.length; i++) {
-    const q = latest[i];
-    const s = q.status === 'rejected' ? -10 : (q.qualityScore || 3);
-    if (s < worstScore) { worstScore = s; victimIdx = i; }
-   }
-   if (victimIdx !== -1) latest.splice(victimIdx, 1);
-  }
-
+  latest = await makeRoomForQuestion(latest);
   latest.push(record);
-  await save(pruneRejectedTail(latest));
+  await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
   telemetry.approvedTotal++;
   telemetry.recentApprovedTimestamps.push(Date.now());
   return record;
@@ -1242,6 +1246,44 @@ function pruneRejectedTail(items, maxRejected = 250) {
  return items.filter((_, i) => !toDrop.has(i));
 }
 
+function trimQuestionPool(items, limit = MAX_QUESTIONS) {
+ if (items.length <= limit) return items;
+ const keep = new Set(items.map((item, index) => ({
+  index,
+  score: item?.status === 'rejected'
+   ? -1000
+   : (Number(item?.qualityScore ?? item?.verification?.qualityScore ?? 3) * 100)
+    + (Number(item?.examPotential ?? item?.verification?.examPotential ?? 0) * 4)
+    + (Number(item?.precisionScore ?? 0) / 10)
+ })).sort((a, b) => b.score - a.score || b.index - a.index)
+  .slice(0, Math.max(0, limit))
+  .map(item => item.index));
+ return items.filter((_, index) => keep.has(index));
+}
+
+async function makeRoomForQuestion(items) {
+ let current = pruneRejectedTail(items);
+ const approvedCount = current.reduce((count, item) => count + (item?.status === 'approved' ? 1 : 0), 0);
+ if ((approvedCount >= QUESTION_POOL_CAPACITY || current.length >= MAX_QUESTIONS) && !curatorBusy) {
+  curatorBusy = true;
+  try {
+   const result = await poolCurator.scanAndPrune({
+    items: current,
+    forcePrune: true,
+    threshold: QUESTION_POOL_CAPACITY,
+    targetKeep: QUESTION_POOL_REFILL_TARGET
+   });
+   current = pruneRejectedTail(result.items || current);
+  } finally {
+   curatorBusy = false;
+   lastCuratorScanAt = Date.now();
+   lastPoolCapCheckAt = lastCuratorScanAt;
+  }
+ }
+ if (current.length >= MAX_QUESTIONS) current = trimQuestionPool(current, MAX_QUESTIONS - 1);
+ return current;
+}
+
 // Hakemlerin veya AI kurulunun elediği geçerli biçimli soruyu da havuzda "rejected" (otomatik elendi) olarak kayıt altına alır
 async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage = null) {
  if (!parsedDraft || typeof parsedDraft !== 'object') return;
@@ -1250,8 +1292,9 @@ async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage =
  if (!Array.isArray(options) || options.length !== 4 || options.some(x => typeof x !== 'string' || x.trim().length < 2)) return;
  if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) return;
  await withSaveLock(async () => {
-  const latest = await load();
+  let latest = await load();
   if ([...questionBank, ...latest].some(x => norm(x.question) === norm(question))) return;
+  latest = await makeRoomForQuestion(latest);
   latest.push({
    id: randomUUID(),
    unitId: ctx.id,
@@ -1270,7 +1313,7 @@ async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage =
    ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : {}),
    createdAt: new Date().toISOString()
   });
-  await save(pruneRejectedTail(latest));
+  await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
  }).catch(() => {});
 }
 
@@ -1564,11 +1607,11 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  ]);
  const adaptiveQuality = jarvis.computeAdaptiveQuality(jarvisMemory, researchMemory, getTelemetrySnapshot(), apexState, trainerState);
  const fastThink = opts.fastThink ?? cfg.fastThink;
- const selfCorrection = opts.selfCorrection ?? false;
- const passageMode = opts.passageMode ?? 'summary-only';
- const smartDifficulty = opts.smartDifficulty ?? false;
+ const selfCorrection = opts.selfCorrection ?? cfg.selfCorrection;
+ const passageMode = opts.passageMode ?? cfg.passageMode;
+ const smartDifficulty = opts.smartDifficulty ?? cfg.smartDifficulty;
  const forceSubSecond = Boolean(opts.forceSubSecond);
- const subSecondEnabled = cfg.subSecondAllBots !== false;
+ const subSecondEnabled = cfg.subSecondAllBots === true;
  const subSecondBudgetMs = Number(opts.subSecondBudgetMs || cfg.subSecondBudgetMs || SUBSECOND_BOT_BUDGET_MS);
 
  const resultAudit = audit(items);
@@ -2163,16 +2206,29 @@ JSON döndür: {"reason": "neden bu iyileştirmeyi yaptın", "generatorAddendum"
  }
 }
 
-async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = 120000, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
- if (busy) throw Error('Bir üretim zaten devam ediyor.');
+// Manuel üretim isteği, arka planda çalışan ünitenin bitmesini kısa bir süre bekler;
+// böylece kullanıcı "üretimi durdur" demek zorunda kalmaz ama hatlar yine de üst üste binmez.
+async function waitForPipelineIdle(maxMs = 60_000) {
+ const deadline = Date.now() + maxMs;
+ while (busy || autoControllers.size > 0) {
+  if (Date.now() >= deadline) return false;
+  await sleep(250);
+ }
+ return true;
+}
+
+async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = 180000, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
+ if (busy || autoControllers.size > 0) throw Error('Soru üretim hattı zaten çalışıyor; istekler sırayla tamamlanacak.');
+ const cfg = await getPipelineConfig();
  busy = true; phase = 'loading'; lastError = '';
  controller = new AbortController();
  const timeout = setTimeout(() => controller.abort(), timeoutMs);
  try {
   return await generateAndVerify(ctx, model, verifierModel, judge2Model, controller.signal, p => { phase = p; }, {
-   passageMode: 'summary-only',
-   smartDifficulty: false,
-   selfCorrection: false,
+   passageMode: cfg.passageMode,
+   smartDifficulty: cfg.smartDifficulty,
+   selfCorrection: cfg.selfCorrection,
+   fastThink: cfg.fastThink,
    forceSubSecond,
    subSecondBudgetMs
   });
@@ -3538,6 +3594,17 @@ async function autoScheduler() {
  while (!autoLoopStopping) {
   try {
    if (autoLoopStopping) break;
+
+   // Enforce the 20k pool cap even when the user pauses question generation.
+   if (!curatorBusy && Date.now() - lastPoolCapCheckAt >= 15_000) {
+    lastPoolCapCheckAt = Date.now();
+    const storedItems = await load();
+    const approvedCount = storedItems.filter(item => item.status === 'approved').length;
+    if (approvedCount >= QUESTION_POOL_CAPACITY || storedItems.length > MAX_QUESTIONS) {
+     await runPoolCuratorScan({ forcePrune: true }).catch(() => {});
+    }
+   }
+
    if (await autoRunningEnabled()) {
     const limit = await autoConcurrencyLimit();
     const cfg = await getPipelineConfig();
@@ -3562,7 +3629,7 @@ async function autoScheduler() {
          await runBatchedCycle(model, verifierModel, judge2Model, limit, await autoTimeoutMs(), cfg);
         }
        }
-      } else if (autoControllers.size < limit) {
+      } else if (!busy && autoControllers.size < limit) {
        const items = await load();
        const a = audit(items);
        if (!a.invalid && !a.duplicates) {
@@ -3576,7 +3643,7 @@ async function autoScheduler() {
   } catch (e) {
    autoLastError = e.message || String(e);
   }
-  await sleep(60);
+  await sleep(1500);
  }
 }
 
@@ -3826,6 +3893,17 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
   ollamaUpgradeState.running = false;
   ollamaUpgradeBusy = false;
  }
+}
+
+// Açılışta yalnızca model gerektirmeyen (0-API) yerel görevler bir kez, sırayla çalışır.
+// Model çağıran arka plan ajanları varsayılan olarak kapalıdır; isteyen
+// TEMPO_ENABLE_BACKGROUND_AGENTS=1 ile açabilir. Böylece açılış yükü düşük kalır.
+async function runZeroApiBootBurst() {
+ try {
+  await triggerLocalTeamFastCycle().catch(() => {});
+  await triggerQwenTournament({ useLiveLlm: false }).catch(() => {});
+  await triggerQwenGithubPrototypeLab({ forceWebMine: false }).catch(() => {});
+ } catch {}
 }
 
 // PROJE BAŞLADIĞI ANDAN İTİBAREN HİÇ DURMADAN MİLİSANİYELER İÇİNDE ÇALIŞAN 0-API TAKIM, 100-YÖNTEM YARIŞI, GITHUB PROTOTİP LAB & ÖSYM SORU KOMİSYONU DÖNGÜSÜ
@@ -4120,27 +4198,25 @@ async function getTrainingReadiness(items) {
 }
 
 
-// Açılışta önceki oturumdan kalan süresiz ("Forever") GPU pinlerini temizler.
-// Eski sürümler keep_alive=-1 ile modelleri VRAM'de kilitliyordu; 12 GB kartta bu
-// yüzden büyük üretici modeli asla yüklenemiyordu ("0 soru/dk · Yeni dalga bekleniyor").
-// Boşaltma kapıları: TEMPO_UNLOAD_STALE_PINS=0 ile kapatılabilir.
+// Ollama'da önceden yüklenmiş modelleri boşaltmak varsayılan olarak yapılmaz;
+// kullanıcı isterse TEMPO_UNLOAD_STALE_PINS=1 ile açılış temizliğini seçebilir.
 async function unloadStalePinnedModelsAtBoot() {
  try {
-  if (process.env.TEMPO_UNLOAD_STALE_PINS === '0') return { ok: false, skipped: true };
+  if (process.env.TEMPO_UNLOAD_STALE_PINS !== '1') return { ok: false, skipped: true };
   const r = await fetch(`${base}/api/ps`, { signal: AbortSignal.timeout(2500) });
   if (!r.ok) return { ok: false };
   const loaded = ((await r.json()).models || []).map(m => m?.name || m?.model).filter(Boolean);
-  if (!loaded.length) return { ok: true, unloaded: [] };
-  const results = await Promise.allSettled(loaded.map(name =>
-   fetch(`${base}/api/generate`, {
+  const unloaded = [];
+  for (const name of loaded) {
+   const response = await fetch(`${base}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: name, prompt: '', stream: false, keep_alive: 0 }),
     signal: AbortSignal.timeout(5000)
-   }).then(() => name)
-  ));
-  const unloaded = results.filter(x => x.status === 'fulfilled').map(x => x.value);
-  console.log(`[tempo] Açılış: ${unloaded.length} sıkışmış GPU modeli boşaltıldı${unloaded.length ? ` (${unloaded.slice(0, 4).join(', ')})` : ''}`);
+   });
+   if (response.ok) unloaded.push(name);
+  }
+  console.log(`[tempo] Açılış temizliği: ${unloaded.length} model boşaltıldı${unloaded.length ? ` (${unloaded.slice(0, 4).join(', ')})` : ''}`);
   return { ok: true, unloaded };
  } catch {
   return { ok: false };
@@ -4155,9 +4231,12 @@ export function ollamaPlugin() {
    server?.httpServer?.once?.('close', stopOllamaLoops);
    if (!autoLoopStarted && process.env.TEMPO_DISABLE_AUTOLOOP !== '1') {
     autoLoopStarted = true;
-    unloadStalePinnedModelsAtBoot().catch(() => {});
+    if (process.env.TEMPO_UNLOAD_STALE_PINS === '1') unloadStalePinnedModelsAtBoot().catch(() => {});
     autoScheduler();
-    backgroundCoachLoop();
+    // The research/training/video coach performs many optional background jobs.
+    // Keep it off unless the user explicitly opts in via environment variable.
+    if (process.env.TEMPO_ENABLE_BACKGROUND_AGENTS === '1') backgroundCoachLoop();
+    else runZeroApiBootBurst();
    }
    server.middlewares.use('/api/ollama', async (req, res, next) => {
     try {
@@ -4707,6 +4786,8 @@ export function ollamaPlugin() {
        subSecondAllBots: pipelineConfig.subSecondAllBots,
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
+       modelInferenceConcurrency: 1,
+       modelInferenceQueue: modelInferenceQueue.snapshot(),
        autoActive: autoPhases.length,
        autoPhases, autoLastError,
        totalUnits: contexts.length,
@@ -5945,11 +6026,11 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/concurrency') {
       const input = await body(req);
       const n = Number(input.value);
-      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1 || n > contexts.length) {
-       return respond(res, 400, { error: `1 ile ${contexts.length} arasında bir tam sayı gerekir.` });
+      if (n !== 1) {
+       return respond(res, 400, { error: 'Model çakışmasını önlemek için uygulama eşzamanlılığı 1 ile sabittir.' });
       }
-      await writeSettings({ autoConcurrency: n });
-      return respond(res, 200, { autoConcurrency: n });
+      await writeSettings({ autoConcurrency: 1 });
+      return respond(res, 200, { autoConcurrency: 1, modelInferenceConcurrency: 1 });
      }
 
      if (req.method === 'POST' && path === '/timeout') {
@@ -5964,10 +6045,13 @@ export function ollamaPlugin() {
 
      if (req.method === 'POST' && path === '/config') {
       const input = await body(req);
-      const patch = {};
-      // TEK MOD = TURBO (Kalite Kilitli) — istemci ne gönderirse göndersin boru hattı daima 8 soru/çağrı + kuyruklu + kalite kilitli çalışır.
-      Object.assign(patch, { preset: 'turbo', batchPerCall: 8, fastThink: true, pipelineMode: 'batched', batchVerify: true, selfCorrection: true, smartDifficulty: true, passageMode: 'full-book', generateStudyMaterials: true, autoEvolve: true, turboQualityLock: true });
+      const patch = {
+       preset: 'balanced', batchPerCall: 1, fastThink: true, pipelineMode: 'direct',
+       batchVerify: false, selfCorrection: true, smartDifficulty: true,
+       generateStudyMaterials: false, autoEvolve: false, turboQualityLock: false
+      };
       if (input?.passageMode === 'summary-only') patch.passageMode = 'summary-only';
+      else patch.passageMode = 'full-book';
       if (input?.subSecondBudgetMs !== undefined) {
        const sb = Number(input.subSecondBudgetMs);
        if (!Number.isFinite(sb) || sb < 250 || sb > 980) return respond(res, 400, { error: 'subSecondBudgetMs 250 ile 980 (ms) arasında olmalı.' });
@@ -6635,12 +6719,13 @@ export function ollamaPlugin() {
       const passages = passagesByUnit.get(ctx.id) || [];
       const cfg = await getPipelineConfig();
       const budget = Number(cfg.subSecondBudgetMs || SUBSECOND_BOT_BUDGET_MS);
+      const questionTimeoutMs = await autoTimeoutMs();
 
       const botRuns = await Promise.all([
        timedBot('questionGeneratorAndDualJudge', () =>
         generateOneManual(ctx, model, verifierModel, judge2Model, {
-         timeoutMs: budget,
-         forceSubSecond: !connected || input?.forceSubSecond !== false,
+         timeoutMs: questionTimeoutMs,
+         forceSubSecond: Boolean(input?.forceSubSecond === true && cfg.subSecondAllBots),
          subSecondBudgetMs: budget
         })
        ),
@@ -6749,7 +6834,9 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'POST' && path === '/generate') {
-      if (busy) return respond(res, 409, { error: 'Bir üretim zaten devam ediyor.' });
+      if (!(await waitForPipelineIdle(60_000))) {
+       return respond(res, 409, { error: 'Soru üretim hattı şu an meşgul; birkaç saniye sonra tekrar dene.' });
+      }
       const tGenReq = performance.now();
       const input = await body(req);
       const ids = Array.isArray(input.units) ? input.units.filter(x => typeof x === 'string') : [];
@@ -6758,7 +6845,7 @@ export function ollamaPlugin() {
       const ctx = candidates[cursor++ % candidates.length];
       try {
        const record = await generateOneManual(ctx, model, verifierModel, judge2Model, {
-        forceSubSecond: Boolean(input?.subSecond),
+        forceSubSecond: Boolean(input?.subSecond && (await getPipelineConfig()).subSecondAllBots),
         subSecondBudgetMs: Number.isFinite(Number(input?.subSecondBudgetMs)) ? Number(input.subSecondBudgetMs) : SUBSECOND_BOT_BUDGET_MS
        });
        const durationMs = +(performance.now() - tGenReq).toFixed(2);

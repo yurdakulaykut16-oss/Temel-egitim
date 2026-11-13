@@ -22,9 +22,9 @@ const DEFAULT_REPORT = {
  approvedCount: 0,
  rejectedCount: 0,
  avgCompositeScore: 0,
- pruneThreshold: 40000,
- threshold: 40000,
- targetAfterPrune: 37000,
+ pruneThreshold: 20_000,
+ threshold: 20_000,
+ targetAfterPrune: 18_500,
  totalPrunedLifetime: 0,
  totalPrunedEver: 0,
  lastRunRemoved: 0,
@@ -44,8 +44,8 @@ export class PoolCuratorBot {
   this.dataDir = dataDir;
   this.brainDir = resolve(dataDir, 'ai-brain');
   this.reportFile = resolve(this.brainDir, 'curator-report.json');
-  this.pruneThreshold = Number.isFinite(opts.pruneThreshold) ? opts.pruneThreshold : 40000;
-  this.targetAfterPrune = Number.isFinite(opts.targetAfterPrune) ? opts.targetAfterPrune : 37000;
+  this.pruneThreshold = Number.isFinite(opts.pruneThreshold) ? opts.pruneThreshold : 20_000;
+  this.targetAfterPrune = Number.isFinite(opts.targetAfterPrune) ? opts.targetAfterPrune : 18_500;
   this.minKeepPerUnit = Number.isFinite(opts.minKeepPerUnit) ? opts.minKeepPerUnit : 5;
   this.minKeepPerTier = Number.isFinite(opts.minKeepPerTier) ? opts.minKeepPerTier : 15;
  }
@@ -61,7 +61,8 @@ export class PoolCuratorBot {
   try {
    const parsed = JSON.parse(await readFile(this.reportFile, 'utf8'));
    const merged = { ...DEFAULT_REPORT, ...(parsed || {}) };
-   if ((Number(merged.pruneThreshold) || 0) < this.pruneThreshold) {
+   // Upgrade persisted reports from older larger-capacity settings.
+   if (Number(merged.pruneThreshold) !== this.pruneThreshold || Number(merged.targetAfterPrune) !== this.targetAfterPrune) {
     merged.pruneThreshold = this.pruneThreshold;
     merged.threshold = this.pruneThreshold;
     merged.targetAfterPrune = this.targetAfterPrune;
@@ -146,13 +147,13 @@ export class PoolCuratorBot {
   return Math.max(0, Math.min(100, Math.round(score)));
  }
 
- // Havuzu baştan sona tarar; 40.000'i geçince kalitesizleri ve kopyaları siler, ünite & kolay/orta/zor tabanını korur
+ // Havuzu tarar; 20.000'e ulaşınca en zayıf tekrarları ayıklayıp 18.500 civarına indirir.
  async scanAndPrune({ items, researchMemory = null, adaptiveQuality = null, forcePrune = false, threshold = this.pruneThreshold, targetKeep = this.targetAfterPrune }) {
   const prevReport = await this.loadReport();
   const approved = items.filter(q => q.status === 'approved');
   const rejected = items.filter(q => q.status === 'rejected');
 
-  // Ünite bazlı benzerlik & skor taraması (büyük 40k havuzda da <1sn kalmak için son pencere + boyut filtresi + parmak izi)
+  // Ünite bazlı benzerlik ve kalite taraması; parmak izi ile karşılaştırma maliyeti sınırlanır.
   const byUnit = new Map();
   for (const q of approved) {
    if (!byUnit.has(q.unitId)) byUnit.set(q.unitId, []);
@@ -242,7 +243,7 @@ export class PoolCuratorBot {
    if (s.nearDup && canDrop(s.q)) markDrop(s.q);
   }
 
-  // 2) 40.000 eşiği aşıldıysa (veya forcePrune istendiyse) en düşük kaliteli soruları hedefe kadar sil
+  // 2) 20.000 eşiğine ulaşıldıysa (veya forcePrune istendiyse) kaliteyi koruyarak hedefe kadar sil
   const aboveThreshold = approved.length >= threshold;
   if ((aboveThreshold || forcePrune) && (approved.length - toDelete.size) > targetKeep) {
    const candidates = scored
@@ -265,7 +266,7 @@ export class PoolCuratorBot {
      id: it.id,
      unitId: it.unitId,
      score: match?.composite ?? 0,
-     reason: match?.nearDup ? 'Yakın tekrar soru' : '40k+ havuz kalite çıtası altında kaldı',
+     reason: match?.nearDup ? 'Yakın tekrar soru' : '20k havuz sınırında düşük kalite',
      question: String(it.question || '').slice(0, 120)
     });
    } else {

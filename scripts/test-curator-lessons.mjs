@@ -7,20 +7,20 @@ import { join } from 'node:path';
 import { PoolCuratorBot } from '../server/pool-curator.mjs';
 import { LessonEngine } from '../server/lesson-engine.mjs';
 
-test('PoolCuratorBot 40.000+ eşiği aşılınca düşük kaliteli/tekrar soruları budar, kolay/orta/zor korur ve <1sn sürer', async () => {
+test('PoolCuratorBot 20.000 eşiğine ulaşınca düşük kaliteli/tekrar soruları budar, kolay/orta/zor korur ve <1sn sürer', async () => {
  const dir = mkdtempSync(join(tmpdir(), 'tempo-curator-'));
  try {
   const bot = new PoolCuratorBot(dir, { minKeepPerUnit: 50, minKeepPerTier: 100 });
-  assert.equal(bot.pruneThreshold, 40000);
-  assert.equal(bot.targetAfterPrune, 37000);
+  assert.equal(bot.pruneThreshold, 20000);
+  assert.equal(bot.targetAfterPrune, 18500);
   const diffs = ['kolay', 'orta', 'zor'];
   const units = ['0-0', '0-1', '1-0', '2-0', '3-0'];
   const items = [];
-  for (let i = 0; i < 40050; i++) {
+  for (let i = 0; i < 20050; i++) {
    const unitId = units[i % units.length];
    const diff = diffs[i % diffs.length];
-   const isLow = i < 1800;
-   const isDup = i >= 39950;
+   const isLow = i < 1200;
+   const isDup = i >= 19950;
    const tagA = `konu_${i.toString(36)}`;
    const tagB = `terim_${(i * 7 + 13).toString(36)}`;
    const tagC = `olgu_${(i * 11 + 29).toString(36)}`;
@@ -52,10 +52,10 @@ test('PoolCuratorBot 40.000+ eşiği aşılınca düşük kaliteli/tekrar sorula
   const res = await bot.scanAndPrune({ items });
   const scanMs = performance.now() - t0;
   assert.equal(res.report.aboveThreshold, true);
-  assert.equal(res.report.pruneThreshold, 40000);
+  assert.equal(res.report.pruneThreshold, 20000);
   const remainingApproved = res.items.filter(x => x.status === 'approved');
-  assert.ok(remainingApproved.length <= 37000, `Beklenen <=37000, gelen ${remainingApproved.length}`);
-  assert.ok(res.removedCount >= 3050, `En az 3050 düşük/tekrar soru silinmeli, gelen ${res.removedCount}`);
+  assert.ok(remainingApproved.length <= 18500, `Beklenen <=18500, gelen ${remainingApproved.length}`);
+  assert.ok(res.removedCount >= 1500, `En az 1500 düşük/tekrar soru silinmeli, gelen ${res.removedCount}`);
   assert.ok(res.report.nearDuplicatesFound >= 90);
   // kolay / orta / zor kademeleri ASLA boş kalmamalı
   assert.ok(res.report.tierBreakdown.kolay >= 100);
@@ -64,9 +64,9 @@ test('PoolCuratorBot 40.000+ eşiği aşılınca düşük kaliteli/tekrar sorula
   // düşük kaliteli soruların tamamına yakını elenmiş olmalı, yüksek kaliteliler kalmalı
   const remainingIds = new Set(remainingApproved.map(x => x.id));
   assert.equal(remainingIds.has('q-0'), false);
-  assert.equal(remainingIds.has('q-20000'), true);
+  assert.equal(remainingIds.has('q-15000'), true);
   assert.ok(Array.isArray(res.report.refillPriorityUnits));
-  assert.ok(scanMs < 2500, `40k havuz taraması hızlı kalmalı, gelen ${scanMs.toFixed(1)}ms`);
+  assert.ok(scanMs < 2500, `20k havuz taraması hızlı kalmalı, gelen ${scanMs.toFixed(1)}ms`);
  } finally {
   rmSync(dir, { recursive: true, force: true });
  }
@@ -289,17 +289,18 @@ test('ollamaPlugin uçtan uca 5-açı soru üretimi, timing-aware student-state,
   assert.equal(gen.json.item.examPotential, 5);
   assert.ok(gen.json.item.questionAngle);
 
-  // 5) 40k+ havuz tarayıcı bot taraması + /status telemetrisi
+  // 5) 20k havuz tarayıcı bot taraması + /status telemetrisi
   const scan = await call('POST', '/curator/scan', {});
   assert.equal(scan.status, 200);
   assert.ok(scan.json.report.totalScans >= 1);
-  assert.equal(scan.json.report.pruneThreshold, 40000);
+  assert.equal(scan.json.report.pruneThreshold, 20000);
   assert.ok(scan.json.report.avgCompositeScore > 0);
 
   const status = await call('GET', '/status');
   assert.equal(status.status, 200);
-  assert.equal(status.json.questionCapacity, 40000);
-  assert.equal(status.json.curator.pruneThreshold, 40000);
+  assert.equal(status.json.questionCapacity, 20000);
+  assert.equal(status.json.maxQuestionsStored, 20000);
+  assert.equal(status.json.curator.pruneThreshold, 20000);
   assert.ok(status.json.curator);
   assert.ok(status.json.lessons);
   assert.ok(status.json.angleCounts);

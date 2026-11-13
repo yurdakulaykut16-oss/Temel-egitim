@@ -43,7 +43,8 @@ test('Tüm botlar + soru üretimi (<1 sn) uçtan uca doğrulama: çevrimdışı 
   // 1) Durum ve subsecond ayarı doğrula
   const subCfg = await (await fetch(`${base}/api/ollama/subsecond`)).json();
   assert.equal(subCfg.ok, true);
-  assert.equal(subCfg.subSecondAllBots, true);
+  // Alt-saniye tüm-bot sürüsü sistemi yormamak için varsayılan olarak kapalı; testte açılır.
+  assert.equal(subCfg.subSecondAllBots, false);
   assert.ok(subCfg.subSecondBudgetMs <= 950);
 
   const subSet = await timedPost('/subsecond', { enabled: true, budgetMs: 850 });
