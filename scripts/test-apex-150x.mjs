@@ -9,9 +9,8 @@ import { JarvisCore } from '../server/jarvis-core.mjs';
 import { SandboxEvolver } from '../server/sandbox-evolver.mjs';
 import { IntelligenceTrainer, HARDENED_ULTRA_RULE_CODE } from '../server/intelligence-trainer.mjs';
 import { GithubKnowledgeMiner } from '../server/github-researcher.mjs';
-import { VideoDirector } from '../server/video-director.mjs';
 
-test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kümülatif · 3,000,000x Eğitim: +70,500,000,000% · %100 Yerel): 96 tuzak, turnuva, self-repair, 11 alt-sistem ve zero-API doğrulama', async () => {
+test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kümülatif · 3,000,000x Eğitim: +70,500,000,000% · %100 Yerel): 96 tuzak, turnuva, self-repair, 8 alt-sistem ve zero-API doğrulama', async () => {
  const dir = mkdtempSync(join(tmpdir(), 'tempo-apex-'));
  try {
   assert.equal(ADVERSARIAL_TRAP_CASES.length, 96);
@@ -62,7 +61,6 @@ test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kü
       crossBotHypotheses: [
        { targetBot: 'generator', hypothesis: 'Pasaj kör noktalarına odaklanılırsa kapsam artar', action: '0-0#02..04 ve 0-1 pasajlarından vaka soruları üret', expectedGain: '+35% pasaj kapsamı' },
        { targetBot: 'lessonEngine', hypothesis: '0-1 kodlaması değiştirilirse kalıcılık artar', action: '0-1 için görsel saha hikâyesi kur', expectedGain: '+40% hatırlama' },
-       { targetBot: 'videoDirector', hypothesis: '0-1 için hata_kurtarma 3D/MP4 sahnesi oluşturulmalı', action: 'Can ile tuzak karşılaştırma diyalogu üret', expectedGain: 'Hata tekrarı azalır' }
       ]
      }
     };
@@ -78,7 +76,6 @@ test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kü
         judge: 'Tüm 4 seçeneğin uzunluk dengesini kontrol et ve belirsiz şıkları ele.',
         curator: 'Kör nokta pasajları taşıyan onaylı soruları koru.',
         lessonEngine: '0-1 gibi yüksek hatalı ünitelerde tamamen yeni kodlama üret.',
-        videoDirector: 'Öğrencinin düştüğü tuzakları Koç-Can diyaloguyla görselleştir ve MP4 göm.',
         researchAgent: 'Sınav tahminlerinin yanında nadir pasaj detaylarını da listele.'
        },
        difficultyDirectives: {
@@ -140,10 +137,8 @@ test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kü
   assert.match(res.state.codename, /Ultra-Singularity-705Mx\+/);
   assert.equal(res.state.turboQualityLock, true);
   assert.ok(res.diagnostics.botHealth.kayseriCoach);
-  assert.ok(res.diagnostics.botHealth.tiktokFeed);
   assert.ok(res.diagnostics.botHealth.qwenCodeSandbox);
   assert.ok(res.diagnostics.botHealth.turboQualityGuard);
-  assert.ok(res.diagnostics.botHealth.localVideoStudio);
   assert.equal(res.stressResult.valid, true);
   assert.ok(res.stressResult.f1Score >= 90);
   assert.equal(res.appliedPolicy.preserveDifficultyTiers, true);
@@ -151,7 +146,7 @@ test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kü
   assert.equal(res.state.hyperParams.batchSizeHint, 6);
   assert.equal(res.state.hyperParams.curatorMinScoreHint, 62);
   assert.ok(res.state.hyperParams.reframePriorityUnits.includes('0-1'));
-  assert.equal(res.newHypotheses.length, 3);
+  assert.equal(res.newHypotheses.length, 2);
 
   // Üst üste döngüler playbook doğrulaması yapmalı ve zekâ çarpanını yükseltmeli
   let latest = res;
@@ -168,7 +163,6 @@ test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kü
     telemetry: { approvalRate: 92, dualAnswerBlocked: 4, attemptsTotal: 40 + i * 10 },
     studentProfile: { weakUnits: [], results: {} },
     lessonsSummary: { enhancedCount: 2 },
-    videosSummary: { producedCount: 2, rescueCount: 1 },
     researchMemory: { researchCycles: 4, webHitsTotal: 12, byUnit: { '0-0': {}, '0-1': {} } }
    });
   }
@@ -180,14 +174,13 @@ test('ApexArchitect Ultra-Singularity-705Mx+ v8 (100x Yükseltme · 150,000x Kü
  }
 });
 
-test('IntelligenceTrainer (100x · +70,500,000,000% Ultra-Singularity-705Mx+), 0-API GithubKnowledgeMiner (MIT/Apache-2.0) ve %100 Yerel Video Motoru', async () => {
+test('IntelligenceTrainer (100x · +70,500,000,000% Ultra-Singularity-705Mx+) ve 0-API GithubKnowledgeMiner (MIT/Apache-2.0)', async () => {
  const dir = mkdtempSync(join(tmpdir(), 'tempo-ultra-trainer-'));
  try {
   const evolver = new SandboxEvolver(dir);
   const jarvis = new JarvisCore(dir, process.cwd());
   const apex = new ApexArchitect(dir);
   const trainer = new IntelligenceTrainer(dir);
-  const vd = new VideoDirector(dir);
 
   const contexts = [
    { id: '0-0', book: 'Hareket ve Antrenman', unit: 'Antrenman İlkeleri', text: 'Progresif yüklenme organizmaya verilen şiddetin 10% oranında kademeli artırılmasıdır.' },
@@ -259,13 +252,6 @@ test('IntelligenceTrainer (100x · +70,500,000,000% Ultra-Singularity-705Mx+), 0
   assert.equal(oss.discoveredThisCycle, 1);
   assert.ok(oss.synthesizedBlueprints.every(b => b.license === 'MIT' || b.license === 'Apache-2.0'));
 
-  // 0-API Google Flow Otonom Stüdyo testi (API anahtarı gerekmeden submitted=true & flow_ready_0api!)
-  const fallbackVid = vd.buildFallbackVideo(contexts[0], passagesByUnit.get('0-0'), {}, null, null, 'tiktok_kayseri');
-  await vd.saveVideo(fallbackVid);
-  const flowAll = await vd.submitAllVideosToGoogleFlow({ limit: 5 });
-  assert.equal(flowAll.zeroApiAutonomous, true);
-  assert.equal(flowAll.submittedCount, 1);
-  assert.equal(flowAll.results[0].mode, 'autonomous-flow-0api');
  } finally {
   rmSync(dir, { recursive: true, force: true });
  }
@@ -311,7 +297,6 @@ test('ollamaPlugin 150x ApexArchitect uç noktası ve tüm botlara canlı direkt
         judge: 'UNIQUE_APEX_JUDGE_DIRECTIVE_150X',
         curator: 'UNIQUE_APEX_CURATOR_DIRECTIVE_150X',
         lessonEngine: 'UNIQUE_APEX_LESSON_DIRECTIVE_150X',
-        videoDirector: 'UNIQUE_APEX_VIDEO_DIRECTIVE_150X',
         researchAgent: 'UNIQUE_APEX_RESEARCH_DIRECTIVE_150X'
        },
        difficultyDirectives: {
@@ -321,26 +306,6 @@ test('ollamaPlugin 150x ApexArchitect uç noktası ve tüm botlara canlı direkt
        },
        newAvoidLessons: [],
        newGoldenPatterns: []
-      }]
-     })
-    }));
-   }
-   if (/MORPA|googleFlowPrompt/i.test(prompt)) {
-    return res.end(JSON.stringify({
-     response: JSON.stringify({
-      title: '3D Video',
-      summary: 'Özet',
-      environment: 'classroom_3d',
-      scenes: [{
-       id: 'scene-1', sceneTitle: 'Sahne', environment: 'classroom_3d', cameraMove: 'orbit_slow',
-       durationSec: 18, boardTitle: 'Başlık', boardCode: 'A-B', boardBullets: ['M1'],
-       dialogues: [
-        { speaker: 'coach', emotion: 'cheerful', action: 'point_board', text: 'Merhaba!' },
-        { speaker: 'ada', emotion: 'curious', action: 'think', text: 'Nedir bu?' }
-       ],
-       repeatPrompt: 'Tekrar et!',
-       quickQuestion: { question: 'Q?', options: ['A', 'B'], answer: 'A' },
-       googleFlowPrompt: '3D classroom'
       }]
      })
     }));
@@ -378,12 +343,6 @@ test('ollamaPlugin 150x ApexArchitect uç noktası ve tüm botlara canlı direkt
   assert.equal(evo.json.ok, true);
   assert.equal(evo.json.state.evolutionCycles, 1);
 
-  // Artık video üretildiğinde ApexArchitect direktifi video promptuna enjekte edilmeli!
-  const vid = await call('POST', '/videos/generate', { unitId: '0-0' });
-  assert.equal(vid.status, 200);
-  const videoPrompt = seenPrompts.find(p => /Morpa Kampüs tarzında 3D etkileşimli eğitim videosu/i.test(p)) || '';
-  assert.match(videoPrompt, /UNIQUE_APEX_VIDEO_DIRECTIVE_150X/);
-
   const status = await call('GET', '/status');
   assert.equal(status.status, 200);
   assert.equal(status.json.upgradeFactorFromPrevious, 100);
@@ -397,7 +356,7 @@ test('ollamaPlugin 150x ApexArchitect uç noktası ve tüm botlara canlı direkt
   assert.equal(status.json.noApiKeyPrompts, true);
   assert.ok(status.json.jarvis.apex.state.evolutionCycles >= 1);
   assert.ok(status.json.jarvis.apex.diagnostics.botHealth.generator);
-  assert.ok(status.json.jarvis.apex.diagnostics.botHealth.localVideoStudio);
+  assert.ok(status.json.jarvis.apex.diagnostics.botHealth.qwenCodeSandbox);
 
   const tickRes = await call('POST', '/intelligence/train-tick', { batchUnits: 4 });
   assert.equal(tickRes.status, 200);

@@ -39,7 +39,7 @@ test('CoderCouncilHub & BotParameterMatrix: 40 aşırı eğitilmiş açık kayna
 
   const initMatrix = await matrix.loadState();
   const mSum = matrix.getSummary(initMatrix);
-  assert.ok(mSum.totalFactoredParamsQuadrillions >= 24.7);
+  assert.ok(mSum.totalFactoredParamsQuadrillions >= 18.0);
 
   const initCouncil = await council.loadState();
   assert.ok(initCouncil.totalOvertrainEpochs >= 40 * 28);
@@ -146,7 +146,7 @@ test('Ollama middleware: /coder-council, /coder-council/parameters, /coder-counc
     epochsPerModel: 3,
     candidateChanges: [
      { title: 'UI Dokunma', area: 'ui', targetFile: 'src/OllamaStudio.tsx' },
-     { title: 'Video Motoru Geliştirme', area: 'video', targetFile: 'server/video-director.mjs' }
+     { title: 'Havuz Motoru Geliştirme', area: 'ai', targetFile: 'server/pool-curator.mjs' }
     ]
    })
   });
@@ -163,7 +163,7 @@ test('Ollama middleware: /coder-council, /coder-council/parameters, /coder-counc
   const statusJson = await (await fetch(`${base}/api/ollama/status`)).json();
   assert.equal(statusJson.coderCouncil.totalModels, OPEN_SOURCE_CODER_CATALOG.length);
   assert.equal(statusJson.coderCouncil.uiImmutable, true);
-  assert.ok(statusJson.parameterMatrix.totalFactoredParamsQuadrillions >= 24.7);
+  assert.ok(statusJson.parameterMatrix.totalFactoredParamsQuadrillions >= 18.0);
  } finally {
   stopOllamaLoops();
   if (prevOffline === undefined) delete process.env.TEMPO_OFFLINE_ONLY;

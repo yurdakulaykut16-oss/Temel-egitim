@@ -9,25 +9,11 @@ import { JarvisCore } from './jarvis-core.mjs';
 import { ResearchAgent } from './research-agent.mjs';
 import { PoolCuratorBot } from './pool-curator.mjs';
 import { LessonEngine } from './lesson-engine.mjs';
-import {
- VideoDirector,
- VIDEO_SPEC_VERSION,
- isLegacyVideoRecord,
- VIDEO_THEMES,
- PHOTO_CLOUD_VIDEO_MODELS,
- VIDEO_GENERATION_POLICY,
- ALLOWED_VIDEO_PROVIDERS,
- isAllowedVideoModel,
- classifyVideoProvider
-} from './video-director.mjs';
 import { ApexArchitect } from './apex-architect.mjs';
-import { Mp4Renderer } from './mp4-renderer.mjs';
 import { buildKayseriReaction, generateAiKayseriReaction, extractKeyTermsFromUnit } from './kayseri-coach.mjs';
 import { IntelligenceTrainer } from './intelligence-trainer.mjs';
 import { GithubKnowledgeMiner } from './github-researcher.mjs';
 import { VoiceStudioManager } from './voice-studio.mjs';
-import { LocalVideoEngineHub, GITHUB_LOCAL_VIDEO_ENGINES } from './local-video-engines.mjs';
-import { Local3DAnimationEngine, LOCAL_3D_ANIMATION_PRESETS, LOCAL_3D_ENGINES_CATALOG } from './three-d-animation-engine.mjs';
 import { BotParameterMatrix } from './bot-parameter-matrix.mjs';
 import { MultiAiSwarmEvaluator } from './multi-ai-evaluator.mjs';
 import { QwenCodeLab } from './qwen-code-lab.mjs';
@@ -129,7 +115,6 @@ const poolCurator = new PoolCuratorBot(dataDir, {
  targetAfterPrune: QUESTION_POOL_REFILL_TARGET
 });
 const lessonEngine = new LessonEngine(dataDir);
-const videoDirector = new VideoDirector(dataDir);
 const apex = new ApexArchitect(dataDir);
 const trainer = new IntelligenceTrainer(dataDir);
 const githubMiner = new GithubKnowledgeMiner(dataDir, { verifier100 });
@@ -142,10 +127,7 @@ const coderCouncil = new CoderCouncilHub(dataDir, { verifier100 });
 const nexusModel = new NexusTitanFusionModel(dataDir, process.cwd(), { verifier100 });
 const githubMega = new GithubMegaCorpus(dataDir, { verifier100 });
 const bookSearch = new BookKnowledgeSearch({ contexts, passagesByUnit, questionBank });
-const mp4Renderer = new Mp4Renderer();
 const voiceStudio = new VoiceStudioManager(dataDir);
-const local3dEngine = new Local3DAnimationEngine({ getFfmpegPath: () => mp4Renderer.getFfmpegPath() });
-const localVideoHub = new LocalVideoEngineHub(dataDir, { mp4Renderer, voiceStudio, local3dEngine });
 const ragEngine = new HybridRagEngine({ projectRoot: process.cwd(), dataDir, bookSearch });
 const trainingHub = new TrainingFrameworksHub({ projectRoot: process.cwd(), dataDir });
 const agentOrchestrator = new MultiFrameworkAgentOrchestrator({
@@ -380,7 +362,6 @@ const projectLevelUp = new ProjectLevelUpOrchestrator({
  evolver,
  jarvis,
  apex,
- local3dEngine,
  contexts,
  loadItemsFn: () => load(),
  getTelemetryFn: () => getTelemetrySnapshot(),
@@ -390,8 +371,7 @@ const projectLevelUp = new ProjectLevelUpOrchestrator({
   return {
    approvedCount: items.filter(x => x.status === 'approved').length,
    unitsCount: contexts.length,
-   totalLessons: (await lessonEngine.listSummary(contexts.length))?.totalLessons ?? 0,
-   totalVideos: (await videoDirector.listSummary(contexts.length))?.totalVideos ?? 0
+   totalLessons: (await lessonEngine.listSummary(contexts.length))?.totalLessons ?? 0
   };
  },
  getTrainingPrepStatsFn: getTrainingPrepStatsFast
@@ -403,7 +383,6 @@ let cachedNexusModelState = null;
 let cachedGithubMegaSummary = null;
 let cachedHardwareProfile = null;
 let hardwarePullBootAttempted = false;
-const mp4RenderLocks = new Map();
 let jarvisReflecting = false;
 let apexEvolving = false;
 let trainerBusy = false;
@@ -418,15 +397,10 @@ let hyperBotEvolveBusy = false;
 let researchBusy = false;
 let curatorBusy = false;
 let lessonBusy = false;
-let videoBusy = false;
 let coachRunning = false;
 let ollamaUpgradeBusy = false;
 let lastInteractiveApiAt = Date.now();
 let lastOllamaConnectedSig = '';
-let continuousVideoCounter = 0;
-let continuousGeneratedTotal = 0;
-let replacedLegacyTotal = 0;
-let lastKnownLegacyRemaining = null;
 const ollamaUpgradeState = {
  running: false,
  upgradedCount: 0,
@@ -437,7 +411,6 @@ const ollamaUpgradeState = {
 };
 let researchCursor = 0;
 let lessonCursor = 0;
-let videoCursor = 0;
 let specialistsBootstrapAttempted = false;
 let lastWebResearchAt = 0;
 let lastGithubMineAt = 0;
@@ -451,7 +424,6 @@ let lastHyperBotEvolveAt = 0;
 let lastCuratorScanAt = 0;
 let lastPoolCapCheckAt = 0;
 let lastLessonEnhanceAt = 0;
-let lastVideoProduceAt = 0;
 let lastTrainerTickAt = 0;
 let lastApexTimeAt = 0;
 let lastCoachTrainPrepCount = 0;
@@ -601,11 +573,6 @@ async function selectedEvolverModel(model) {
  const v = await readSettings();
  if (typeof v.evolverModel === 'string' && v.evolverModel.length <= 200 && v.evolverModel.trim()) return v.evolverModel;
  return process.env.OLLAMA_EVOLVER_MODEL || model;
-}
-async function selectedVideoModel(fallback) {
- const v = await readSettings();
- if (typeof v.videoModel === 'string' && v.videoModel.length <= 200 && v.videoModel.trim() && isAllowedVideoModel(v.videoModel)) return v.videoModel;
- return process.env.OLLAMA_VIDEO_MODEL || PHOTO_CLOUD_VIDEO_MODELS[0]?.id || fallback;
 }
 async function autoRunningEnabled() {
  const v = await readSettings();
@@ -948,35 +915,10 @@ async function rawBody(req, maxBytes = 64 * 1024 * 1024) {
  for await (const chunk of req) {
   const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
   total += buf.length;
-  if (total > maxBytes) throw new Error('Video dosyası boyutu sınırı aşıyor.');
+  if (total > maxBytes) throw new Error('İstek gövdesi boyutu sınırı aşıyor.');
   chunks.push(buf);
  }
  return Buffer.concat(chunks);
-}
-async function sendMp4File(req, res, filePath) {
- const st = await stat(filePath);
- const total = st.size;
- const range = req.headers.range;
- res.setHeader('Content-Type', 'video/mp4');
- res.setHeader('Accept-Ranges', 'bytes');
- res.setHeader('Cache-Control', 'no-store');
- if (range && typeof range === 'string') {
-  const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
-  if (match) {
-   const start = match[1] ? Math.min(total - 1, Number(match[1])) : 0;
-   const end = match[2] ? Math.min(total - 1, Number(match[2])) : total - 1;
-   if (Number.isFinite(start) && Number.isFinite(end) && start <= end) {
-    res.statusCode = 206;
-    res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
-    res.setHeader('Content-Length', String(end - start + 1));
-    createReadStream(filePath, { start, end }).pipe(res);
-    return;
-   }
-  }
- }
- res.statusCode = 200;
- res.setHeader('Content-Length', String(total));
- createReadStream(filePath).pipe(res);
 }
 function respond(res, code, obj) {
  res.statusCode = code;
@@ -1348,13 +1290,6 @@ async function runModelRequest(which, input, temperature, signal, numPredict = 9
  }
 }
 
-async function runVideoDirectorModel(which, input, temperature, signal, numPredict = 2200, opts = {}) {
- if (!isAllowedVideoModel(which)) {
-  throw Error(`Videolar yalnızca Kimi ve Ollama modelleriyle oluşturulabilir (${which}).`);
- }
- // %100 Yerel çalıştırma: Harici Kimi API anahtarı veya bulut uç noktası kesinlikle istenmez/kullanılmaz.
- return runModel(which, input, temperature, signal, numPredict, { ...opts, botRole: 'videoDirector' });
-}
 
 async function finalize(parsed, ctx, model, verification, passage = null, policy = null, adaptiveQuality = null, targetAngle = null) {
  return withSaveLock(async () => {
@@ -2612,36 +2547,17 @@ function pickBestModel(models, patterns, exclude = []) {
  return models.find(m => !exclude.includes(m)) || models[0];
 }
 
-function pickBestVideoModel(models) {
- return pickBestModel(models, [
-  /^kimi-k3\.1-pro:cloud$/i,
-  /^kimi.*:cloud$/i,
-  /kimi/i,
-  /^glm-5\.3-flash:cloud$/i,
-  /^glm.*:cloud$/i,
-  /^deepseek-v4\.1-flash:cloud$/i,
-  /^deepseek.*:cloud$/i,
-  /:cloud$/i,
-  /^tempo-ogretmen/i,
-  /qwen3/i,
-  /qwen2\.5(?!.*coder)/i,
-  /gemma/i,
-  /llama/i
- ]);
-}
 
-// Sıfır tıklama: Kurulu modellerden Üretici, 1. Hakem, 2. Hakem, Evrimci, Video (Kimi/GLM/DeepSeek :cloud öncelikli) ve Qwen Coder rollerini otomatik doldurur
+// Sıfır tıklama: Kurulu modellerden Üretici, 1. Hakem, 2. Hakem, Evrimci ve Qwen Coder rollerini otomatik doldurur
 async function ensureRolesAutoAssigned(installedModels, createSpecialistsIfMissing = false) {
  if (!Array.isArray(installedModels) || !installedModels.length) return { changed: false, models: [] };
  const jCfg = await jarvis.loadConfig();
  if (jCfg.autoAssignRoles === false) return { changed: false, models: installedModels };
 
- const settingsNow = await readSettings();
  const curGen = await selectedModel();
  const curVer = await selectedVerifierModel(curGen);
  const curJ2 = await selectedJudgeModel('judge2Model', defaultJudge2Model);
  const curEvo = await selectedEvolverModel(curGen);
- const curVideo = await selectedVideoModel(curEvo);
  const patch = {};
 
  if (!installedModels.includes(curGen)) {
@@ -2658,10 +2574,6 @@ async function ensureRolesAutoAssigned(installedModels, createSpecialistsIfMissi
  }
  if (!installedModels.includes(curEvo)) {
   patch.evolverModel = pickBestModel(installedModels, [/^tempo-mimar/i, /qwen3/i, /qwen2\.5/i, /gemma/i]) || activeGen;
- }
- const bestVideo = pickBestVideoModel(installedModels);
- if (!installedModels.includes(curVideo) || (!settingsNow.videoModelLocked && /:cloud$/i.test(bestVideo) && !/:cloud$/i.test(curVideo))) {
-  patch.videoModel = bestVideo || patch.evolverModel || curEvo;
  }
 
  let changed = false;
@@ -2879,470 +2791,11 @@ async function triggerLessonEnhance(unitId, fallbackModel, { forceReframe = fals
  }
 }
 
-async function resolveActiveVideoSetup(overrideModel = null, overrideEngineId = '') {
- const settingsNow = await readSettings();
- const curGen = await selectedModel();
- const curEvo = await selectedEvolverModel(curGen);
- const explicitVideo = typeof settingsNow.videoModel === 'string' && settingsNow.videoModel.trim() && isAllowedVideoModel(settingsNow.videoModel)
-  ? settingsNow.videoModel.trim()
-  : '';
- let installedModels = [];
- let ollamaReachable = false;
- try {
-  const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(700) });
-  if (r.ok) {
-   const tags = await r.json().catch(() => null);
-   installedModels = Array.isArray(tags?.models) ? tags.models.map(m => m.name) : [];
-   ollamaReachable = true;
-  }
- } catch {}
- const picked = overrideModel && typeof overrideModel === 'string' && overrideModel.trim() && isAllowedVideoModel(overrideModel, installedModels)
-  ? overrideModel.trim()
-  : (explicitVideo && (settingsNow.videoModelLocked || !installedModels.length || installedModels.includes(explicitVideo) || /:cloud$/i.test(explicitVideo))
-   ? explicitVideo
-   : (pickBestVideoModel(installedModels) || explicitVideo || process.env.OLLAMA_VIDEO_MODEL || PHOTO_CLOUD_VIDEO_MODELS[0]?.id || curEvo || 'kimi-k3.1-pro:cloud'));
- const localState = await localVideoHub.loadState().catch(() => ({ preferredEngineId: 'tempo-cinema-pro' }));
- const activeEngineId = overrideEngineId && typeof overrideEngineId === 'string' && overrideEngineId.trim()
-  ? overrideEngineId.trim()
-  : (localState.preferredEngineId || 'tempo-cinema-pro');
- return {
-  activeVideoModel: picked,
-  generatorProvider: classifyVideoProvider(picked),
-  activeEngineId,
-  ollamaReachable,
-  installedModels
- };
-}
 
-async function ensureUnitMp4(unitId, forceRebuild = false, variantId = '', speedProfile = 'turbo', opts = {}) {
- const safeId = String(unitId || '0-0').replace(/[^a-zA-Z0-9_-]/g, '');
- const safeVar = variantId ? String(variantId).replace(/[^a-zA-Z0-9_-]/g, '') : '';
- const lockKey = `${safeId}::${safeVar}`;
- if (mp4RenderLocks.has(lockKey)) {
-  return mp4RenderLocks.get(lockKey);
- }
- const task = (async () => {
-  const outPath = videoDirector.mp4Path(safeId, safeVar);
-  if (!forceRebuild && (await videoDirector.hasMp4(safeId, safeVar))) {
-   return { path: outPath, cached: true };
-  }
-  const ctx = contexts.find(c => c.id === safeId) || contexts[0];
-  const [savedVideo, lesson, studentProfile, localState] = await Promise.all([
-   videoDirector.loadVideo(safeId, safeVar),
-   lessonEngine.loadLesson(safeId),
-   evolver.loadStudentProfile(),
-   localVideoHub.loadState().catch(() => ({ preferredEngineId: 'tempo-cinema-pro' }))
-  ]);
-  const inferredTheme = safeVar.startsWith('tiktok_kayseri') ? 'tiktok_kayseri'
-   : safeVar.startsWith('terim_avcisi') ? 'terim_avcisi'
-    : safeVar.startsWith('hamam_bocegi') ? 'hamam_bocegi_komedi'
-     : safeVar.startsWith('shorts') ? 'shorts_hizli'
-      : safeVar.startsWith('stadyum') ? 'stadyum_spikeri'
-       : safeVar.startsWith('super') ? 'super_kahraman'
-        : safeVar.startsWith('lab') ? 'lab_deney' : 'morpa_klasik';
-  const engineId = opts.engineId || localState.preferredEngineId || 'tempo-cinema-pro';
-  const video = savedVideo || videoDirector.buildFallbackVideo(ctx, passagesByUnit.get(ctx.id) || [], lesson, studentProfile, null, inferredTheme, '', { aiVideoEngine: engineId });
-  return await localVideoHub.dispatchLocalRender({
-   engineId,
-   preferLiveNeural: true,
-   video,
-   outMp4Path: outPath,
-   speedProfile: speedProfile === 'hd' ? 'cinema' : 'turbo'
-  });
- })().finally(() => {
-  mp4RenderLocks.delete(lockKey);
- });
- mp4RenderLocks.set(lockKey, task);
- return task;
-}
 
-const AUTO_BG_THEMES = ['tiktok_kayseri', 'hamam_bocegi_komedi', 'terim_avcisi', 'shorts_hizli', 'stadyum_spikeri', 'super_kahraman', 'lab_deney', 'morpa_klasik'];
 
-// Tüm 29 ünite/bölümü eksiksiz doldurur, mevcut eski TikTok videolarını yerinde yenileriyle değiştirir (Phase 2) ve kesintisiz yeni TikTok videoları üretmeye devam eder (Phase 3)!
-async function fillNextMissingUnitVideo(fallbackModel = null, { count = 1, speedProfile = 'turbo', instantOnly = false, useAiModels = true, engineId = '', aiTimeoutMs = 6000, regenerateLegacy = true, replaceLegacyFirst = false, continuous = true, maxVariantsPerUnit = 8 } = {}) {
- if (videoBusy) return { filled: 0, totalUnits: contexts.length };
- videoBusy = true;
- try {
-  const setup = await resolveActiveVideoSetup(fallbackModel, engineId);
-  const [feedAll, studentProfile, apexState, localDetection] = await Promise.all([
-   videoDirector.listAllFeedVideos(),
-   evolver.loadStudentProfile(),
-   apex.loadState(),
-   localVideoHub.detectLocalEngines().catch(() => ({ engines: [], preferredEngineId: 'tempo-cinema-pro' }))
-  ]);
-  const liveNeuralIds = ['comfyui-wan22', 'ltx2-local', 'short-video-maker', 'moneyprinter-turbo', 'cogvideox-local', 'mochi-local'];
-  const liveNeuralEngine = liveNeuralIds
-   .map(id => (localDetection.engines || []).find(e => e.id === id))
-   .find(e => e?.available);
-  const chosenEngine = (engineId && engineId !== 'auto')
-   ? engineId
-   : (setup.activeEngineId && setup.activeEngineId !== 'auto' && setup.activeEngineId !== 'tempo-cinema-pro')
-    ? setup.activeEngineId
-    : (liveNeuralEngine ? liveNeuralEngine.id : 'tempo-cinema-pro');
+// Sürekli zekâ döngüsü: eğitmen, konsey ve araştırma botlarını arka planda ilerletir.
 
-  const mp4ByUnit = new Map();
-  for (const v of feedAll) {
-   if (!v.hasMp4) continue;
-   if (!mp4ByUnit.has(v.unitId)) mp4ByUnit.set(v.unitId, new Set());
-   mp4ByUnit.get(v.unitId).add(v.themeStyle);
-  }
-  const tiktokUnitsSet = new Set(feedAll.filter(v => v.hasMp4 && (v.noQuestions || v.themeStyle === 'tiktok_kayseri')).map(v => v.unitId));
-  const missingUnits = contexts.filter(c => !mp4ByUnit.has(c.id) || !tiktokUnitsSet.has(c.id));
-
-  // Faz 2: Eski (legacy) veya MP4'süz / videoSpecVersion < 2 TikTok videolarını yerinde tespit et!
-  // Not: MP4'ü hiç derlenmemiş eski subsec-* artıklarını ise kalabalık yapmaması için temizleriz.
-  const staleSubsecItems = regenerateLegacy
-   ? feedAll.filter(v => !v.hasMp4 && String(v.variantId || '').startsWith('subsec-'))
-   : [];
-  if (staleSubsecItems.length) {
-   await Promise.allSettled(
-    staleSubsecItems.slice(0, Math.max(8, count * 3)).map(st => videoDirector.deleteVariant(st.unitId, st.variantId))
-   );
-  }
-
-  const staleDroppedIds = new Set(staleSubsecItems.slice(0, Math.max(8, count * 3)).map(s => s.id));
-  const legacyItemsAll = regenerateLegacy
-   ? feedAll.filter(v => !staleDroppedIds.has(v.id) && (v.isLegacy || !v.hasMp4 || !v.aiVideoModel || !v.model || !v.upgradedAt || Number(v.videoSpecVersion || 1) < VIDEO_SPEC_VERSION))
-   : [];
-
-  const desiredCount = Math.max(1, count);
-  const plan = [];
-  const usedUnitsInBatch = new Set();
-
-  const enqueueMissing = () => {
-   for (const ctx of missingUnits) {
-    if (plan.length >= desiredCount) break;
-    const existingThemes = mp4ByUnit.get(ctx.id) || new Set();
-    const themeStyle = !tiktokUnitsSet.has(ctx.id)
-     ? 'tiktok_kayseri'
-     : (AUTO_BG_THEMES.find(t => !existingThemes.has(t)) || AUTO_BG_THEMES[(videoCursor++) % AUTO_BG_THEMES.length]);
-    plan.push({
-     phase: 'missing',
-     ctx,
-     themeStyle,
-     variantId: `${themeStyle}-${Date.now().toString(36)}-${plan.length}`,
-     replacedFromLegacy: false,
-     prevVersion: 1,
-     angleIndex: continuousVideoCounter++
-    });
-    usedUnitsInBatch.add(ctx.id);
-   }
-  };
-
-  const enqueueLegacy = () => {
-   for (const oldItem of legacyItemsAll) {
-    if (plan.length >= desiredCount) break;
-    const ctx = contexts.find(c => c.id === oldItem.unitId);
-    if (!ctx) continue;
-    const themeStyle = AUTO_BG_THEMES.includes(oldItem.themeStyle) ? oldItem.themeStyle : 'tiktok_kayseri';
-    plan.push({
-     phase: 'replace_legacy',
-     ctx,
-     themeStyle,
-     variantId: oldItem.variantId || '',
-     replacedFromLegacy: true,
-     prevVersion: Number(oldItem.version || 1),
-     angleIndex: continuousVideoCounter++
-    });
-   }
-  };
-
-  if (replaceLegacyFirst) {
-   enqueueLegacy();
-   enqueueMissing();
-  } else {
-   enqueueMissing();
-   enqueueLegacy();
-  }
-
-  // Faz 3 (Sürekli TikTok Üretimi): Eksik ve eski kalmadığında bile yeni açılardan yeni TikTok videoları üretmeye devam et!
-  if (!plan.length && continuous !== false && contexts.length) {
-   const diversifyUnits = contexts.filter(c => (mp4ByUnit.get(c.id)?.size || 0) < 3);
-   for (let k = 0; k < desiredCount; k++) {
-    const ctx = diversifyUnits.length
-     ? diversifyUnits[(videoCursor++) % diversifyUnits.length]
-     : contexts[(videoCursor++) % contexts.length];
-    const themeStyle = AUTO_BG_THEMES[(continuousVideoCounter + k) % AUTO_BG_THEMES.length];
-    plan.push({
-     phase: 'continuous',
-     ctx,
-     themeStyle,
-     variantId: `${themeStyle}-${Date.now().toString(36)}-${k}`,
-     replacedFromLegacy: false,
-     prevVersion: 2,
-     angleIndex: continuousVideoCounter++
-    });
-   }
-  }
-
-  if (!plan.length) {
-   lastVideoProduceAt = Date.now();
-   lastKnownLegacyRemaining = legacyItemsAll.length;
-   return {
-    filled: 0,
-    replacedLegacyCount: 0,
-    continuousGeneratedCount: 0,
-    legacyRemaining: legacyItemsAll.length,
-    missingRemaining: 0,
-    totalUnits: contexts.length,
-    complete: true,
-    continuousActive: Boolean(continuous),
-    aiVideoModel: setup.activeVideoModel,
-    generatorProvider: setup.generatorProvider,
-    aiVideoEngine: chosenEngine,
-    videoPolicy: VIDEO_GENERATION_POLICY,
-    localExecutionOnly: true,
-    zeroApiRequired: true,
-    noApiKeyPrompts: true
-   };
-  }
-
-  const canUseAiModel = !instantOnly && useAiModels !== false && setup.ollamaReachable && setup.activeVideoModel && isAllowedVideoModel(setup.activeVideoModel, setup.installedModels);
-  const apexDirective = [
-   apex.getBotDirectiveBlock(apexState, 'videoDirector'),
-   apex.getBotDirectiveBlock(apexState, 'localVideoStudio')
-  ].filter(Boolean).join('\n');
-
-  const jobs = [];
-  let aiScriptedCount = 0;
-  for (let i = 0; i < plan.length; i++) {
-   const step = plan[i];
-   const ctx = step.ctx;
-   const passages = passagesByUnit.get(ctx.id) || [];
-   const lesson = await lessonEngine.loadLesson(ctx.id);
-   let vid = null;
-   if (canUseAiModel) {
-    try {
-     vid = await videoDirector.produceUnitVideo({
-      ctx, passages, lesson, studentProfile,
-      themeStyle: step.themeStyle,
-      saveAsVariant: false,
-      variantId: step.variantId,
-      noQuestions: true,
-      apexDirective,
-      aiVideoEngine: chosenEngine,
-      runModelFn: runVideoDirectorModel,
-      model: setup.activeVideoModel,
-      signal: AbortSignal.timeout(aiTimeoutMs)
-     });
-     if (vid) {
-      if (step.replacedFromLegacy) {
-       vid.replacedFromLegacy = true;
-       vid.replacedLegacyAt = new Date().toISOString();
-      }
-      aiScriptedCount++;
-     }
-    } catch {}
-   }
-   if (!vid) {
-    vid = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, null, step.themeStyle, '', {
-     noQuestions: true,
-     variantId: step.variantId,
-     replacedFromLegacy: step.replacedFromLegacy,
-     prevVersion: step.prevVersion,
-     angleIndex: step.angleIndex,
-     aiModel: setup.activeVideoModel,
-     aiVideoEngine: chosenEngine,
-     generatorProvider: setup.generatorProvider
-    });
-    if (step.variantId) vid.variantId = step.variantId;
-   }
-   jobs.push({
-    video: vid,
-    outMp4Path: videoDirector.mp4Path(ctx.id, step.variantId),
-    unitId: ctx.id,
-    variantId: step.variantId,
-    phase: step.phase
-   });
-  }
-
-  let filled = 0;
-  let replacedLegacyNow = 0;
-  let continuousNow = 0;
-  let actualEngineUsed = chosenEngine;
-  if (jobs.length) {
-   if (chosenEngine !== 'tempo-cinema-pro') {
-    for (const job of jobs) {
-     try {
-      const r = await localVideoHub.dispatchLocalRender({
-       engineId: chosenEngine,
-       preferLiveNeural: true,
-       video: job.video,
-       outMp4Path: job.outMp4Path,
-       speedProfile: speedProfile === 'hd' ? 'cinema' : 'turbo'
-      });
-      if (r?.path) {
-       actualEngineUsed = r.engineId || chosenEngine;
-       job.video.aiVideoEngine = actualEngineUsed;
-       job.video.audioMuxed = Boolean(r.audioMuxed);
-       await videoDirector.saveVideo(job.video, job.variantId);
-       filled++;
-       if (job.phase === 'replace_legacy') replacedLegacyNow++;
-       else if (job.phase === 'continuous') continuousNow++;
-       if (job.phase === 'continuous') {
-        await videoDirector.pruneExcessUnitVariants(job.unitId, { maxVariants: maxVariantsPerUnit }).catch(() => {});
-       }
-      }
-     } catch {}
-    }
-   } else {
-    const results = await mp4Renderer.renderBatchMp4(jobs, { concurrency: Math.min(4, jobs.length), speedProfile }).catch(() => []);
-    for (let i = 0; i < jobs.length; i++) {
-     if (results[i]?.ok) {
-      jobs[i].video.aiVideoEngine = 'tempo-cinema-pro';
-      await videoDirector.saveVideo(jobs[i].video, jobs[i].variantId);
-      filled++;
-      if (jobs[i].phase === 'replace_legacy') replacedLegacyNow++;
-      else if (jobs[i].phase === 'continuous') continuousNow++;
-      if (jobs[i].phase === 'continuous') {
-       await videoDirector.pruneExcessUnitVariants(jobs[i].unitId, { maxVariants: maxVariantsPerUnit }).catch(() => {});
-      }
-     }
-    }
-    if (filled > 0) {
-     const curHub = await localVideoHub.loadState().catch(() => null);
-     if (curHub) {
-      await localVideoHub.saveState({
-       lastRenderStats: {
-        totalRenders: (curHub.lastRenderStats?.totalRenders || 0) + filled,
-        lastEngineId: 'tempo-cinema-pro',
-        lastRenderedAt: new Date().toISOString()
-       }
-      }).catch(() => {});
-     }
-    }
-   }
-  }
-  replacedLegacyTotal += replacedLegacyNow;
-  continuousGeneratedTotal += continuousNow;
-  const remainingAfter = Math.max(0, legacyItemsAll.length - staleSubsecItems.length - replacedLegacyNow);
-  lastKnownLegacyRemaining = remainingAfter;
-  lastVideoProduceAt = Date.now();
-  return {
-   filled,
-   replacedLegacyCount: replacedLegacyNow,
-   continuousGeneratedCount: continuousNow,
-   replacedLegacyTotal,
-   continuousGeneratedTotal,
-   legacyRemaining: remainingAfter,
-   missingRemaining: Math.max(0, missingUnits.length - jobs.filter(j => j.phase === 'missing').length),
-   totalUnits: contexts.length,
-   continuousActive: Boolean(continuous),
-   aiVideoModel: setup.activeVideoModel,
-   generatorProvider: setup.generatorProvider,
-   aiVideoEngine: actualEngineUsed,
-   aiScriptedCount,
-   videoPolicy: VIDEO_GENERATION_POLICY,
-   localExecutionOnly: true,
-   zeroApiRequired: true,
-   noApiKeyPrompts: true
-  };
- } finally {
-  videoBusy = false;
- }
-}
-
-async function triggerVideoProduce(unitId, fallbackModel, forcedMode = null, opts = {}) {
- const isManual = Boolean(unitId);
- if (!isManual && videoBusy) return null;
- if (!isManual) videoBusy = true;
- try {
-  const [studentProfile, vCfg, apexState, trainerState] = await Promise.all([
-   evolver.loadStudentProfile(),
-   videoDirector.loadConfig(),
-   apex.loadState(),
-   trainer.loadState()
-  ]);
-  if (!unitId && vCfg.autoProduceVideos === false) return null;
-  let ctx = unitId ? contexts.find(c => c.id === unitId) : null;
-  let chosenTheme = opts.themeStyle || '';
-  if (!ctx) {
-   // Çok yanlış yapılan ünite varsa hemen "hata_kurtarma" + eğlenceli video üret!
-   const rescueUnit = contexts.find(c => lessonEngine.formatStudentPerformance(c.id, studentProfile).needsReread);
-   if (rescueUnit) {
-    const existingVid = await videoDirector.loadVideo(rescueUnit.id);
-    if (!existingVid || existingVid.situationMode !== 'hata_kurtarma') {
-     ctx = rescueUnit;
-    }
-   }
-  }
-  if (!ctx) {
-   const idx = videoCursor++;
-   ctx = contexts[idx % contexts.length];
-   if (!chosenTheme) {
-    chosenTheme = AUTO_BG_THEMES[Math.floor(idx / contexts.length) % AUTO_BG_THEMES.length];
-   }
-  }
-  if (!chosenTheme) chosenTheme = 'morpa_klasik';
-  const videoHint = trainer.getVideoEnrichmentHint(trainerState, ctx.id);
-  const fullVideoDirective = [
-   apex.getBotDirectiveBlock(apexState, 'videoDirector'),
-   apex.getBotDirectiveBlock(apexState, 'localVideoStudio'),
-   videoHint ? `20x EĞİTİM SİNEMA VURGUSU: ${videoHint}` : ''
-  ].filter(Boolean).join('\n');
-
-  const passages = passagesByUnit.get(ctx.id) || [];
-  const lesson = await lessonEngine.loadLesson(ctx.id);
-  const saveAsVariant = opts.saveAsVariant !== undefined
-   ? Boolean(opts.saveAsVariant)
-   : Boolean(!isManual && chosenTheme !== 'morpa_klasik');
-  const variantId = typeof opts.variantId === 'string' && opts.variantId
-   ? opts.variantId
-   : (saveAsVariant ? `${chosenTheme}-${Date.now().toString(36)}` : '');
-
-  let video;
-  const resolvedVideoModel = isAllowedVideoModel(fallbackModel) ? fallbackModel : (PHOTO_CLOUD_VIDEO_MODELS[0]?.id || 'kimi-k3.1-pro:cloud');
-  const localVideoCfg = await localVideoHub.loadState().catch(() => ({ preferredEngineId: 'tempo-cinema-pro' }));
-  const resolvedEngine = opts.engineId || localVideoCfg.preferredEngineId || 'tempo-cinema-pro';
-  if (opts.instantTurbo) {
-   video = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, forcedMode, chosenTheme, opts.customIdea || '', {
-    aiModel: resolvedVideoModel,
-    aiVideoEngine: resolvedEngine
-   });
-   if (variantId) video.variantId = variantId;
-   await videoDirector.saveVideo(video, variantId);
-  } else {
-   try {
-    video = await videoDirector.produceUnitVideo({
-     ctx,
-     passages,
-     lesson,
-     studentProfile,
-     forcedMode,
-     themeStyle: chosenTheme,
-     customIdea: opts.customIdea || '',
-     variantId,
-     saveAsVariant,
-     apexDirective: fullVideoDirective,
-     aiVideoEngine: resolvedEngine,
-     runModelFn: runVideoDirectorModel,
-     model: resolvedVideoModel
-    });
-   } catch (e) {
-    if (opts.fallbackOnError) {
-     video = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, forcedMode, chosenTheme, opts.customIdea || '', {
-      aiModel: resolvedVideoModel,
-      aiVideoEngine: resolvedEngine
-     });
-     if (variantId) video.variantId = variantId;
-     await videoDirector.saveVideo(video, variantId);
-    } else {
-     throw e;
-    }
-   }
-  }
-  lastVideoProduceAt = Date.now();
-  // Senaryodan (Kimi / Ollama) doğrudan gömülü .mp4 dosyasını yerel derleyici ile oluştur! (Harici 3. parti video servisi çağrılmaz)
-  if (opts.deferMp4Render) {
-   setTimeout(() => { ensureUnitMp4(ctx.id, true, video.variantId || '', opts.speedProfile || 'turbo').catch(() => {}); }, 60).unref?.();
-  } else {
-   ensureUnitMp4(ctx.id, true, video.variantId || '', opts.speedProfile || 'turbo').catch(() => {});
-  }
-  return video;
- } finally {
-  if (!isManual) videoBusy = false;
- }
-}
 
 async function triggerContinuousIntelligenceTick(batchUnits = 4) {
  if (trainerBusy) return null;
@@ -3507,10 +2960,10 @@ async function triggerHyperBotEvolveCycle() {
  if (hyperBotEvolveBusy) return null;
  hyperBotEvolveBusy = true;
  try {
-  const [items, study, policy, lessonsSummary, videosSummary, feedAll, studentProfile] = await Promise.all([
+  const [items, study, policy, lessonsSummary, studentProfile] = await Promise.all([
    load(), loadStudy(), evolver.loadPolicy(),
-   lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length),
-   videoDirector.listAllFeedVideos(), evolver.loadStudentProfile()
+   lessonEngine.listSummary(contexts.length),
+   evolver.loadStudentProfile()
   ]);
   const swarmRes = await multiAiEval.evaluateAndEvolve({
    paramMatrix: null,
@@ -3519,8 +2972,6 @@ async function triggerHyperBotEvolveCycle() {
    contexts,
    passagesByUnit,
    lessonsSummary,
-   videosSummary,
-   feedVideos: (feedAll || []).filter(v => v.hasMp4),
    evolver,
    policy,
    studentProfile,
@@ -3781,13 +3232,12 @@ async function triggerApexEvolve(evolverModel, installedModels = []) {
  if (apexEvolving) return null;
  apexEvolving = true;
  try {
-  const [jCfg, items, studentProfile, curatorReport, lessonsSummary, videosSummary, rMem] = await Promise.all([
+  const [jCfg, items, studentProfile, curatorReport, lessonsSummary, rMem] = await Promise.all([
    jarvis.loadConfig(),
    load(),
    evolver.loadStudentProfile(),
    poolCurator.loadReport(),
    lessonEngine.listSummary(contexts.length),
-   videoDirector.listSummary(contexts.length),
    researchAgent.loadMemory()
   ]);
   const coderModel = installedModels.includes(jCfg.coderModel) ? jCfg.coderModel : evolverModel;
@@ -3804,7 +3254,6 @@ async function triggerApexEvolve(evolverModel, installedModels = []) {
    studentProfile,
    curatorReport,
    lessonsSummary,
-   videosSummary,
    researchMemory: rMem,
    paramMatrix,
    multiAiEval,
@@ -3896,7 +3345,7 @@ async function autoScheduler() {
 }
 
 // OLLAMA BAĞLANDIĞINDA PROJE VE TÜM AI BOTLARI 100x ULTRA-SINGULARITY SEVİYESİNE OTOMATİK YÜKSELTEN KASKAD!
-async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force = false, renderVideosNow = false } = {}) {
+async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force = false } = {}) {
  const models = Array.isArray(installedModels) ? installedModels.filter(Boolean) : [];
  const isMock = models.some(m => /^fake:/i.test(m));
  const liveOllama = models.length > 0 && !isMock;
@@ -3913,20 +3362,17 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    await ensureRolesAutoAssigned(models, true).catch(() => {});
    await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: models, profile: cachedHardwareProfile }).catch(() => {});
   }
-  const [model, evolverModel, verifierModel, judge2Model, videoModel, jCfg, items, study, studentProfile, policy, lessonsSummary, videosSummary, feedAll] = await Promise.all([
+  const [model, evolverModel, verifierModel, judge2Model, jCfg, items, study, studentProfile, policy, lessonsSummary] = await Promise.all([
    selectedModel(),
    selectedEvolverModel(await selectedModel()),
    selectedVerifierModel(await selectedModel()),
    selectedJudgeModel('judge2Model', defaultJudge2Model),
-   selectedVideoModel(await selectedEvolverModel(await selectedModel())),
    jarvis.loadConfig(),
    load(),
    loadStudy(),
    evolver.loadStudentProfile(),
    evolver.loadPolicy(),
    lessonEngine.listSummary(contexts.length),
-   videoDirector.listSummary(contexts.length),
-   videoDirector.listAllFeedVideos()
   ]);
 
   await paramMatrix.syncBackbones({
@@ -3934,21 +3380,13 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    verifierModel,
    judge2Model,
    evolverModel,
-   videoModel,
    coderModel: jCfg.coderModel
   }).catch(() => {});
 
   const telSnap = getTelemetrySnapshot();
   const preferredCoder = models.includes(jCfg.coderModel) ? jCfg.coderModel : (models.includes(evolverModel) ? evolverModel : (models[0] || null));
-  const activeVideoModel = models.includes(videoModel) ? videoModel : pickBestVideoModel(models);
 
   // 1) Tüm AI botlarını + 44+ model konseyini + 100-yöntem laboratuvarını + 40-aşamalı eğitmeni + çoklu swarm değerlendiriciyi paralel yükselt
-  const normalizedFeed = (feedAll || []).filter(v => v.hasMp4).map(item => ({
-   ...item,
-   noQuestions: true,
-   directAnswer: item.directAnswer || item.summary || item.unit,
-   keyTerms: Array.isArray(item.keyTerms) ? item.keyTerms : []
-  }));
 
   const skipDupCouncil = !force && (Date.now() - lastCoderSprintAt < 8_000) && cachedCoderCouncilState;
   const skipDupQwen = !force && (Date.now() - lastQwenTournamentAt < 8_000);
@@ -3968,8 +3406,6 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
     contexts,
     passagesByUnit,
     lessonsSummary,
-    videosSummary,
-    feedVideos: normalizedFeed,
     evolver,
     policy,
     studentProfile,
@@ -4058,39 +3494,6 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
   }
   nexusCycleRes = await triggerNexusFusionCycle(models, { withLiveLlm: Boolean(liveOllama && models.length) }).catch(() => null);
 
-  // 3) Bağlantı anında mevcut eski TikTok videolarının bir partisini hemen yerinde yenileriyle değiştir (MP4 render arka planda event-loop'u kilitlemeden çalışır)!
-  let videoRes = null;
-  if (renderVideosNow) {
-   videoRes = await fillNextMissingUnitVideo(activeVideoModel, {
-    count: liveOllama ? 3 : 2,
-    speedProfile: 'turbo',
-    instantOnly: false,
-    regenerateLegacy: true,
-    continuous: true,
-    aiTimeoutMs: liveOllama ? 12_000 : 4_000
-   }).catch(() => null);
-  } else {
-   videoRes = await fillNextMissingUnitVideo(activeVideoModel, {
-    count: liveOllama ? 3 : 2,
-    speedProfile: 'turbo',
-    instantOnly: true,
-    regenerateLegacy: true,
-    continuous: true,
-    aiTimeoutMs: 2_500
-   }).catch(() => null);
-   setTimeout(() => {
-    if (!autoLoopStopping && !videoBusy && Date.now() - lastInteractiveApiAt >= 3_500) {
-     fillNextMissingUnitVideo(activeVideoModel, {
-      count: 2,
-      speedProfile: 'turbo',
-      instantOnly: false,
-      regenerateLegacy: true,
-      continuous: true
-     }).catch(() => {});
-    }
-   }, 8_000).unref?.();
-  }
-
   cachedParamState = await paramMatrix.loadState().catch(() => cachedParamState);
   cachedLocalTeamState = await localAiTeam.loadState().catch(() => cachedLocalTeamState);
   cachedCoderCouncilState = await coderCouncil.loadState().catch(() => cachedCoderCouncilState);
@@ -4109,7 +3512,7 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    cumulativeUpgradeFactor: 150000,
    trainingScaleFactor: 3000000,
    trapDefenseTotal: 96,
-   botsUpgraded: 11,
+   botsUpgraded: 8,
    coderModelsUpgraded: cachedCoderCouncilState?.totalModels || 64,
    paramBoostOk: boostRes.status === 'fulfilled',
    swarmOk: swarmRes.status === 'fulfilled',
@@ -4125,16 +3528,13 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    jarvisReflected: Boolean(jarvisRes),
    nexusModelCreated: Boolean(nexusOllamaBuild?.created),
    nexusFusionCycle: nexusCycleRes?.state?.fusionCycles || cachedNexusModelState?.fusionCycles || 0,
-   videosReplacedNow: videoRes?.replacedLegacyCount || 0,
-   videosFilledNow: videoRes?.filled || 0,
-   legacyVideosRemaining: videoRes?.legacyRemaining ?? lastKnownLegacyRemaining,
    durationMs
   };
   ollamaUpgradeState.lastResult = summaryResult;
   await jarvis.addJournal(
    'ollama_connected_100x_upgrade',
    `100x Ultra-Singularity Tam Proje & Tüm Bot Yükseltmesi (${liveOllama ? `${models.length} Canlı Ollama Modeli` : 'Yerel 0-API'})`,
-   `11 bot, ${summaryResult.coderModelsUpgraded} model konseyi, 40-aşama eğitmen, 96-tuzak turnuvası ve ${summaryResult.videosFilledNow} TikTok videosu ${durationMs}ms içinde yükseltildi.`
+   `8 bot, ${summaryResult.coderModelsUpgraded} model konseyi, 40-aşama eğitmen, 96-tuzak turnuvası ${durationMs}ms içinde yükseltildi.`
   ).catch(() => {});
   return summaryResult;
  } finally {
@@ -4283,13 +3683,6 @@ async function backgroundCoachLoop() {
     if (parallelBgTasks.length) {
      await Promise.allSettled(parallelBgTasks);
     }
-    // 0.7) Kimi & Ollama video politikası aktifken harici Google Veo yoklaması kapalı tutulur
-    const vCfgLoop = await videoDirector.loadConfig().catch(() => ({ kimiOllamaOnly: true, autoUseGoogleFlow: false }));
-    if (vCfgLoop.kimiOllamaOnly === false && vCfgLoop.autoUseGoogleFlow === true) {
-     videoDirector.pollAllPendingGoogleFlowRenders().catch(() => {});
-    }
-
-    const legacyWaitMs = (lastKnownLegacyRemaining === null || lastKnownLegacyRemaining > 0) ? 2_500 : 5_000;
 
     if (models.length && !autoLoopStopping) {
      await ensureRolesAutoAssigned(models, true).catch(() => {});
@@ -4297,7 +3690,6 @@ async function backgroundCoachLoop() {
      const cfg = await getPipelineConfig();
      const model = await selectedModel();
      const evolverModel = await selectedEvolverModel(model);
-     const videoModel = await selectedVideoModel(evolverModel);
      const [jCfg, jMem] = await Promise.all([jarvis.loadConfig(), jarvis.loadMemory()]);
 
      if (models.includes(evolverModel) && !isMockOllama) {
@@ -4325,7 +3717,7 @@ async function backgroundCoachLoop() {
        await triggerJarvisInnovate(evolverModel, models).catch(() => {});
       }
 
-      // 4.5) 100x Ultra-Singularity ApexArchitect Çapraz-Bot Evrimi (Hem deneme hem zaman tetikleyicisiyle tüm 11 alt-sistemi sürekli yükseltir!)
+      // 4.5) 100x Ultra-Singularity ApexArchitect Çapraz-Bot Evrimi (Hem deneme hem zaman tetikleyicisiyle tüm 8 alt-sistemi sürekli yükseltir!)
       const apexStateNow = await apex.loadState();
       if (!apexEvolving && (apexStateNow.evolutionCycles === 0 || telemetry.attemptsTotal - lastApexCycleAtAttempt >= 14 || Date.now() - lastApexTimeAt >= 45_000)) {
        await triggerApexEvolve(evolverModel, models).catch(() => {});
@@ -4349,19 +3741,6 @@ async function backgroundCoachLoop() {
        await triggerLessonEnhance(null, evolverModel).catch(() => {});
       }
 
-      // 8) Kimi ve Ollama Modelleriyle Eski TikTok Videolarını Yerinde Değiştir + Sürekli Yeni TikTok Videoları Üret!
-      if (!videoBusy && !isMockOllama && Date.now() - telemetry.startedAt >= 8_000 && Date.now() - lastInteractiveApiAt >= 3_500 && Date.now() - lastVideoProduceAt >= legacyWaitMs) {
-       const activeVideoModel = models.includes(videoModel) ? videoModel : pickBestVideoModel(models);
-       const canRunKimiOrOllama = Boolean(activeVideoModel && models.includes(activeVideoModel) && isAllowedVideoModel(activeVideoModel, models));
-       await fillNextMissingUnitVideo(activeVideoModel, {
-        count: (lastKnownLegacyRemaining === null || lastKnownLegacyRemaining > 0) ? 2 : 1,
-        speedProfile: 'turbo',
-        instantOnly: !canRunKimiOrOllama,
-        regenerateLegacy: true,
-        continuous: true
-       }).catch(() => {});
-      }
-
       // 9) Sürekli SFT + DPO Veri Seti Hazırlığı (eski düğme kaldırıldı; hazır olunca kendiliğinden hazırlar) + Donanım Hazırsa Ağırlık Eğitimi
       const items = await load();
       const approvedNow = items.filter(x => x.status === 'approved').length;
@@ -4375,15 +3754,6 @@ async function backgroundCoachLoop() {
        }
       }
      }
-    } else if (!videoBusy && !isMockOllama && Date.now() - telemetry.startedAt >= 8_000 && Date.now() - lastInteractiveApiAt >= 3_500 && Date.now() - lastVideoProduceAt >= legacyWaitMs) {
-     // Ollama bağlı olmasa bile mevcut eski TikTok videoları arka planda yerinde yenilenir ve sürekli yeni TikTok videoları üretilir!
-     await fillNextMissingUnitVideo(null, {
-      count: (lastKnownLegacyRemaining === null || lastKnownLegacyRemaining > 0) ? 2 : 1,
-      speedProfile: 'turbo',
-      instantOnly: false,
-      regenerateLegacy: true,
-      continuous: true
-     }).catch(() => {});
     }
     // 10) Continue/Aider RAG + AutoGen/LangGraph/CrewAI + Axolotl/LLaMA-Factory QLoRA+DPO arka plan döngüsü
     if (!autoLoopStopping && !isMockOllama && Date.now() - telemetry.startedAt >= 4_000 && Date.now() - lastInteractiveApiAt >= 3_500) {
@@ -4481,7 +3851,7 @@ export function ollamaPlugin() {
     autoLoopStarted = true;
     if (process.env.TEMPO_UNLOAD_STALE_PINS === '1') unloadStalePinnedModelsAtBoot().catch(() => {});
     autoScheduler();
-    // The research/training/video coach performs many optional background jobs.
+    // The research/training coach performs many optional background jobs.
     // Keep it off unless the user explicitly opts in via environment variable.
     if (process.env.TEMPO_ENABLE_BACKGROUND_AGENTS === '1') backgroundCoachLoop();
     else runZeroApiBootBurst();
@@ -4492,7 +3862,7 @@ export function ollamaPlugin() {
      const path = urlObj.pathname;
      if (req.method === 'POST' && path !== '/stop') lastInteractiveApiAt = Date.now();
      let models = [], connected = false;
-     if (['/status', '/jarvis', '/videos', '/hardware'].includes(path)) {
+     if (['/status', '/jarvis', '/hardware'].includes(path)) {
       try {
        const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(2500) });
        if (r.ok) {
@@ -4503,19 +3873,11 @@ export function ollamaPlugin() {
      }
      if (models.length) {
       cachedConnectedModels = models;
-      // Yalnızca videoModel henüz kilitlenmemişse fotoğraf bulut modellerini (kimi-k3.1-pro:cloud vb.) önceliklendir
-      const settingsNow = await readSettings();
-      const curVideo = await selectedVideoModel(await selectedEvolverModel(await selectedModel()));
-      const bestVideo = pickBestVideoModel(models);
-      if (!settingsNow.videoModelLocked && /:cloud$/i.test(bestVideo) && (!models.includes(curVideo) || !/:cloud$/i.test(curVideo))) {
-       await writeSettings({ videoModel: bestVideo }).catch(() => {});
-      }
      }
      const model = await selectedModel();
      const verifierModel = await selectedVerifierModel(model);
      const judge2Model = await selectedJudgeModel('judge2Model', defaultJudge2Model);
      const evolverModel = await selectedEvolverModel(model);
-     const videoModel = await selectedVideoModel(evolverModel);
 
      if (req.method === 'GET' && path === '/voicestudio/catalog') {
       return respond(res, 200, await voiceStudio.getCatalog());
@@ -4525,134 +3887,9 @@ export function ollamaPlugin() {
       return respond(res, 200, { ok: true, ...(await voiceStudio.checkLocalVoiceStudio()) });
      }
 
-     if (req.method === 'GET' && path === '/videos/local-engines') {
-      return respond(res, 200, await localVideoHub.detectLocalEngines());
-     }
 
-     if (req.method === 'GET' && path === '/3d/engines') {
-      const [caps, videoHubCaps] = await Promise.all([
-       local3dEngine.detectCapabilities(),
-       localVideoHub.detectLocalEngines()
-      ]);
-      return respond(res, 200, {
-       ok: true,
-       ...caps,
-       presets: LOCAL_3D_ANIMATION_PRESETS,
-       catalog: LOCAL_3D_ENGINES_CATALOG,
-       localVideoEngines: videoHubCaps?.engines || []
-      });
-     }
 
-     if (req.method === 'POST' && path === '/3d/generate') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '0-0';
-      const ctx = contexts.find(c => c.id === unitId) || contexts[0];
-      const passages = passagesByUnit.get(ctx?.id || unitId) || [];
-      const keyPoints = Array.isArray(input?.keyPoints) && input.keyPoints.length
-       ? input.keyPoints
-       : extractKeyTermsFromUnit(ctx, passages).slice(0, 4);
-      const spec = local3dEngine.build3DAnimationSpec({
-       unitId: ctx?.id || unitId,
-       unitTitle: typeof input?.unitTitle === 'string' && input.unitTitle.trim() ? input.unitTitle.trim() : (ctx?.unit || 'Temel Eğitim 3D'),
-       book: typeof input?.book === 'string' && input.book.trim() ? input.book.trim() : (ctx?.book || 'Temel Eğitim'),
-       presetId: typeof input?.presetId === 'string' ? input.presetId : 'biomech_sprint',
-       environment: typeof input?.environment === 'string' ? input.environment : '',
-       choreography: typeof input?.choreography === 'string' ? input.choreography : '',
-       hologram: typeof input?.hologram === 'string' ? input.hologram : '',
-       cameraPath: typeof input?.cameraPath === 'string' ? input.cameraPath : '',
-       speed: Number(input?.speed || 1.0),
-       particleCount: Number(input?.particleCount || 24),
-       customPrompt: typeof input?.customPrompt === 'string' ? input.customPrompt : '',
-       keyPoints
-      });
-      const includeBlender = input?.includeBlenderScript !== false;
-      const blenderScript = includeBlender ? local3dEngine.generateBlenderScript(spec) : null;
-      const previewSvg = local3dEngine.renderProjected3DFrameSvg({
-       spec,
-       sceneIdx: 0,
-       dialogue: spec.scenes?.[0]?.dialogues?.[0] || null,
-       phase: 2,
-       totalPhases: 16
-      });
-      let savedVariantId = '';
-      if (input?.saveToUnit && ctx) {
-       const variantId = `3d-${spec.presetId}`;
-       await videoDirector.saveVideo(spec, variantId);
-       savedVariantId = variantId;
-      }
-      let mp4Result = null;
-      if (input?.renderMp4 && ctx) {
-       const ffmpegPath = await mp4Renderer.getFfmpegPath?.();
-       if (ffmpegPath) {
-        const variantId = savedVariantId || `3d-${spec.presetId}`;
-        if (!savedVariantId) await videoDirector.saveVideo(spec, variantId);
-        mp4Result = await localVideoHub.dispatchLocalRender({
-         engineId: 'tempo-3d-cinema-engine',
-         video: spec,
-         outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-         speedProfile: input?.speedProfile === 'hd' ? 'cinema' : 'turbo'
-        });
-        mp4Result.mp4Url = `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}&variantId=${encodeURIComponent(variantId)}&t=${Date.now()}`;
-        savedVariantId = variantId;
-       }
-      }
-      return respond(res, 200, {
-       ok: true,
-       zeroApi: true,
-       spec,
-       blenderScript,
-       previewSvg,
-       savedVariantId,
-       mp4: mp4Result
-      });
-     }
 
-     if (req.method === 'POST' && path === '/3d/render-mp4') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '0-0';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      const passages = passagesByUnit.get(ctx.id) || [];
-      const keyPoints = Array.isArray(input?.keyPoints) && input.keyPoints.length
-       ? input.keyPoints
-       : extractKeyTermsFromUnit(ctx, passages).slice(0, 4);
-      const spec = local3dEngine.build3DAnimationSpec({
-       unitId: ctx.id,
-       unitTitle: typeof input?.unitTitle === 'string' && input.unitTitle.trim() ? input.unitTitle.trim() : ctx.unit,
-       book: ctx.book,
-       presetId: typeof input?.presetId === 'string' ? input.presetId : 'biomech_sprint',
-       environment: typeof input?.environment === 'string' ? input.environment : '',
-       choreography: typeof input?.choreography === 'string' ? input.choreography : '',
-       hologram: typeof input?.hologram === 'string' ? input.hologram : '',
-       cameraPath: typeof input?.cameraPath === 'string' ? input.cameraPath : '',
-       speed: Number(input?.speed || 1.0),
-       particleCount: Number(input?.particleCount || 24),
-       customPrompt: typeof input?.customPrompt === 'string' ? input.customPrompt : '',
-       keyPoints
-      });
-      const variantId = typeof input?.variantId === 'string' && input.variantId.trim()
-       ? input.variantId.trim()
-       : `3d-${spec.presetId}`;
-      await videoDirector.saveVideo(spec, variantId);
-      try {
-       const renderRes = await localVideoHub.dispatchLocalRender({
-        engineId: 'tempo-3d-cinema-engine',
-        video: spec,
-        outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-        speedProfile: input?.speedProfile === 'hd' ? 'cinema' : 'turbo'
-       });
-       return respond(res, 200, {
-        ok: true,
-        hasMp4: true,
-        variantId,
-        spec,
-        ...renderRes,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}&variantId=${encodeURIComponent(variantId)}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Yerel 3D MP4 derlenemedi.' });
-      }
-     }
 
      if ((req.method === 'GET' || req.method === 'POST') && path === '/rag/query') {
       const input = req.method === 'POST' ? await body(req) : {};
@@ -4955,12 +4192,12 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'GET' && path === '/status') {
-      const [items, study, storage, autoRunning, autoConcurrency, autoTimeout, pipelineConfig, policy, history, studentProfile, jConfig, jMemory, jEnv, rMem, curatorReport, lessonsSummary, videosSummary, feedAll, apexState, trainerState, githubOss, githubMegaState, voiceStudioSummary, localVideoStatus, local3dSummary, rawParamState, swarmState, qwenLabState, localTeamState, hardwareSummary, coderState, verifier100State] = await Promise.all([
+      const [items, study, storage, autoRunning, autoConcurrency, autoTimeout, pipelineConfig, policy, history, studentProfile, jConfig, jMemory, jEnv, rMem, curatorReport, lessonsSummary, apexState, trainerState, githubOss, githubMegaState, voiceStudioSummary, rawParamState, swarmState, qwenLabState, localTeamState, hardwareSummary, coderState, verifier100State] = await Promise.all([
        load(), loadStudy(), storageUsage(), autoRunningEnabled(), autoConcurrencyLimit(), autoTimeoutMs(), getPipelineConfig(),
        evolver.loadPolicy(), evolver.loadHistory(), evolver.loadStudentProfile(),
        jarvis.loadConfig(), jarvis.loadMemory(), jarvis.inspectTrainingEnvironment(), researchAgent.loadMemory(),
-       poolCurator.loadReport(), lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length), videoDirector.listAllFeedVideos(), apex.loadState(),
-       trainer.loadState(), githubMiner.loadState(), githubMega.loadState(), voiceStudio.getSummary(), localVideoHub.detectLocalEngines(), local3dEngine.detectCapabilities(), paramMatrix.loadState(), multiAiEval.loadState(), qwenCodeLab.loadState(), localAiTeam.loadState(),
+       poolCurator.loadReport(), lessonEngine.listSummary(contexts.length), apex.loadState(),
+       trainer.loadState(), githubMiner.loadState(), githubMega.loadState(), voiceStudio.getSummary(), paramMatrix.loadState(), multiAiEval.loadState(), qwenCodeLab.loadState(), localAiTeam.loadState(),
        hardwareOpt.getSummary({ ollamaBaseUrl: connected ? base : null, installedModels: models }),
        coderCouncil.loadState(),
        verifier100.loadState()
@@ -4975,7 +4212,6 @@ export function ollamaPlugin() {
        verifierModel,
        judge2Model,
        evolverModel,
-       videoModel,
        coderModel: jConfig.coderModel
       }).catch(() => rawParamState);
       cachedParamState = paramState;
@@ -4985,20 +4221,11 @@ export function ollamaPlugin() {
       const qwenLabSummary = qwenCodeLab.getSummary(qwenLabState);
       const localTeamSummary = localAiTeam.getSummary(localTeamState);
       const coderCouncilSummary = coderCouncil.getSummary(coderState, { installedModels: models, botMatrixSummary: paramSummary });
-      const filledFeedUnits = new Set(feedAll.filter(v => v.hasMp4).map(v => v.unitId)).size;
-      const tiktokFeedSummary = {
-       totalUnits: contexts.length,
-       filledUnits: filledFeedUnits,
-       coveragePct: contexts.length ? Math.round((filledFeedUnits / contexts.length) * 100) : 0,
-       feedItemsCount: feedAll.filter(v => v.hasMp4).length,
-       tiktokCount: feedAll.filter(v => v.noQuestions || v.themeStyle === 'tiktok_kayseri' || v.themeStyle === 'terim_avcisi').length
-      };
-      const enrichedVideosSummary = { ...videosSummary, ...tiktokFeedSummary };
       const telSnap = getTelemetrySnapshot();
       const adaptiveQuality = jarvis.computeAdaptiveQuality(jMemory, rMem, telSnap, apexState);
       const liveDiagnostics = apex.diagnoseAllBots({
        items, contexts, passagesByUnit, telemetry: telSnap, studentProfile,
-       curatorReport, lessonsSummary, videosSummary: enrichedVideosSummary, researchMemory: rMem, jarvisMemory: jMemory
+       curatorReport, lessonsSummary, researchMemory: rMem, jarvisMemory: jMemory
       });
       const approvedCount = items.filter(x => x.status === 'approved').length;
       const sinceTrain = Math.max(0, approvedCount - (jMemory.lastTrainedApprovedCount || 0));
@@ -5019,8 +4246,7 @@ export function ollamaPlugin() {
        pool: {
         approvedCount,
         unitsCount: contexts.length,
-        totalLessons: lessonsSummary?.totalLessons ?? 0,
-        totalVideos: enrichedVideosSummary?.totalVideos ?? 0
+        totalLessons: lessonsSummary?.totalLessons ?? 0
        },
        teamState: localTeamState,
        codeLabState: qwenLabState,
@@ -5038,17 +4264,12 @@ export function ollamaPlugin() {
        agentOrchestrator.getStatus()
       ]);
       return respond(res, 200, {
-       connected, model, verifierModel, judge2Model, evolverModel, videoModel,
+       connected, model, verifierModel, judge2Model, evolverModel,
        installed: models.includes(model),
        verifierInstalled: models.includes(verifierModel),
        judge2Installed: models.includes(judge2Model),
        evolverInstalled: models.includes(evolverModel),
-       videoModelInstalled: models.includes(videoModel),
-       videoPolicy: VIDEO_GENERATION_POLICY,
-       allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-       videoProvider: classifyVideoProvider(videoModel),
        coderInstalled: models.includes(jConfig.coderModel),
-       cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
        installedCloudModels: models.filter(m => /:cloud$/i.test(m)),
        models, busy, phase, lastError, storage,
        count: items.length,
@@ -5067,19 +4288,8 @@ export function ollamaPlugin() {
        angleCounts,
        curator: curatorReport,
        lessons: lessonsSummary,
-       videos: enrichedVideosSummary,
-       tiktokFeed: tiktokFeedSummary,
-       continuousTikTok: {
-        active: true,
-        replacedLegacyTotal,
-        continuousGeneratedTotal,
-        legacyRemaining: videosSummary.legacyCount ?? feedAll.filter(v => v.isLegacy).length,
-        upgradedV2Count: videosSummary.upgradedV2Count ?? feedAll.filter(v => !v.isLegacy).length,
-        videoSpecVersion: VIDEO_SPEC_VERSION
-       },
        ollamaUpgrade: ollamaUpgradeState,
        voiceStudio: voiceStudioSummary,
-       localVideoEngines: localVideoStatus,
        upgradeFactorFromPrevious: 100,
        cumulativeUpgradeFactor: 150000,
        trainingScaleFactor: 3000000,
@@ -5176,7 +4386,6 @@ export function ollamaPlugin() {
        verifier100: verifier100.getSummary(verifier100State),
        bookSearch: bookSearch.getSummary(),
        projectLevel: projectLevelSummary,
-       local3d: local3dSummary,
        ragSummary,
        trainingHub: trainingHubStatus,
        orchestrator: orchestratorStatus,
@@ -5196,13 +4405,12 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'GET' && path === '/intelligence') {
-      const [trainerState, githubOss, apexState, jMem, rMem, videosSummary, paramState, swarmState, coderState] = await Promise.all([
+      const [trainerState, githubOss, apexState, jMem, rMem, paramState, swarmState, coderState] = await Promise.all([
        trainer.loadState(),
        githubMiner.loadState(),
        apex.loadState(),
        jarvis.loadMemory(),
        researchAgent.loadMemory(),
-       videoDirector.listSummary(contexts.length),
        paramMatrix.loadState(),
        multiAiEval.loadState(),
        coderCouncil.loadState()
@@ -5230,13 +4438,7 @@ export function ollamaPlugin() {
        adaptiveQuality,
        parameterMatrix: paramSummary,
        swarmEval: multiAiEval.getSummary(swarmState),
-       coderCouncil: coderCouncil.getSummary(coderState, { installedModels: models, botMatrixSummary: paramSummary }),
-       googleFlow: {
-        zeroApiAutonomous: true,
-        flowTaggedCount: videosSummary.googleFlowTagged || 0,
-        flowEmbeddedCount: videosSummary.googleFlowEmbedded || 0,
-        flowPendingCount: videosSummary.googleFlowPending || 0
-       }
+       coderCouncil: coderCouncil.getSummary(coderState, { installedModels: models, botMatrixSummary: paramSummary })
       });
      }
 
@@ -5247,7 +4449,6 @@ export function ollamaPlugin() {
        verifierModel,
        judge2Model,
        evolverModel,
-       videoModel,
        coderModel: jCfg.coderModel
       });
       cachedParamState = synced;
@@ -5269,14 +4470,12 @@ export function ollamaPlugin() {
 
      if (req.method === 'POST' && (path === '/parameters/evolve' || path === '/swarm-evaluate')) {
       const input = await body(req);
-      const [items, study, studentProfile, curatorReport, lessonsSummary, videosSummary, feedVideos, policy, rMem, jMemory, jCfg] = await Promise.all([
+      const [items, study, studentProfile, curatorReport, lessonsSummary, policy, rMem, jMemory, jCfg] = await Promise.all([
        load(),
        loadStudy(),
        evolver.loadStudentProfile(),
        poolCurator.loadReport(),
        lessonEngine.listSummary(contexts.length),
-       videoDirector.listSummary(contexts.length),
-       videoDirector.listAllFeedVideos(),
        evolver.loadPolicy(),
        researchAgent.loadMemory(),
        jarvis.loadMemory(),
@@ -5287,19 +4486,12 @@ export function ollamaPlugin() {
        verifierModel,
        judge2Model,
        evolverModel,
-       videoModel,
        coderModel: jCfg.coderModel
       }).catch(() => {});
       const telSnap = getTelemetrySnapshot();
       const liveDiagnostics = apex.diagnoseAllBots({
        items, contexts, passagesByUnit, telemetry: telSnap, studentProfile,
-       curatorReport, lessonsSummary, videosSummary, researchMemory: rMem, jarvisMemory: jMemory
-      });
-      const normalizedFeed = (feedVideos || []).filter(v => v.hasMp4).map(item => {
-       const ctx = contexts.find(c => c.id === item.unitId);
-       const terms = item.keyTerms?.length ? item.keyTerms : (ctx ? extractKeyTermsFromUnit(ctx, passagesByUnit.get(ctx.id) || [], null) : []);
-       const dAns = (item.directAnswer || (ctx ? (ctx.text || '').split('.').slice(0, 2).join('. ').trim() : item.summary) || '').replace(/\?+\s*$/, '').trim();
-       return { ...item, noQuestions: true, directAnswer: dAns, keyTerms: terms };
+       curatorReport, lessonsSummary, researchMemory: rMem, jarvisMemory: jMemory
       });
       const swarmRes = await multiAiEval.evaluateAndEvolve({
        paramMatrix,
@@ -5308,8 +4500,6 @@ export function ollamaPlugin() {
        contexts,
        passagesByUnit,
        lessonsSummary,
-       videosSummary,
-       feedVideos: normalizedFeed,
        evolver,
        policy,
        studentProfile,
@@ -5383,13 +4573,11 @@ export function ollamaPlugin() {
        coderCouncil.runOvertrainSprint({ installedModels: tagsList, hardwareProfile: cachedHardwareProfile, paramMatrix: null, epochsPerModel: 1, distillDpo: true }),
        Promise.all([
         lessonEngine.listSummary(contexts.length),
-        videoDirector.listSummary(contexts.length),
-        videoDirector.listAllFeedVideos(),
         evolver.loadStudentProfile()
-       ]).then(([lessonsSummary, videosSummary, feedAll, studentProfile]) =>
+       ]).then(([lessonsSummary, studentProfile]) =>
         multiAiEval.evaluateAndEvolve({
-         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary, videosSummary,
-         feedVideos: feedAll.filter(v => v.hasMp4), evolver, policy, studentProfile,
+         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+         evolver, policy, studentProfile,
          source: 'sub-second-team-sprint'
         })
        )
@@ -5497,13 +4685,13 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/coder-council/team-develop') {
       const input = await body(req);
       const tDev = performance.now();
-      const [tagsList, items, study, policy, lessonsSummary, videosSummary, feedAll, studentProfile] = await Promise.all([
+      const [tagsList, items, study, policy, lessonsSummary, studentProfile] = await Promise.all([
        fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(700) })
         .then(r => (r.ok ? r.json() : null))
         .then(j => (Array.isArray(j?.models) ? j.models.map(x => x.name) : []))
         .catch(() => []),
        load(), loadStudy(), evolver.loadPolicy(),
-       lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length), videoDirector.listAllFeedVideos(),
+       lessonEngine.listSummary(contexts.length),
        evolver.loadStudentProfile()
       ]);
       const epochs = Math.max(1, Math.min(20, Number(input?.epochsPerModel || 3)));
@@ -5520,8 +4708,8 @@ export function ollamaPlugin() {
        localAiTeam.runFastTeamCycle({ items, contexts, evolver, policy, installedModels: tagsList, apex, jarvis, teamBudgetMs: cachedHardwareProfile?.teamBudgetMs || 900 }),
        qwenCodeLab.runHundredMethodTournament({ evolver, paramMatrix: null, jarvis, items, applyToProject: true }),
        multiAiEval.evaluateAndEvolve({
-        paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary, videosSummary,
-        feedVideos: feedAll.filter(v => v.hasMp4), evolver, policy, studentProfile,
+        paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+        evolver, policy, studentProfile,
         source: '40-model-non-ui-team-develop'
        })
       ]);
@@ -5776,164 +4964,8 @@ export function ollamaPlugin() {
       }
       return respond(res, 200, { summary: await lessonEngine.listSummary(contexts.length) });
      }
-     if (req.method === 'GET' && path === '/videos/mp4') {
-      const unitId = urlObj.searchParams.get('unitId') || '0-0';
-      const variantId = urlObj.searchParams.get('variantId') || '';
-      const speedProfile = urlObj.searchParams.get('profile') === 'hd' ? 'hd' : 'turbo';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       const force = urlObj.searchParams.get('rebuild') === '1';
-       await ensureUnitMp4(ctx.id, force, variantId, speedProfile);
-       return await sendMp4File(req, res, videoDirector.mp4Path(ctx.id, variantId));
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Gömülü MP4 video üretilemedi.' });
-      }
-     }
 
-     if (req.method === 'GET' && path === '/videos/feed') {
-      const limit = Math.max(1, Math.min(100, Number(urlObj.searchParams.get('limit') || 40)));
-      const themeFilter = urlObj.searchParams.get('theme') || '';
-      const shouldShuffle = urlObj.searchParams.get('shuffle') !== '0';
-      const setup = await resolveActiveVideoSetup();
-      let feed = await videoDirector.listAllFeedVideos();
-      // İlk açılışta en az 3 ünitenin TikTok videosu hazır değilse seçili 0-API AI video modelleriyle hızlıca üret
-      if (feed.length < 3 && !videoBusy) {
-       await fillNextMissingUnitVideo(setup.activeVideoModel, { count: 3, speedProfile: 'turbo', instantOnly: false, aiTimeoutMs: 3000 }).catch(() => {});
-       feed = await videoDirector.listAllFeedVideos();
-      }
-      // TikTok akışındaki kartlar ASLA soru sormaz; yalnızca gerçek MP4'ü hazır videolara net cevap + keyTerms + 0-API AI model bilgisini garanti et
-      let normalized = feed.filter(v => v.hasMp4).map(item => {
-       const ctx = contexts.find(c => c.id === item.unitId);
-       const terms = item.keyTerms?.length ? item.keyTerms : (ctx ? extractKeyTermsFromUnit(ctx, passagesByUnit.get(ctx.id) || [], null) : []);
-       const dAns = item.directAnswer || (ctx ? (ctx.text || '').split('.').slice(0, 2).join('. ').trim() : item.summary);
-       return {
-        ...item,
-        aiVideoModel: item.aiVideoModel || item.model || setup.activeVideoModel,
-        aiVideoEngine: item.aiVideoEngine || setup.activeEngineId || 'tempo-cinema-pro',
-        generatorProvider: item.generatorProvider || setup.generatorProvider,
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        zeroApi: true,
-        localExecutionOnly: true,
-        noApiKeyPrompts: true,
-        noQuestions: true,
-        directAnswer: dAns,
-        keyTerms: terms
-       };
-      });
-      if (themeFilter) normalized = normalized.filter(x => x.themeStyle === themeFilter);
-      if (shouldShuffle) {
-       // Farklı üniteleri birbirine karıştır (aynı üniteden iki video art arda gelmesin)
-       normalized = normalized.sort((a, b) => (a.unitId === b.unitId ? 0 : Math.random() - 0.5));
-      }
-      const filledSet = new Set(feed.filter(v => v.hasMp4).map(v => v.unitId));
-      const legacyRemaining = feed.filter(v => v.isLegacy).length;
-      const upgradedV2Count = feed.filter(v => !v.isLegacy && v.hasMp4).length;
-      return respond(res, 200, {
-       ok: true,
-       noQuestions: true,
-       activeVideoModel: setup.activeVideoModel,
-       activeVideoProvider: setup.generatorProvider,
-       activeVideoEngine: setup.activeEngineId || 'tempo-cinema-pro',
-       videoPolicy: VIDEO_GENERATION_POLICY,
-       videoSpecVersion: VIDEO_SPEC_VERSION,
-       localExecutionOnly: true,
-       zeroApiRequired: true,
-       noApiKeyPrompts: true,
-       items: normalized.slice(0, limit),
-       totalFeedCount: normalized.length,
-       legacyReplacement: {
-        legacyRemaining,
-        upgradedV2Count,
-        replacedLegacyTotal,
-        inProgress: videoBusy
-       },
-       continuousTikTok: {
-        active: true,
-        continuousGeneratedTotal
-       },
-       coverage: {
-        filledUnits: filledSet.size,
-        totalUnits: contexts.length,
-        coveragePct: contexts.length ? Math.round((filledSet.size / contexts.length) * 100) : 0
-       }
-      });
-     }
 
-     if (req.method === 'GET' && path === '/videos') {
-      const unitId = urlObj.searchParams.get('unitId');
-      const variantId = urlObj.searchParams.get('variantId') || '';
-      const vCfg = await videoDirector.loadConfig();
-      if (unitId) {
-       const ctx = contexts.find(c => c.id === unitId);
-       if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-       const [video, lesson, studentProfile, hasMp4, variants] = await Promise.all([
-        videoDirector.loadVideo(unitId, variantId),
-        lessonEngine.loadLesson(unitId),
-        evolver.loadStudentProfile(),
-        videoDirector.hasMp4(unitId, variantId),
-        videoDirector.listUnitVariants(unitId)
-       ]);
-       const situationMode = videoDirector.selectSituationMode(unitId, studentProfile);
-       const mp4Url = `/api/ollama/videos/mp4?unitId=${encodeURIComponent(unitId)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}`;
-       if (video) {
-        return respond(res, 200, {
-         video,
-         situationMode,
-         hasMp4,
-         mp4Url,
-         variants,
-         themes: VIDEO_THEMES,
-         videoModel,
-         videoModelInstalled: models.includes(videoModel),
-         videoPolicy: VIDEO_GENERATION_POLICY,
-         allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-         videoProvider: classifyVideoProvider(videoModel),
-         cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
-         localExecutionOnly: true,
-         zeroApiRequired: true,
-         noApiKeyPrompts: true,
-         hasGoogleFlowKey: false,
-         googleFlowModel: vCfg.googleFlowModel
-        });
-       }
-       const passages = passagesByUnit.get(ctx.id) || [];
-       return respond(res, 200, {
-        video: videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile),
-        situationMode,
-        hasMp4,
-        mp4Url,
-        variants,
-        themes: VIDEO_THEMES,
-        videoModel,
-        videoModelInstalled: models.includes(videoModel),
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-        videoProvider: classifyVideoProvider(videoModel),
-        cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
-        localExecutionOnly: true,
-        zeroApiRequired: true,
-        noApiKeyPrompts: true,
-        hasGoogleFlowKey: false,
-        googleFlowModel: vCfg.googleFlowModel
-       });
-      }
-      return respond(res, 200, {
-       summary: await videoDirector.listSummary(contexts.length),
-       themes: VIDEO_THEMES,
-       videoModel,
-       videoModelInstalled: models.includes(videoModel),
-       videoPolicy: VIDEO_GENERATION_POLICY,
-       allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-       videoProvider: classifyVideoProvider(videoModel),
-       cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
-       localExecutionOnly: true,
-       zeroApiRequired: true,
-       noApiKeyPrompts: true,
-       hasGoogleFlowKey: false,
-       googleFlowModel: vCfg.googleFlowModel
-      });
-     }
      if (req.method === 'GET' && path === '/passages') {
       const unitId = urlObj.searchParams.get('unitId') || '0-0';
       const list = passagesByUnit.get(unitId) || [];
@@ -6262,14 +5294,11 @@ export function ollamaPlugin() {
       const input = await body(req);
       const chosen = input.model;
       const role = typeof input.role === 'string' ? input.role : 'model';
-      const roleKey = { model: 'model', verifier: 'verifierModel', judge2: 'judge2Model', evolver: 'evolverModel', video: 'videoModel' }[role];
+      const roleKey = { model: 'model', verifier: 'verifierModel', judge2: 'judge2Model', evolver: 'evolverModel' }[role];
       if (!roleKey) return respond(res, 400, { error: 'Geçersiz rol.' });
       const storage = await storageUsage();
       if (storage.total + 1_000_000 > storageLimit) return respond(res, 400, { error: '100 GB sınırına yaklaşıldı; ayar kaydedilmedi.' });
       if (typeof chosen !== 'string' || chosen.length > 200 || !chosen.trim()) return respond(res, 400, { error: 'Geçersiz model adı.' });
-      if (role === 'video' && !isAllowedVideoModel(chosen)) {
-       return respond(res, 400, { error: 'Video üretimi için yalnızca Kimi ve Ollama modelleri seçilebilir.' });
-      }
       let tags = null;
       let ollamaReachable = false;
       try {
@@ -6280,57 +5309,16 @@ export function ollamaPlugin() {
        }
       } catch {}
       const tagNames = Array.isArray(tags?.models) ? tags.models.map(x => x.name) : [];
-      if (role === 'video' && isAllowedVideoModel(chosen, tagNames) && (!ollamaReachable || tagNames.includes(chosen))) {
-       await writeSettings({ videoModel: chosen, videoModelLocked: true });
-       return respond(res, 200, {
-        role,
-        model: chosen,
-        localExecutionOnly: true,
-        zeroApiRequired: true,
-        noApiKeyPrompts: true,
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        videoProvider: classifyVideoProvider(chosen)
-       });
-      }
       if (!ollamaReachable) {
        return respond(res, 502, { error: 'Ollama model listesi alınamadı.' });
       }
       if (!tagNames.includes(chosen)) {
        return respond(res, 400, { error: 'Model yerel Ollama listesinde bulunamadı.' });
       }
-      if (role === 'video' && !isAllowedVideoModel(chosen, tagNames)) {
-       return respond(res, 400, { error: 'Video üretimi için yalnızca Kimi ve Ollama modelleri seçilebilir.' });
-      }
-      await writeSettings({ [roleKey]: chosen, ...(role === 'video' ? { videoModelLocked: true } : {}) });
+      await writeSettings({ [roleKey]: chosen });
       return respond(res, 200, { role, model: chosen, localExecutionOnly: true, zeroApiRequired: true });
      }
 
-     if (req.method === 'POST' && path === '/videos/pull-model') {
-      const input = await body(req);
-      const chosen = typeof input?.model === 'string' ? input.model.trim() : '';
-      if (!chosen || chosen.length > 160 || !/^[a-zA-Z0-9._:/-]+$/.test(chosen)) {
-       return respond(res, 400, { error: 'Geçersiz model adı.' });
-      }
-      if (!isAllowedVideoModel(chosen)) {
-       return respond(res, 400, { error: 'Video üretimi için yalnızca Kimi ve Ollama modelleri indirilebilir.' });
-      }
-      try {
-       const pullRes = await fetch(`${base}/api/pull`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: chosen, stream: false }),
-        signal: AbortSignal.timeout(120_000)
-       });
-       if (!pullRes.ok) {
-        const msg = await pullRes.text().catch(() => '');
-        return respond(res, 502, { error: msg || 'Ollama bulut modeli indirilemedi.' });
-       }
-       await writeSettings({ videoModel: chosen, videoModelLocked: true });
-       return respond(res, 200, { ok: true, model: chosen, zeroApiRequired: true });
-      } catch (e) {
-       return respond(res, 502, { error: e.message || 'Ollama bağlantı kuramadı.' });
-      }
-     }
 
      if (req.method === 'POST' && path === '/concurrency') {
       const input = await body(req);
@@ -6481,308 +5469,16 @@ export function ollamaPlugin() {
       }
      }
 
-     if (req.method === 'POST' && path === '/videos/fill-all') {
-      const input = await body(req);
-      const count = input?.all ? contexts.length : Math.max(1, Math.min(29, Number(input?.count || 4)));
-      const reqModel = typeof input?.model === 'string' && input.model.trim() ? input.model.trim() : null;
-      if (reqModel && !isAllowedVideoModel(reqModel, models)) {
-       return respond(res, 400, { error: 'TikTok akışı videoları yalnızca API gerektirmeyen Kimi ve Ollama video modelleriyle oluşturulabilir.' });
-      }
-      if (reqModel && reqModel !== videoModel) {
-       await writeSettings({ videoModel: reqModel, videoModelLocked: true }).catch(() => {});
-      }
-      const reqEngine = typeof input?.engineId === 'string' && input.engineId.trim() ? input.engineId.trim() : '';
-      const validEngineIds = new Set(['', 'auto', ...GITHUB_LOCAL_VIDEO_ENGINES.map(e => e.id)]);
-      if (reqEngine && !validEngineIds.has(reqEngine)) {
-       return respond(res, 400, { error: 'Geçersiz yerel AI video motoru.' });
-      }
-      try {
-       const resFill = await fillNextMissingUnitVideo(reqModel, {
-        count,
-        speedProfile: input?.speedProfile === 'hd' ? 'hd' : 'turbo',
-        instantOnly: false,
-        engineId: reqEngine,
-        regenerateLegacy: input?.regenerateLegacy !== false,
-        continuous: input?.continuous !== false
-       });
-       return respond(res, 200, { ok: true, ...resFill });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Ünite videoları doldurulamadı.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/replace-legacy') {
-      const input = await body(req);
-      const count = input?.all ? 64 : Math.max(1, Math.min(64, Number(input?.count || 6)));
-      const reqModel = typeof input?.model === 'string' && input.model.trim() ? input.model.trim() : null;
-      if (reqModel && !isAllowedVideoModel(reqModel, models)) {
-       return respond(res, 400, { error: 'TikTok akışı videoları yalnızca API gerektirmeyen Kimi ve Ollama video modelleriyle değiştirilebilir.' });
-      }
-      try {
-       const resReplace = await fillNextMissingUnitVideo(reqModel, {
-        count,
-        speedProfile: input?.speedProfile === 'hd' ? 'hd' : 'turbo',
-        instantOnly: Boolean(input?.instantOnly),
-        regenerateLegacy: true,
-        replaceLegacyFirst: true,
-        continuous: true
-       });
-       return respond(res, 200, { ok: true, ...resReplace });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Eski TikTok videoları yerinde yenilenemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/generate') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const forcedMode = typeof input?.situationMode === 'string' ? input.situationMode : null;
-      const themeStyle = typeof input?.themeStyle === 'string' ? input.themeStyle : 'morpa_klasik';
-      const customIdea = typeof input?.customIdea === 'string' ? input.customIdea : '';
-      const saveAsVariant = Boolean(input?.saveAsVariant);
-      const variantId = typeof input?.variantId === 'string' ? input.variantId : '';
-      const instantTurbo = Boolean(input?.instantTurbo);
-      const speedProfile = input?.speedProfile === 'hd' ? 'hd' : 'turbo';
-      const requestedVideoModel = typeof input?.model === 'string' && input.model.trim() ? input.model.trim() : videoModel;
-      if (typeof input?.model === 'string' && input.model.trim() && !isAllowedVideoModel(requestedVideoModel, models)) {
-       return respond(res, 400, { error: 'Videolar yalnızca Kimi ve Ollama modelleriyle oluşturulabilir.' });
-      }
-      if (requestedVideoModel !== videoModel && typeof input?.model === 'string' && input.model.trim()) {
-       await writeSettings({ videoModel: requestedVideoModel, videoModelLocked: true }).catch(() => {});
-      }
-      const subSecondVideo = Boolean(input?.subSecond);
-      try {
-       const video = await triggerVideoProduce(unitId, requestedVideoModel, forcedMode, {
-        themeStyle,
-        customIdea,
-        saveAsVariant,
-        variantId,
-        instantTurbo: instantTurbo || subSecondVideo,
-        deferMp4Render: subSecondVideo,
-        fallbackOnError: true,
-        speedProfile
-       });
-       if (!video) return respond(res, 409, { error: 'Video yönetmeni şu an başka bir ünite üretiyor.' });
-       const activeVar = video.variantId || variantId || '';
-       const renderRes = subSecondVideo
-        ? null
-        : await ensureUnitMp4(unitId, true, activeVar, speedProfile).catch(() => null);
-       const variants = await videoDirector.listUnitVariants(unitId);
-       return respond(res, 200, {
-        ok: true,
-        localExecutionOnly: true,
-        zeroApiRequired: true,
-        noApiKeyPrompts: true,
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        generatorProvider: classifyVideoProvider(requestedVideoModel),
-        video,
-        variants,
-        hasMp4: Boolean(renderRes),
-        mp4RenderingInBackground: subSecondVideo,
-        bytes: renderRes?.bytes || 0,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(unitId)}${activeVar ? `&variantId=${encodeURIComponent(activeVar)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 502, { error: e.message || '3D diyaloglu video üretilemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/batch-generate') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const ctx = contexts.find(c => c.id === unitId) || contexts[0];
-      const requestedThemes = Array.isArray(input?.themes) && input.themes.length
-       ? input.themes.slice(0, 6)
-       : ['hamam_bocegi_komedi', 'shorts_hizli', 'stadyum_spikeri'];
-      const customIdea = typeof input?.customIdea === 'string' ? input.customIdea : '';
-      const speedProfile = input?.speedProfile === 'hd' ? 'hd' : 'turbo';
-      try {
-       const [lesson, studentProfile] = await Promise.all([
-        lessonEngine.loadLesson(ctx.id),
-        evolver.loadStudentProfile()
-       ]);
-       const passages = passagesByUnit.get(ctx.id) || [];
-       const stamp = Date.now().toString(36);
-       const jobs = [];
-       const producedVideos = [];
-       for (let i = 0; i < requestedThemes.length; i++) {
-        const theme = String(requestedThemes[i]);
-        const vId = `${theme.replace(/[^a-zA-Z0-9_-]/g, '')}-${stamp}-${i}`;
-        const vid = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, null, theme, customIdea);
-        vid.variantId = vId;
-        await videoDirector.saveVideo(vid, vId);
-        producedVideos.push(vid);
-        jobs.push({ video: vid, outMp4Path: videoDirector.mp4Path(ctx.id, vId) });
-       }
-       const renderResults = await mp4Renderer.renderBatchMp4(jobs, { concurrency: 3, speedProfile });
-       const variants = await videoDirector.listUnitVariants(ctx.id);
-       return respond(res, 200, {
-        ok: true,
-        unitId: ctx.id,
-        count: producedVideos.length,
-        renderedCount: renderResults.filter(r => r?.ok).length,
-        videos: producedVideos,
-        variants,
-        latestMp4Url: producedVideos[0]
-         ? `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}&variantId=${encodeURIComponent(producedVideos[0].variantId)}&t=${Date.now()}`
-         : ''
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Toplu hızlı MP4 üretimi başarısız.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/local-engines/select') {
-      const input = await body(req);
-      const engineId = typeof input?.engineId === 'string' ? input.engineId.trim() : 'auto';
-      const validIds = new Set(['auto', ...GITHUB_LOCAL_VIDEO_ENGINES.map(e => e.id)]);
-      if (!validIds.has(engineId)) return respond(res, 400, { error: 'Geçersiz yerel video motoru.' });
-      const saved = await localVideoHub.saveState({ preferredEngineId: engineId });
-      return respond(res, 200, { ok: true, state: saved, ...(await localVideoHub.detectLocalEngines()) });
-     }
 
-     if (req.method === 'POST' && path === '/videos/local-engines/discover') {
-      const disc = await localVideoHub.discoverGithubVideoEngines();
-      return respond(res, 200, { ok: true, ...disc });
-     }
 
-     if (req.method === 'POST' && path === '/videos/local-engines/render') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const variantId = typeof input?.variantId === 'string' ? input.variantId : '';
-      const engineId = typeof input?.engineId === 'string' ? input.engineId : 'auto';
-      const speedProfile = input?.speedProfile === 'turbo' ? 'turbo' : 'cinema';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       const [savedVideo, lesson, studentProfile] = await Promise.all([
-        videoDirector.loadVideo(ctx.id, variantId),
-        lessonEngine.loadLesson(ctx.id),
-        evolver.loadStudentProfile()
-       ]);
-       const video = savedVideo || videoDirector.buildFallbackVideo(ctx, passagesByUnit.get(ctx.id) || [], lesson, studentProfile, null, 'morpa_klasik');
-       if (!savedVideo) await videoDirector.saveVideo(video, variantId);
-       const renderRes = await localVideoHub.dispatchLocalRender({
-        engineId,
-        video,
-        outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-        speedProfile
-       });
-       return respond(res, 200, {
-        ok: true,
-        ...renderRes,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Yerel AI video motoru render hatası.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/render-mp4') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const variantId = typeof input?.variantId === 'string' ? input.variantId : '';
-      const speedProfile = input?.speedProfile === 'hd' ? 'hd' : 'turbo';
-      const engineId = typeof input?.engineId === 'string' ? input.engineId : '';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       let renderRes;
-       if (engineId) {
-        const [savedVideo, lesson, studentProfile] = await Promise.all([
-         videoDirector.loadVideo(ctx.id, variantId),
-         lessonEngine.loadLesson(ctx.id),
-         evolver.loadStudentProfile()
-        ]);
-        const video = savedVideo || videoDirector.buildFallbackVideo(ctx, passagesByUnit.get(ctx.id) || [], lesson, studentProfile, null, 'morpa_klasik');
-        renderRes = await localVideoHub.dispatchLocalRender({
-         engineId,
-         video,
-         outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-         speedProfile: speedProfile === 'hd' ? 'cinema' : 'turbo'
-        });
-       } else {
-        renderRes = await ensureUnitMp4(ctx.id, true, variantId, speedProfile);
-       }
-       return respond(res, 200, {
-        ok: true,
-        hasMp4: true,
-        engineId: renderRes?.engineId || 'tempo-cinema-pro',
-        audioMuxed: Boolean(renderRes?.audioMuxed),
-        bytes: renderRes?.bytes || 0,
-        durationSec: renderRes?.durationSec || 0,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'MP4 video dosyası derlenemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/mp4') {
-      const unitId = urlObj.searchParams.get('unitId') || '0-0';
-      const variantId = urlObj.searchParams.get('variantId') || '';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       const buf = await rawBody(req, 64 * 1024 * 1024);
-       if (!buf || buf.length < 64) return respond(res, 400, { error: 'Geçersiz video verisi.' });
-       const contentType = String(req.headers['content-type'] || 'video/webm');
-       const resTrans = await mp4Renderer.transcodeBufferToMp4(buf, videoDirector.mp4Path(ctx.id, variantId), contentType);
-       return respond(res, 200, {
-        ok: true,
-        hasMp4: true,
-        bytes: resTrans.bytes,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Tarayıcı kaydı MP4 formatına çevrilemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/google-flow') {
-      const input = await body(req);
-      if (input?.action === 'save-config') {
-       const cfg = await videoDirector.saveConfig(input);
-       return respond(res, 200, { ok: true, config: cfg });
-      }
-      if (input?.action === 'poll') {
-       const pollRes = await videoDirector.pollAndEmbedGoogleFlowRender({
-        operationName: typeof input?.operationName === 'string' ? input.operationName : '',
-        unitId: typeof input?.unitId === 'string' ? input.unitId : '0-0',
-        variantId: typeof input?.variantId === 'string' ? input.variantId : ''
-       });
-       return respond(res, 200, { ok: true, ...pollRes });
-      }
-      const resFlow = await videoDirector.requestGoogleFlowRender({
-       unitId: typeof input?.unitId === 'string' ? input.unitId : '0-0',
-       variantId: typeof input?.variantId === 'string' ? input.variantId : '',
-       sceneId: typeof input?.sceneId === 'string' ? input.sceneId : 'scene-1',
-       prompt: typeof input?.prompt === 'string' ? input.prompt : '',
-       instantMp4Fallback: true
-      });
-      // 0-API Modu: Google Flow senaryosu & Veo yerel/otomatik motoruyla doğrudan gömülü MP4 derle
-      if (resFlow.zeroApiAutonomous || input?.renderMp4 !== false) {
-       await ensureUnitMp4(
-        typeof input?.unitId === 'string' ? input.unitId : '0-0',
-        true,
-        typeof input?.variantId === 'string' ? input.variantId : '',
-        'turbo'
-       ).catch(() => {});
-      }
-      return respond(res, 200, { ok: true, ...resFlow });
-     }
 
-     if (req.method === 'POST' && path === '/videos/google-flow-all') {
-      const input = await body(req);
-      const count = Math.max(1, Math.min(contexts.length, Number(input?.count || 4)));
-      try {
-       const fillRes = await fillNextMissingUnitVideo(null, { count, speedProfile: 'turbo', instantOnly: false });
-       const flowRes = await videoDirector.submitAllVideosToGoogleFlow({ limit: contexts.length });
-       return respond(res, 200, { ok: true, zeroApiAutonomous: true, localExecutionOnly: true, noApiKeyPrompts: true, fill: fillRes, flow: flowRes });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Toplu yerel otonom video senkronizasyonu başarısız.' });
-      }
-     }
 
      if (req.method === 'POST' && path === '/evolve') {
       try {
@@ -7009,10 +5705,10 @@ export function ollamaPlugin() {
       const tAll = performance.now();
       const unitIds = Array.isArray(input?.units) && input.units.length ? input.units : ['0-0'];
       const ctx = contexts.find(c => unitIds.includes(c.id)) || contexts[cursor++ % contexts.length];
-      const [items, study, policy, lessonsSummary, videosSummary, feedAll, studentProfile, jCfg] = await Promise.all([
+      const [items, study, policy, lessonsSummary, studentProfile, jCfg] = await Promise.all([
        load(), loadStudy(), evolver.loadPolicy(),
-       lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length),
-       videoDirector.listAllFeedVideos(), evolver.loadStudentProfile(), jarvis.loadConfig()
+       lessonEngine.listSummary(contexts.length),
+       evolver.loadStudentProfile(), jarvis.loadConfig()
       ]);
 
       const timedBot = async (name, fn) => {
@@ -7059,8 +5755,8 @@ export function ollamaPlugin() {
        ),
        timedBot('multiAiSwarmEvaluator', () =>
         multiAiEval.evaluateAndEvolve({
-         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary, videosSummary,
-         feedVideos: feedAll.filter(v => v.hasMp4), evolver, policy, studentProfile,
+         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+         evolver, policy, studentProfile,
          source: 'subsecond-all-bots-run'
         })
        ),
@@ -7077,24 +5773,6 @@ export function ollamaPlugin() {
         const les = lessonEngine.buildFallbackLesson(ctx, passages, studentProfile, null);
         await lessonEngine._atomicWrite(lessonEngine._lessonFile(ctx.id), les);
         return { unitId: ctx.id, sections: les.deepSections?.length || 0 };
-       }),
-       timedBot('videoDirectorInstant', async () => {
-        const subsecVariant = 'tiktok_kayseri-subsec';
-        const vid = videoDirector.buildFallbackVideo(ctx, passages, null, studentProfile, null, 'tiktok_kayseri', '', {
-         noQuestions: true,
-         variantId: subsecVariant,
-         angleIndex: continuousVideoCounter++,
-         aiModel: videoModel,
-         aiVideoEngine: 'tempo-cinema-pro'
-        });
-        vid.variantId = subsecVariant;
-        await videoDirector.saveVideo(vid, subsecVariant);
-        setTimeout(() => {
-         if (!autoLoopStopping && Date.now() - lastInteractiveApiAt >= 1_500) {
-          ensureUnitMp4(ctx.id, true, subsecVariant, 'turbo').catch(() => {});
-         }
-        }, 2_000).unref?.();
-        return { unitId: ctx.id, variantId: subsecVariant, scenes: vid.scenes?.length || 0, aiVideoModel: vid.aiVideoModel, zeroApi: true };
        }),
        timedBot('kayseriCoach', () =>
         buildKayseriReaction({

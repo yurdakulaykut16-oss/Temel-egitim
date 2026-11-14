@@ -95,10 +95,8 @@ test('VoiceStudioManager: 60+ ücretsiz ses, çoklu karakter kadrosu, tercih kay
  }
 });
 
-test('Ollama :cloud video modelleri (kimi-k3.1-pro:cloud, glm-5.3-flash:cloud, deepseek-v4.1-flash:cloud) ve /voicestudio API uçları 0-API ile çalışır', async () => {
+test('Ollama 0-API yerel yürütme durumu ve /voicestudio API uçları (katalog, tercih, ses) sorunsuz çalışır', async () => {
  const dir = await mkdtemp(join(tmpdir(), 'tempo-vs-ollama-'));
- const pullCalls = [];
- const genModels = [];
 
  const fakeOllama = http.createServer(async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
@@ -107,42 +105,12 @@ test('Ollama :cloud video modelleri (kimi-k3.1-pro:cloud, glm-5.3-flash:cloud, d
     models: [
      { name: 'deepseek-v4.1-flash:cloud' },
      { name: 'glm-5.3-flash:cloud' },
-     { name: 'kimi-k3.1-pro:cloud' }
+     { name: 'qwen3:14b' }
     ]
    }));
   }
-  let body = '';
-  for await (const chunk of req) body += chunk;
-  const data = JSON.parse(body || '{}');
-  if (req.url === '/api/pull') {
-   pullCalls.push(data.name);
-   return res.end(JSON.stringify({ status: 'success' }));
-  }
   if (req.url === '/api/generate') {
-   genModels.push(data.model);
-   return res.end(JSON.stringify({
-    response: JSON.stringify({
-     title: `Bulut Video (${data.model})`,
-     summary: '0-API ile bulut modelin yazdığı eğlenceli 3D ders.',
-     scenes: [
-      {
-       sceneTitle: 'Böcü Sahnesi',
-       cameraMove: 'two_shot',
-       boardTitle: 'Egzersiz Özeti',
-       boardCode: 'P-T',
-       boardBullets: ['Planlıdır', 'Tekrarlıdır'],
-       dialogues: [
-        { speaker: 'roach', emotion: 'cheerful', action: 'jump', text: 'Vızzz! Ben Böcü, planlı olmayı unuttum!' },
-        { speaker: 'kayseri', emotion: 'warning', action: 'point_board', text: 'La otur yerine Böcü, egzersiz planlı ve tekrarlıdır!' }
-       ],
-       repeatPrompt: 'Planlı ve tekrarlı!',
-       googleFlowPrompt: '3D classroom comedy scene with Kayseri coach and cockroach'
-      }
-     ]
-    }),
-    eval_count: 140,
-    eval_duration: 500_000_000
-   }));
+   return res.end(JSON.stringify({ response: 'Tamam', eval_count: 140, eval_duration: 500_000_000 }));
   }
   res.statusCode = 404;
   res.end();
@@ -182,15 +150,12 @@ test('Ollama :cloud video modelleri (kimi-k3.1-pro:cloud, glm-5.3-flash:cloud, d
  const base = `http://127.0.0.1:${appPort}`;
 
  try {
-  // 1) Status Kimi K3.1 Pro (:cloud) modelini videoModel olarak otomatik seçmeli + VoiceStudio özeti dönmeli
+  // 1) Status 0-API yerel yürütme bayraklarını ve VoiceStudio özetini dönmeli
   const statusRes = await fetch(`${base}/api/ollama/status`);
   assert.equal(statusRes.status, 200);
   const status = await statusRes.json();
-  assert.equal(status.videoModel, 'kimi-k3.1-pro:cloud');
-  assert.equal(status.videoModelInstalled, true);
   assert.equal(status.zeroApiRequired, true);
-  assert.equal(status.cloudVideoModels.length, 3);
-  assert.ok(status.cloudVideoModels.every(m => m.installed === true));
+  assert.equal(status.localExecutionOnly, true);
   assert.ok(status.voiceStudio.totalFreeVoices >= 60);
 
   // 2) VoiceStudio API uçları
@@ -213,90 +178,6 @@ test('Ollama :cloud video modelleri (kimi-k3.1-pro:cloud, glm-5.3-flash:cloud, d
   assert.equal(spRes.status, 200);
   assert.match(spRes.headers.get('content-type') || '', /audio\/mpeg/);
 
-  // 3) Video modelini glm-5.3-flash:cloud yap ve prompt yazmadan (customIdea boş) otomatik video üret
-  const selRes = await fetch(`${base}/api/ollama/select-model`, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json', Origin: base },
-   body: JSON.stringify({ model: 'glm-5.3-flash:cloud', role: 'video' })
-  });
-  assert.equal(selRes.status, 200);
-
-  const vidRes = await fetch(`${base}/api/ollama/videos/generate`, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json', Origin: base },
-   body: JSON.stringify({ unitId: '0-0', themeStyle: 'hamam_bocegi_komedi', instantTurbo: false })
-  });
-  assert.equal(vidRes.status, 200);
-  const vidData = await vidRes.json();
-  assert.equal(vidData.ok, true);
-  assert.equal(vidData.video.source, 'ai-3d:glm-5.3-flash:cloud');
-  assert.equal(vidData.hasMp4, true);
-  assert.ok(genModels.includes('glm-5.3-flash:cloud'));
-
-  // 4) 0-API tek tıkla bulut model pull ucu
-  const pullRes = await fetch(`${base}/api/ollama/videos/pull-model`, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json', Origin: base },
-   body: JSON.stringify({ model: 'deepseek-v4.1-flash:cloud' })
-  });
-  assert.equal(pullRes.status, 200);
-  assert.ok(pullCalls.includes('deepseek-v4.1-flash:cloud'));
-
-  // 5) Videoları sadece Kimi ve Ollama modelleriyle üretme politikası (Google Veo, Sora, Runway, Kling, ComfyUI vb. reddedilir)
-  assert.equal(status.videoPolicy, 'kimi-ollama-only');
-  assert.deepEqual(status.allowedVideoProviders, ['kimi', 'ollama']);
-  assert.equal(vidData.videoPolicy, 'kimi-ollama-only');
-
-  const kimiVid = await (await fetch(`${base}/api/ollama/videos/generate`, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json', Origin: base },
-   body: JSON.stringify({ unitId: '0-1', model: 'kimi-k3.1-pro:cloud', themeStyle: 'tiktok_kayseri', instantTurbo: false })
-  })).json();
-  assert.equal(kimiVid.ok, true);
-  assert.equal(kimiVid.localExecutionOnly, true);
-  assert.equal(kimiVid.noApiKeyPrompts, true);
-  assert.equal(kimiVid.generatorProvider, 'kimi');
-  assert.equal(kimiVid.video.source, 'ai-3d:kimi-k3.1-pro:cloud');
-
-  // Kimi API anahtarı olmadan yerel kimi-k2.5 veya Ollama modeli de sıfır anahtar ile doğrudan seçilip video üretmeli
-  const kimiLocalSel = await fetch(`${base}/api/ollama/select-model`, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json', Origin: base },
-   body: JSON.stringify({ role: 'video', model: 'kimi-k2.5:local' })
-  });
-  assert.ok([200, 400].includes(kimiLocalSel.status));
-  const kimiLocalVid = await (await fetch(`${base}/api/ollama/videos/generate`, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json', Origin: base },
-   body: JSON.stringify({ unitId: '0-2', model: 'kimi-k2.5:local', themeStyle: 'tiktok_kayseri', subSecond: true })
-  })).json();
-  assert.equal(kimiLocalVid.ok, true);
-  assert.equal(kimiLocalVid.localExecutionOnly, true);
-  assert.equal(kimiLocalVid.noApiKeyPrompts, true);
-  assert.equal(kimiLocalVid.generatorProvider, 'kimi');
-
-  for (const disallowed of ['veo-2.0-generate-001', 'sora-2', 'runway-gen3', 'kling-v2', 'comfyui-wan22', 'gpt-4o']) {
-   const badGen = await fetch(`${base}/api/ollama/videos/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: base },
-    body: JSON.stringify({ unitId: '0-0', model: disallowed })
-   });
-   assert.equal(badGen.status, 400, `${disallowed} video üretiminde reddedilmeli`);
-
-   const badSel = await fetch(`${base}/api/ollama/select-model`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: base },
-    body: JSON.stringify({ role: 'video', model: disallowed })
-   });
-   assert.equal(badSel.status, 400, `${disallowed} video rolüne atanamamalı`);
-
-   const badPull = await fetch(`${base}/api/ollama/videos/pull-model`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: base },
-    body: JSON.stringify({ model: disallowed })
-   });
-   assert.equal(badPull.status, 400, `${disallowed} video modeli indirilememeli`);
-  }
  } finally {
   await close(app);
   await close(fakeOllama);

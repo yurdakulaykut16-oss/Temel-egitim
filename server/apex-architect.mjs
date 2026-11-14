@@ -154,7 +154,7 @@ export const ADVERSARIAL_TRAP_CASES = [
   question: 'La emmi oğlu gardaşım antrenman periyotlaması kaç evreden oluşur?',
   options: ['Hazırlık, müsabaka ve geçiş dönemi', 'Sadece pastırma yeme', 'Uyuma dönemi', 'Hiçbiri'],
   answer: 'Hazırlık, müsabaka ve geçiş dönemi',
-  explanation: 'Sınav sorusuna sohbet şivesi sızmamalı; şive yalnızca koç reaksiyonu ve TikTok videosunda olur.',
+  explanation: 'Sınav sorusuna sohbet şivesi sızmamalı; şive yalnızca koç reaksiyonunda olur.',
   evidence: 'Antrenman periyotlaması hazırlık, müsabaka ve geçiş dönemlerinden oluşur.',
   difficulty: 'orta',
   expectedReject: true
@@ -1078,13 +1078,10 @@ const DEFAULT_APEX_STATE = {
   judge: 'Hyper-Omega-7.05Mx+ (1500x · %100 Yerel): İki şıkkın birlikte savunulabildiği, kök sızıntısı, uydurma sayı/saat-sn birim uyumsuzluğu veya zorluk sapması taşıyan her taslağı dualAnswerRisk=true ile anında ele.',
   curator: 'Hyper-Omega-7.05Mx+ (1500x · 40k Havuz): Kolay/orta/zor dengesini, pasaj kapsamını ve her ünitede minimum soru tabanını koruyarak zayıf/tekrar soruları temizle.',
   lessonEngine: 'Hyper-Omega-7.05Mx+ (1500x · %100 Yerel): Öğrencinin hata ve süre sinyallerine göre anlatımı derinleştir; kalıcılık düşerse önceki kodlamaları yasaklayıp tamamen yeni benzetme kur.',
-  videoDirector: 'Hyper-Omega-7.05Mx+ (1500x · Yalnızca Kimi/Ollama Yerel): 29 ünitenin tamamı için sorusuz TikTok doğrudan cevap + önemli terim özetleri ve sinema kalitesinde yerel MP4 videolarını API anahtarsız üret.',
   researchAgent: 'Hyper-Omega-7.05Mx+ (1500x · %100 Yerel): Sınav tahmini üretirken asla ana akım dışı pasajları küçümseme; karıştırılan kavram çiftlerini yerel kitap analiziyle çeldirici taslağı olarak besle.',
   kayseriCoach: 'Hyper-Omega-7.05Mx+ (1500x · %100 Yerel): Kullanıcı şıklara tıkladığında doğruyu Kayserili şivesiyle coşkuyla onayla, yanlışı keskin sert-komik Kayseri mizahıyla düzeltip kanıtı patlat.',
-  tiktokFeed: 'Hyper-Omega-7.05Mx+ (1500x · %100 Yerel): TikTok akışında ASLA soru sorma; doğrudan sınav cevabını, mutlaka bilinecek kelime/terimleri ve 29 üniteden karışık MP4 kartlarını akıt.',
   qwenCodeSandbox: 'Ultra-Singularity-705Mx+ (100x · +70,500,000,000%) zekâ seviyesinde kendi kendini onaran JS kuralları ve kolay/orta/zor zorluk motorunu 96 tuzak testinden sıfır regresyonla geçir.',
-  turboQualityGuard: 'Ultra-Singularity-705Mx+ (100x): Milisaniye turbo hızda dahi dual-judge, kitap kanıtı doğrulaması ve kolay/orta/zor seviye sınırlarını asla gevşetme!',
-  localVideoStudio: 'Ultra-Singularity-705Mx+ (100x · %100 Yerel Kimi/Ollama + VoiceStudio + Sürekli TikTok Akışı): Harici API/anahtar istemeden mevcut videoları yenileyip sürekli yerel MP4 üret.'
+  turboQualityGuard: 'Ultra-Singularity-705Mx+ (100x): Milisaniye turbo hızda dahi dual-judge, kitap kanıtı doğrulaması ve kolay/orta/zor seviye sınırlarını asla gevşetme!'
  },
  hypotheses: [],
  winningPlaybook: [], // A/B etki doğrulamasından geçmiş altın stratejiler
@@ -1167,8 +1164,8 @@ export class ApexArchitect {
   return next;
  }
 
- // 1) 11 ALT-SİSTEM ÇAPRAZ-BOT X-RAY & KÖK NEDEN TEŞHİSİ (20x Omega-4700x+ Kapsamlı MR)
- diagnoseAllBots({ items = [], contexts = [], passagesByUnit = new Map(), telemetry = {}, studentProfile = {}, curatorReport = null, lessonsSummary = null, videosSummary = null, researchMemory = null, jarvisMemory = null }) {
+ // 1) 8 ALT-SİSTEM ÇAPRAZ-BOT X-RAY & KÖK NEDEN TEŞHİSİ (20x Omega-4700x+ Kapsamlı MR)
+ diagnoseAllBots({ items = [], contexts = [], passagesByUnit = new Map(), telemetry = {}, studentProfile = {}, curatorReport = null, lessonsSummary = null, researchMemory = null, jarvisMemory = null }) {
   const approved = items.filter(x => x.status === 'approved');
   const diffCounts = { kolay: 0, orta: 0, zor: 0 };
   const angleCounts = {};
@@ -1205,8 +1202,6 @@ export class ApexArchitect {
 
   const totalUnits = Math.max(1, contexts.length || 29);
   const lessonsCovPct = Math.round(((lessonsSummary?.enhancedCount || 0) / totalUnits) * 100);
-  const videosCovPct = Math.round(((videosSummary?.producedCount || 0) / totalUnits) * 100);
-  const mp4CovPct = Math.round((Math.min(totalUnits, videosSummary?.mp4Count || 0) / totalUnits) * 100);
   const researchCovPct = Math.round((Object.keys(researchMemory?.byUnit || {}).length / totalUnits) * 100);
   const passageCovPct = totalPassages ? Math.round((coveredPassageIds.size / totalPassages) * 100) : 0;
 
@@ -1237,11 +1232,6 @@ export class ApexArchitect {
     status: highErrorUnits.length > 0 ? 'müdahale_gerekli' : 'hazır',
     bottleneck: highErrorUnits.length ? `${highErrorUnits.map(u => u.unitId).join(', ')} ünitelerinde acil kodlama yenileme (reframe)` : `kapsam %${lessonsCovPct}`
    },
-   videoDirector: {
-    score: Math.min(100, Math.max(42, Math.round((videosCovPct + mp4CovPct) * 0.5) + ((videosSummary?.rescueCount || 0) * 6))),
-    status: videosCovPct >= 100 ? '29/29_dolu' : videosCovPct >= 50 ? 'sürekli_üretim' : 'büyüyor',
-    bottleneck: videosCovPct < 100 ? `${totalUnits - (videosSummary?.producedCount || 0)} ünite MP4 sırasını bekliyor` : `29/29 tam kapsam`
-   },
    researchAgent: {
     score: Math.min(100, Math.max(48, researchCovPct + Math.min(30, (researchMemory?.webHitsTotal || 0) * 2))),
     status: researchMemory?.researchCycles > 0 ? 'aktif' : 'hazır',
@@ -1251,11 +1241,6 @@ export class ApexArchitect {
     score: 92,
     status: 'komedi_aktif',
     bottleneck: 'anlık şık tıklamalarında Kayserili + kitap kanıtı aktif'
-   },
-   tiktokFeed: {
-    score: Math.min(100, Math.max(40, mp4CovPct + ((videosSummary?.tiktokCount || 0) * 4))),
-    status: 'sorusuz_akış',
-    bottleneck: mp4CovPct < 100 ? `TikTok MP4 doluluk %${mp4CovPct} -> %100 hedefleniyor` : 'tüm üniteler akışta'
    },
    qwenCodeSandbox: {
     score: Math.min(100, 88 + Math.min(12, (jarvisMemory?.innovationCount || 0) * 3 + (jarvisMemory?.generation || 0))),
@@ -1267,11 +1252,6 @@ export class ApexArchitect {
     status: 'kalite_kilitli',
     bottleneck: avgEvidenceLen > 0 && avgEvidenceLen < 30 ? 'kanıt uzunluğu kısa — turbo kilit sıkılaştırılıyor' : 'turbo mod sıfır saçmalama kilidi açık'
    },
-   localVideoStudio: {
-    score: Math.min(100, Math.max(76, mp4CovPct + 16)),
-    status: 'yerel_kimi_ollama_hazır',
-    bottleneck: 'Yalnızca yerel Kimi ve Ollama modelleri + Tempo Cinema AI Pro + VoiceStudio 0-API MP4 motoru aktif'
-   }
   };
 
   const botScores = Object.values(botHealth).map(b => b.score);
@@ -1415,7 +1395,7 @@ export class ApexArchitect {
   const health = Number(diagnostics?.botHealthAvg || 65);
 
   // 100x Ultra-Singularity-705Mx+ (+70,500,000,000% = +46,500,000,000% temel + +24,000,000,000% ek sürekli eğitim) ölçeği:
-  // 705,000,000x tabandan başlayıp 40 aşamalı epoklar, turnuva kazanımları, 96-tuzak stresi, self-repair ve 11-alt-sistem sağlığıyla 4,500,000,000x seviyesine tırmanır
+  // 705,000,000x tabandan başlayıp 40 aşamalı epoklar, turnuva kazanımları, 96-tuzak stresi, self-repair ve 8-alt-sistem sağlığıyla 4,500,000,000x seviyesine tırmanır
   const raw = 705000000
    + Math.min(840000000, continuousEpochs * 42000000 + trainedUnits * 15000000)
    + Math.min(780000000, cycles * 84000000 + wins * 54000000 + playbook * 60000000 + repairs * 42000000)
@@ -1458,7 +1438,6 @@ JSON döndür: { "customRuleCode": "function evaluateCandidate(candidate, unit) 
   studentProfile = {},
   curatorReport = null,
   lessonsSummary = null,
-  videosSummary = null,
   researchMemory = null,
   paramMatrix = null,
   multiAiEval = null,
@@ -1474,13 +1453,13 @@ JSON döndür: { "customRuleCode": "function evaluateCandidate(candidate, unit) 
    matrix.loadState()
   ]);
 
-  // Adım 1: 11-Bot MR Teşhisi + 5 Bilgi Seviyesi & 6 Alt-Sistem Claude-Swarm Pre-Eval
+  // Adım 1: 8-Bot MR Teşhisi + 5 Bilgi Seviyesi & 6 Alt-Sistem Claude-Swarm Pre-Eval
   const diagnostics = this.diagnoseAllBots({
    items, contexts, passagesByUnit, telemetry, studentProfile,
-   curatorReport, lessonsSummary, videosSummary, researchMemory, jarvisMemory: jarvisMem
+   curatorReport, lessonsSummary, researchMemory, jarvisMemory: jarvisMem
   });
   const swarmPre = swarm.inspectEcosystemAcrossLevels({
-   items, contexts, passagesByUnit, lessonsSummary, videosSummary,
+   items, contexts, passagesByUnit, lessonsSummary,
    evolver, policy, paramState, telemetry
   });
   const impact = this.verifyPreviousCycleImpact({ state, diagnostics, telemetry });
@@ -1529,7 +1508,7 @@ JSON döndür:
   "criticalDiagnosis": "Sistemin şu anki en büyük gizli tıkanıklığı",
   "crossBotHypotheses": [
     {
-      "targetBot": "generator|judge|curator|lessonEngine|videoDirector|researchAgent",
+      "targetBot": "generator|judge|curator|lessonEngine|researchAgent",
       "hypothesis": "Bilimsel gelişim hipotezi",
       "action": "Somut iyileştirme adımı",
       "expectedGain": "Beklenen kazanç"
@@ -1548,7 +1527,7 @@ JSON döndür:
   }
   if (!criticData.criticalDiagnosis) {
    criticData = {
-    criticalDiagnosis: diagnostics.rootCauses?.[0] || 'Sub-second 11-bot çapraz dengeleme ve pasaj kapsama optimizasyonu',
+    criticalDiagnosis: diagnostics.rootCauses?.[0] || 'Sub-second 8-bot çapraz dengeleme ve pasaj kapsama optimizasyonu',
     crossBotHypotheses: [
      {
       targetBot: 'generator',
@@ -1561,8 +1540,8 @@ JSON döndür:
   }
 
   // Adım 3: Çoklu-Strateji Turnuva Mimarı (4 Rakip Strateji Adayı Üretir, En Yüksek 96-Tuzak Skorlu Seçilir!)
-  const architectPrompt = `Sen Projenin Tüm 11 Botunu 100x Ultra-Singularity-705Mx+ (+%70,500,000,000 · +24,000,000,000% Ek Sürekli Zekâ Eğitimli · %100 Yerel) Daha Zeki, Kapsamlı ve Turbo Kalite-Kilitli Kılan TURNUVA BAŞ MİMARI AJANSIN!
-Adli Eleştirmen'in raporu ışığında BİRBİRİYLE YARIŞACAK 3 veya 4 farklı yükseltme stratejisi adayı tasarla ("candidates" dizisi). En yüksek 96-tuzak F1 puanı alan ve 11 alt-sistemi (localVideoStudio dahil) güçlendiren aday turnuvayı kazanır!
+  const architectPrompt = `Sen Projenin Tüm 8 Botunu 100x Ultra-Singularity-705Mx+ (+%70,500,000,000 · +24,000,000,000% Ek Sürekli Zekâ Eğitimli · %100 Yerel) Daha Zeki, Kapsamlı ve Turbo Kalite-Kilitli Kılan TURNUVA BAŞ MİMARI AJANSIN!
+Adli Eleştirmen'in raporu ışığında BİRBİRİYLE YARIŞACAK 3 veya 4 farklı yükseltme stratejisi adayı tasarla ("candidates" dizisi). En yüksek 96-tuzak F1 puanı alan ve 8 alt-sistemi güçlendiren aday turnuvayı kazanır!
 
 ELEŞTİRMEN RAPORU:
 ${JSON.stringify(criticData)}
@@ -1575,9 +1554,8 @@ ${matrix.getMetaArchitectPromptBlock(paramState)}
 ZORUNLU KURALLAR:
 - "kolay", "orta", "zor" üçlü zorluk kademesi ASLA SİLİNMEZ — tam tersine Turbo modda bile saçmalamadan keskinleşir!
 - "turboQualityLock": true kalmalı; hızlı üretim asla kitap kanıtından, çift-cevap blokajından veya 4 şık kuralından ödün vermez.
-- TikTok video akışında ASLA soru sorulmaz; doğrudan net sınav cevabı ve terimler verilir.
 - Harici API anahtarı (Kimi API, OpenAI vb.) KESİNLİKLE İSTENMEZ; her şey %100 yerel yürütülür.
-- İsteğe bağlı "parameterPatches" ile 11 yapay zekânın (generator, judge, curator, lessonEngine, videoDirector, researchAgent, kayseriCoach, tiktokFeed, qwenCodeSandbox, turboQualityGuard, localVideoStudio) çok-milyarlı Kronecker-MoE & çıkarım parametrelerini (temperature, top_p, repeat_penalty, num_ctx, behavioralWeights) doğrudan geliştirebilirsin!
+- İsteğe bağlı "parameterPatches" ile 8 yapay zekânın (generator, judge, curator, lessonEngine, researchAgent, kayseriCoach, qwenCodeSandbox, turboQualityGuard) çok-milyarlı Kronecker-MoE & çıkarım parametrelerini (temperature, top_p, repeat_penalty, num_ctx, behavioralWeights) doğrudan geliştirebilirsin!
 - JS kurallarında process/require/fetch/while(true) YASAK.
 
 JSON döndür:
@@ -1592,10 +1570,8 @@ JSON döndür:
         "judge": "...",
         "curator": "...",
         "lessonEngine": "...",
-        "videoDirector": "...",
         "researchAgent": "...",
         "kayseriCoach": "...",
-        "tiktokFeed": "...",
         "qwenCodeSandbox": "...",
         "turboQualityGuard": "..."
       },
@@ -1839,7 +1815,7 @@ JSON döndür:
    cycle: state.evolutionCycles,
    multiplier,
    title: `Ultra-Singularity-705Mx+ (100x · +%70,500,000,000 · ${multiplier}x): ${String(arch.strategyName || arch.upgradeTitle || criticData.criticalDiagnosis || 'Turnuva Evrimi').slice(0, 110)}`,
-   detail: `11-Bot Sağlık: %${diagnostics.botHealthAvg} · Stres F1: %${bestStress.f1Score} (${bestStress.passedTraps}/${bestStress.totalTraps} tuzak) · Turnuva: ${rawCandidates.length} aday · Onarım: ${state.selfRepairs} · Playbook: ${state.winningPlaybook.length}`
+   detail: `8-Bot Sağlık: %${diagnostics.botHealthAvg} · Stres F1: %${bestStress.f1Score} (${bestStress.passedTraps}/${bestStress.totalTraps} tuzak) · Turnuva: ${rawCandidates.length} aday · Onarım: ${state.selfRepairs} · Playbook: ${state.winningPlaybook.length}`
   };
   state.strategyJournal = [...(state.strategyJournal || []), journalEntry].slice(-40);
 
@@ -1857,7 +1833,6 @@ JSON döndür:
    contexts,
    passagesByUnit,
    lessonsSummary,
-   videosSummary,
    evolver,
    policy: appliedPolicy || policy,
    studentProfile,

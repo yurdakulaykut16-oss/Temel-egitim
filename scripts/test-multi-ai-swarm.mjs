@@ -44,7 +44,7 @@ test('BotParameterMatrix v2 seamlessly upgrades v1 (16-head/12-rank) parameters 
  }
 });
 
-test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 6 subsystems, runs Claude-style 3-pass self-critique, and splits across distinct AI models', async () => {
+test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 5 subsystems, runs Claude-style 3-pass self-critique, and splits across distinct AI models', async () => {
  const dir = mkdtempSync(resolve(tmpdir(), 'multi-ai-swarm-'));
  try {
   const matrix = new BotParameterMatrix(dir);
@@ -52,7 +52,7 @@ test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 6 subsystems, runs C
   const swarm = new MultiAiSwarmEvaluator(dir);
   const policy = await evolver.loadPolicy();
 
-  // Intentionally include defective questions + leaked TikTok item + broken drill so swarm MUST detect them
+  // Intentionally include defective questions + broken drill so swarm MUST detect them
   const badItems = [
    {
     id: 'q1', unitId: '0-0', status: 'approved', difficulty: 'zor',
@@ -72,7 +72,6 @@ test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 6 subsystems, runs C
    matchings: [],
    drills: [{ id: 'd1', type: 'fill_blank', prompt: 'Boşluğu olmayan hatalı alıştırma' }]
   };
-  const badFeed = [{ unitId: '0-0', noQuestions: false, directAnswer: 'Bu nedir?', keyTerms: [] }];
 
   const inspection = swarm.inspectEcosystemAcrossLevels({
    items: badItems,
@@ -80,8 +79,6 @@ test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 6 subsystems, runs C
    contexts: [{ id: '0-0', unit: 'Dayanıklılık', text: 'Aerobik kapasite VO2max ile ölçülür.' }],
    passagesByUnit: new Map([['0-0', [{ id: '0-0#00', text: 'Aerobik kapasite VO2max ile ölçülür.' }]]]),
    lessonsSummary: { enhancedCount: 2 },
-   videosSummary: { coveragePct: 40 },
-   feedVideos: badFeed,
    evolver,
    policy,
    paramState: await matrix.loadState(),
@@ -92,7 +89,6 @@ test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 6 subsystems, runs C
   assert.equal(Object.keys(inspection.subsystemScores).length, TESTED_SUBSYSTEMS.length);
   assert.equal(inspection.diagnostics.lengthLeakCount, 1);
   assert.equal(inspection.diagnostics.weakEvidenceCount, 1);
-  assert.equal(inspection.diagnostics.questionLeakInFeed, 1);
   assert.ok(inspection.levelScores.speed_skimmer < 88);
   assert.ok(inspection.levelScores.expert_coach < 92);
 
@@ -128,8 +124,6 @@ test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 6 subsystems, runs C
    contexts: [{ id: '0-0', unit: 'Dayanıklılık', text: 'Aerobik kapasite VO2max ile ölçülür.' }],
    passagesByUnit: new Map([['0-0', [{ id: '0-0#00', text: 'Aerobik kapasite VO2max ile ölçülür.' }]]]),
    lessonsSummary: { enhancedCount: 2 },
-   videosSummary: { coveragePct: 40 },
-   feedVideos: badFeed,
    evolver,
    policy,
    studentProfile: { weakUnits: ['0-0'] },
@@ -205,7 +199,7 @@ test('Ollama middleware exposes /swarm-evaluate GET & POST and embeds swarmEval 
   assert.equal(postRes.status, 200);
   const postJson = await postRes.json();
   assert.equal(postJson.ok, true);
-  assert.equal(postJson.evolution.botsUpdated, 11);
+  assert.equal(postJson.evolution.botsUpdated, 8);
   assert.ok(postJson.summary.totalFactoredMetaTensorBillions >= 377.9);
   assert.ok(postJson.report.levelScores.adversarial_exploiter >= 90);
 

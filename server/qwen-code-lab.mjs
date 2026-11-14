@@ -278,12 +278,12 @@ test('nextMemoryIntervalDays resets on error and rewards fast accurate recall', 
 `
  },
  {
-  slug: 'tiktok-script-sanitizer',
-  title: 'Sorusuz TikTok Doğrudan Cevap & Anahtar Terim Yoğunlaştırıcısı',
-  githubInspiration: 'MIT educational-short-video & zero-question retention kalıpları',
-  targetBot: 'tiktokFeed',
-  summary: 'TikTok akış senaryolarında soru işaretli kökleri tespit edip doğrudan bilgi + 3 anahtar terime dönüştürür.',
-  indexCode: `export function sanitizeTikTokScript({ summary = '', unit = '', rawAnswer = '' }) {
+  slug: 'summary-keyterm-condenser',
+  title: 'Sorusuz Doğrudan Cevap & Anahtar Terim Yoğunlaştırıcısı',
+  githubInspiration: 'MIT educational-summary & zero-question retention kalıpları',
+  targetBot: 'lessonEngine',
+  summary: 'Ünite özetlerindeki soru işaretli kökleri tespit edip doğrudan bilgi + 4 anahtar terime dönüştürür.',
+  indexCode: `export function condenseSummaryKeyTerms({ summary = '', unit = '', rawAnswer = '' }) {
  const cleaned = String(rawAnswer || summary || unit)
   .replace(/\\?+/g, '.')
   .replace(/\\s+/g, ' ')
@@ -299,10 +299,10 @@ test('nextMemoryIntervalDays resets on error and rewards fast accurate recall', 
 `,
   testCode: `import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeTikTokScript } from './index.mjs';
+import { condenseSummaryKeyTerms } from './index.mjs';
 
-test('sanitizeTikTokScript guarantees zero questions and extracts key terms', () => {
- const out = sanitizeTikTokScript({ unit: 'Dayanıklılık', rawAnswer: 'VO2max aerobik kapasitenin temel göstergesi midir?' });
+test('condenseSummaryKeyTerms guarantees zero questions and extracts key terms', () => {
+ const out = condenseSummaryKeyTerms({ unit: 'Dayanıklılık', rawAnswer: 'VO2max aerobik kapasitenin temel göstergesi midir?' });
  assert.equal(out.noQuestions, true);
  assert.equal(out.directAnswer.includes('?'), false);
  assert.ok(out.keyTerms.length >= 2);

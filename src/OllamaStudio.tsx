@@ -164,18 +164,6 @@ type CuratorReport = {
  droppedSamples?: {unitId: string; reason: string; score: number; question: string}[];
 };
 type LessonsSummary = {totalUnits: number; enhancedCount: number; aiEnhancedCount: number; avgVersion: number; units: {unitId: string; version: number; source: string; updatedAt: string}[]};
-type VideosSummary = {
- totalUnits: number; producedCount: number; totalVariantsCount?: number; roachCount?: number;
- aiProducedCount: number; rescueCount: number; mp4Count?: number;
- filledUnits?: number; coveragePct?: number; tiktokCount?: number;
- hasGoogleFlowKey: boolean; googleFlowModel: string;
- units: {unitId: string; version: number; situationMode: string; source: string; sceneCount: number; updatedAt: string}[];
-};
-type LocalVideoEngineInfo = {
- id: string; name: string; repo: string; license: string; stars: string;
- category: string; endpoint: string; available: boolean; alwaysReady?: boolean;
- audioMuxReady?: boolean; detail?: string; description?: string;
-};
 type BotParamSummary = {
  botId: string;
  label: string;
@@ -601,20 +589,16 @@ type PrecisionQualitySummary = {
 };
 
 type Status = {
- connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean; evolverInstalled?: boolean; videoModelInstalled?: boolean; coderInstalled?: boolean;
- model: string; verifierModel: string; judge2Model: string; evolverModel?: string; videoModel?: string; models: string[];
- cloudVideoModels?: {id: string; label: string; badge: string; installed?: boolean}[];
- localVideoEngines?: {preferredEngineId: string; liveEnginesCount: number; totalCatalogCount: number; engines: LocalVideoEngineInfo[]};
+ connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean; evolverInstalled?: boolean; coderInstalled?: boolean;
+ model: string; verifierModel: string; judge2Model: string; evolverModel?: string; models: string[];
  voiceStudio?: {zeroApiRequired: boolean; totalFreeVoices: number; localAvailable: boolean; selectedVoiceId: string};
  busy: boolean; phase: string; storage?: {total: number; limit: number; modelsReserved: number};
  lastError: string; count: number; approved: number; rejected: number;
  trainingScaleFactor?: number; qwenBoostPercent?: number; addedIntelligenceBoostPercent?: number; zeroApiRequired?: boolean; trapDefenseTotal?: number; turboQualityLock?: boolean;
- tiktokFeed?: {totalUnits: number; filledUnits: number; coveragePct: number; feedItemsCount: number; tiktokCount: number};
  difficultyCounts?: {kolay: number; orta: number; zor: number};
  angleCounts?: Record<string, number>;
  curator?: CuratorReport;
  lessons?: LessonsSummary;
- videos?: VideosSummary;
  studyCounts?: StudyCounts;
  autoRunning: boolean; autoConcurrency: number; autoTimeoutMs: number;
  questionCapacity?: number; maxQuestionsStored?: number;
@@ -637,14 +621,6 @@ type Status = {
  tvgfbfSwarm?: TvgfbfSwarmSummary;
  hundredAiCouncil?: HundredAiCouncilSummary;
  precisionQuality?: PrecisionQualitySummary;
- local3d?: {
-  ffmpegReady: boolean;
-  blenderInstalled: boolean;
-  manimInstalled: boolean;
-  presetsCount: number;
-  enginesCount: number;
-  zeroApi: boolean;
- };
  hardware?: HardwareSummary;
 };
 
@@ -683,7 +659,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  const [chosenVerifier, setChosenVerifier] = useState('');
  const [chosenJudge2, setChosenJudge2] = useState('');
  const [chosenEvolver, setChosenEvolver] = useState('');
- const [chosenVideo, setChosenVideo] = useState('');
  const [chosenCoder, setChosenCoder] = useState('');
  const [items, setItems] = useState<GeneratedQuestion[]>([]);
  const [audit, setAudit] = useState<Audit | null>(null);
@@ -736,7 +711,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const selectModel = async (role: 'model' | 'verifier' | 'judge2' | 'evolver' | 'video', modelName: string) => {
+ const selectModel = async (role: 'model' | 'verifier' | 'judge2' | 'evolver', modelName: string) => {
   try {
    const r = await fetch(`${api}/select-model`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -748,28 +723,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    await refresh();
   } catch (e) {
    setError(e instanceof Error ? e.message : 'Model seçilemedi.');
-  }
- };
-
- const pullVideoCloudModel = async (modelName: string) => {
-  setBusyAction(`pull-${modelName}`);
-  setInfoMsg(`"${modelName}" (0-API) Ollama bulut modeli indiriliyor / etkinleştiriliyor…`);
-  try {
-   const r = await fetch(`${api}/videos/pull-model`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({model: modelName})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Model indirilemedi.');
-   setError('');
-   setChosenVideo(modelName);
-   setInfoMsg(`✓ "${modelName}" hazır — hiçbir API anahtarı girmeden video üretimi aktif!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Ollama çevrimdışı olsa bile 0-API Otonom video motoru her zaman hazır.');
-  } finally {
-   setBusyAction('');
   }
  };
 
@@ -963,40 +916,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
 
 
 
- const selectLocalVideoEngine = async (engineId: string) => {
-  setBusyAction(`local-video-${engineId}`);
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/videos/local-engines/select`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({engineId})});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Yerel AI video motoru seçilemedi.');
-   setError('');
-   setInfoMsg(`Yerel GitHub AI Video Motoru güncellendi: ${engineId} (${data.liveEnginesCount || 1} yerel motor aktif, 0 API anahtarı).`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Yerel video motoru seçim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
-
- const discoverLocalVideoEngines = async () => {
-  setBusyAction('discover-local-video');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/videos/local-engines/discover`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'GitHub yerel video motorları taranamadı.');
-   setError('');
-   setInfoMsg(`GitHub Açık Kaynak AI Video Tarama (0-API): ${(data.repos || []).length} doğrulanmış proje (${(data.repos || []).slice(0, 3).map((x: {fullName: string}) => x.fullName).join(', ')})!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'GitHub video tarama hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
-
 
 
 
@@ -1113,76 +1032,11 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      <span>{status?.connected ? (status.evolverInstalled ? 'hazır' : 'kurulu değil') : 'bekleniyor'}</span>
     </div>
 
-    <div className="model-select">
-     <label htmlFor="video-choice">4. Video Yönetmeni (0-API Bulut)</label>
-     <select id="video-choice" value={chosenVideo || status?.videoModel || ''} onChange={e => setChosenVideo(e.target.value)} disabled={!status?.models.length || status.busy}>
-      <option value="" disabled>Model seç</option>
-      {status?.models.map(m => <option key={m} value={m}>{m}</option>)}
-     </select>
-     <button className="outline" onClick={() => selectModel('video', chosenVideo)} disabled={!chosenVideo || !!status?.busy}>Video Modeli Yap</button>
-     <span>{status?.connected ? (status.videoModelInstalled ? `hazır (${status.videoModel})` : '0-API Otonom aktif') : '0-API Otonom hazır'}</span>
-    </div>
-
     <div className="preset-bar" style={{marginTop: 8, marginBottom: 8}}>
-     <span className="preset-label">🎬 Önerilen 0-API Bulut Video Modelleri:</span>
-     {(status?.cloudVideoModels || [
-      {id: 'kimi-k3.1-pro:cloud', label: 'Kimi K3.1 Pro (:cloud)', badge: 'Önerilen', installed: false},
-      {id: 'glm-5.3-flash:cloud', label: 'GLM 5.3 Flash (:cloud)', badge: 'Hızlı', installed: false},
-      {id: 'deepseek-v4.1-flash:cloud', label: 'DeepSeek V4.1 Flash (:cloud)', badge: 'Keskin', installed: false}
-     ]).map(cm => (
-      <button
-       key={cm.id}
-       className={`preset-btn ${status?.videoModel === cm.id ? 'active' : ''}`}
-       disabled={!!busyAction}
-       title={`${cm.badge} · API anahtarı gerekmez`}
-       onClick={() => cm.installed ? selectModel('video', cm.id) : pullVideoCloudModel(cm.id)}
-      >
-       {cm.id.startsWith('kimi') ? '⭐' : cm.id.startsWith('glm') ? '⚡' : '🧠'} {cm.id} {cm.installed ? '✓' : (busyAction === `pull-${cm.id}` ? 'İniyor…' : '(Tek Tıkla Al)')}
-      </button>
-     ))}
-     <span className="jarvis-badge ok" style={{marginLeft: 6}}>
+     <span className="jarvis-badge ok">
       🎙️ VoiceStudio: {status?.voiceStudio?.totalFreeVoices ?? 62} Ücretsiz Ses · 0-API
      </span>
     </div>
-
-    {/* GITHUB AÇIK KAYNAK YEREL AI VİDEO ÜRETİCİLERİ HUB'I (0-API) */}
-    {status?.localVideoEngines && (
-     <div className="jarvis-box" style={{marginTop: 8, marginBottom: 10}}>
-      <div className="coverage-top" style={{marginBottom: 6}}>
-       <b>🎥 GitHub Profesyonel Yerel AI Video Üreticileri (0-API · {status.localVideoEngines.liveEnginesCount}/{status.localVideoEngines.totalCatalogCount} Yerel Hazır)</b>
-       <div style={{display: 'flex', gap: 6, flexWrap: 'wrap'}}>
-        <button className={`preset-btn ${status.localVideoEngines.preferredEngineId === 'auto' ? 'active' : ''}`} onClick={() => selectLocalVideoEngine('auto')} disabled={!!busyAction}>
-         Otomatik (En İyi Yerel)
-        </button>
-        <button className="outline" onClick={discoverLocalVideoEngines} disabled={!!busyAction}>
-         <Globe size={13}/> {busyAction === 'discover-local-video' ? 'Taranıyor…' : 'GitHub OSS Tara'}
-        </button>
-       </div>
-      </div>
-      <div className="jarvis-diff-grid">
-       {(status.localVideoEngines.engines || []).map(eng => (
-        <div className="jarvis-diff-card" key={eng.id} style={{display: 'flex', flexDirection: 'column', gap: 4}}>
-         <div className="coverage-top">
-          <span className={`jarvis-badge ${eng.available ? 'ok' : 'neutral'}`}>
-           {eng.available ? (eng.alwaysReady ? 'YERLEŞİK HAZIR ✓' : 'YEREL BAĞLI ✓') : 'YEREL BEKLEMEDE'}
-          </span>
-          <small>{eng.license} · ★{eng.stars}</small>
-         </div>
-         <b style={{fontSize: '0.88rem'}}>{eng.name}</b>
-         <p style={{margin: 0}}><small>{eng.repo} — {eng.detail || eng.description}</small></p>
-         <button
-          className={`preset-btn ${status.localVideoEngines?.preferredEngineId === eng.id ? 'active' : ''}`}
-          style={{marginTop: 'auto'}}
-          disabled={!!busyAction}
-          onClick={() => selectLocalVideoEngine(eng.id)}
-         >
-          {status.localVideoEngines?.preferredEngineId === eng.id ? 'Seçili Motor ✓' : 'Bu Motoru Seç'}
-         </button>
-        </div>
-       ))}
-      </div>
-     </div>
-    )}
 
     {/* İNCE KAPSAM AYARI — hız/kalite Turbo kilidinde sabittir */}
     <div className="config-grid">
@@ -1368,7 +1222,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      </div>
 
      <p className="manifest-line" style={{marginTop: 10}}>
-      🤖 <b>Tamamen Otonom:</b> Rol atama, web araştırması, havuz taraması, konu anlatımı geliştirme, 3D video üretimi, ApexArchitect evrimi, sürekli zekâ eğitimi, Nexus-Titan tam proje geliştirme, GitHub OSS madenciliği, parametre evrimi, LoRA+DPO ağırlık eğitimi ve hot-swap — <b>tümü proje açıldığı andan itibaren arka planda kendiliğinden çalışır.</b> Hiçbir düğmeye basman gerekmez.
+      🤖 <b>Tamamen Otonom:</b> Rol atama, web araştırması, havuz taraması, konu anlatımı geliştirme, ApexArchitect evrimi, sürekli zekâ eğitimi, Nexus-Titan tam proje geliştirme, GitHub OSS madenciliği, parametre evrimi, LoRA+DPO ağırlık eğitimi ve hot-swap — <b>tümü proje açıldığı andan itibaren arka planda kendiliğinden çalışır.</b> Hiçbir düğmeye basman gerekmez.
      </p>
 
      {/* 20x OMEGA-4700x+ (+470,000%) APEXARCHITECT, +160,000% KESİNTİSİZ ZEKÂ EĞİTİMİ & 0-API YASAL GITHUB OSS PANELİ */}
@@ -1390,8 +1244,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <b> Kitap Pasaj Kapsamı:</b> %{apexData.diagnostics?.passageCovPct ?? 0} ·
         <b> Çekirdek Doğruluk:</b> %{apexData.diagnostics?.evalAccuracyScore ?? 0} ·
         <b> 96-Tuzak Zırhı:</b> {trainerData?.trapDefensePassed ?? 96}/{trainerData?.trapDefenseTotal ?? 96} ·
-        <b> 40-Aşamalı Eğitim Turu:</b> #{trainerData?.epochsCompleted ?? trainerData?.ticksTotal ?? 0} ({Object.keys(trainerData?.distilledUnits || {}).length}/{status.totalUnits} ünite damıtıldı) ·
-        <b> 29 Ünite TikTok MP4:</b> {status.tiktokFeed?.filledUnits ?? status.videos?.filledUnits ?? 0}/{status.totalUnits} (%{status.tiktokFeed?.coveragePct ?? status.videos?.coveragePct ?? 0})
+        <b> 40-Aşamalı Eğitim Turu:</b> #{trainerData?.epochsCompleted ?? trainerData?.ticksTotal ?? 0} ({Object.keys(trainerData?.distilledUnits || {}).length}/{status.totalUnits} ünite damıtıldı)
        </p>
         {ossData && (
          <p style={{margin: '4px 0'}}>
@@ -1603,7 +1456,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
           Soru Havuzu ({status.swarmEval.lastSubsystemScores.questionPool ?? 0}) ·
           Materyaller ({status.swarmEval.lastSubsystemScores.studyMaterials ?? 0}) ·
           Anlatım ({status.swarmEval.lastSubsystemScores.lessons ?? 0}) ·
-          Video/TikTok ({status.swarmEval.lastSubsystemScores.videosAndTiktok ?? 0}) ·
           Sandbox/48-Tuzak ({status.swarmEval.lastSubsystemScores.sandboxAndTraps ?? 0}) ·
           Parametre Matrisi ({status.swarmEval.lastSubsystemScores.parameterMatrix ?? 0})
          </small>
@@ -1636,7 +1488,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <b> Güvenli Geri Alma:</b> {status.parameterMatrix.rollbackDepth} adım
        </p>
        <p className="manifest-line" style={{margin: '4px 0 8px'}}>
-        🤖 <b>Otonom Hyper-Evrim:</b> Tüm 11 bot + 64-Katman MoE, proje açıldığı andan itibaren arka planda sürekli evrimleşir (her ~14 sn); hiçbir düğmeye basman gerekmez.
+        🤖 <b>Otonom Hyper-Evrim:</b> Tüm 8 bot + 64-Katman MoE, proje açıldığı andan itibaren arka planda sürekli evrimleşir (her ~14 sn); hiçbir düğmeye basman gerekmez.
        </p>
        <div className="jarvis-diff-grid" style={{marginTop: 6}}>
         {(status.parameterMatrix.bots || []).map(bot => (
@@ -1814,7 +1666,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         • Projenin 8 çekirdek katmanını eşzamanlı ölçer, en zayıf darboğazı ({status.projectLevel.bottleneckPillar?.name || 'otomatik'}) hedefleyip yükseltir ve her adımı <b>100-Yollu Doğrulama Kapısından</b> (&lt;1sn, 0-API) geçirir.
        </p>
        <p className="manifest-line" style={{margin: '0 0 8px'}}>
-        🤖 <b>Otonom Seviye Atlama:</b> 8 çekirdek katman (BM25 arama, Türkçe ÖSYM & 96-Tuzak, 64-Katman MoE konseyi, 260k+ GitHub emilimi, 100-yollu doğrulama kapısı, eğitim hattı, 3D/video stüdyosu, Python QLoRA/DPO) proje açıldığı andan itibaren arka planda sürekli ölçülüp zayıfa odaklanılarak yükseltilir; her adım 100/100 kapısından geçer. Hiçbir düğmeye basman gerekmez.
+        🤖 <b>Otonom Seviye Atlama:</b> 8 çekirdek katman (BM25 arama, Türkçe ÖSYM & 96-Tuzak, 64-Katman MoE konseyi, 260k+ GitHub emilimi, 100-yollu doğrulama kapısı, eğitim hattı, Python QLoRA/DPO) proje açıldığı andan itibaren arka planda sürekli ölçülüp zayıfa odaklanılarak yükseltilir; her adım 100/100 kapısından geçer. Hiçbir düğmeye basman gerekmez.
        </p>
        <div className="jarvis-diff-grid">
         {(status.projectLevel.pillars || []).map(p => (
@@ -1881,7 +1733,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         </small>
        </p>
        <p className="manifest-line" style={{margin: '6px 0 8px'}}>
-        🤖 <b>Otonom Aşırı Eğitim:</b> {status.coderCouncil.totalModels} kodlayıcı + 11 botun DPO damıtma aşırı-eğitim turu <b>proje açılışından itibaren arka planda kesintisiz çalışır</b>; güçlü açık kaynak kodlayıcılar da Ollama bağlandığında kendiliğinden kurulur (indirme komutları README'de). Hiçbir düğmeye basman gerekmez.
+        🤖 <b>Otonom Aşırı Eğitim:</b> {status.coderCouncil.totalModels} kodlayıcı + 8 botun DPO damıtma aşırı-eğitim turu <b>proje açılışından itibaren arka planda kesintisiz çalışır</b>; güçlü açık kaynak kodlayıcılar da Ollama bağlandığında kendiliğinden kurulur (indirme komutları README'de). Hiçbir düğmeye basman gerekmez.
        </p>
        <div className="jarvis-diff-grid">
         {(status.coderCouncil.models || []).map(cm => (
@@ -1978,9 +1830,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       </p>
       <p style={{margin: 0}}>
        • <b>Konu Anlatımı Motoru (LessonEngine):</b> {status.lessons?.enhancedCount ?? 0} / {status.totalUnits} ünite zenginleştirildi ({status.lessons?.aiEnhancedCount ?? 0} tanesi AI v{status.lessons?.avgVersion || 1} — çok hata yapılan ünitelerde kodlamaları &amp; anlatımı otomatik baştan değiştirir ve &quot;Ya Çıkarsa?&quot; %100 köşeleri açıklar).
-      </p>
-      <p style={{margin: 0}}>
-       • <b>Gömülü MP4 &amp; Çoklu Tema Video Yönetmeni:</b> {status.videos?.producedCount ?? 0} / {status.totalUnits} ünite hazır ({status.videos?.totalVariantsCount ?? status.videos?.producedCount ?? 0} toplam video varyantı, {status.videos?.mp4Count ?? 0} gömülü .mp4, {status.videos?.roachCount ?? 0} Hamam Böceği Böcü komedisi, {status.videos?.aiProducedCount ?? 0} AI üretimi, {status.videos?.rescueCount ?? 0} Hata Kurtarma · dış Google bağlantısı yok · 0-API Yerel AI Motorları + Gömülü MP4 aktif).
       </p>
      </div>
 

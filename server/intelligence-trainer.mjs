@@ -279,7 +279,7 @@ export class IntelligenceTrainer {
   return { defects, diffCounts, totalAudited: allQuestions.length };
  }
 
- // 20x Omega-4700x+ (+470,000%) 20-Aşamalı Sürekli Eğitim Adımı — TÜM 11 Botu ve Milyarlarca Parametrelerini Eşzamanlı Zenginleştirir!
+ // 20x Omega-4700x+ (+470,000%) 20-Aşamalı Sürekli Eğitim Adımı — TÜM 8 Botu ve Milyarlarca Parametrelerini Eşzamanlı Zenginleştirir!
  async runContinuousTrainingTick({
   contexts = [],
   passagesByUnit = new Map(),
@@ -344,7 +344,7 @@ export class IntelligenceTrainer {
     });
    }
 
-   // Sentetik zor-negatif DPO eğitim çifti üretimi (üretici + hakem + video için)
+   // Sentetik zor-negatif DPO eğitim çifti üretimi (üretici + hakem + anlatım için)
    const syntheticDpoPairs = [];
    if (mined.facts.length > 0 && kws.length >= 2) {
     syntheticDpoPairs.push({
@@ -354,7 +354,7 @@ export class IntelligenceTrainer {
     });
    }
 
-   const videoEnrichmentCue = `${ctx.unit} sinema vurgusu: ${kws.slice(0, 4).join(' • ')}${mined.causeEffectChains[0] ? ` | Etki: ${mined.causeEffectChains[0].slice(0, 110)}` : ''}`;
+   const narrationCue = `${ctx.unit} anlatım vurgusu: ${kws.slice(0, 4).join(' • ')}${mined.causeEffectChains[0] ? ` | Etki: ${mined.causeEffectChains[0].slice(0, 110)}` : ''}`;
    const kayseriHook = autoTraps[0]
     ? `La gardaşım ${autoTraps[0].conceptA} ile ${autoTraps[0].conceptB} kavramını birbirine katarsan mantıyı yakarsın!`
     : `Emmi oğlu ${ctx.unit} ünitesindeki şu kilidi kap da sınavda şaşma!`;
@@ -369,7 +369,7 @@ export class IntelligenceTrainer {
     exceptionClauses: mined.exceptionClauses,
     confusionTraps: autoTraps,
     syntheticDpoPairs,
-    videoEnrichmentCue,
+    narrationCue,
     kayseriHook,
     keywords: kws.slice(0, 12),
     blindSpots: blindSpots.slice(0, 8),
@@ -410,7 +410,7 @@ export class IntelligenceTrainer {
        unitA: a.id,
        unitB: otherId,
        sharedConcepts: shared.slice(0, 4),
-       bridgeNote: `${a.id} ve ${otherId} üniteleri "${shared.slice(0, 2).join(' / ')}" ekseninde çapraz sınav sorusu ve video karşılaştırması için birleştirildi.`
+       bridgeNote: `${a.id} ve ${otherId} üniteleri "${shared.slice(0, 2).join(' / ')}" ekseninde çapraz sınav sorusu ve kavram karşılaştırması için birleştirildi.`
       });
      }
     }
@@ -473,7 +473,7 @@ export class IntelligenceTrainer {
    }
   }
 
-  // Aşama 18–40: Tüm 11 Bot İçin Somut Zenginleştirme Direktifleri & JARVIS / Apex Senkronizasyonu
+  // Aşama 18–40: Tüm 8 Bot İçin Somut Zenginleştirme Direktifleri & JARVIS / Apex Senkronizasyonu
   const topFocusUnit = targets[0]?.id || '0-0';
   const topDu = state.distilledUnits[topFocusUnit];
   const topDeficit = topDu?.deficitTier || 'orta';
@@ -482,13 +482,10 @@ export class IntelligenceTrainer {
    judge: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): ${trapPassed}/${trapTotal} tuzak kapısı F1:%${trapF1} ile çift-cevap, uzunluk sızıntısı ve kök tekrarını sıfır toleransla ele.`,
    curator: `Ultra-Singularity-705Mx+ (100x · 40k Havuz): Tüm 29 ünitede kör pasajları (${state.blindSpotsMapped} adet) kapatıp kolay/orta/zor oranını %33 bandında tut.`,
    lessonEngine: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Sebep-sonuç (${topDu?.causeEffectChains?.length || 0}) ve istisna kurallarını zihin kancasıyla 40 aşamalı derinleştir.`,
-   videoDirector: `Ultra-Singularity-705Mx+ (100x · Yalnızca Kimi/Ollama Yerel): ${topDu?.videoEnrichmentCue || 'Kitap terimleri + sinema sahnesi'} yönlendirmesiyle sürekli TikTok video yenilemesi + 3D sahne üret.`,
    researchAgent: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): ${state.globalConfusionTraps.length} global kavram tuzağını yerel sınav tahmini çeldiricisi olarak besle.`,
    kayseriCoach: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): ${topDu?.kayseriHook || 'Kayserili şivesi + anlık kitap kanıtı'} ile keskin komedi & doğrulama sun.`,
-   tiktokFeed: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Sıfır soru kuralı + eski videoları arka planda yenile + sürekli yeni TikTok videosu üret.`,
    qwenCodeSandbox: `Ultra-Singularity-705Mx+ (100x · +70,500,000,000%): 96 adversarial tuzak testi ve self-repair JS kurallarını sıfır regresyonla kilitle.`,
-   turboQualityGuard: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Milisaniye turbo hızda dahi en az 25 krk kitap kanıtı ve eşit uzunlukta 4 şık kuralını kilitle.`,
-   localVideoStudio: `Ultra-Singularity-705Mx+ (100x · Yalnızca Kimi/Ollama + VoiceStudio): Harici API/anahtar istemeden yerel MP4 + sürekli dönen TikTok üretimi sun.`
+   turboQualityGuard: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Milisaniye turbo hızda dahi en az 25 krk kitap kanıtı ve eşit uzunlukta 4 şık kuralını kilitle.`
   };
   state.botEnrichmentDirectives = enrichedDirectives;
 
@@ -593,7 +590,7 @@ export class IntelligenceTrainer {
    timestamp: new Date().toISOString()
   });
 
-  // ApexArchitect durumunu da senkron güncelle ki tüm 11 alt-sistem anında yararlansın!
+  // ApexArchitect durumunu da senkron güncelle ki tüm 8 alt-sistem anında yararlansın!
   if (apex) {
    const axState = await apex.loadState();
    axState.version = 8;
@@ -626,7 +623,7 @@ export class IntelligenceTrainer {
    await apex.saveState(axState);
   }
 
-  // Claude-Tarzı Çok-Zekâlı & 5 Bilgi Seviyeli Öz-Doğrulama + 11 Botun Çok-Milyarlı Parametre Evrimi!
+  // Claude-Tarzı Çok-Zekâlı & 5 Bilgi Seviyeli Öz-Doğrulama + 8 Botun Çok-Milyarlı Parametre Evrimi!
   let swarmRes = null;
   if (!skipSwarmEval) {
    const matrix = paramMatrix || new BotParameterMatrix(this.dataDir);
@@ -680,7 +677,7 @@ export class IntelligenceTrainer {
   };
  }
 
- // Soru üretimi, hakem denetimi, konu anlatımı ve video motoruna damıtılmış ünite zekâsı enjekte eder
+ // Soru üretimi, hakem denetimi ve konu anlatımına damıtılmış ünite zekâsı enjekte eder
  getUnitDistilledPrompt(state, unitId) {
   const du = state?.distilledUnits?.[unitId];
   if (!du) return '';
@@ -703,10 +700,10 @@ export class IntelligenceTrainer {
   return `\n${parts.join('\n')}`;
  }
 
- // Video Yönetmeni & Yerel Video Stüdyosu için ünite zekâsından sinematik vurguları döndürür
- getVideoEnrichmentHint(state, unitId) {
+ // Konu anlatımı motoru için ünite zekâsından anlatım vurgularını döndürür
+ getNarrationEnrichmentHint(state, unitId) {
   const du = state?.distilledUnits?.[unitId];
   if (!du) return '';
-  return du.videoEnrichmentCue || '';
+  return du.narrationCue || '';
  }
 }

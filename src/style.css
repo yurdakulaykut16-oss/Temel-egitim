@@ -118,57 +118,11 @@
 .every-corner-card b{font-size:13px;color:#3e2a70}
 .every-corner-card p{margin:0;font-size:12px;line-height:1.6;color:#4e3d78}
 .every-corner-card small{font-size:11px;color:#7865a3}
-.video-stage-card{margin-top:24px;background:#fff;border:1px solid #d5e3cd;border-radius:14px;padding:20px;display:grid;gap:14px}
-.video-stage-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
-.video-stage-top h3{margin:4px 0 0;font:800 18px Manrope,Arial;color:#243929;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-.video-mode-pill{font-size:11px;font-weight:700;background:#e6f3dd;color:#2e6b29;border-radius:20px;padding:4px 10px}
-.video-top-actions{display:flex;flex-wrap:wrap;gap:8px}
-.video-mp4-embed-wrap{border-radius:12px;overflow:hidden;border:1px solid #cfe0c6;background:#111f16;display:grid}
-.video-mp4-player{width:100%;aspect-ratio:16/9;max-height:430px;display:block;background:#0e1a12}
-.video-mp4-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 14px;background:#f4f9f0;border-top:1px solid #dce8d4;font-size:12px;color:#3d5740;font-weight:600}
-.video-theme-studio{background:#f7fbf3;border:1px solid #dbe8d2;border-radius:11px;padding:12px 14px;display:grid;gap:10px}
-.video-theme-chips{display:flex;flex-wrap:wrap;gap:6px}
-.video-theme-chip{border:1px solid #d2e2c8;background:#fff;color:#334a36;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
-.video-theme-chip.active{background:#2e6f40;border-color:#2e6f40;color:#fff}
-.video-idea-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.video-idea-bar input{flex:1;min-width:220px;padding:9px 12px;border:1px solid #cde0c2;border-radius:8px;font:inherit;font-size:12px;background:#fff}
-.video-gallery-strip{display:grid;gap:8px;padding-top:6px;border-top:1px solid #edf2ea}
-.video-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
-.video-gallery-card{text-align:left;padding:10px 12px;border:1px solid #d5e4cd;background:#f9fcf6;border-radius:9px;display:grid;gap:3px;cursor:pointer}
-.video-gallery-card b{font-size:12px;color:#243a29;line-height:1.35}
-.video-gallery-card small{font-size:11px;color:#5a705b}
-.video-gallery-card.active{background:#e7f4df;border-color:#5fa245;box-shadow:0 0 0 2px rgba(95,162,69,.18)}
-.video-3d-frame{position:relative;border-radius:12px;overflow:hidden;border:1px solid #cfe0c6;background:#eaf3e4;min-height:370px}
-.video-3d-canvas canvas{display:block;width:100%!important;height:370px!important}
-.video-fallback-box{padding:28px;color:#26422c;display:grid;gap:8px}
-.video-subtitle-bar{position:absolute;left:14px;right:14px;bottom:14px;background:rgba(20,38,26,.88);backdrop-filter:blur(6px);color:#f3f8f0;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
-.speaker-chip{font-size:11px;font-weight:800;border-radius:16px;padding:4px 10px;white-space:nowrap}
-.video-subtitle-bar p{margin:0;font-size:13px;line-height:1.55}
-.video-repeat-overlay{position:absolute;inset:0;background:rgba(20,36,24,.78);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px}
-.video-repeat-card{background:#fff;border-radius:14px;padding:22px 26px;max-width:560px;width:100%;display:grid;gap:12px;text-align:left;box-shadow:0 16px 36px rgba(0,0,0,.25)}
-.video-repeat-card h4{margin:0;font:800 17px/1.45 Manrope,Arial;color:#233828}
-.video-mini-quiz{background:#f5f9f2;border:1px solid #dbe7d4;border-radius:10px;padding:12px 14px;display:grid;gap:8px}
-.video-mini-quiz p{margin:0;font-size:13px;color:#314835}
-.video-mini-opts{display:grid;gap:7px}
-.video-mini-opts button{text-align:left;padding:10px 12px;border:1px solid #d5e2ce;background:#fff;border-radius:8px;font-size:12px;font-weight:600;color:#334936}
-.video-mini-opts button.correct{background:#e7f5df;border-color:#74af4e;color:#25551f}
-.video-mini-opts button.incorrect{background:#ffefec;border-color:#d8786d;color:#92342b}
-.video-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.scene-pills{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
-.scene-pill{border:1px solid #d7e4cf;background:#f7fbf4;color:#4f6b4e;border-radius:18px;padding:6px 12px;font-size:11px;font-weight:700}
-.scene-pill.active{background:#2d4033;border-color:#2d4033;color:#fff}
-.video-mode-switcher{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding-top:6px;border-top:1px solid #edf2ea}
-.video-mode-switcher small{font-size:11px;font-weight:700;color:#6c7e6a;margin-right:4px}
-.google-flow-box{background:#f4f8ff;border:1px solid #ceddf3;border-radius:10px;padding:14px 16px;display:grid;gap:9px}
-.google-flow-box p{margin:0;font-size:12px;line-height:1.6;color:#3a5170}
-.flow-prompt-code{display:block;background:#1e2a3b;color:#dce8fa;border-radius:7px;padding:10px 12px;font-size:11px;line-height:1.5;overflow-x:auto}
-.flow-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.flow-actions input{flex:1;min-width:210px;padding:9px 11px;border:1px solid #c9d8ef;border-radius:7px;font:inherit;font-size:12px}
-.video-status-line{margin:0;font-size:12px;font-weight:700;color:#3a6f35;background:#eef7e8;padding:8px 12px;border-radius:8px}
+.reframe-status-line{margin:0;font-size:12px;font-weight:700;color:#3a6f35;background:#eef7e8;padding:8px 12px;border-radius:8px}
 .exam-breakdown{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
 .exam-mod-box{background:#f7faf4;border:1px solid #dfe8d9;border-radius:9px;padding:10px;text-align:center;font-size:11px;color:#4a604b}
 .exam-mod-box b{display:block;font:800 16px Manrope,Arial;color:#273b2b;margin:4px 0}
-@media(max-width:760px){.every-corner-grid,.exam-breakdown{grid-template-columns:1fr}.scene-pills{margin-left:0}}
+@media(max-width:760px){.every-corner-grid,.exam-breakdown{grid-template-columns:1fr}}
 
 /* Kayserili Koç Şık Tepki Kartı */
 .kayseri-reaction-box{margin:14px 0 6px;border-radius:14px;padding:16px 20px;border:2px solid #d97757;background:linear-gradient(135deg,#fff5ee,#fffaf6);display:grid;gap:8px;box-shadow:0 8px 24px rgba(156,44,28,.08)}
@@ -185,56 +139,7 @@
 .kr-fact{margin:0;font-size:13px;line-height:1.6;color:#243929;background:rgba(255,255,255,.78);padding:9px 12px;border-radius:8px;border:1px solid #e1e9dc}
 .kr-term{font-size:12px;color:#6c2818;background:#fde9e2;padding:7px 11px;border-radius:8px;border:1px solid #f4c6b8}
 
-/* TikTok Dikey Kaydırılabilir Sorusuz Video Akışı */
-.tiktok-shell{display:grid;gap:14px}
-.tiktok-topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;background:#fff;border:1px solid #dbe7d3;border-radius:14px;padding:14px 18px}
-.tiktok-top-left{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.tiktok-pill{background:#1d3124;color:#e7f4df;border-radius:20px;padding:6px 13px;font:800 12px Manrope,Arial}
-.tiktok-coverage-pill{background:#f1f7ec;color:#2e6b29;border:1px solid #cfe0c5;border-radius:20px;padding:6px 12px;font-size:12px}
-.tiktok-top-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.tiktok-select{padding:8px 12px;border:1px solid #cde0c2;border-radius:9px;background:#fff;font:inherit;font-size:12px;font-weight:700;color:#2c3f2e}
-.btn-primary{background:#2e6f40;color:#fff;border:0;border-radius:9px;padding:9px 14px;font:700 12px Manrope,Arial;cursor:pointer}
-.btn-primary:disabled{opacity:.6;cursor:not-allowed}
-.btn-secondary{background:#9c2c1c;color:#fff;border:0;border-radius:9px;padding:9px 14px;font:700 12px Manrope,Arial;cursor:pointer}
-.btn-ghost{background:#f3f7ef;color:#2c4230;border:1px solid #d5e2cd;border-radius:9px;padding:8px 13px;font:700 12px Manrope,Arial;cursor:pointer}
-.tiktok-progress-bar{height:7px;border-radius:99px;background:#e4ede0;overflow:hidden}
-.tiktok-progress-fill{height:100%;background:linear-gradient(90deg,#2e6f40,#9c2c1c);transition:width .35s ease}
-.tiktok-status-note{font-size:12px;font-weight:700;color:#2e6b29;background:#edf7e6;border:1px solid #cbe2be;padding:8px 12px;border-radius:9px}
-.tiktok-viewport-wrap{display:flex;justify-content:center}
-.tiktok-feed-scroll{width:100%;max-width:760px;height:78vh;min-height:540px;max-height:780px;overflow-y:auto;scroll-snap-type:y mandatory;border-radius:18px;background:#101c14;border:2px solid #243c2c;box-shadow:0 20px 50px rgba(16,28,20,.22);outline:none}
-.tiktok-card{scroll-snap-align:start;scroll-snap-stop:always;min-height:100%;display:grid;grid-template-rows:1fr auto;background:#132118;color:#f3f7f0;border-bottom:2px solid #263e2e}
-.tiktok-card-stage{position:relative;display:grid;place-items:center;background:#0a130d;min-height:300px;overflow:hidden}
-.tiktok-mp4-player{width:100%;height:100%;max-height:420px;object-fit:contain;display:block;background:#000}
-.tiktok-mp4-fallback{padding:36px;color:#b8cbb8;font-weight:700}
-.tiktok-floating-badges{position:absolute;top:12px;left:12px;right:68px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
-.tiktok-badge-unit{background:rgba(15,28,20,.82);color:#e7f4df;border:1px solid rgba(167,198,110,.5);padding:5px 10px;border-radius:16px;font-size:11px;font-weight:700}
-.tiktok-badge-noquiz{background:rgba(156,44,28,.9);color:#fff;padding:5px 10px;border-radius:16px;font-size:11px;font-weight:800;letter-spacing:.3px}
-.tiktok-side-rail{position:absolute;right:10px;bottom:14px;display:grid;gap:7px;justify-items:center}
-.rail-btn{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(16,28,20,.85);color:#fff;font-size:16px;display:grid;place-items:center;cursor:pointer}
-.rail-btn.active{background:#9c2c1c;border-color:#ffd0b8}
-.rail-btn:disabled{opacity:.35;cursor:not-allowed}
-.rail-counter{font-size:11px;font-weight:800;background:rgba(16,28,20,.85);color:#d7ebc7;padding:3px 8px;border-radius:12px}
-.tiktok-card-info{padding:14px 18px 18px;display:grid;gap:10px;background:#16271c}
-.tiktok-card-title{margin:0;font:800 16px Manrope,Arial;color:#ffffff}
-.tiktok-direct-answer{background:#213a2a;border:1px solid #5fa245;border-radius:11px;padding:10px 13px;display:grid;gap:4px}
-.tda-label{font-size:10px;font-weight:800;letter-spacing:.7px;color:#b8e29b}
-.tda-text{margin:0;font-size:13px;line-height:1.55;color:#f5fbf0}
-.tiktok-terms-box{display:grid;gap:6px}
-.tiktok-terms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-.tiktok-term-chip{background:#1e2f24;border:1px solid #385541;border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.4;color:#dcead6}
-.tiktok-term-chip strong{color:#ffd080}
-.tiktok-dialogue-strip{display:grid;gap:6px}
-.tiktok-dlg-row{display:flex;align-items:flex-start;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:7px 10px}
-.tiktok-spk-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:12px;white-space:nowrap}
-.spk-kayseri{background:#9c2c1c;color:#fff}
-.spk-roach{background:#7a3e1b;color:#ffe6cc}
-.spk-coach{background:#2e6f40;color:#fff}
-.spk-ada{background:#2b5d8f;color:#fff}
-.spk-can{background:#b34c26;color:#fff}
-.tiktok-dlg-txt{font-size:12px;line-height:1.5;color:#eef6ea}
-@media(max-width:760px){.tiktok-terms-grid{grid-template-columns:1fr}.tiktok-feed-scroll{height:75vh}}
-
-/* VoiceStudio Çoklu Ücretsiz Ses Merkezi & 0-API Video Model Barı */
+/* VoiceStudio Çoklu Ücretsiz Ses Merkezi */
 .vs-status-banner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;background:#fff;border:1px solid #d9e6d0;border-radius:14px;padding:14px 18px;margin-bottom:16px}
 .vs-status-left{display:flex;align-items:center;gap:12px}
 .vs-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
@@ -275,11 +180,6 @@
 .spin{animation:vsSpin 1s linear infinite}
 @keyframes vsSpin{to{transform:rotate(360deg)}}
 
-.video-cloud-bar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:9px 12px;margin-bottom:10px;background:#f3f8ef;border:1px solid #d4e3cb;border-radius:10px}
-.video-cloud-label{font-size:11px;font-weight:800;color:#2b4b34;letter-spacing:.2px}
-.video-cloud-chip{border:1px solid #cadcc0;background:#fff;color:#243c2c;border-radius:18px;padding:5px 11px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-.video-cloud-chip.active{background:#1d3124;color:#fff;border-color:#1d3124}
-.video-cloud-chip small{font-size:10px;opacity:.78;font-weight:600}
 
 /* Hızlı BM25 Arama, 5-Ders Baraj Radarı, Kişisel Hata Defteri & Sınav Navigasyonu */
 .quick-search-box{background:#fff;border:1px solid #d9e6d0;border-radius:16px;padding:12px 16px;margin:16px 0 20px;box-shadow:0 4px 16px rgba(32,58,36,.04)}
@@ -331,33 +231,7 @@
 .qn-pill.bad{background:#fce6e4;border-color:#d46357;color:#94261a}
 .qn-pill.flg::after{content:'';position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:#e5a93b}
 
-/* Yerel 3D Animasyon & Koreografi Üreticisi (Three.js + mp4-muxer + Blender bpy) */
-.three-d-studio-card{background:#f7fbf6;border:1px solid #cce0c4;border-radius:16px;padding:14px 16px;display:grid;gap:12px;margin-top:8px}
-.three-d-studio-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
-.three-d-studio-head h4{margin:3px 0 0;font:800 17px Manrope,Arial;color:#172a1c}
-.three-d-caps-pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:16px;background:#e3f3e6;color:#1f5e32;border:1px solid #b8dbb7}
-.three-d-preset-strip{display:flex;flex-wrap:wrap;gap:7px}
-.three-d-preset-chip{border:1px solid #c9dec1;background:#fff;color:#1d3124;border-radius:16px;padding:5px 11px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .15s}
-.three-d-preset-chip.active{background:#235733;color:#fff;border-color:#235733}
-.three-d-viewport-wrap{position:relative;border-radius:14px;overflow:hidden;background:#0b1a13;border:1px solid #2b4c37}
-.three-d-canvas-host{width:100%;min-height:290px;cursor:grab}
-.three-d-canvas-host:active{cursor:grabbing}
-.three-d-fallback-stage{padding:48px 20px;text-align:center;color:#d6eed4;display:grid;gap:8px;justify-items:center}
-.three-d-overlay-hud{position:absolute;left:10px;right:10px;bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;pointer-events:none}
-.three-d-overlay-hud span{background:rgba(12,26,18,.82);color:#d8f5d2;font-size:11px;font-weight:600;padding:4px 9px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(141,230,122,.28)}
-.three-d-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.three-d-toolbar .active-chip{background:#e3f3e6;border-color:#5fa245;color:#1d542d}
-.three-d-creator-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
-.three-d-creator-grid label{display:grid;gap:4px;font-size:11px;font-weight:700;color:#2b4130}
-.three-d-creator-grid label span{display:inline-flex;align-items:center;gap:4px}
-.three-d-creator-grid select{padding:6px 8px;border-radius:8px;border:1px solid #c9dec1;background:#fff;font-size:12px;color:#1b2c1e}
-.three-d-prompt-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.three-d-prompt-row input{flex:1;min-width:220px;padding:8px 11px;border-radius:10px;border:1px solid #c9dec1;background:#fff;font-size:13px}
-.three-d-blender-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.three-d-blender-code{background:#122017;color:#d6f5d0;padding:12px;border-radius:10px;font-size:11px;line-height:1.45;max-height:220px;overflow:auto;margin:0}
-.three-d-mp4-preview{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.three-d-mp4-preview video{width:min(420px,100%);border-radius:10px;border:1px solid #c9dec1;background:#000}
-
+.stack-caps-pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:16px;background:#e3f3e6;color:#1f5e32;border:1px solid #b8dbb7}
 /* Tek Localhost · Birleşik Tek Önizleme & RAG / AutoGen / LangGraph / CrewAI / Axolotl / LLaMA-Factory QLoRA+DPO */
 .unified-cockpit-stack{display:grid;gap:20px;margin-top:22px}
 .unified-cockpit-banner{background:linear-gradient(135deg,#162b1d,#234830);color:#f3faf1;border-radius:18px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}

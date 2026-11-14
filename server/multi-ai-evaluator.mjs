@@ -10,7 +10,7 @@ export const KNOWLEDGE_LEVEL_PERSONAS = [
   label: 'Acemi / Temel Düzey Öğrenci',
   targetDifficulties: ['kolay'],
   focus: 'Terim karmaşası, netlik, anlaşılır kodlama/akrostiş, kafa karıştırmayan kök',
-  primaryBots: ['lessonEngine', 'generator', 'tiktokFeed']
+  primaryBots: ['lessonEngine', 'generator']
  },
  {
   id: 'intermediate_trainee',
@@ -30,15 +30,15 @@ export const KNOWLEDGE_LEVEL_PERSONAS = [
   id: 'speed_skimmer',
   label: 'Hızlı Tarayıcı (Dikkat & Uzunluk Testi)',
   targetDifficulties: ['kolay', 'orta', 'zor'],
-  focus: 'En uzun şık doğru cevabı ele veriyor mu, soru kökü şişkin mi, TikTok doğrudan bilgi veriyor mu',
-  primaryBots: ['turboQualityGuard', 'kayseriCoach', 'tiktokFeed']
+  focus: 'En uzun şık doğru cevabı ele veriyor mu, soru kökü şişkin mi',
+  primaryBots: ['turboQualityGuard', 'kayseriCoach']
  },
  {
   id: 'adversarial_exploiter',
   label: 'Adversarial Red-Team (72-Tuzak & Halüsinasyon Avcısı)',
   targetDifficulties: ['kolay', 'orta', 'zor'],
   focus: 'Çift doğru şık, hepsi/hiçbiri, şive sızıntısı, uydurma kanıt, enjeksiyon, 72 tuzak zırhı',
-  primaryBots: ['qwenCodeSandbox', 'judge', 'videoDirector', 'localVideoStudio']
+  primaryBots: ['qwenCodeSandbox', 'judge']
  }
 ];
 
@@ -46,7 +46,6 @@ export const TESTED_SUBSYSTEMS = [
  'questionPool',
  'studyMaterials',
  'lessons',
- 'videosAndTiktok',
  'sandboxAndTraps',
  'parameterMatrix'
 ];
@@ -137,8 +136,6 @@ export class MultiAiSwarmEvaluator {
   contexts = [],
   passagesByUnit = new Map(),
   lessonsSummary = null,
-  videosSummary = null,
-  feedVideos = [],
   evolver = null,
   policy = null,
   paramState = null,
@@ -221,17 +218,6 @@ export class MultiAiSwarmEvaluator {
   const enhancedPct = lessonsSummary ? clamp((lessonsSummary.enhancedCount || 0) / totalUnits * 100, 0, 100) : 75;
   const lessonsScore = Math.round(clamp(70 + enhancedPct * 0.30, 40, 100));
 
-  // --- Alt Sistem 4: TikTok / 3D Cinema & Yerel OSS Video Motorları ---
-  const vids = Array.isArray(feedVideos) ? feedVideos : [];
-  const questionLeakInFeed = vids.filter(v => v.noQuestions === false || /\?\s*$/.test(String(v.directAnswer || ''))).length;
-  const missingKeyTermsInFeed = vids.filter(v => !Array.isArray(v.keyTerms) || v.keyTerms.length === 0).length;
-  const legacyVids = vids.filter(v => v.isLegacy).length;
-  const videoCovPct = videosSummary?.coveragePct ?? (vids.length ? Math.min(100, Math.round((vids.length / totalUnits) * 100)) : 70);
-  const videosAndTiktokScore = Math.round(clamp(
-   84 + videoCovPct * 0.16 - questionLeakInFeed * 12 - missingKeyTermsInFeed * 4 - (vids.length ? (legacyVids / vids.length) * 8 : 0),
-   35, 100
-  ));
-
   // --- Alt Sistem 5: Sandbox Kuralları & 96 Tuzak Zırhı ---
   let trapPassed = ADVERSARIAL_TRAP_CASES.length;
   let trapF1 = 100;
@@ -293,7 +279,7 @@ export class MultiAiSwarmEvaluator {
    beginner_novice: Math.round(clamp((lessonsScore * 0.45) + (studyMaterialsScore * 0.25) + (tierBalanceScore * 0.30) - slangOrBannedCount * 5, 35, 100)),
    intermediate_trainee: Math.round(clamp((questionPoolScore * 0.45) + (tierBalanceScore * 0.35) + (approvalRate * 0.20), 35, 100)),
    expert_coach: Math.round(clamp((questionPoolScore * 0.40) + (sandboxAndTrapsScore * 0.35) + clamp(100 - weakEvidenceCount * 8, 40, 100) * 0.25, 35, 100)),
-   speed_skimmer: Math.round(clamp((videosAndTiktokScore * 0.45) + clamp(100 - lengthLeakCount * 10 - questionLeakInFeed * 12, 35, 100) * 0.55, 35, 100)),
+   speed_skimmer: Math.round(clamp(clamp(100 - lengthLeakCount * 10, 35, 100) * 0.55 + (questionPoolScore * 0.45), 35, 100)),
    adversarial_exploiter: Math.round(clamp((sandboxAndTrapsScore * 0.65) + clamp(100 - slangOrBannedCount * 15 - stemRepeatPenalty * 8 - (dualBlocked > 5 ? 6 : 0), 30, 100) * 0.35, 30, 100))
   };
 
@@ -301,7 +287,6 @@ export class MultiAiSwarmEvaluator {
    questionPool: questionPoolScore,
    studyMaterials: studyMaterialsScore,
    lessons: lessonsScore,
-   videosAndTiktok: videosAndTiktokScore,
    sandboxAndTraps: sandboxAndTrapsScore,
    parameterMatrix: parameterMatrixScore
   };
@@ -326,8 +311,6 @@ export class MultiAiSwarmEvaluator {
     osymStyleScore: osymAudit.avgScore,
     osymElitePct: osymAudit.elitePct,
     osymWeakestIssues: osymAudit.weakestIssues,
-    questionLeakInFeed,
-    missingKeyTermsInFeed,
     trapPassed,
     trapTotal: ADVERSARIAL_TRAP_CASES.length,
     trapF1,
@@ -384,26 +367,17 @@ export class MultiAiSwarmEvaluator {
    setPatch('judge', {}, { dualAnswerSensitivity: 0.985 }, { expertRigor: 0.96 }, { crossModelAgreementGain: 0.95 });
   }
 
-  // Aşama 3 (Hız & Tuzak Kalkanı Sentezi): Speed Skimmer + Adversarial Exploiter + TikTok/Video
+  // Aşama 3 (Hız & Tuzak Kalkanı Sentezi): Speed Skimmer + Adversarial Exploiter
   if (diagnostics.lengthLeakCount > 0 || levelScores.speed_skimmer < 88) {
-   critiqueChain.push(`[Hızlı Okuyucu & TikTok Eleştirisi · ${levelScores.speed_skimmer}/100] Şık uzunluk sızıntısı ve TikTok sorusuz netlik kilidi yükseltildi.`);
+   critiqueChain.push(`[Hızlı Okuyucu Eleştirisi · ${levelScores.speed_skimmer}/100] Şık uzunluk sızıntısı kilidi yükseltildi.`);
    setPatch('turboQualityGuard', { temperature: 0.10 }, {
     optionLengthParityGate: 0.98,
     speedToQualityFloor: 0.98
    }, {
     speedSkimmerImmunity: 0.98
    });
-   setPatch('tiktokFeed', {}, {
-    zeroQuestionGuardWeight: 1.0,
-    keyTermDensity: 0.97
-   }, {
-    speedSkimmerImmunity: 0.97
-   });
-   setPatch('videoDirector', {}, { flowPromptDetailLevel: 0.96, boardDensityCalibration: 0.92 }, { noviceClarity: 0.93 });
-   setPatch('localVideoStudio', {}, { cinemaFpsQualityWeight: 0.95, audioMuxSyncGain: 0.97 }, { speedSkimmerImmunity: 0.94 });
   } else {
    setPatch('turboQualityGuard', {}, {}, { speedSkimmerImmunity: 0.96 });
-   setPatch('localVideoStudio', {}, {}, { speedSkimmerImmunity: 0.94 });
   }
 
   if (levelScores.adversarial_exploiter < 92 || diagnostics.trapF1 < 98) {
@@ -451,7 +425,6 @@ export class MultiAiSwarmEvaluator {
   installedModels = [],
   sampleItems = [],
   sampleLesson = null,
-  sampleVideo = null,
   signal
  } = {}) {
   if (typeof runModelFn !== 'function' || !installedModels.length) {
@@ -487,8 +460,8 @@ export class MultiAiSwarmEvaluator {
    {
     role: 'expert_redteam_critic_ai',
     model: expertCriticModel,
-    prompt: `Sen Başhakem + Adversarial Red-Team Eleştirmenisin (Claude tarzı kendi hatalarını arayan derin analiz). Çift doğru şık, uzunluk sızıntısı, zayıf kanıt ve video sorusuzluk kuralını kontrol et. JSON döndür: {"expertPass": true, "trapRisk": false, "videoClean": true, "prescription": "...", "generatorTemp": 0.48}`
-      + `\nSORU: ${JSON.stringify(compactQuestion)}\nVİDEO: ${JSON.stringify({ directAnswer: sampleVideo?.directAnswer || '', noQuestions: sampleVideo?.noQuestions !== false })}`
+    prompt: `Sen Başhakem + Adversarial Red-Team Eleştirmenisin (Claude tarzı kendi hatalarını arayan derin analiz). Çift doğru şık, uzunluk sızıntısı ve zayıf kanıt kuralını kontrol et. JSON döndür: {"expertPass": true, "trapRisk": false, "prescription": "...", "generatorTemp": 0.48}`
+      + `\nSORU: ${JSON.stringify(compactQuestion)}`
    },
    {
     role: 'self_repair_coder_ai',
@@ -538,8 +511,6 @@ export class MultiAiSwarmEvaluator {
   contexts = [],
   passagesByUnit = new Map(),
   lessonsSummary = null,
-  videosSummary = null,
-  feedVideos = [],
   evolver = null,
   policy = null,
   studentProfile = {},
@@ -556,7 +527,7 @@ export class MultiAiSwarmEvaluator {
 
   // 1) Pre-Eval: Tüm sistemleri ve 5 bilgi seviyesini tara
   const preInspection = this.inspectEcosystemAcrossLevels({
-   items, study, contexts, passagesByUnit, lessonsSummary, videosSummary, feedVideos,
+   items, study, contexts, passagesByUnit, lessonsSummary,
    evolver, policy, paramState: paramBefore, telemetry
   });
 
@@ -566,7 +537,6 @@ export class MultiAiSwarmEvaluator {
     runModelFn,
     installedModels,
     sampleItems: items.filter(q => q.status === 'approved').slice(-3),
-    sampleVideo: feedVideos?.[0] || null,
     signal
    }).catch(() => ({ executed: false, shards: [], consensusFindings: [], modelPatches: {} }))
    : { executed: false, shards: [], consensusFindings: [], modelPatches: {} };
@@ -603,7 +573,7 @@ export class MultiAiSwarmEvaluator {
 
   // 5) Post-Eval Gate: Parametre evrimi sonrası sistemi yeniden test et
   const postInspection = this.inspectEcosystemAcrossLevels({
-   items, study, contexts, passagesByUnit, lessonsSummary, videosSummary, feedVideos,
+   items, study, contexts, passagesByUnit, lessonsSummary,
    evolver, policy, paramState: evoResult.state, telemetry
   });
 

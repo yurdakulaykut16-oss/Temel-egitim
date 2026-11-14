@@ -101,7 +101,7 @@ test('ProjectLevelUpOrchestrator: evaluates 8 pillars and completes 100/100 veri
    loadItemsFn: async () => [],
    getTelemetryFn: () => ({ approvalRate: 92, dualAnswerBlocked: 0 }),
    getModelsFn: () => [],
-   getPoolSummaryFn: async () => ({ approvedCount: 180, unitsCount: contexts.length, totalLessons: 5, totalVideos: 3 }),
+   getPoolSummaryFn: async () => ({ approvedCount: 180, unitsCount: contexts.length, totalLessons: 5 }),
    getTrainingPrepStatsFn: async () => ({ sftRows: 64, dpoRows: 40, codeRows: 24 })
   });
 

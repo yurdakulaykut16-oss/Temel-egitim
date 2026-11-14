@@ -19,15 +19,15 @@ test('parseBackboneParamsBillions resolves small, multi-billion, MoE, and cloud 
  assert.equal(parseBackboneParamsBillions('wan2.2-14b-i2v'), 14);
 });
 
-test('BotParameterMatrix initializes 17.18B+ Kronecker-MoE + neural backbone across all 11 AIs and supports Meta-AI evolution + rollback', async () => {
+test('BotParameterMatrix initializes 17.18B+ Kronecker-MoE + neural backbone across all 8 AIs and supports Meta-AI evolution + rollback', async () => {
  const dir = mkdtempSync(resolve(tmpdir(), 'param-matrix-'));
  try {
   const matrix = new BotParameterMatrix(dir);
   const initial = await matrix.loadState();
   const summary0 = matrix.getSummary(initial);
 
-  assert.equal(summary0.totalBots, 11);
-  assert.equal(summary0.bots.length, 11);
+  assert.equal(summary0.totalBots, 8);
+  assert.equal(summary0.bots.length, 8);
   for (const botId of ALL_AI_BOT_IDS) {
    const bot = initial.bots[botId];
    assert.ok(bot, `Missing bot ${botId}`);
@@ -46,21 +46,19 @@ test('BotParameterMatrix initializes 17.18B+ Kronecker-MoE + neural backbone acr
    verifierModel: 'qwen3:32b',
    judge2Model: 'gemma3:27b',
    evolverModel: 'qwen3:32b',
-   coderModel: 'qwen2.5-coder:32b',
-   videoModel: 'deepseek-v4.1-flash:cloud'
+   coderModel: 'qwen2.5-coder:32b'
   });
   assert.equal(synced.bots.generator.backboneParamsBillions, 72);
   assert.equal(synced.bots.judge.backboneParamsBillions, 59);
 
-  // Meta-AI evolves all 11 bots with telemetry + diagnostics + customPatches
+  // Meta-AI evolves all 8 bots with telemetry + diagnostics + customPatches
   const genBefore = synced.bots.generator.parameterGeneration;
   const tensorBefore = [...synced.bots.generator.expertGates];
   const evo1 = await matrix.evolveAllBotParameters({
    diagnostics: {
     botHealth: {
      generator: { score: 62, bottleneck: 'çeldirici zayıf' },
-     judge: { score: 88, bottleneck: 'stabil' },
-     localVideoStudio: { score: 74, bottleneck: 'hız artışı' }
+     judge: { score: 88, bottleneck: 'stabil' }
     }
    },
    telemetry: { approvalRate: 58, dualAnswerBlocked: 7 },
@@ -76,7 +74,7 @@ test('BotParameterMatrix initializes 17.18B+ Kronecker-MoE + neural backbone acr
     unknownBotShouldBeIgnored: { temperature: 99 }
    }
   });
-  assert.equal(evo1.evolution.botsUpdated, 11);
+  assert.equal(evo1.evolution.botsUpdated, 8);
   assert.equal(evo1.state.bots.generator.parameterGeneration, genBefore + 1);
   assert.equal(evo1.state.bots.generator.inferenceParams.temperature, 0.49);
   assert.equal(evo1.state.bots.generator.inferenceParams.repeat_penalty, 1.13);
@@ -115,7 +113,7 @@ test('IntelligenceTrainer, ApexArchitect, and JarvisCore all develop BotParamete
    ['1-0', [{ id: '1-0#00', heading: 'Kas', pages: [2], keywords: ['aktin', 'miyozin'], text: sampleContexts[1].text }]]
   ]);
 
-  // 1) Continuous IntelligenceTrainer tick evolves all 11 AIs
+  // 1) Continuous IntelligenceTrainer tick evolves all 8 AIs
   const tickRes = await trainer.runContinuousTrainingTick({
    contexts: sampleContexts,
    passagesByUnit: passages,
@@ -149,13 +147,10 @@ test('IntelligenceTrainer, ApexArchitect, and JarvisCore all develop BotParamete
        judge: 'Çift cevabı sıfır toleransla reddet',
        curator: 'Kaliteyi koru',
        lessonEngine: 'Püf noktalarını vurgula',
-       videoDirector: 'Sorusuz sahne kur',
        researchAgent: 'Kavram tuzaklarını çıkar',
        kayseriCoach: 'Keskin yerel yorum yap',
-       tiktokFeed: 'Hızlı akışta doğrudan bilgi ver',
        qwenCodeSandbox: 'Güvenli JS kuralları yaz',
-       turboQualityGuard: 'Turbo kalitesini kilitle',
-       localVideoStudio: 'OSS video motoru ve VoiceStudio kullan'
+       turboQualityGuard: 'Turbo kalitesini kilitle'
       },
       difficultyDirectives: { kolay: 'Net tanım', orta: 'İlişki', zor: 'Vaka analizi' }
      }]
@@ -189,7 +184,7 @@ test('IntelligenceTrainer, ApexArchitect, and JarvisCore all develop BotParamete
      innovationTitle: 'Param-Tensor Hız & Keskinlik',
      difficultyDirectives: { kolay: 'Net', orta: 'Orta', zor: 'Zor' },
      parameterPatches: {
-      videoDirector: { top_p: 0.94, behavioralWeights: { hookImpact: 0.97 } }
+      researchAgent: { top_p: 0.91, behavioralWeights: { confusionPairMiningDepth: 0.99 } }
      }
     },
     elapsed: 10
@@ -204,7 +199,8 @@ test('IntelligenceTrainer, ApexArchitect, and JarvisCore all develop BotParamete
   });
   assert.equal(jRes.parameterEvolution.totalEvolutions, 3);
   const afterJarvis = await matrix.loadState();
-  assert.equal(afterJarvis.bots.videoDirector.inferenceParams.top_p, 0.94);
+  assert.equal(afterJarvis.bots.researchAgent.inferenceParams.top_p, 0.91);
+  assert.equal(afterJarvis.bots.researchAgent.behavioralWeights.confusionPairMiningDepth, 0.99);
  } finally {
   rmSync(dir, { recursive: true, force: true });
  }
@@ -244,13 +240,13 @@ test('Ollama middleware exposes /parameters, /parameters/evolve, /parameters/rol
   assert.equal(statusRes.status, 200);
   const statusJson = await statusRes.json();
   assert.ok(statusJson.parameterMatrix);
-  assert.equal(statusJson.parameterMatrix.totalBots, 11);
+  assert.equal(statusJson.parameterMatrix.totalBots, 8);
   assert.ok(statusJson.parameterMatrix.totalEcosystemParamsBillions >= 500);
 
   const getRes = await fetch(`${baseUrl}/parameters`);
   assert.equal(getRes.status, 200);
   const getJson = await getRes.json();
-  assert.equal(getJson.bots.length, 11);
+  assert.equal(getJson.bots.length, 8);
 
   const evoRes = await fetch(`${baseUrl}/parameters/evolve`, {
    method: 'POST',

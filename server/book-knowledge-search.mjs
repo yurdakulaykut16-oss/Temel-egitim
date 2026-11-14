@@ -328,7 +328,7 @@ export class BookKnowledgeSearch {
    priorityActions.push({
     kind: 'weak_unit',
     unitId: allWeak[0].unitId,
-    title: `${allWeak[0].unit} ünitesini 3D video + kodlamalarla tazele`,
+    title: `${allWeak[0].unit} ünitesini kodlamalarla tazele`,
     reason: `${allWeak[0].wrong} yanlış birikimi var.`
    });
   }

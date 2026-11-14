@@ -103,7 +103,6 @@ test('Tüm botlar + soru üretimi (<1 sn) uçtan uca doğrulama: çevrimdışı 
    ['/local-team/cycle', {}],
    ['/team-sprint', {}],
    ['/coder-council/team-develop', { epochsPerModel: 2 }],
-   ['/videos/generate', { unitId: '0-0', subSecond: true }],
    ['/kayseri-react', { unitId: '0-0', isCorrect: true }]
   ];
 

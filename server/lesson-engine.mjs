@@ -6,7 +6,7 @@ const NARRATIVE_STYLES = [
  'Zıtlıklar & Kıyaslama Tablosu (Karıştırılan Çiftler)',
  'Günlük Yaşamdan Somut Benzetmeler & Ritimli Akrostiş',
  'Sınav Dedektifi (Tuzak Avcısı & Neden-Sonuç Zinciri)',
- '3D Zihin Sarayı (Mekan-Kavram Eşleştirmeli Ezber)',
+ 'Zihin Sarayı (Mekan-Kavram Eşleştirmeli Ezber)',
  'ÖSYM Komisyon Röntgeni (5 Açıdan Kök-Şık Simetrisi)',
  'Biyomekanik & Fizyoloji Sayısal Sınır Haritası'
 ];
@@ -172,7 +172,7 @@ export class LessonEngine {
     recommendation = 'Bu konuda çok fazla yanlış yaptın! Önce dersi tekrar biraz daha oku; eski kodlamalar işe yaramadığı için anlatım & kodlamalar yeni tarzla değiştiriliyor.';
    } else if (needsReread) {
     statusLabel = 'Çok Yanlış Yapıldı — Konuyu Tekrar Oku';
-    recommendation = 'Bu konuda arka arkaya yanlışların birikti! Teste devam etmeden önce ünite konu anlatımını ve 3D diyaloglu videosunu tekrar biraz daha incele.';
+    recommendation = 'Bu konuda arka arkaya yanlışların birikti! Teste devam etmeden önce ünite konu anlatımını tekrar biraz daha incele.';
    } else if (avgSec >= 45) {
     statusLabel = 'Doğruluk İyi Ama Süre Yavaş — Kodlamayla Hızlan';
     recommendation = 'Soru başına süren uzun; kodlamalar ve püf noktalarıyla karar süreni ~20-30 saniyeye düşür.';

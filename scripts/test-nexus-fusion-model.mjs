@@ -189,7 +189,7 @@ test('API Uç Noktaları (/api/ollama/nexus-model/*) ve UI-dahil tam proje geli�
   const pullRes = await (await fetch(`${base}/api/ollama/nexus-model/pull-external`, {
    method: 'POST',
    headers: { 'Content-Type': 'application/json', Origin: base },
-   body: JSON.stringify({ idOrTag: 'github-wan22-video' })
+   body: JSON.stringify({ idOrTag: 'github-piper-tts' })
   })).json();
   assert.equal(pullRes.ok, true);
   assert.equal(pullRes.status, 'prepared_local_manifest');

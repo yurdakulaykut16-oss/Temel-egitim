@@ -497,9 +497,9 @@ export class HundredWayVerifier {
       const days = vmInfo.fn({ stabilityDays: 4, correct: true, responseSec: 5 });
       return { passed: Number.isFinite(days) && days > 4, detail: `FSRS aralığı=${days} gün` };
      }
-     if (candidate.slug === 'tiktok-script-sanitizer') {
+     if (candidate.slug === 'summary-keyterm-condenser') {
       const res = vmInfo.fn({ unit: 'Dayanıklılık', rawAnswer: 'VO2max nedir?' });
-      return { passed: Boolean(res?.noQuestions && !res.directAnswer?.includes('?')), detail: 'TikTok sorusuz doğrulandı' };
+      return { passed: Boolean(res?.noQuestions && !res.directAnswer?.includes('?')), detail: 'Özet sorusuz doğrulandı' };
      }
      return { passed: typeof vmInfo.fn === 'function', detail: `${vmInfo.fnName} çağrılabilir` };
     }

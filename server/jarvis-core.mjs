@@ -298,19 +298,19 @@ print(json.dumps(out))`;
    title = `Seviye 9 · Ultra-Singularity-705Mx+ (100x Yükseltme · +70,500,000,000% · %100 Yerel · ${apexMult}x)`;
    minQualityScore = approvalRate >= 50 ? 4.85 : 4.55;
    targetScenarioRatio = 'ultra_singularity_100x_local';
-   directive = 'Ultra-Singularity-705Mx+ (100x · 3,000,000x · +70,500,000,000% · %100 Yerel) 11-bot Süper-Zekâ standardı: 29 üniteden 40 aşamalı çapraz kavram köprüleri, 96-tuzaklı adversarial kalkan, sıfır API anahtarı ve keskin kolay/orta/zor ayrımı.';
+   directive = 'Ultra-Singularity-705Mx+ (100x · 3,000,000x · +70,500,000,000% · %100 Yerel) 8-bot Süper-Zekâ standardı: 29 üniteden 40 aşamalı çapraz kavram köprüleri, 96-tuzaklı adversarial kalkan, sıfır API anahtarı ve keskin kolay/orta/zor ayrımı.';
   } else if (apexMult >= 7050000 && (epochs >= 1 || maturityScore >= 3)) {
    level = 8;
    title = `Seviye 8 · Hyper-Omega-7.05Mx+ (1500x Yükseltme · +705,000,000% · %100 Yerel · ${apexMult}x)`;
    minQualityScore = approvalRate >= 50 ? 4.75 : 4.45;
    targetScenarioRatio = 'hyper_omega_1500x_local';
-   directive = 'Hyper-Omega-7.05Mx+ (1500x · 30,000x · +%705,000,000 · %100 Yerel) 11-bot Süper-Zekâ standardı: 29 üniteden 30 aşamalı çapraz kavram köprüleri, 72-tuzaklı adversarial kalkan, sıfır API anahtarı ve keskin kolay/orta/zor ayrımı.';
+   directive = 'Hyper-Omega-7.05Mx+ (1500x · 30,000x · +%705,000,000 · %100 Yerel) 8-bot Süper-Zekâ standardı: 29 üniteden 30 aşamalı çapraz kavram köprüleri, 72-tuzaklı adversarial kalkan, sıfır API anahtarı ve keskin kolay/orta/zor ayrımı.';
   } else if (apexMult >= 4700 && (epochs >= 1 || maturityScore >= 3)) {
    level = 7;
    title = `Seviye 7 · Omega-4700x+ (20x Eğitim · +470,000% Tüm-Bot Süper-Zekâ · ${apexMult}x)`;
    minQualityScore = approvalRate >= 50 ? 4.6 : 4.3;
    targetScenarioRatio = 'omega_4700x_20x_tum_bot';
-   directive = 'Omega-4700x+ (20x Eğitim · +%470,000 · +160,000% ek sürekli eğitimli) 11-bot Süper-Zekâ standardı: 29 üniteden 20 aşamalı çapraz kavram köprüleri, 48-tuzaklı adversarial kalkan, sıfır çift-cevap sızıntısı ve keskin kolay/orta/zor ayrımı.';
+   directive = 'Omega-4700x+ (20x Eğitim · +%470,000 · +160,000% ek sürekli eğitimli) 8-bot Süper-Zekâ standardı: 29 üniteden 20 aşamalı çapraz kavram köprüleri, 48-tuzaklı adversarial kalkan, sıfır çift-cevap sızıntısı ve keskin kolay/orta/zor ayrımı.';
   } else if (apexMult >= 235 || epochs >= 3 || maturityScore >= 42) {
    level = 6;
    title = `Seviye 6 · Ultra-235x+ (+8000% Sürekli Eğitimli Süper-Zekâ · ${apexMult}x)`;
@@ -322,7 +322,7 @@ print(json.dumps(out))`;
    title = `Seviye 5 · ${apexMult}x Apex Meta-Zekâ`;
    minQualityScore = approvalRate >= 45 ? 4.2 : 3.8;
    targetScenarioRatio = 'coklu_ajan_150x';
-   directive = '150x Apex Meta-Zekâ standardı: 11 botun çapraz geri bildirimiyle üret — sıfır çift-cevap sızıntısı, eşit uzunlukta zeki çeldiriciler, "Ya Çıkarsa?" kör nokta pasajları, 5 açı dengesi ve keskin kolay/orta/zor ayrımı.';
+   directive = '150x Apex Meta-Zekâ standardı: 8 botun çapraz geri bildirimiyle üret — sıfır çift-cevap sızıntısı, eşit uzunlukta zeki çeldiriciler, "Ya Çıkarsa?" kör nokta pasajları, 5 açı dengesi ve keskin kolay/orta/zor ayrımı.';
   } else if (maturityScore >= 18) {
    level = 4;
    title = `Seviye 4 · Usta Sınav Mimarı (${apexMult}x)`;
@@ -771,7 +771,7 @@ JSON döndür:
  }
 
  // Qwen Code / Coder AI İnovasyon Döngüsü (+%15500 Hyper-155x+):
- // kolay/orta/zor + turboQualityLock sistemini koruyarak tüm 10 alt-sistemi geliştirir,
+ // kolay/orta/zor + turboQualityLock sistemini koruyarak tüm 8 alt-sistemi geliştirir,
  // 16-tuzak stresi ile kuralları doğrular ve kapsamlı bot yükseltmeleri üretir.
  async runQwenCodeInnovation({ runModelFn, fallbackModel, installedModels = [], evolver, telemetry, studentProfile, items, paramMatrix = null, allowUiEvolution = false, signal }) {
   const cfg = await this.loadConfig();
@@ -788,11 +788,10 @@ JSON döndür:
   }
 
   const prompt = `Sen JARVIS Qwen-Code Baş Yazılım, Eğitim ve 100x Ultra-Singularity-705Mx+ (+70,500,000,000% · %100 Yerel) Kalite Mimarısın!
-Görevin: Projedeki TÜM 11 botu (Soru Üretici, Hakem, Küratör, Ders Motoru, Video/TikTok Yönetmeni, Araştırmacı, Kayserili Koç, Yerel Video Stüdyosu) aynı anda 100x daha zeki, kapsamlı ve hızlı kılmak.
+Görevin: Projedeki TÜM 8 botu (Soru Üretici, Hakem, Küratör, Ders Motoru, Araştırmacı, Kayserili Koç, Qwen-Code Sandbox, Turbo Kalite Kilidi) aynı anda 100x daha zeki, kapsamlı ve hızlı kılmak.
 DEĞİŞMEZ KURAL 1: Sorulardaki "kolay", "orta", "zor" üçlü zorluk sistemi KESİNLİKLE SİLİNMEZ — tam tersine Turbo hızda dahi saçmalamayı engelleyecek biçimde keskinleştirilir!
 DEĞİŞMEZ KURAL 2: Turbo mod hız için aktifken dahi çift-cevap ("hepsi/hiçbiri"), uydurma istatistik/kanıt ve 4 şıktan sapma KESİNLİKLE YASAKTIR ("turboQualityLock: true").
-DEĞİŞMEZ KURAL 3: TikTok akış videolarında ASLA soru sorulmaz; doğrudan net sınav cevabı ve önemli terimler verilir.
-${allowUiEvolution ? 'GÖREV KAPSAMI: Kullanıcı ARAYÜZÜ (src/, index.html, *.css, *.tsx) DAHİL tüm proje dosyaları (server/, training/, scripts/) geliştirme kapsamındadır!' : 'DEĞİŞMEZ KURAL 4: Kullanıcı ARAYÜZÜ (src/, index.html, public/, *.css, *.tsx, *.jsx) ASLA DEĞİŞTİRİLMEZ! Yalnız arka uç (server/), eğitim (training/), test (scripts/), parametreler, ses/video ve veri kalitesi geliştirilir.'}
+${allowUiEvolution ? 'GÖREV KAPSAMI: Kullanıcı ARAYÜZÜ (src/, index.html, *.css, *.tsx) DAHİL tüm proje dosyaları (server/, training/, scripts/) geliştirme kapsamındadır!' : 'DEĞİŞMEZ KURAL 4: Kullanıcı ARAYÜZÜ (src/, index.html, public/, *.css, *.tsx, *.jsx) ASLA DEĞİŞTİRİLMEZ! Yalnız arka uç (server/), eğitim (training/), test (scripts/), parametreler, ses ve veri kalitesi geliştirilir.'}
 DEĞİŞMEZ KURAL 5: Harici Kimi API veya bulut anahtarı ASLA istenmez; tüm işlemler %100 yerel yürütülür.
 
 MEVCUT ZORLUK DAĞILIMI: ${JSON.stringify(diffStats)}
@@ -813,10 +812,9 @@ JSON döndür:
   "parameterPatches": { "generator": { "temperature": 0.54, "top_p": 0.90, "behavioralWeights": { "distractorSophistication": 0.94 } } },
   "botUpgrades": {
     "kayseriCoach": "Kayserili komedi koçu tepki kalitesi yükseltmesi",
-    "tiktokFeed": "Sorusuz TikTok doğrudan cevap + terim özeti yükseltmesi",
     "turboQualityGuard": "Turbo mod halüsinasyon ve kalite kilidi yükseltmesi"
   },
-  "codeProposal": { "title": "...", "area": "ai|study|difficulty|training|server|video", "summary": "...", "targetFile": "server/...", "code": "..." }
+  "codeProposal": { "title": "...", "area": "ai|study|difficulty|training|server", "summary": "...", "targetFile": "server/...", "code": "..." }
 }`;
 
   const { parsed, engine } = await this._runCoderEngine(prompt, {
@@ -852,7 +850,6 @@ JSON döndür:
   if (parsed?.botUpgrades && typeof parsed.botUpgrades === 'object') {
    mem.lastBotUpgrades = {
     kayseriCoach: String(parsed.botUpgrades.kayseriCoach || '').slice(0, 220),
-    tiktokFeed: String(parsed.botUpgrades.tiktokFeed || '').slice(0, 220),
     turboQualityGuard: String(parsed.botUpgrades.turboQualityGuard || '').slice(0, 220),
     updatedAt: new Date().toISOString()
    };
@@ -889,7 +886,7 @@ JSON döndür:
    proposalAdded = {
     id: `prop-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
     title: cp.title.trim().slice(0, 120),
-    area: uiBlocked ? 'blocked_ui' : (['ai', 'study', 'difficulty', 'training', 'server', 'video', 'ui', 'frontend'].includes(rawArea) ? rawArea : 'ai'),
+    area: uiBlocked ? 'blocked_ui' : (['ai', 'study', 'difficulty', 'training', 'server', 'ui', 'frontend'].includes(rawArea) ? rawArea : 'ai'),
     summary: uiBlocked ? 'Arayüz değişmezlik koruması: src/ ve UI dosyaları kullanıcı kuralı gereği engellendi.' : (typeof cp.summary === 'string' ? cp.summary.trim().slice(0, 400) : ''),
     targetFile,
     code: uiBlocked ? '' : (typeof cp.code === 'string' ? cp.code.trim().slice(0, 2000) : ''),

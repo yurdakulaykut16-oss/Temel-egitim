@@ -392,8 +392,8 @@ export function VoiceStudio() {
        <Users size={22} />
       </span>
       <div>
-       <b>Video & Diyalog Karakter Ses Kadrosu</b>
-       <p>Her karakteri farklı bir ücretsiz VoiceStudio sesiyle konuştur (3D Video ve TikTok akışına otomatik bağlanır).</p>
+       <b>Diyalog Karakter Ses Kadrosu</b>
+       <p>Her karakteri farklı bir ücretsiz VoiceStudio sesiyle konuştur (konu anlatımı ve sesli dinlemeye otomatik bağlanır).</p>
       </div>
      </div>
      <button

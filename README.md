@@ -2,7 +2,7 @@
 
 Bu rehber **Windows 11 üzerinde, doğrudan kendi bilgisayarında** çalışmak içindir. Ubuntu veya WSL kurman gerekmez. İşlemleri sırayla yap: önce projeyi ve Ollama'yı çalıştır, ardından soruları incele. Model eğitimi isteğe bağlıdır ve sonraki adımlardadır.
 
-> **SIFIR DÜĞME — SORU ÜRETİMİ SÜREKLİ:** Proje açıldığı andan itibaren **hiçbir düğmeye basman gerekmez**. Soru üretimi, iki hakem denetimi ve havuz bakımı arka planda kendiliğinden ve **kesintisiz** çalışır; soru havuzu **20.000 kayıtla** sınırlı tutulur (sınıra gelince en zayıf/tekrar sorular ayıklanır, üretim durmaz). Model çağrıları tek bir kuyruktan sırayla geçer, bu yüzden **iki yapay zekâ modeli asla aynı anda çakışmaz**. Araştırma, eğitim, video ve Nexus geliştirme gibi ek arka plan ajanları sistem yükünü artırmamak için **varsayılan olarak kapalıdır**; istersen `TEMPO_ENABLE_BACKGROUND_AGENTS=1` ile açarsın (bkz. bölüm 7).
+> **SIFIR DÜĞME — SORU ÜRETİMİ SÜREKLİ:** Proje açıldığı andan itibaren **hiçbir düğmeye basman gerekmez**. Soru üretimi, iki hakem denetimi ve havuz bakımı arka planda kendiliğinden ve **kesintisiz** çalışır; soru havuzu **20.000 kayıtla** sınırlı tutulur (sınıra gelince en zayıf/tekrar sorular ayıklanır, üretim durmaz). Model çağrıları tek bir kuyruktan sırayla geçer, bu yüzden **iki yapay zekâ modeli asla aynı anda çakışmaz**. Araştırma, eğitim ve Nexus geliştirme gibi ek arka plan ajanları sistem yükünü artırmamak için **varsayılan olarak kapalıdır**; istersen `TEMPO_ENABLE_BACKGROUND_AGENTS=1` ile açarsın (bkz. bölüm 7).
 
 > **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/b582fa34-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
 
@@ -112,9 +112,9 @@ ollama pull yi-coder:9b; ollama pull aya-expanse:8b; ollama pull command-r7b:lat
 ollama pull devstral:24b; ollama pull cogito:14b
 ```
 
-### Seçenek E — Bulut video modelleri (0-API, Ollama hesabınla · opsiyonel)
+### Seçenek E — Bulut modeller (0-API, Ollama hesabınla · opsiyonel)
 
-Video yönetmeni yalnızca **Kimi ve Ollama** modelleriyle çalışır (başka site/anahtar yok). Ollama aboneliğin varsa:
+Araştırma botu ve Kayserili koç gibi bazı botlar isteğe bağlı olarak bulut modellerini kullanabilir (başka site/anahtar yok). Ollama aboneliğin varsa:
 
 ```powershell
 ollama pull kimi-k3.1-pro:cloud
@@ -122,7 +122,7 @@ ollama pull glm-5.3-flash:cloud
 ollama pull deepseek-v4.1-flash:cloud
 ```
 
-Yoksa uygulama yerel 0-API MP4 boru hattıyla üretimine devam eder; hiçbir şey indirmene gerek yoktur.
+Yoksa uygulama tamamen yerel modellerle çalışmaya devam eder; hiçbir şey indirmene gerek yoktur.
 
 ### Seçenek F — Harici Qwen Code CLI (opsiyonel)
 
@@ -178,7 +178,7 @@ Ortam değişkenleriyle ince ayar:
 | `OLLAMA_JUDGE2_MODEL` | `gemma3:4b` | 2. hakem modeli |
 | `OLLAMA_AUTO_TIMEOUT_MS` | `180000` | Tek model çağrısı zaman aşımı (ms) |
 | `TEMPO_OLLAMA_KEEP_ALIVE` | `0` | `0` = model çağrıdan sonra boşaltılır; `5m` gibi bir süre de verilebilir |
-| `TEMPO_ENABLE_BACKGROUND_AGENTS` | `0` | `1` yapılınca araştırma/eğitim/video/Nexus arka plan ajanları da çalışır |
+| `TEMPO_ENABLE_BACKGROUND_AGENTS` | `0` | `1` yapılınca araştırma/eğitim/Nexus arka plan ajanları da çalışır |
 | `TEMPO_UNLOAD_STALE_PINS` | `0` | `1` yapılınca açılışta VRAM'deki eski modeller boşaltılır |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
 | `TEMPO_QUESTION_INTERVAL_MS` | `5000` | Hedef üretim temposu (ms); model yavaşsa tempo kendiliğinden uzar |
@@ -309,10 +309,10 @@ Proje başladığı saniyeden itibaren **hiçbir düğmeye basman gerekmez**:
    - **260k+ GitHub Proje Mega-Emilim** (her ~6 sn) + **Tüm Botlar Hyper-Evrimi** (64-Katman MoE, her ~14 sn),
    - **Nexus-Titan**: sürekli füzyon & arayüz evrimi (her ~8 sn) + **TÜM PROJEYİ & Arayüzü geliştirme** (her ~4 dk) + `tempo-nexus-titan:latest` Ollama modeli oluşturma/güncelleme (her ~5 dk) + doğrulanmış önerileri **100/100 kapısından geçirip projeye otomatik uygulama** (her ~2 dk, otomatik rollback korumalı),
    - **Tüm Proje 8-Katman Seviye Atlama** (her ~75 sn; her adım 100-yollu doğrulama kapısından geçer),
-   - **Qwen 100-yöntem turnuvası**, **GitHub/internet prototip laboratuvarı** (100/100 kapılı otomatik projeye ekleme), **havuz küratörü**, **konu anlatımı/video motorları**, **RAG & Aider bağlam yenileme**, **Axolotl/LLaMA-Factory senkronizasyonu** — hepsi arka planda kesintisiz çalışır.
+   - **Qwen 100-yöntem turnuvası**, **GitHub/internet prototip laboratuvarı** (100/100 kapılı otomatik projeye ekleme), **havuz küratörü**, **konu anlatımı motoru**, **RAG & Aider bağlam yenileme**, **Axolotl/LLaMA-Factory senkronizasyonu** — hepsi arka planda kesintisiz çalışır.
 6. **Otomatik SFT + DPO Veri Seti Hazırlığı:** 50 onaylı soruya ulaşıldığında proje açılışından itibaren `training/prepare.py --multitask --dpo` kendiliğinden çalışır ve her +25 onaylı soruda `.tempo-data/training` klasörünü günceller.
 
-> Not: Araştırma, eğitim, video ve Nexus geliştirme döngüleri de model çağırır; bu yüzden sistem yükünü ve model çakışmasını azaltmak için **varsayılan olarak kapalıdır**. Açmak için PowerShell'de `setx TEMPO_ENABLE_BACKGROUND_AGENTS "1"` yazıp sunucuyu yeniden başlat.
+> Not: Araştırma, eğitim ve Nexus geliştirme döngüleri de model çağırır; bu yüzden sistem yükünü ve model çakışmasını azaltmak için **varsayılan olarak kapalıdır**. Açmak için PowerShell'de `setx TEMPO_ENABLE_BACKGROUND_AGENTS "1"` yazıp sunucuyu yeniden başlat.
 
 ## 8. Modelleri ve rolleri kontrol et (isteğe bağlı)
 
@@ -340,15 +340,16 @@ Bu sürümde yapay zekâlar 5 kitabın tamamından (824 sayfa, ~2 milyon karakte
    - Yapay zekâ deneyim, araştırma ve Qwen Code inovasyonu kazandıkça (**Seviye 1 → Seviye 4 · Usta Sınav Mimarı**), beklediği minimum kalite çıtası ve vaka/analiz derinliği kendiliğinden yükselir.
 4. **Qwen Code Sürekli İnovasyonu & `kolay` / `orta` / `zor` Koruması:**
 5. **Çok Yanlış Yönlendirmesi & Anlatım/Kodlama Yenileme (`server/lesson-engine.mjs`):**
-   - Bir konuda üst üste hata yaptığında uygulama seni anında o konuyu biraz daha okumaya veya **3D Diyaloglu Videosunu** izlemeye yönlendirir.
+   - Bir konuda üst üste hata yaptığında uygulama seni anında o konuyu biraz daha okumaya veya **konu anlatımını sesli dinlemeye** yönlendirir.
    - Hâlâ akılda kalmıyorsa **"Aklımda Kalmıyor: Kodlamaları & Anlatımı Değiştir"** (hem otomatik arka plan hem tek tıkla manuel) eski kodlamaları tamamen yasaklayıp yepyeni bir benzetme/akrostiş/hikâye tarzıyla dersi baştan kurgular.
 6. **"Ya Çıkarsa?" %100 Pasaj Kapsamı ve `5 × 20 = 100` Sınav Provası:**
    - Sınavda 5 kitabın her birinden 20'şer toplam 100 soru geleceği için yapay zekâ "az önemli" saysa bile hiçbir kitap bölümü atlanmaz: her ünitede `everyCornerDetails` ("Ya Çıkarsa?" köşeleri), sıfır kör nokta pasaj önceliği ve Test Merkezinde **5 × 20 = 100 Soru Tam Sınav** + **"Ya Çıkarsa?" Kör Nokta Testi** bulunur.
-7. **Gömülü MP4 Video Oynatıcı, 3D Morpa Kampüs Sahnesi & Google Flow Köprüsü (`server/mp4-renderer.mjs`, `server/video-director.mjs`, `src/VideoLessonStage.tsx`):**
-   - Arka plandaki AI Yönetmeni üniteler için **Koç Yapay Zekâ, Sporcu Ada ve Tuzakçı Can** arasında geçen durum tabanlı (`İlk Keşif`, `Hata Kurtarma`, `Ya Çıkarsa?`, `Hızlı Tekrar`) 3D diyaloglu videoları otomatik **gerçek H.264/AAC `.mp4` dosyalarına** dönüştürüp `.tempo-data/ai-brain/videos/{unitId}.mp4` olarak kaydeder ve `GET /api/ollama/videos/mp4` (HTTP `Range` 206 destekli) üzerinden **doğrudan uygulama içine gömülü `<video controls>` oynatıcısında** açar (**başka siteye veya sayfaya yönlendirme yapmaz**).
-   - İstersen tek tıkla **Three.js 3D Etkileşimli Sahne**ye geçebilir, 3D sahneyi kaydedip sunucuda `.mp4`'e çevirerek doğrudan sayfaya gömebilir veya opsiyonel `GOOGLE_FLOW_API_KEY` ile üretilen Google Flow / Gemini Veo MP4 çıktısını da sayfa içine çekip gömebilirsin.
+7. **Çoklu Ücretsiz Ses Stüdyosu (`server/voice-studio.mjs`, `src/VoiceStudio.tsx`):**
+   - **64'ten fazla tamamen ücretsiz ses** (yerel VoiceStudio köprüsü, Speechify, OpenAI ve ElevenLabs ücretsiz katmanları dâhil) tek katalogda toplanır; konu anlatımı, sorular ve Kayserili koç tepkileri bu seslerle seslendirilir.
+   - **Diyalog karakter ses kadrosu** (Koç, Kayserili, Hamam Böceği Böcü, Ada, Can ve Anlatıcı) her role ayrı bir ses atar; ses dosyaları sunucudan `audio/mpeg` akışıyla uygulama içinde oynatılır (**başka siteye veya sayfaya yönlendirme yapmaz**).
+   - Tamamı **0-API** prensibiyle çalışır: harici anahtar veya abonelik gerekmez (`zeroApiRequired`, `noApiKeyPrompts`).
 8. **Hyper-150x Meta-Geliştirici Bot — ApexArchitect v3 (`server/apex-architect.mjs`, `server/jarvis-core.mjs`, `server/sandbox-evolver.mjs`):**
-   - Projedeki **tüm 6 botu** (`Üretici`, `Hakem Konseyi`, `20k+ Havuz Botu`, `LessonEngine`, `VideoDirector`, `ResearchAgent`) her döngüde canlı MR taramasından geçirir, kök nedenleri ve pasaj/hata darboğazlarını tespit eder.
+   - Projedeki **tüm 8 botu** (`Üretici`, `Hakem Konseyi`, `20k+ Havuz Botu`, `LessonEngine`, `ResearchAgent`, `Kayseri Koçu`, `Qwen Code Sandbox`, `Turbo Kalite Kilidi`) her döngüde canlı MR taramasından geçirir, kök nedenleri ve pasaj/hata darboğazlarını tespit eder.
    - **Adli Eleştirmen × 3 Adaylı Turnuva Mimarı × Self-Repair (Kendini Onaran Kural) × 8-Tuzak Adversarial F1 Stres Testçisi** kuruluyla birden fazla rakip stratejiyi yarıştırır, bozuk kuralı otomatik tamir eder, önceki turun gerçek etkisini ölçüp `winningPlaybook` altın defterine yazar ve canlı `hyperParams` (`temperatureOffset`, `batchSizeHint`, `priorityPassageUnits`, `reframePriorityUnits`, `curatorMinScoreHint`) ile tüm proje botlarını fiilen yöneterek Zekâ Çarpanını **25x → 150x–500x** bandına tırmandırır (`kolay/orta/zor` üçlü kademesi korunur).
    - Qwen Code (`qwen2.5-coder` / `qwen3-coder` veya harici `qwen` CLI), sorulardaki **`kolay` / `orta` / `zor` 3 kademeli zorluk sistemini ASLA silmeden** her seviyenin direktiflerini geliştirir ve izole `node:vm` kum havuzunda `evaluateDifficultyFit` / `evaluateCandidate` kuralları yazar (`SandboxEvolver` üçlü zorluk sisteminin silinmesini yazılımsal kapıyla engeller).
    - Uygulama koduna yönelik güvenli önerileri `.tempo-data/ai-brain/jarvis-memory.json` → `codeProposals` kuyruğunda toplar; canlı kaynak kodu asla bozmaz.
@@ -570,12 +571,11 @@ Eğitilmiş adaptörü taban modelle biçim, çeldirici dengesi, uzunluk sızın
 
 Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vardır. **5000 benzersiz soru, ünite başına 100 soru, kitapların tüm ayrıntıları ve uzman doğrulaması tamamlanmış değildir.** Kitap PDF'leri konu kaynağı olarak kullanılabilir; PDF sorularının tamamı interaktif teste aktarılmamıştır. Uygulama sınav başarısı veya cevap doğruluğu garantisi vermez.
 
-## 20. Yeni özellikler (Kayserili Koç, Sorusuz TikTok Akışı, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
+## 20. Yeni özellikler (Kayserili Koç, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
 
 - **Dengeli kalite modu (tek mod):** Soru üretimi daima kalite hattından geçer: 1 soru/çağrı, kitaptan ilgili pasaj, tek-doğru ve kaynak kanıtı kontrolü, iki ardışık hakem, gerekirse öz-düzeltme, `kolay`/`orta`/`zor` dengesi. Tüm model çağrıları tek kuyrukta sıraya girer (eşzamanlılık 1), böylece **iki model aynı anda çalışmaz** ve sistem yükü düşük kalır. Havuz 20.000 kayıtla sınırlıdır.
 - **Kayserili Sert-Komedi Şık Tepkisi (`/api/ollama/kayseri-react`):** Test sırasında bir şıkka basıldığında süre ve seriye göre anında Kayserili şiveli/sert-komedi (ve tek tıkla `Temiz Klasik` geçişli + `Sesli Oku` destekli) koç tepkisi, net bilgi ve önemli terim gösterilir.
-- **Sorusuz TikTok Dikey Karışık Akış (`TikTok Akışı` & `/api/ollama/videos/feed`):** 29 ünitenin tamamı dolana kadar arka planda sürekli gömülü `.mp4` üretilir. TikTok akışı soru sormaz; doğrudan sınavda çıkacak net cevabı, önemli kelime/terimleri ve Kayserili/Hamam Böceği Böcü komedi diyaloglarını karışık ünitelerden dikey kaydırmayla oynatır.
-- **+%15500 (`Hyper-155x+`) Qwen Code & ApexArchitect:** 10 alt-sistemi (üretici, hakem, küratör, ders motoru, video yönetmeni, araştırmacı, Kayseri koçu, TikTok akışı, Qwen Code sandbox ve Turbo kalite kilidi) 16 tuzaklı stres testi ve 4 adaylı turnuvayla sürekli geliştirir.
+- **+%15500 (`Hyper-155x+`) Qwen Code & ApexArchitect:** 8 alt-sistemi (üretici, hakem, küratör, ders motoru, araştırmacı, Kayseri koçu, Qwen Code sandbox ve Turbo kalite kilidi) 16 tuzaklı stres testi ve 4 adaylı turnuvayla sürekli geliştirir.
 
 Geliştirici kontrolleri:
 

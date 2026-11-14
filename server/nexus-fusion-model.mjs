@@ -155,48 +155,6 @@ export const EXTERNAL_MODEL_CATALOG = [
   specialty: 'Açık eğitim verili tam şeffaf yazılım geliştirme çekirdeği'
  },
  {
-  id: 'github-wan22-video',
-  name: 'Wan2.2 Local Video (GitHub)',
-  sourceType: 'github',
-  capability: 'multimodal_video',
-  ollamaTag: '',
-  hfRepo: 'Wan-AI/Wan2.2-TI2V-5B',
-  githubRepo: 'Wan-AI/Wan2.2',
-  url: 'https://github.com/Wan-AI/Wan2.2',
-  license: 'Apache-2.0',
-  paramsBillions: 5.0,
-  vramGbQ4: 6.2,
-  specialty: 'Yerel 0-API sinematik ders ve TikTok MP4 sahne üretimi'
- },
- {
-  id: 'github-ltx-video',
-  name: 'LTX-2 Real-Time Video (GitHub)',
-  sourceType: 'github',
-  capability: 'multimodal_video',
-  ollamaTag: '',
-  hfRepo: 'Lightricks/LTX-Video',
-  githubRepo: 'Lightricks/LTX-Video',
-  url: 'https://github.com/Lightricks/LTX-Video',
-  license: 'Apache-2.0',
-  paramsBillions: 2.0,
-  vramGbQ4: 4.1,
-  specialty: 'Gerçek zamanlı yerel AI video sentezi'
- },
- {
-  id: 'github-cogvideox',
-  name: 'CogVideoX-2B (GitHub)',
-  sourceType: 'github',
-  capability: 'multimodal_video',
-  ollamaTag: '',
-  hfRepo: 'THUDM/CogVideoX-2b',
-  githubRepo: 'zai-org/CogVideoX',
-  url: 'https://github.com/zai-org/CogVideoX',
-  license: 'Apache-2.0',
-  paramsBillions: 2.0,
-  vramGbQ4: 5.5,
-  specialty: 'Açıklamalı eğitim görselleştirme video üretimi'
- },
- {
   id: 'github-piper-tts',
   name: 'Piper Neural TTS (GitHub)',
   sourceType: 'github',
@@ -222,21 +180,7 @@ export const EXTERNAL_MODEL_CATALOG = [
   license: 'MIT',
   paramsBillions: 0.24,
   vramGbQ4: 0.8,
-  specialty: 'Yerel ses çözümleme ve ders videosu altyazı senkronu'
- },
- {
-  id: 'github-comfyui',
-  name: 'ComfyUI Workflow Hub (GitHub)',
-  sourceType: 'github',
-  capability: 'multimodal_video',
-  ollamaTag: '',
-  hfRepo: '',
-  githubRepo: 'comfyanonymous/ComfyUI',
-  url: 'https://github.com/comfyanonymous/ComfyUI',
-  license: 'GPL-3.0',
-  paramsBillions: 3.5,
-  vramGbQ4: 6.0,
-  specialty: 'Düğüm tabanlı yerel GGUF/LoRA video ve görsel boru hattı'
+  specialty: 'Yerel ses çözümleme ve ders metni altyazı senkronu'
  },
  {
   id: 'github-unsloth-trainer',
@@ -350,14 +294,6 @@ const UI_EVOLUTION_TARGETS = [
   summary: 'Üst çubukta kesintisiz model füzyonu & arayüz geliştirme durumunu anlık gösteren hafif telemetri kapsülü.'
  },
  {
-  id: 'ui-tiktok-stage',
-  area: 'ui',
-  targetFile: 'src/TikTokVideoFeed.tsx',
-  title: 'TikTok Ders Akışı Sahne Geçişi, Altyazı Kontrastı & Ses Senkronu',
-  layer: 'Arayüz (TSX)',
-  summary: 'TikTok akış kartlarında yüksek okunurluklu altyazı katmanı ve dokunmatik kaydırma tepki iyileştirmesi.'
- },
- {
   id: 'server-fusion-core',
   area: 'server',
   targetFile: 'server/nexus-fusion-model.mjs',
@@ -461,7 +397,7 @@ export class NexusTitanFusionModel {
     reasoning: 97.4,
     codingAndUi: 97.1,
     turkishPedagogy: 98.2,
-    multimodalVideo: 95.8,
+    speechAndAudio: 96.4,
     safetyAnd96Traps: 99.4
    },
    registeredExternalModels: [],
@@ -923,8 +859,6 @@ export class NexusTitanFusionModel {
    { rel: 'index.html', layer: 'ui' },
    { rel: 'src/main.tsx', layer: 'ui' },
    { rel: 'src/OllamaStudio.tsx', layer: 'ui' },
-   { rel: 'src/TikTokVideoFeed.tsx', layer: 'ui' },
-   { rel: 'src/VideoLessonStage.tsx', layer: 'ui' },
    { rel: 'src/StudyArcade.tsx', layer: 'ui' },
    { rel: 'src/VoiceStudio.tsx', layer: 'ui' },
    { rel: 'src/style.css', layer: 'ui' },
@@ -1308,7 +1242,7 @@ export class NexusTitanFusionModel {
     reasoning: +clamp((state.moeRoutingScores?.reasoning || 97.4) + 0.05, 95, 99.98).toFixed(2),
     codingAndUi: +clamp((state.moeRoutingScores?.codingAndUi || 97.1) + 0.07, 95, 99.98).toFixed(2),
     turkishPedagogy: +clamp((state.moeRoutingScores?.turkishPedagogy || 98.2) + 0.04, 95, 99.98).toFixed(2),
-    multimodalVideo: +clamp((state.moeRoutingScores?.multimodalVideo || 95.8) + 0.06, 94, 99.98).toFixed(2),
+    speechAndAudio: +clamp((state.moeRoutingScores?.speechAndAudio || 96.4) + 0.06, 94, 99.98).toFixed(2),
     safetyAnd96Traps: state.trapDefenseF1
    };
 

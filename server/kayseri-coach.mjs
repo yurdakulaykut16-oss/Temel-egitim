@@ -1,4 +1,4 @@
-// Kayserili + Sert/Küfürlü Komedi Üsluplu AI Tepki ve TikTok Diyalog Motoru
+// Kayserili + Sert/Küfürlü Komedi Üsluplu AI Tepki ve Diyalog Motoru
 // Not: Öğrencinin isteğine göre Kayseri şivesi, sert argo/küfür komedisi ve doğrudan bilgi/terim öğretimini birleştirir.
 
 export function extractKeyTermsFromUnit(ctx, passages = [], lesson = null) {

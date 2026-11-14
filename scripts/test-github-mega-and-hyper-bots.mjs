@@ -17,7 +17,7 @@ test('GithubMegaCorpus (260,000+ OSS Projesi), 64-Katman MoE BotParameterMatrix 
  const dir = mkdtempSync(join(tmpdir(), 'tempo-gh-mega-'));
  try {
   assert.equal(BASE_INDEXED_PROJECTS_TARGET, 260_000);
-  assert.equal(GITHUB_OSS_DOMAINS.length, 20);
+  assert.equal(GITHUB_OSS_DOMAINS.length, 18);
   assert.equal(BOT_TRANSFORMER_LAYERS, 64);
   assert.ok(DEEP_FACTORED_PARAMS_PER_BOT > 1.4e17);
   assert.equal(OPEN_SOURCE_CODER_CATALOG.length, 64);
@@ -88,11 +88,11 @@ test('GithubMegaCorpus (260,000+ OSS Projesi), 64-Katman MoE BotParameterMatrix 
   assert.equal(matSummary.totalBots, ALL_AI_BOT_IDS.length);
   assert.equal(matSummary.transformerLayersPerBot, 64);
   assert.equal(matSummary.totalDeepTransformerLayers, ALL_AI_BOT_IDS.length * 64);
-  assert.ok(matSummary.totalFactoredParamsQuadrillions >= 24.7);
-  assert.ok(matSummary.totalDeepMoEFactoredQuadrillions >= 1585);
+  assert.ok(matSummary.totalFactoredParamsQuadrillions >= 18.0);
+  assert.ok(matSummary.totalDeepMoEFactoredQuadrillions >= 1152);
   assert.ok(matSummary.avgBotIq >= 97.4);
   assert.ok(matSummary.avgSkillLevel >= 120);
-  assert.ok(matSummary.totalGithubProjectsAbsorbedByBots >= 198_000);
+  assert.ok(matSummary.totalGithubProjectsAbsorbedByBots >= 160_000);
   const metaPrompt = matrix.getMetaArchitectPromptBlock(hyperEvo.state);
   assert.match(metaPrompt, /64-KATMAN PARAMETRE MATRİSİ/);
   assert.match(metaPrompt, /deepMoEQ/);
@@ -152,7 +152,7 @@ test('ollamaPlugin 260k+ GitHub Mega Corpus, /bots/hyper-evolve ve /bots/run-all
   assert.equal(absorbJson.ok, true);
   assert.ok(absorbJson.summary.indexedProjectsCount >= 260_000);
   assert.equal(absorbJson.summary.absorbedProjectsCount, 3000);
-  assert.ok(absorbJson.parameterMatrix.totalDeepMoEFactoredQuadrillions >= 1585);
+  assert.ok(absorbJson.parameterMatrix.totalDeepMoEFactoredQuadrillions >= 1152);
 
   // Hyper-Evolve All Bots (<1sn)
   const hyperRes = await fetch(`${base}/api/ollama/bots/hyper-evolve`, {

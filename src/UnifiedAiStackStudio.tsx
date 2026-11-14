@@ -186,7 +186,7 @@ export function UnifiedAiStackStudio({ compact = false }: { compact?: boolean })
      <div className="eyebrow muted">TEK LOCALHOST · BİRLEŞİK AI MÜHENDİSLİK YIĞINI (0-API)</div>
      <h3>Continue &amp; Aider RAG · AutoGen / LangGraph / CrewAI · Axolotl &amp; LLaMA-Factory QLoRA + DPO</h3>
     </div>
-    <span className="three-d-caps-pill">
+    <span className="stack-caps-pill">
      {ragMeta.continueConfigured ? 'Continue ✓' : 'Continue'} · {ragMeta.aiderConfigured ? 'Aider ✓' : 'Aider'} · LangGraph + AutoGen + CrewAI ✓ · Axolotl + LLaMA-Factory QLoRA/DPO ✓
     </span>
    </div>

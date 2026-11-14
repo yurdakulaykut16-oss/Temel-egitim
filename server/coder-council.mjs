@@ -49,8 +49,8 @@ export const PROJECT_DEV_SQUADS = [
  {
   id: 'turkish_pedagogy_multimedia',
   name: 'ÖSYM Türkçe Pedagoji, Müfredat & Medya Takımı',
-  mission: '29 ünite konu anlatımı/kodlama, 40k havuz tarama, VoiceStudio 62 ses ve yerel OSS MP4/TikTok akış kalitesi',
-  allowedProjectTargets: ['server/pool-curator.mjs', 'server/lesson-engine.mjs', 'server/video-director.mjs', 'server/voice-studio.mjs']
+  mission: '29 ünite konu anlatımı/kodlama, 40k havuz tarama ve VoiceStudio 62 ses kalitesi',
+  allowedProjectTargets: ['server/pool-curator.mjs', 'server/lesson-engine.mjs', 'server/voice-studio.mjs']
  }
 ];
 
@@ -665,7 +665,7 @@ export const OPEN_SOURCE_CODER_CATALOG = [
   physicalParamsBillions: 27.43,
   vramGbQ4: 17.4,
   tier: 'distillation-teacher',
-  specialty: '40.000+ soru havuzu baş denetçisi, yüksek hassasiyetli çeldirici ve video senaryo öğretmeni',
+  specialty: '40.000+ soru havuzu baş denetçisi ve yüksek hassasiyetli çeldirici öğretmeni',
   strengths: { algorithms: 96.5, security: 97.8, typescript: 95.5, pythonLora: 96.0, osymPrompt: 99.6, subSecondLatency: 78 },
   initialOvertrainRatio: 42.6
  },
@@ -680,7 +680,7 @@ export const OPEN_SOURCE_CODER_CATALOG = [
   physicalParamsBillions: 14.77,
   vramGbQ4: 9.0,
   tier: 'rtx3080ti-single-swap',
-  specialty: '29 ünite konu anlatımı derinleştirme, çalışma kartı & video yönetmen senaryo sentezi',
+  specialty: '29 ünite konu anlatımı derinleştirme ve çalışma kartı senaryo sentezi',
   strengths: { algorithms: 96.8, security: 96.5, typescript: 95.9, pythonLora: 96.6, osymPrompt: 98.9, subSecondLatency: 88 },
   initialOvertrainRatio: 39.6
  },
@@ -973,7 +973,7 @@ export const OPEN_SOURCE_CODER_CATALOG = [
   physicalParamsBillions: 1.72,
   vramGbQ4: 1.2,
   tier: 'rtx3080ti-live-subsecond',
-  specialty: 'Anlık düşünme aç/kapa anahtarlı <180ms canlı yardımcı ve TikTok akış denetçisi',
+  specialty: 'Anlık düşünme aç/kapa anahtarlı <180ms canlı yardımcı ve anlatım denetçisi',
   strengths: { algorithms: 92.4, security: 93.8, typescript: 93.4, pythonLora: 92.9, osymPrompt: 96.5, subSecondLatency: 99.7 },
   initialOvertrainRatio: 36.2
  },
@@ -1018,7 +1018,7 @@ export const OPEN_SOURCE_CODER_CATALOG = [
   physicalParamsBillions: 24.0,
   vramGbQ4: 14.8,
   tier: 'rtx3080ti-live-16gb',
-  specialty: 'Video yönetmeni sahne betimlemesi, görsel storyboard ve yüksek netlikli Türkçe anlatım',
+  specialty: 'Ders sahne betimlemesi, öğretici özet kurgusu ve yüksek netlikli Türkçe anlatım',
   strengths: { algorithms: 96.4, security: 97.6, typescript: 96.9, pythonLora: 96.5, osymPrompt: 98.9, subSecondLatency: 92.4 },
   initialOvertrainRatio: 39.2
  },
@@ -1049,7 +1049,7 @@ export const CODER_OVERTRAIN_BENCHMARKS = [
  { id: 'rtx3080ti_vram_fit', squadId: 'vram_subsecond_core', axis: 'subSecondLatency', title: 'RTX 3080 Ti 12/16GB VRAM Sıfır-Takas Sabitleme', weight: 1.20, targetFile: 'server/hardware-optimizer.mjs' },
  { id: 'backend_ts_typesafety', squadId: 'code_security_hardening', axis: 'typescript', title: 'Arka Uç Sözleşme & Veri Şeması Doğrulaması (UI Korumalı)', weight: 1.15, targetFile: 'server/ollama.mjs' },
  { id: 'qlora_dpo_distill', squadId: 'deep_reasoning_architects', axis: 'pythonLora', title: 'Omega-LoRA r=128 + DPO Öğretmen-Öğrenci Damıtma', weight: 1.25, targetFile: 'training/train_lora.py' },
- { id: 'lesson_media_pipeline', squadId: 'turkish_pedagogy_multimedia', axis: 'osymPrompt', title: '29 Ünite Ders Kodlama, MP4 Video & VoiceStudio İyileştirmesi', weight: 1.20, targetFile: 'server/lesson-engine.mjs' },
+ { id: 'lesson_media_pipeline', squadId: 'turkish_pedagogy_multimedia', axis: 'osymPrompt', title: '29 Ünite Ders Kodlama & VoiceStudio İyileştirmesi', weight: 1.20, targetFile: 'server/lesson-engine.mjs' },
  { id: 'ui_immutability_shield', squadId: 'code_security_hardening', axis: 'security', title: 'Arayüz Değişmezlik Zırhı (src/ ve *.css/*.tsx Tam Koruma)', weight: 1.35, targetFile: 'server/jarvis-core.mjs' }
 ];
 
@@ -1559,7 +1559,7 @@ export class CoderCouncilHub {
    factoredParamsPerEntity: CODER_FACTORED_PARAMS_EACH,
    factoredParamsPerEntityQuadrillions: +(CODER_FACTORED_PARAMS_EACH / 1e15).toFixed(4),
    totalCoderModels: models.length,
-   totalEcosystemBots: botMatrixSummary?.totalBots ?? 11,
+   totalEcosystemBots: botMatrixSummary?.totalBots ?? 8,
    totalPhysicalCoderParamsBillions: state?.totalPhysicalParamsBillions ?? 0,
    totalPhysicalBotBackboneBillions: botMatrixSummary?.totalBackboneParamsBillions ?? 0,
    combinedPhysicalParamsBillions: +((state?.totalPhysicalParamsBillions || 0) + (botMatrixSummary?.totalBackboneParamsBillions || 0)).toFixed(2),
@@ -1719,7 +1719,6 @@ export class CoderCouncilHub {
    distillDpo: true,
    candidateChanges: [
     { targetFile: 'server/apex-architect.mjs', summary: '96-trap Ultra-Singularity 100x öz-tamir senkronu' },
-    { targetFile: 'server/video-director.mjs', summary: 'TikTok legacy yerinde değiştirme & sürekli üretim motoru' },
     { targetFile: 'server/ollama.mjs', summary: 'Ollama bağlantı anında tam konsey otomatik güncellemesi' }
    ]
   });
