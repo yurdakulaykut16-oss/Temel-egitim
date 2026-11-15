@@ -6,7 +6,8 @@
 //  1) İki farklı konuda aynı anda soru hazırlanır.
 //  2) 1. konu dolduktan sonra iki hat birlikte (geride kalan) 2. konuda çalışır.
 //  3) Grup tamamlanmadan sıradaki grubun konularına tek soru yazılmaz.
-//  4) Hiçbir konu kotasını aşmaz (iki hat aynı konuda çalışırken bile); ilk turda yalnızca kolay üretilir.
+//  4) Hiçbir hücre (konu + zorluk) payını aşmaz (iki hat aynı konuda çalışırken bile); ilk turda her
+//     konunun kolay, orta ve zor sorusu birlikte yazılır (kota 6 → konu başına 2 kolay + 2 orta + 2 zor).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -80,7 +81,7 @@ test('plan: iki konu aynı anda; biri dolunca boşalan hat eksik kalana yardım 
    const activeUnits = (status.autoPhases || []).map(p => p.unit);
    if (new Set(activeUnits).size >= 2) sawTwoUnitsAtOnce = true;
    if (activeUnits.length === 2 && activeUnits.every(u => u === B.id)) sawBothHelpingLagging = true;
-   const working = status.plan?.working || [];
+   const working = status.plan?.workingUnits || [];
    if (!workingPair && working.length === 2) workingPair = status.plan;
    if (!workingSingle && working.length === 1 && working[0].unitId === B.id) workingSingle = status.plan;
    if (i % 3 === 0) items = (await (await fetch(`${base}/api/ollama/questions`)).json()).items.filter(q => q.status === 'approved');
@@ -96,22 +97,35 @@ test('plan: iki konu aynı anda; biri dolunca boşalan hat eksik kalana yardım 
   assert.ok(sawBothHelpingLagging, '1. konu dolunca boşalan hat geride kalan 2. konuya yardım etmeli (iki hat da 2. konuda)');
   assert.ok(workingPair, '/status plan.working iki konuyu birlikte göstermeli');
   assert.equal(workingPair.parallel, 2);
-  assert.deepEqual(workingPair.working.map(w => w.unitId), [A.id, B.id]);
+  assert.deepEqual(workingPair.workingUnits.map(w => w.unitId), [A.id, B.id]);
+  assert.deepEqual(workingPair.workingUnits[0].cells.map(c => [c.difficulty, c.share]), [['kolay', 2], ['orta', 2], ['zor', 2]]);
   assert.ok(workingSingle, '1. konu dolunca /status yalnızca eksik kalan 2. konuyu göstermeli');
 
-  // Grup tamamlanmadan sıradaki grubun konularına soru yazılmaz; hiçbir kota aşılmaz.
-  const counts = new Map();
+  // Grup tamamlanmadan sıradaki grubun konularına soru yazılmaz; hiçbir hücre payını aşmaz.
+  const SHARE = QUOTA / 3; // 1. turda konu başına her zorluktan 2 soru
+  const DIFFS = ['kolay', 'orta', 'zor'];
+  const counts = new Map();   // konu -> { kolay, orta, zor } (kaydedilen zorluk)
+  const onTarget = new Map(); // konu -> { kolay, orta, zor } (hedef zorluğuyla kaydedilenler)
+  const zero = () => ({ kolay: 0, orta: 0, zor: 0 });
   for (const q of items) {
-   assert.equal(q.difficulty, 'kolay', 'ilk turda yalnızca kolay üretilir');
    const group = Math.floor(stepIndex.get(q.unitId) / 2);
    const earlier = contexts.slice(0, group * 2);
-   const unfinished = earlier.filter(c => (counts.get(c.id) || 0) < QUOTA).map(c => c.id);
+   const unfinished = earlier.filter(c => DIFFS.some(d => ((counts.get(c.id) || zero())[d]) < SHARE)).map(c => c.id);
    assert.deepEqual(unfinished, [], `${q.unitId} sorusu yazılırken önceki gruptaki ${unfinished.join(', ')} eksikti: ${seq.join(' ')}`);
-   counts.set(q.unitId, (counts.get(q.unitId) || 0) + 1);
-   assert.ok(counts.get(q.unitId) <= QUOTA, `${q.unitId} kotasını (${QUOTA}) aşmamalı: ${seq.join(' ')}`);
+   if (!counts.has(q.unitId)) { counts.set(q.unitId, zero()); onTarget.set(q.unitId, zero()); }
+   counts.get(q.unitId)[q.difficulty]++;
+   assert.ok(counts.get(q.unitId)[q.difficulty] <= QUOTA, `${q.unitId} ${q.difficulty} kotasını (${QUOTA}) aşmamalı`);
+   if (q.verification?.targetDifficulty === q.difficulty) {
+    onTarget.get(q.unitId)[q.difficulty]++;
+    assert.ok(onTarget.get(q.unitId)[q.difficulty] <= SHARE, `${q.unitId} ${q.difficulty}: 1. turdaki pay (${SHARE}) aşılmamalı: ${seq.join(' ')}`);
+   }
   }
-  assert.equal(counts.get(A.id), QUOTA);
-  assert.equal(counts.get(B.id), QUOTA);
+  // 1. ve 2. konunun kolay, orta ve zor sorusu vardır (zorluk konuya göre değil, konu içinde karışık).
+  for (const unit of [A, B]) {
+   for (const d of DIFFS) assert.ok(counts.get(unit.id)[d] >= SHARE, `${unit.id}: ${d} sorusu eksik (${JSON.stringify(counts.get(unit.id))})`);
+  }
+  const firstA = items.filter(q => q.unitId === A.id).slice(0, 3).map(q => q.verification?.targetDifficulty);
+  assert.deepEqual(firstA, ['kolay', 'orta', 'zor'], 'konu içinde zorluklar sırayla döner');
   // 2. konunun son soruları, 1. konu bittikten sonra yazıldı (yardım gerçekten işe yaradı).
   assert.ok(seq.lastIndexOf(B.id) > seq.lastIndexOf(A.id));
  } catch (e) {

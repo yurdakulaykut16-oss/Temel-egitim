@@ -39,7 +39,7 @@ BOOK_INDEX = ROOT / 'src' / 'bookIndex.json'
 CONTEXTS = ROOT / 'server' / 'contexts.json'
 OUT = ROOT / 'src' / 'bookSummary.json'
 
-DEFAULT_TARGET = 100          # konu başına hedef özet cümlesi (eski özet + kitaptan eklenenler)
+DEFAULT_TARGET = 150          # konu başına hedef özet cümlesi (eski özet + kitaptan eklenenler)
 BODY_FONT = 'AGaramondPro'    # kitapların gövde yazı tipi
 BODY_SIZE = 11.0              # gövde metni puntosu
 SUMMARY_SIZE = 10.0           # kitabın kendi "bölüm özeti" sayfalarındaki punto
@@ -565,6 +565,17 @@ def build_unit_summary(paragraphs, existing_summary, keywords, target=DEFAULT_TA
                     if try_select(pi, si):
                         progressed = True
                         break
+
+    # Sayfa tabanı: gövde metni olan HER sayfadan en az bir cümle bulunsun (sorular kitabın bütün
+    # sayfalarına yayılsın). Puan eşiği burada aranmaz; cümle yine bütün biçim süzgeçlerinden geçmiş
+    # olmalıdır. Hedef sayı dolmuş olsa da eklenir.
+    for (page, _), queue in zip(sorted(by_page.items()), queues):
+        if any(si in selected[pi] for _, pi, si in queue):
+            continue
+        for score, pi, si in queue:
+            want = count + 2
+            if try_select(pi, si):
+                break
 
     out = []
     for pi, par in enumerate(paragraphs):

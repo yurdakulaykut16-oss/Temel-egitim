@@ -1,18 +1,20 @@
 // ÜRETİM PLANI SIRA TESTİ (uçtan uca, Ollama simülatörüyle)
 // ---------------------------------------------------------------------------
-// İstenen düzen: 1. tur her konuya sırayla N kolay soru (1. kitabın 1. konusundan başlayarak),
-// tüm konular bitince 2. tur N orta, sonra 3. tur N zor. Sorular yalnızca konu özetinden kurulur.
-// Test kotayı 1'e indirir; böylece 29 konu + 2. turun ilk adımları kısa sürede görülür.
+// İstenen düzen: 1. kitabın 1. konusundan başlayarak her konuya sırayla N soru; zorluklar KARIŞIK
+// (kolay → orta → zor), yani her konunun kolay, orta ve zor sorusu birlikte gelir. Tüm konular
+// bitince 2. ve 3. tur yapılır; sonunda her konuda N kolay + N orta + N zor olur.
+// Sorular yalnızca konu özetinden (kitap sayfalarından derlenmiş) kurulur ve kitap sayfasını taşır.
+// Test kotayı 3'e indirir: 1. turda her konuya 1 kolay + 1 orta + 1 zor düşer.
 // Sıra birebir sınansın diye tek soru hattı kullanılır; iki konunun birlikte üretimi
 // scripts/test-plan-parallel.mjs içinde sınanır.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import {mkdtemp, rm, readFile} from 'node:fs/promises';
+import {mkdtemp, rm, readFile, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createFakeOllama} from './fake-ollama-sim.mjs';
-import {evidenceWithinSummary} from '../server/production-plan.mjs';
+import {summaryPageOf, evidenceWithinSummary} from '../server/production-plan.mjs';
 
 const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 const close = server => new Promise(resolve => server.close(resolve));
@@ -23,7 +25,8 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
  let failure = null;
  try {
   const contexts = JSON.parse(await readFile(new URL('../server/contexts.json', import.meta.url), 'utf8'));
-  const WANT = contexts.length + 3; // 1. tur (29 konu) + 2. turun ilk 3 konusu
+  const FIRST_PASS = contexts.length * 3; // 1. tur: 29 konu × (kolay + orta + zor)
+  const WANT = FIRST_PASS + 2;            // + 2. turun ilk soruları
   sim = createFakeOllama({ loadMs: 20, genMs: 15, judgeMs: 10, keepPrompts: true });
   const fakePort = await sim.listen();
   dir = await mkdtemp(join(tmpdir(), 'tempo-plan-'));
@@ -32,9 +35,19 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   delete process.env.OLLAMA_VERIFIER_MODEL;
   delete process.env.OLLAMA_JUDGE2_MODEL;
   process.env.TEMPO_DATA_DIR = dir;
+  // Eski sürümün ölçek hatasıyla reddettiği iki soru: ilki geri alınmalı; ikincisi (hakem puanı
+  // gerçekten düşük) reddedilmiş kalmalı.
+  const wronged = (id, question, qualityScore) => ({
+   id, unitId: contexts.at(-1).id, book: contexts.at(-1).book, unit: contexts.at(-1).unit, topic: 'Eski kayıt', question,
+   options: ['Birinci seçenek metni', 'İkinci seçenek metni', 'Üçüncü seçenek metni', 'Dördüncü seçenek metni'], answer: 'Birinci seçenek metni',
+   explanation: 'Eski sürümde onaylanmış, sonra havuz bakımında reddedilmiş bir kayıt.', evidence: 'Eski kayıt kanıtı.',
+   status: 'rejected', difficulty: 'zor', qualityScore, examPotential: 4, curatedBy: 'ai-council', createdAt: '2026-11-01T10:00:00.000Z',
+   curationReason: 'Otonom Kurul: Gelişen kalite standardı (Seviye 9 >= 68) altında kaldığı için elendi'
+  });
+  await writeFile(join(dir, 'questions.json'), JSON.stringify([wronged('eski-1', 'Eski sürümde haksız yere reddedilen soru hangisidir?', 5), wronged('eski-2', 'Hakem puanı gerçekten düşük olan soru hangisidir?', 2)]));
   process.env.TEMPO_OFFLINE_ONLY = '1';
   process.env.TEMPO_QUIET = '1';
-  process.env.TEMPO_PLAN_QUOTA = '1';
+  process.env.TEMPO_PLAN_QUOTA = '3';
   process.env.TEMPO_QUESTION_INTERVAL_MS = '20';
   delete process.env.TEMPO_PLAN;
   process.env.TEMPO_AUTO_CONCURRENCY = '1';
@@ -50,20 +63,24 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   });
   base = `http://127.0.0.1:${await listen(app)}`;
 
+  // Hakem bir soruyu hedeften farklı zorlukta bulursa soru o zorlukla kaydedilir (kotası varsa);
+  // sıra, hedef zorluğuyla kaydedilen sorular üzerinden sınanır.
+  const onTarget = list => list.filter(q => q.verification?.targetDifficulty === q.difficulty);
   let items = [];
   let midStatus = null;
-  for (let i = 0; i < 400 && items.length < WANT; i++) {
+  for (let i = 0; i < 700 && items.length < WANT; i++) {
    await sleep(250);
-   items = (await (await fetch(`${base}/api/ollama/questions`)).json()).items.filter(q => q.status === 'approved');
-   if (!midStatus && items.length >= 2 && items.length < contexts.length) midStatus = await (await fetch(`${base}/api/ollama/status`)).json();
+   items = onTarget((await (await fetch(`${base}/api/ollama/questions`)).json()).items.filter(q => q.status === 'approved'));
+   if (!midStatus && items.length >= 4 && items.length < contexts.length) midStatus = await (await fetch(`${base}/api/ollama/status`)).json();
   }
   const status = await (await fetch(`${base}/api/ollama/status`)).json();
   assert.ok(items.length >= WANT, `en az ${WANT} soru üretilmeliydi; üretilen: ${items.length}, engel: ${JSON.stringify(status.autoBlock)}, plan: ${JSON.stringify(status.plan?.current)}, son olay: ${JSON.stringify(status.autoEvents?.[0])}`);
 
-  const seq = items.slice(0, WANT).map(q => `${q.unitId}:${q.difficulty}`);
-  const expected = [...contexts.map(c => `${c.id}:kolay`), ...contexts.slice(0, 3).map(c => `${c.id}:orta`)];
-  console.log(`\nİlk 5: ${seq.slice(0, 5).join(', ')} … tur geçişi: ${seq.slice(contexts.length - 2, contexts.length + 3).join(', ')}`);
-  assert.deepEqual(seq, expected, 'sıra: 1. tur tüm konular kolay (kitap/konu sırasıyla), ardından 2. tur orta');
+  const seq = items.slice(0, FIRST_PASS).map(q => `${q.unitId}:${q.difficulty}`);
+  const expected = contexts.flatMap(c => ['kolay', 'orta', 'zor'].map(d => `${c.id}:${d}`));
+  console.log(`\nİlk 7: ${seq.slice(0, 7).join(', ')} … 1. turun sonu: ${seq.slice(-3).join(', ')} → ${items.slice(FIRST_PASS, WANT).map(q => q.unitId).join(', ')}`);
+  assert.deepEqual(seq, expected, 'sıra: konu konu (kitap/konu sırasıyla), her konuda kolay → orta → zor');
+  assert.ok(items.slice(FIRST_PASS, WANT).every(q => q.unitId === contexts[0].id), '1. tur bitince 2. tur yine ilk konudan başlar');
 
   // Yalnızca özet: kitap pasajı kullanılmaz, kanıt cümlesi konu özetinde geçer.
   for (const q of items.slice(0, WANT)) {
@@ -71,7 +88,13 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
    assert.ok(!q.passageId, `kitap pasajı kullanılmamalı (${q.unitId}: ${q.passageId})`);
    assert.ok(evidenceWithinSummary(q.evidence, ctx.text).ok, `kanıt konu özetinde olmalı: ${q.evidence}`);
    assert.equal(q.verification.targetDifficulty, q.difficulty);
+   // Kitaptan alınan cümleye dayanan soru, o cümlenin kitap sayfasını taşır.
+   const page = summaryPageOf(ctx, q.evidence);
+   assert.deepEqual(q.pages || null, page ? [page] : null, `${q.unitId}: soru kartındaki sayfa kanıt cümlesinin sayfası olmalı`);
   }
+  const withPage = items.slice(0, WANT).filter(q => q.pages?.length);
+  assert.ok(withPage.length >= WANT * 0.6, `kitap sayfası taşıyan soru: ${withPage.length}/${WANT}`);
+  assert.ok(new Set(withPage.map(q => `${q.unitId}:${q.pages[0]}`)).size >= withPage.length * 0.8, 'sorular farklı sayfalara yayılmalı');
   const genRequests = sim.stats.requests.filter(r => r.role === 'generator');
   assert.ok(genRequests.length >= WANT && genRequests.every(r => r.focus), 'üretici istemi her soruda özetten bir odak cümlesi vermeli');
   assert.ok(genRequests.every(r => !r.bookSeed), 'yalnızca-özet modunda kitap sorusu örneği isteme eklenmemeli');
@@ -104,13 +127,32 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
 
   // /status plan özeti.
   assert.equal(midStatus.plan.enabled, true);
-  assert.equal(midStatus.plan.quota, 1);
+  assert.equal(midStatus.plan.quota, 3);
+  assert.equal(midStatus.plan.mixed, true);
   assert.equal(midStatus.plan.current.pass, 1);
-  assert.equal(midStatus.plan.current.difficulty, 'kolay');
-  assert.equal(midStatus.plan.totalTarget, contexts.length * 3);
-  assert.equal(status.plan.passes[0].done, contexts.length, '1. tur tamamlanmış görünmeli');
+  assert.equal(midStatus.plan.totalTarget, contexts.length * 9);
+  assert.equal(midStatus.plan.workingUnits.length, 1);
+  assert.deepEqual(midStatus.plan.workingUnits[0].cells.map(c => [c.difficulty, c.share]), [['kolay', 1], ['orta', 1], ['zor', 1]], 'çalışılan konunun kolay / orta / zor payı görünmeli');
+  assert.equal(midStatus.plan.workingUnits[0].target, 3);
+  assert.equal(status.plan.passes[0].done, contexts.length * 3, '1. tur tamamlanmış görünmeli');
+  assert.equal(status.plan.passes[0].unitsDone, contexts.length);
   assert.equal(status.plan.current.pass, 2);
+  assert.ok(status.plan.difficulties.every(d => d.done >= contexts.length && d.target === contexts.length * 3), 'her zorlukta her konudan soru olmalı');
   assert.equal(status.autoConcurrencyEffective, 1);
+
+  // Havuz bakımı onaylı soruları toplu reddetmemeli. (Eski hata: 0-100'lük bileşik puan eşiği
+  // hakemlerin 1-5'lik puanıyla karşılaştırılıyor, bakım her çalıştığında havuzda 10 soru kalıyordu.)
+  const approvedNow = async () => (await (await fetch(`${base}/api/ollama/questions`)).json()).items.filter(q => q.status === 'approved');
+  const before = (await approvedNow()).length;
+  const scan = await (await fetch(`${base}/api/ollama/curator/scan`, { method: 'POST', headers: { Origin: base, 'Content-Type': 'application/json' }, body: '{}' })).json();
+  assert.equal(scan.ok, true, JSON.stringify(scan).slice(0, 300));
+  assert.equal(scan.report.councilRejected, 0, 'hakemlerden 5/5 almış sorular kalite eşiğine takılmamalı');
+  const after = await approvedNow();
+  assert.ok(after.length >= before, `havuz bakımı onaylı soruları silmemeli: ${before} → ${after.length}`);
+  const everything = (await (await fetch(`${base}/api/ollama/questions`)).json()).items;
+  assert.equal(everything.find(q => q.id === 'eski-1')?.status, 'approved', 'eski ölçek hatasıyla reddedilen soru geri alınmalı');
+  assert.equal(everything.find(q => q.id === 'eski-2')?.status, 'rejected', 'hakem puanı düşük soru reddedilmiş kalmalı');
+  assert.deepEqual(everything.filter(q => /Otonom Kurul/.test(q.curationReason || '')).map(q => q.id), ['eski-2'], 'bu çalışmada üretilen hiçbir soru kurul eşiğine takılmamalı');
  } catch (e) {
   failure = e;
  }

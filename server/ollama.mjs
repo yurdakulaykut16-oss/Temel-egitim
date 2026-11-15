@@ -38,7 +38,7 @@ import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './o
 import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
 import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
 import {
- planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
+ planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, summaryPageOf, PLAN_DIFFICULTIES, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep
 } from './production-plan.mjs';
 
@@ -877,9 +877,12 @@ async function nextPlanStep(items, inflight = {}, size = 1) {
   return { step: null, planActive: false };
  }
  const step = pickPlanWork(snap.all, size, inflight);
- if (step && !planAnnounced.has(step.key)) {
-  planAnnounced.add(step.key);
-  tempoLog(`Plan: ${describeStep(step)} · ${step.done}/${step.quota} (toplam ${snap.totalDone}/${snap.totalTarget})`);
+ // Konu başına bir kez duyurulur (zorluklar konu içinde karışık ilerler).
+ const visitKey = step ? `${step.pass}|${step.unitId}` : '';
+ if (step && !planAnnounced.has(visitKey)) {
+  planAnnounced.add(visitKey);
+  const unitCells = snap.all.filter(x => x.pass === step.pass && x.unitId === step.unitId);
+  tempoLog(`Plan: ${step.pass}. tur · ${step.bookNo}. kitap ${step.unitNo}. konu — ${step.unit} · ${unitCells.map(x => `${x.difficulty} ${x.done}/${x.quota}`).join(', ')} (toplam ${snap.totalDone}/${snap.totalTarget})`);
  }
  return { step: step || null, planActive: true };
 }
@@ -904,11 +907,36 @@ async function publicPlan(items) {
  if (!PLAN.enabled) return { enabled: false };
  await loadPlanState();
  const snap = planSnapshot({ contexts, items, quota: PLAN.quota, parked: planState.parked });
- const slim = step => step && ({ key: step.key, pass: step.pass, difficulty: step.difficulty, unitId: step.unitId, book: step.book, unit: step.unit, bookNo: step.bookNo, unitNo: step.unitNo, done: step.done, quota: step.quota });
- const passes = DIFFICULTIES.map((difficulty, i) => {
-  const steps = snap.steps.filter(x => x.difficulty === difficulty);
-  const done = steps.reduce((sum, x) => sum + Math.min(PLAN.quota, snap.counts.get(x.key) || 0), 0);
-  return { pass: i + 1, difficulty, done, target: steps.length * PLAN.quota, unitsDone: steps.filter(x => (snap.counts.get(x.key) || 0) >= PLAN.quota).length, units: steps.length };
+ const slim = step => step && ({ key: step.key, pass: step.pass, difficulty: step.difficulty, unitId: step.unitId, book: step.book, unit: step.unit, bookNo: step.bookNo, unitNo: step.unitNo, done: step.done, quota: step.quota, from: step.from, share: step.share });
+ // Tur özeti: her turda her konuya PLAN.quota soru (zorluklar karışık) yazılır.
+ const passes = [1, 2, 3].map(pass => {
+  const cells = snap.all.filter(x => x.pass === pass);
+  const done = cells.reduce((sum, x) => sum + Math.max(0, x.done - x.from), 0);
+  const target = cells.reduce((sum, x) => sum + x.share, 0);
+  const unitIds = [...new Set(cells.map(x => x.unitId))];
+  const unitsDone = unitIds.filter(id => cells.every(x => x.unitId !== id || x.done >= x.quota)).length;
+  const mix = PLAN_DIFFICULTIES.map(d => cells.filter(x => x.difficulty === d).reduce((sum, x) => sum + x.share, 0) / Math.max(1, unitIds.length));
+  return { pass, done, target, unitsDone, units: unitIds.length, mix: { kolay: mix[0], orta: mix[1], zor: mix[2] } };
+ });
+ // Zorluk özeti: bütün konularda toplam kolay / orta / zor.
+ const difficulties = PLAN_DIFFICULTIES.map(difficulty => ({
+  difficulty,
+  done: contexts.reduce((sum, c) => sum + Math.min(PLAN.quota, snap.counts.get(stepKey(c.id, difficulty)) || 0), 0),
+  target: contexts.length * PLAN.quota
+ }));
+ const size = Math.max(1, autoState.effectiveConcurrency || 1);
+ const batch = planBatch(snap.all, size);
+ // Şu an üzerinde çalışılan konular: her konunun bu turdaki kolay / orta / zor ilerlemesi.
+ const workingUnits = [...new Set(batch.map(x => `${x.pass}|${x.unitId}`))].map(id => {
+  const [pass, unitId] = [Number(id.split('|')[0]), id.slice(id.indexOf('|') + 1)];
+  const cells = snap.all.filter(x => x.pass === pass && x.unitId === unitId);
+  const first = cells[0];
+  return {
+   pass, unitId, book: first.book, unit: first.unit, bookNo: first.bookNo, unitNo: first.unitNo,
+   done: cells.reduce((sum, x) => sum + Math.max(0, x.done - x.from), 0),
+   target: cells.reduce((sum, x) => sum + x.share, 0),
+   cells: cells.map(x => ({ difficulty: x.difficulty, done: x.done, quota: x.quota, from: x.from, share: x.share, parked: x.parked, streak: planState.streaks[x.key] || 0 }))
+  };
  });
  return {
   enabled: true,
@@ -921,16 +949,19 @@ async function publicPlan(items) {
   current: slim(snap.current),
   currentLabel: describeStep(snap.current),
   // Şu an üzerinde çalışılan grup (eksik kalan konular) ve her birinin sonuçsuz deneme sayacı.
-  working: planBatch(snap.all, Math.max(1, autoState.effectiveConcurrency || 1)).map(step => ({ ...slim(step), streak: planState.streaks[step.key] || 0 })),
-  parallel: Math.max(1, autoState.effectiveConcurrency || 1),
+  working: batch.map(step => ({ ...slim(step), streak: planState.streaks[step.key] || 0 })),
+  workingUnits,
+  parallel: size,
+  mixed: true,
   passes,
+  difficulties,
   parked: snap.parkedSteps.map(slim)
  };
 }
 
 /**
  * Sıradaki sorunun hedef zorluğu.
- * Plan açıkken konu içi sıra sabittir: önce kolay kotası, sonra orta, sonra zor.
+ * Plan açıkken konu içinde zorluklar karışık ilerler: kotası dolmamış kovalardan en az sorusu olan seçilir.
  * Plan kapalıyken (ya da konunun bütün kotaları dolduysa) ünite içinde en az sorusu olan zorluk seçilir.
  */
 function nextDifficulty(ctx, items, offset = 0) {
@@ -1527,7 +1558,7 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
    ? { grounding: { score: Number(groundingRes.score.toFixed(3)), inSource: true } }
    : {}),
   ...(fullPrec.warnings?.length ? { precisionWarnings: fullPrec.warnings.slice(0, 4) } : {}),
-  ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : {}),
+  ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : summaryPagesField(ctx, evidence)),
   ...(typeof o.questionType === 'string' && QUESTION_TYPES.includes(o.questionType) ? { questionType: o.questionType } : {}),
   ...(typeof o.questionAngle === 'string' && QUESTION_ANGLES.includes(o.questionAngle) ? { questionAngle: o.questionAngle } : {}),
   ...(typeof o.bloomLevel === 'string' && o.bloomLevel.trim() ? { bloomLevel: o.bloomLevel.trim().slice(0, 40) } : {}),
@@ -1882,6 +1913,12 @@ function packOptionalBlocks(blocks, maxChars) {
 // Konu özeti kitaptan genişletildi (konu başına ~100 cümle); istemlere özetin TAMAMI değil,
 // ilgili cümlenin (odak / kanıt) çevresindeki pencere konur. Kanıt kapısı ise özetin tamamına bakar.
 const SUMMARY_WINDOW_CHARS = Math.max(1200, Math.min(6000, Number(process.env.TEMPO_SUMMARY_WINDOW_CHARS) || 2400));
+/** Yalnızca-özet modunda sorunun dayandığı cümlenin kitap sayfası ({ pages: [54] }); bilinmiyorsa {}. */
+function summaryPagesField(ctx, evidence) {
+ const page = summaryPageOf(ctx, evidence);
+ return page ? { pages: [page] } : {};
+}
+
 function summarySource(ctx, anchor = '') {
  return summaryWindow(ctx?.text || '', anchor, SUMMARY_WINDOW_CHARS).text;
 }
@@ -2958,7 +2995,8 @@ function handleUnitSuccess(ctx, record, startedAt, plan = null) {
  // hedef sırasında mı yoksa modelin/hakemin etiketinde mi olduğu buradan anlaşılır.
  const targetNote = target && target !== record?.difficulty ? `, hedef ${target}` : '';
  const planNote = plan?.step ? ` [${plan.step.bookNo}. kitap ${plan.step.unitNo}. konu · ${plan.step.difficulty} ${plan.done}/${plan.step.quota}]` : '';
- tempoLog(`✓ ${ctx.id}${planNote} onaylandı (${record?.difficulty || '?'}${targetNote}, ${secs} sn) — ${String(record?.question || '').slice(0, 90)}`);
+ const pageNote = !record?.passageId && record?.pages?.length ? `, kitap s.${record.pages.join(',')}` : '';
+ tempoLog(`✓ ${ctx.id}${planNote} onaylandı (${record?.difficulty || '?'}${targetNote}${pageNote}, ${secs} sn) — ${String(record?.question || '').slice(0, 90)}`);
 }
 
 async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = UNIT_SAFETY_TIMEOUT_MS, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
@@ -3332,7 +3370,12 @@ async function runPoolCuratorScan({ forcePrune = false } = {}) {
   const [jCfg, jMem, rMem, apexState] = await Promise.all([jarvis.loadConfig(), jarvis.loadMemory(), researchAgent.loadMemory(), apex.loadState()]);
   if (jCfg.autoCuratePool === false && !forcePrune) return { updated: 0 };
   const adaptive = jarvis.computeAdaptiveQuality(jMem, rMem, getTelemetrySnapshot(), apexState);
-  const curatorThreshold = Math.max(adaptive.minQualityScore, Number(apexState?.hyperParams?.curatorMinScoreHint) || 0);
+  // Eşik HAKEM ölçeğindedir (1-5): soru kaydındaki qualityScore iki hakemin 1-5 puanıdır.
+  // Apex'in curatorMinScoreHint değeri (40-80) 0-100'lük bileşik puan ölçeğindedir; ikisi
+  // Math.max ile karıştırıldığında eşik 68 oluyor ve 1-5 puanlı BÜTÜN onaylı sorular (en iyileri
+  // dahil) "eşik altı" sayılıp reddediliyordu: havuz her bakımda 10 soruya düşüyor, plan aynı
+  // konuları baştan dolduruyordu. Bileşik puan eşiği yalnızca bileşik puanla karşılaştırılır.
+  const curatorThreshold = Math.min(5, Math.max(1, Number(adaptive.minQualityScore) || 3));
   const result = await withSaveLock(async () => {
    const items = await load();
    const curated = await poolCurator.scanAndCurate({
@@ -3341,6 +3384,28 @@ async function runPoolCuratorScan({ forcePrune = false } = {}) {
     adaptiveQuality: adaptive,
     forcePrune
    });
+   // Eski ölçek hatasıyla (yukarıdaki not) haksız yere reddedilmiş sorular geri alınır: hakem puanı
+   // bugünkü eşiği geçiyorsa, aynı kök onaylı havuzda yoksa ve plan kotası doluysa aşılmıyorsa.
+   let councilRestored = 0;
+   {
+    const approvedStems = new Set(curated.items.filter(x => x.status === 'approved').map(x => String(x.question || '').trim().toLocaleLowerCase('tr-TR')));
+    const bucket = countApproved(curated.items);
+    for (const q of curated.items) {
+     if (q.status !== 'rejected' || q.curatedBy !== 'ai-council') continue;
+     if (!String(q.curationReason || '').startsWith('Otonom Kurul: Gelişen kalite standardı')) continue;
+     if (!Number.isFinite(q.qualityScore) || q.qualityScore < curatorThreshold || q.qualityScore > 5) continue;
+     const stem = String(q.question || '').trim().toLocaleLowerCase('tr-TR');
+     if (!stem || approvedStems.has(stem)) continue;
+     const key = stepKey(q.unitId, q.difficulty);
+     if (PLAN.enabled && (bucket.get(key) || 0) >= PLAN.quota) continue;
+     q.status = 'approved';
+     delete q.curationReason;
+     approvedStems.add(stem);
+     bucket.set(key, (bucket.get(key) || 0) + 1);
+     councilRestored++;
+    }
+    if (councilRestored) tempoLog(`Havuz bakımı: eski ölçek hatasıyla reddedilmiş ${councilRestored} soru yeniden onaylı.`);
+   }
    // Ayrıca Adaptive Quality seviyesi yükseldikçe eşik altı kalanları işaretle (güvenli alt sınırla)
    let councilRejected = 0;
    const remainingApproved = curated.items.filter(x => x.status === 'approved').length;
@@ -3356,10 +3421,10 @@ async function runPoolCuratorScan({ forcePrune = false } = {}) {
     }
    }
    const totalRemoved = (curated.removedCount || 0) + councilRejected;
-   if (totalRemoved > 0 || curated.scoredCount > 0) {
+   if (totalRemoved > 0 || curated.scoredCount > 0 || councilRestored > 0) {
     await save(pruneRejectedTail(curated.items));
    }
-   return { ...curated.report, councilRejected };
+   return { ...curated.report, councilRejected, councilRestored };
   });
   for (const dropped of (result.droppedSamples || []).slice(0, 6)) {
    await appendTrace({ type: 'curator_pruned', unitId: dropped.unitId, question: dropped.question, reason: dropped.reason, score: dropped.score }).catch(() => {});

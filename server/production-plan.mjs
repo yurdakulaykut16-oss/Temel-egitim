@@ -1,19 +1,26 @@
 // ÜRETİM PLANI
 // ---------------------------------------------------------------------------
-// Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler:
+// Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Her konuya üç kez uğranır ve her
+// uğrayışta o konuya 50 soru yazılır; zorluklar KARIŞIKTIR (kolay → orta → zor → kolay → …):
 //
-//   1. tur (KOLAY): 1. kitabın 1. konusuna 50 soru → 2. konusuna 50 → … → son kitabın son konusu
-//   2. tur (ORTA) : aynı sıra, her konuya 50 soru
-//   3. tur (ZOR)  : aynı sıra, her konuya 50 soru
+//   1. tur: 1. kitabın 1. konusu 17 kolay + 17 orta + 16 zor → 2. konu → … → son kitabın son konusu
+//   2. tur: aynı sıra, her konuya 16 kolay + 17 orta + 17 zor
+//   3. tur: aynı sıra, her konuya 17 kolay + 16 orta + 17 zor
 //
-// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) adımlar N'li GRUPLAR hâlinde işlenir:
+// Üç tur sonunda her konuda 50 kolay + 50 orta + 50 zor soru olur. Böylece ilk turdan itibaren
+// her konunun kolay, orta ve zor sorusu vardır ("önce bütün konuların kolayı" beklenmez).
+//
+// Plan "hücre"lerden oluşur: (tur, konu, zorluk). Hücrenin `quota` alanı o konu + zorlukta o turun
+// SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 33); `from` turun başındaki
+// sayıdır, `share` o tura düşen paydır.
+//
+// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) konular N'li GRUPLAR hâlinde işlenir:
 // ör. 1. ve 2. konu birlikte başlar; biri 50'ye ulaşınca boşalan hat 3. konuya GEÇMEZ, eksik kalan
-// konuya yardım eder. Gruptaki bütün konular 50'ye ulaşınca (ya da atlanınca) sıradaki grup başlar.
-// Böylece hiçbir konu yarım bırakılıp ilerlenmez.
+// konuya yardım eder. Gruptaki bütün konular dolunca (ya da atlanınca) sıradaki grup başlar.
 //
-// Bir adım (konu + zorluk) kotası dolmadan o yuva sıradaki adıma geçmez. Konu özeti kısa olduğu
-// için kota dolmayabilir: üst üste çok sayıda deneme sonuç vermezse adım "atlanır" (park
-// edilir) ve sıradakine geçilir; tüm adımlar bittiğinde atlananlar yeniden denenir.
+// Konu özeti bir zorlukta yeni soru için yetmeyebilir: o konu + zorlukta üst üste çok sayıda deneme
+// sonuç vermezse hücre "atlanır" (park edilir), konunun diğer zorlukları ve sıradaki konular sürer;
+// tüm hücreler bittiğinde atlananlar yeniden denenir.
 //
 // Bu dosya saf fonksiyonlardan oluşur (dosya/ağ erişimi yok); server/ollama.mjs kullanır.
 
@@ -37,7 +44,17 @@ export function planConfigFromEnv(env = process.env) {
  };
 }
 
-/** Sıralı adım listesi: önce zorluk turu, tur içinde contexts sırası (kitap → konu). */
+/**
+ * `pass`. turda (1-3) bir konunun `difficultyIndex` zorluğuna (0 kolay, 1 orta, 2 zor) düşen soru payı.
+ * Üç turun toplamı her zorlukta tam `quota` eder; her turun toplamı da `quota`dır (50 → 17+17+16).
+ */
+export function passShare(quota, pass, difficultyIndex) {
+ const base = Math.floor(quota / 3);
+ const rest = quota % 3;
+ return base + ((((difficultyIndex - (pass - 1)) % 3) + 3) % 3 < rest ? 1 : 0);
+}
+
+/** Sıralı hücre listesi: tur → konu (contexts sırası: kitap → konu) → zorluk. Payı 0 olan hücre yoktur. */
 export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA) {
  const bookOrder = [];
  for (const c of contexts) if (!bookOrder.includes(c.book)) bookOrder.push(c.book);
@@ -49,22 +66,31 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA) {
   unitNoInBook.set(c.id, n);
  }
  const steps = [];
- PLAN_DIFFICULTIES.forEach((difficulty, passIndex) => {
-  for (const c of contexts) {
-   steps.push({
-    index: steps.length,
-    key: stepKey(c.id, difficulty),
-    pass: passIndex + 1,
-    unitId: c.id,
-    difficulty,
-    quota,
-    book: c.book,
-    unit: c.unit,
-    bookNo: bookOrder.indexOf(c.book) + 1,
-    unitNo: unitNoInBook.get(c.id)
+ for (let pass = 1; pass <= PLAN_DIFFICULTIES.length; pass++) {
+  contexts.forEach((c, unitIndex) => {
+   PLAN_DIFFICULTIES.forEach((difficulty, di) => {
+    const share = passShare(quota, pass, di);
+    if (share <= 0) return;
+    let from = 0;
+    for (let p = 1; p < pass; p++) from += passShare(quota, p, di);
+    steps.push({
+     index: steps.length,
+     key: stepKey(c.id, difficulty),
+     pass,
+     visit: (pass - 1) * contexts.length + unitIndex,
+     unitId: c.id,
+     difficulty,
+     from,
+     share,
+     quota: from + share,
+     book: c.book,
+     unit: c.unit,
+     bookNo: bookOrder.indexOf(c.book) + 1,
+     unitNo: unitNoInBook.get(c.id)
+    });
    });
-  }
- });
+  });
+ }
  return steps;
 }
 
@@ -81,30 +107,37 @@ export function countApproved(items) {
 
 /**
  * Planın anlık durumu.
- * @param parked  { [stepKey]: {...} } — atlanan adımlar
+ * @param parked  { [stepKey]: {...} } — atlanan (konu, zorluk) çiftleri
  * @returns { current, queue, all, complete, allParked, totalDone, totalTarget, parkedSteps, steps, counts }
- *   current: sıradaki (kotası dolmamış ve atlanmamış) ilk adım; yoksa null.
- *   queue: kotası dolmamış ve atlanmamış bütün adımlar, plan sırasıyla.
- *   all: bütün adımlar, plan sırasıyla; her biri { ...adım, done, parked }.
- *   allParked: geriye yalnızca atlanan adımlar kaldıysa true (çağıran taraf park listesini temizleyip yeniden dener).
+ *   current: sıradaki (hedefine ulaşmamış ve atlanmamış) ilk hücre; yoksa null.
+ *   queue: hedefine ulaşmamış ve atlanmamış bütün hücreler, plan sırasıyla.
+ *   all: bütün hücreler, plan sırasıyla; her biri { ...hücre, done, parked }. `done` o konu + zorluktaki
+ *        onaylı soru sayısıdır (hücrenin `quota` değerini aşmaz).
+ *   allParked: geriye yalnızca atlananlar kaldıysa true (çağıran taraf park listesini temizleyip yeniden dener).
  */
 export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, parked = {} }) {
  const steps = buildPlanSteps(contexts, quota);
  const counts = countApproved(items);
  let totalDone = 0;
+ for (const c of contexts) for (const d of PLAN_DIFFICULTIES) totalDone += Math.min(quota, counts.get(stepKey(c.id, d)) || 0);
  const parkedSteps = [];
+ const parkedSeen = new Set();
  const queue = [];
  const all = [];
  for (const step of steps) {
-  const done = Math.min(quota, counts.get(step.key) || 0);
-  totalDone += done;
-  all.push({ ...step, done, parked: Boolean(parked[step.key]) && done < quota });
-  if (done >= quota) continue;
-  if (parked[step.key]) { parkedSteps.push({ ...step, done }); continue; }
+  const done = Math.min(step.quota, counts.get(step.key) || 0);
+  const isParked = Boolean(parked[step.key]) && done < step.quota;
+  all.push({ ...step, done, parked: isParked });
+  if (done >= step.quota) continue;
+  if (isParked) {
+   // Aynı (konu, zorluk) sonraki turlarda da atlanmış sayılır; listede bir kez gösterilir.
+   if (!parkedSeen.has(step.key)) { parkedSeen.add(step.key); parkedSteps.push({ ...step, done }); }
+   continue;
+  }
   queue.push({ ...step, done });
  }
  const current = queue[0] || null;
- const totalTarget = steps.length * quota;
+ const totalTarget = contexts.length * PLAN_DIFFICULTIES.length * quota;
  const complete = totalDone >= totalTarget;
  return {
   current,
@@ -121,41 +154,62 @@ export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, park
 }
 
 /**
- * Şu an üzerinde çalışılan grup: plan sırası `size`'lı gruplara bölünür (1-2, 3-4, …); içinde
- * kotası dolmamış ve atlanmamış adım bulunan İLK grubun açık adımları döner. Grup bitmeden
- * sıradaki gruba geçilmez.
+ * Şu an üzerinde çalışılan grup: konu uğrayışları `size`'lı gruplara bölünür (1.-2. konu, 3.-4. konu, …);
+ * içinde açık (hedefine ulaşmamış ve atlanmamış) hücre bulunan İLK grubun açık hücreleri döner.
+ * Grup bitmeden sıradaki gruba geçilmez.
  * @param all  planSnapshot().all
  */
 export function planBatch(all, size = 1) {
  const n = Math.max(1, Math.floor(size) || 1);
- for (let i = 0; i < (all || []).length; i += n) {
-  const open = all.slice(i, i + n).filter(step => step.done < step.quota && !step.parked);
-  if (open.length) return open;
+ let group = null;
+ let open = [];
+ for (const step of all || []) {
+  const g = Math.floor((step.visit ?? step.index ?? 0) / n);
+  if (g !== group) {
+   if (open.length) return open;
+   group = g;
+  }
+  if (step.done < step.quota && !step.parked) open.push(step);
  }
- return [];
+ return open;
 }
 
 /**
- * Boşalan hat için iş seçer: gruptaki açık adımlardan, üzerinde en az hat çalışanı (eşitlikte
- * plan sırasıyla ilki). Bir adımda "tamamlanan + hazırlanmakta olan" soru sayısı kotaya ulaştıysa
- * o adıma yeni hat verilmez (kota aşılmasın). Uygun adım yoksa null (hat kısa süre bekler).
- * @param inflight  { [stepKey]: o adımda şu an hazırlanan soru sayısı }
+ * Boşalan hat için iş seçer.
+ *  1) Gruptaki konulardan, üzerinde en az hat çalışanı (iki konu aynı anda ilerler; biri bitince
+ *     bütün hatlar eksik kalan konuya yardım eder).
+ *  2) O konunun zorluklarından, bu turdaki payında en geride olanı (kolay → orta → zor → kolay … sırası).
+ * Bir hücrede "tamamlanan + hazırlanmakta olan" soru sayısı hedefe ulaştıysa o hücreye yeni hat
+ * verilmez (kota aşılmasın). Uygun hücre yoksa null (hat kısa süre bekler).
+ * @param inflight  { [stepKey]: o konu + zorlukta şu an hazırlanan soru sayısı }
  */
 export function pickPlanWork(all, size = 1, inflight = {}) {
+ const batch = planBatch(all, size);
+ const unitBusy = new Map();
+ for (const step of batch) unitBusy.set(step.unitId, (unitBusy.get(step.unitId) || 0) + (inflight[step.key] || 0));
  let best = null;
- for (const step of planBatch(all, size)) {
+ for (const step of batch) {
   const busy = inflight[step.key] || 0;
   if (step.done + busy >= step.quota) continue;
-  if (!best || busy < best.busy) best = { step, busy };
+  const rank = [unitBusy.get(step.unitId) || 0, step.done - (step.from || 0) + busy, step.index ?? 0];
+  if (!best || rank[0] < best.rank[0] || (rank[0] === best.rank[0] && (rank[1] < best.rank[1] || (rank[1] === best.rank[1] && rank[2] < best.rank[2])))) best = { step, rank };
  }
  return best ? best.step : null;
 }
 
-/** Bir konu için plan sırasına göre sıradaki zorluk: kotası dolmamış ilk kova (hepsi doluysa null). */
+/**
+ * Bir konu için sıradaki zorluk: kotası dolmamış kovalardan en az sorusu olan (eşitlikte kolay → orta → zor).
+ * Hepsi doluysa null.
+ */
 export function planDifficultyForUnit(unitId, items, quota = DEFAULT_PLAN_QUOTA) {
  const counts = countApproved(items);
- for (const d of PLAN_DIFFICULTIES) if ((counts.get(stepKey(unitId, d)) || 0) < quota) return d;
- return null;
+ let best = null;
+ for (const d of PLAN_DIFFICULTIES) {
+  const n = counts.get(stepKey(unitId, d)) || 0;
+  if (n >= quota) continue;
+  if (!best || n < best.n) best = { d, n };
+ }
+ return best ? best.d : null;
 }
 
 /** Hakemlerin verdiği zorluk plana göre kaydedilebilir mi? (Hedefle aynıysa ya da o kova henüz dolmadıysa evet.) */
@@ -286,6 +340,32 @@ export function summaryWindow(summary, anchor = '', maxChars = 2400) {
 }
 
 /**
+ * Bir özet cümlesinin (odak ya da kanıt) kitaptaki sayfası. Özetin kitaptan alınan bölümleri
+ * `ctx.pageMarks` ([metin konumu, sayfa]) ile işaretlidir. Cümle elle yazılmış bölümdeyse ya da
+ * özette bulunamazsa null döner.
+ */
+export function summaryPageOf(ctx, sentence) {
+ const marks = Array.isArray(ctx?.pageMarks) ? ctx.pageMarks : [];
+ const text = String(ctx?.text || '');
+ const wanted = String(sentence || '').trim();
+ if (!marks.length || wanted.length < 15) return null;
+ let pos = text.indexOf(wanted);
+ if (pos < 0) {
+  // Model kanıtı küçük farklarla kopyalamış olabilir: en çok örtüşen özet cümlesine bakılır.
+  const win = summaryWindow(text, wanted, 1);
+  if (win.center < 0) return null;
+  pos = text.indexOf(splitSummarySentences(text)[win.center]);
+  if (pos < 0) return null;
+ }
+ let page = null;
+ for (const [offset, p] of marks) {
+  if (offset > pos) break;
+  page = p;
+ }
+ return Number.isInteger(page) ? page : null;
+}
+
+/**
  * Özetin en az soru sorulmuş cümlesini seçer (aynı cümleye yığılmayı önler; kısa özetten
  * çok sayıda farklı soru çıkarmanın tek yolu cümleleri sırayla dolaşmaktır).
  * @param rotation  aynı kullanım sayısındaki cümleler arasında dönmek için sayaç (ör. deneme sayısı)
@@ -333,5 +413,5 @@ export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
 /** Arayüz ve terminal için tek satırlık adım açıklaması. */
 export function describeStep(step) {
  if (!step) return '';
- return `${step.pass}. tur (${step.difficulty}) · ${step.bookNo}. kitap ${step.unitNo}. konu — ${step.unit}`;
+ return `${step.pass}. tur · ${step.bookNo}. kitap ${step.unitNo}. konu — ${step.unit} · ${step.difficulty}`;
 }

@@ -50,10 +50,13 @@ type CuratorReport = {
  refillPriorityUnits?: string[]; tierBreakdown?: {kolay: number; orta: number; zor: number};
 };
 type PlanStep = {key: string; pass: number; difficulty: string; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; quota: number};
+type PlanCell = {difficulty: string; done: number; quota: number; from: number; share: number; parked?: boolean; streak?: number};
+type PlanUnit = {pass: number; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; target: number; cells: PlanCell[]};
 type ProductionPlan = {
  enabled: boolean; quota?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
- current?: PlanStep | null; working?: (PlanStep & {streak?: number})[]; parallel?: number; parked?: PlanStep[];
- passes?: {pass: number; difficulty: string; done: number; target: number; unitsDone: number; units: number}[];
+ current?: PlanStep | null; working?: (PlanStep & {streak?: number})[]; workingUnits?: PlanUnit[]; parallel?: number; parked?: PlanStep[];
+ difficulties?: {difficulty: string; done: number; target: number}[];
+ passes?: {pass: number; difficulty?: string; done: number; target: number; unitsDone: number; units: number}[];
 };
 type Status = {
  connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean;
@@ -396,27 +399,33 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       <div className="lineup-head">
        <b>Üretim planı</b>
        <span className={`jarvis-badge ${plan.complete ? 'ok' : 'neutral'}`}>
-        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · ${plan.current.difficulty}` : 'Atlanan adımlar yeniden denenecek'}
+        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · kolay + orta + zor karışık` : 'Atlanan adımlar yeniden denenecek'}
        </span>
        <span>Toplam <b>{plan.totalDone ?? 0}</b> / {plan.totalTarget ?? 0} soru</span>
       </div>
-      {(plan.working || []).map(step => (
-       <div key={step.key}>
+      {(plan.workingUnits || []).map(u => (
+       <div key={`${u.pass}-${u.unitId}`}>
         <p className="lineup-line">
-         {(plan.working || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{step.bookNo}. kitap {step.unitNo}. konu — {step.unit}</b> ({step.book}) · {step.difficulty} <b>{step.done} / {step.quota}</b>
-         {(step.streak ?? 0) >= 5 ? ` · üst üste ${step.streak} deneme sonuçsuz (${plan.stuckLimit} olunca bu adım atlanır)` : ''}
+         {(plan.workingUnits || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{u.bookNo}. kitap {u.unitNo}. konu — {u.unit}</b> ({u.book}) · bu turda <b>{u.done} / {u.target}</b>
+         {' · '}{u.cells.map(c => `${c.difficulty} ${Math.max(0, c.done - c.from)}/${c.share}${c.parked ? ' (atlandı)' : ''}`).join(' · ')}
+         {u.cells.filter(c => (c.streak ?? 0) >= 5).map(c => ` · ${c.difficulty}: üst üste ${c.streak} deneme sonuçsuz (${plan.stuckLimit} olunca atlanır)`).join('')}
         </p>
-        <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={step.quota} aria-valuenow={step.done}>
-         <span style={{width: `${Math.min(100, Math.round((step.done / Math.max(1, step.quota)) * 100))}%`}}/>
+        <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={u.target} aria-valuenow={u.done}>
+         <span style={{width: `${Math.min(100, Math.round((u.done / Math.max(1, u.target)) * 100))}%`}}/>
         </div>
        </div>
       ))}
       <p className="lineup-line">
-       {(plan.passes || []).map(p => `${p.pass}. tur ${p.difficulty}: ${p.done}/${p.target} (${p.unitsDone}/${p.units} konu)`).join(' · ')}
+       {(plan.passes || []).map(p => `${p.pass}. tur: ${p.done}/${p.target} (${p.unitsDone}/${p.units} konu)`).join(' · ')}
       </p>
+      {(plan.difficulties || []).length > 0 && (
+       <p className="lineup-line">
+        Bütün konularda toplam: {(plan.difficulties || []).map(d => `${d.difficulty} ${d.done}/${d.target}`).join(' · ')}
+       </p>
+      )}
       <p className="lineup-line">
-       Sıra: 1. kitabın 1. konusundan başlayarak her konuya {plan.quota} kolay soru; bütün konular bitince her konuya {plan.quota} orta, sonra {plan.quota} zor.
-       {(plan.parallel ?? 1) > 1 ? ` Konular ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan konuya yardım eder, grup tamamlanmadan sıradaki konulara geçilmez.` : ''} Sorular yalnızca konu özetinden kurulur.
+       Sıra: 1. kitabın 1. konusundan başlayarak her konuya {plan.quota} soru; zorluklar karışıktır (kolay → orta → zor → kolay …), yani her konunun kolay, orta ve zor sorusu birlikte gelir. Bütün konular bitince ikinci ve üçüncü tur yapılır; sonunda her konuda {plan.quota} kolay + {plan.quota} orta + {plan.quota} zor soru olur.
+       {(plan.parallel ?? 1) > 1 ? ` Konular ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan konuya yardım eder, grup tamamlanmadan sıradaki konulara geçilmez.` : ''} Sorular konunun kitap sayfalarından derlenmiş özetinden kurulur; her sorunun dayandığı kitap sayfası soru kartında yazar.
       </p>
       {(plan.parked || []).length > 0 && (
        <p className="lineup-warn">
@@ -625,7 +634,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       <div className="eyebrow muted">
        {q.book} · {q.unit}
        {q.passageHeading ? ` · ${q.passageHeading}` : ''}
-       {q.pages?.length ? ` (s. ${q.pages.join(', ')})` : ''}
+       {q.pages?.length ? ` · kitap s. ${q.pages.join(', ')}` : ''}
       </div>
       <div className="tag-row">
        <span className="topic-label">Konu: {q.topic}</span>

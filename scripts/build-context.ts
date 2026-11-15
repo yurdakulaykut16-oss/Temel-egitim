@@ -17,7 +17,8 @@ import bookSummary from '../src/bookSummary.json';
 // scripts/build-book-summary.py kitap PDF'lerinden üretir). Soru stüdyosu soruları YALNIZCA bu
 // özetten kurar; 50 kolay + 50 orta + 50 zor soruya yetmesi için özet kitapla büyütülmüştür.
 // baseChars: metnin elle yazılmış bölümünün uzunluğu (kısa özet isteyen modüller için).
-const contexts=books.flatMap((b,bi)=>b.units.map((u,ui)=>{const id=`${bi}-${ui}`;const base=[u.lesson,...expanded[bi][ui],deepDive[bi][ui],unique[id]?.lesson,advanced[id]?.lesson,newQuestions[id]?.lesson,bookNotes[id]?.text].filter(Boolean).join(' ');const fromBook=((bookSummary as Record<string,{pages:number[];sentences:string[]}[]>)[id]||[]).flatMap(g=>g.sentences).join(' ');return {id,book:b.title,unit:u.title,text:fromBook?`${base} ${fromBook}`:base,baseChars:base.length};}));
+// pageMarks: [metindeki başlangıç konumu, kitap sayfası] — kitaptan alınan her bölümün hangi sayfadan geldiği.
+const contexts=books.flatMap((b,bi)=>b.units.map((u,ui)=>{const id=`${bi}-${ui}`;const base=[u.lesson,...expanded[bi][ui],deepDive[bi][ui],unique[id]?.lesson,advanced[id]?.lesson,newQuestions[id]?.lesson,bookNotes[id]?.text].filter(Boolean).join(' ');const groups=((bookSummary as Record<string,{pages:number[];sentences:string[]}[]>)[id]||[]).filter(g=>g.sentences.length);let text=base;const pageMarks:number[][]=[];for(const g of groups){pageMarks.push([text.length+1,g.pages[0]]);text+=' '+g.sentences.join(' ');}return {id,book:b.title,unit:u.title,text,baseChars:base.length,pageMarks};}));
 writeFileSync('server/contexts.json',JSON.stringify(contexts,null,2));
 
 // --- Kaynak temellendirme dizini -------------------------------------------------

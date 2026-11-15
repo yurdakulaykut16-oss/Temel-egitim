@@ -233,22 +233,27 @@ Ortam değişkenleriyle ince ayar:
 
 ### 4.1.1 Üretim planı: sorular hangi sırayla gelir?
 
-Otomatik üretim konuları rastgele dolaşmaz; sabit bir plan izler:
+Otomatik üretim konuları rastgele dolaşmaz; sabit bir plan izler. 1. kitabın 1. konusundan başlanır, her konuya **50 soru** yazılır ve sıradaki konuya geçilir. Zorluklar konuya göre ayrılmaz, **her konunun içinde karışıktır**: kolay → orta → zor → kolay → … Böylece ilk turdan itibaren her konunun kolay, orta ve zor sorusu vardır.
 
-1. **1. tur — kolay:** 1. kitabın 1. konusuna 50 kolay soru, sonra 2. konusuna 50, … son kitabın son konusuna kadar (29 konu).
-2. **2. tur — orta:** aynı sırayla her konuya 50 orta soru.
-3. **3. tur — zor:** aynı sırayla her konuya 50 zor soru.
+| Tur | Her konuya yazılan 50 soru | Tur sonunda konu başına toplam |
+|---|---|---|
+| 1. tur | 17 kolay + 17 orta + 16 zor | 17 / 17 / 16 |
+| 2. tur | 16 kolay + 17 orta + 17 zor | 33 / 34 / 33 |
+| 3. tur | 17 kolay + 16 orta + 17 zor | **50 kolay / 50 orta / 50 zor** |
+
+29 konu × 150 = 4.350 soru.
 
 - **İki konu aynı anda, yarım bırakmadan:** Konular "Aynı anda hazırlanan soru" ayarı kadar (varsayılan 2) gruplar hâlinde işlenir: 1. ve 2. konu birlikte başlar. Biri 50'ye ulaşınca boşalan hat 3. konuya geçmez, **eksik kalan konuya yardım eder**; ikisi de 50 olunca 3. ve 4. konu başlar. Ayarı 1 yaparsan konular teker teker dolar. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
 - **Kota kesindir:** hiçbir konu bir zorlukta 50'yi aşmaz; iki hat aynı konuda çalışırken bile fazladan soru kaydedilmez.
-- **Sorular yalnızca o konunun özetinden kurulur.** Kitap pasajı kullanılmaz; kanıt cümlesi konu özetinde geçmeyen soru reddedilir. Tekrarı azaltmak için her soruda özetin en az soru sorulmuş cümlesi odak olarak verilir; odak cümleleri özetin başına yığılmaz, tamamına yayılarak seçilir.
-- **Özetler kitaptan büyütülmüştür.** Elle yazılmış kısa özete (11–26 cümle) kitap PDF'lerinin o konuya ait sayfalarından **birebir alınmış** tanım, sınıflama ve ilke cümleleri eklenir; konu başına hedef 100 cümledir (toplam ~2.800 cümle). Gövde metni az olan üç konu hedefin altındadır: *Ölçme ve değerlendirme* 56, *Dopingle mücadele* 79, *Beceri öğrenimi* 84 cümle. Eklenen cümleler `src/bookSummary.json` dosyasındadır; uygulamayı çalıştırmak için ek kurulum gerekmez.
-- **Modele özetin tamamı değil ilgili bölümü gösterilir.** Büyütülmüş özet (konu başına 5–15 bin karakter) modelin bağlam penceresine sığmaz; soru yazarına odak cümlenin, hakemlere kanıt cümlesinin çevresindeki ~2.400 karakterlik kesintisiz bölüm verilir (`TEMPO_SUMMARY_WINDOW_CHARS`). Kanıt denetimi ise özetin tamamına bakar.
-- Hakemler bir soruyu hedeften farklı zorlukta bulursa (ör. kolay turunda "orta") ve o konunun o zorluktaki kotası dolmamışsa soru o zorlukla kaydedilir ve ileriki tura sayılır; kota doluysa reddedilir.
-- **Bir konudan aynı zorlukta 50 farklı soru yine de çıkmayabilir** (özellikle cümlesi az olan konularda). Bir adımda üst üste 25 deneme soru çıkarmazsa adım **atlanır**, sıradaki konuya geçilir ve stüdyoda "Atlanan adımlar" olarak gösterilir; diğer adımlar bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
+- **Sorular kitabın sayfalarından kurulur.** Her konunun özeti, kitap PDF'inde o konuya ayrılmış sayfalardan derlenir; her soruda özetin en az soru sorulmuş cümlesi odak olarak verilir ve odaklar konunun sayfalarına yayılarak seçilir. Kanıt cümlesi konu özetinde geçmeyen soru reddedilir. **Soru kartında sorunun dayandığı kitap sayfası yazar** ("kitap s. 54"); terminaldeki `✓ … onaylandı` satırında da görünür.
+- **Özetler kitaptan derlenir.** Elle yazılmış kısa özete (11–26 cümle) kitap PDF'lerinin o konuya ait sayfalarından **birebir alınmış** tanım, sınıflama ve ilke cümleleri eklenir; konu başına hedef 150 cümledir (toplam ~4.050 cümle). Konu sayfalarının 645'inden 577'sinden cümle vardır; kalan 68 sayfa bölüm kapağı ya da yalnızca tablo, şekil ve etkinlik yönergesi içeren sayfalardır (düz anlatım cümlesi yoktur). Kitabın kendi test sayfaları ve cevap anahtarları özete alınmaz. Gövde metni az olan konular hedefin altındadır: *Ölçme ve değerlendirme* 59, *Dopingle mücadele* 79, *Beceri öğrenimi* 84, *Antrenmanı oluşturan ögeler* 129, *Sporda fair play* 130, *Sporcu sağlığı ve ilk yardım* 137 cümle. Eklenen cümleler `src/bookSummary.json` dosyasındadır; uygulamayı çalıştırmak için ek kurulum gerekmez.
+- **Modele özetin tamamı değil ilgili bölümü gösterilir.** Özet (konu başına 7–23 bin karakter) modelin bağlam penceresine sığmaz; soru yazarına odak cümlenin, hakemlere kanıt cümlesinin çevresindeki ~2.400 karakterlik kesintisiz bölüm verilir (`TEMPO_SUMMARY_WINDOW_CHARS`). Kanıt denetimi ise özetin tamamına bakar.
+- Hakemler bir soruyu hedeften farklı zorlukta bulursa (ör. kolay hedeflenmişken "orta") ve o konunun o zorluktaki kotası (50) dolmamışsa soru o zorlukla kaydedilir ve o zorluğun payına sayılır; kota doluysa reddedilir.
+- **Bir konudan aynı zorlukta 50 farklı soru yine de çıkmayabilir** (özellikle cümlesi az olan konularda). Bir konunun bir zorluğunda üst üste 25 deneme soru çıkarmazsa o zorluk **atlanır**; konunun diğer zorlukları ve sıradaki konular sürer, atlananlar stüdyoda "Atlanan adımlar" olarak gösterilir ve diğer her şey bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
 - **Özeti yeniden üretmek** (kitap PDF'i ya da seçim kuralları değiştiyse): `pip install pymupdf` ardından `npm run summary`. Betik (`scripts/build-book-summary.py`) yalnızca gövde yazı tipindeki paragrafları okur; tablo, şekil yazısı, kaynakça, etkinlik yönergesi, soru cümlesi ve başka cümleye gönderme yapan ("bu, bunlar…") cümleleri almaz.
 - Daha önce üretilmiş onaylı sorular kotalara sayılır.
-- Stüdyodaki **Üretim planı** kutusu o anki turu, konuyu ve ilerlemeyi gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
+- **Onaylı sorular havuz bakımında toplu reddedilmez.** Eski sürümde arka plandaki "Otonom Kurul" bakımı, hakemlerin 1–5'lik kalite puanını 0–100'lük bir eşikle karşılaştırdığı için havuz 15 soruyu geçtikten sonra onaylı soruların 10'u dışında hepsini "reddedildi"ye çeviriyordu (plan da aynı konuları baştan dolduruyordu). Eşik artık hakem ölçeğindedir; bu hatayla reddedilmiş ve hâlâ kayıtlı olan sorular (reddedilenlerin son 250'si saklanır) ilk havuz bakımında, kotayı aşmamak koşuluyla yeniden onaylı yapılır.
+- Stüdyodaki **Üretim planı** kutusu o anki turu, çalışılan konuları, her konunun kolay / orta / zor ilerlemesini ve bütün konulardaki zorluk toplamlarını gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
 
 ### 4.2 Soru ve çeldirici kalitesi
 
