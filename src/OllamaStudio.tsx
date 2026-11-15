@@ -21,7 +21,19 @@ type Telemetry = {
  secondsPerItem?: number;
  avgGenMs: number; avgVerifyMs: number; tokensPerSecond: number;
  pipelinePhase: string; rejectionReasons: Record<string, number>;
+ infraErrors?: number; timeouts?: number; formatRepairs?: number;
+ lastApprovedAt?: string | null; lastAttemptAt?: string | null;
 };
+type LineupCandidate = {name: string; family?: string; paramsB?: number; vramGb?: number; quality?: number; usable?: boolean; note?: string};
+type Lineup = {
+ ok: boolean; reason?: string; profile: string; profiles?: {id: string; label: string; description: string}[];
+ model: string; verifierModel: string; judge2Model: string;
+ pinned: {model: boolean; verifierModel: boolean; judge2Model: boolean}; auto: boolean;
+ coResident: boolean; estimatedVramGb?: number | null; vramGb?: number | null; vramDetected?: boolean; gpuName?: string | null;
+ warnings: string[]; candidates?: LineupCandidate[];
+ recommended?: {generator: string; judge2: string; pullCommand: string; missing: string[]};
+};
+type AutoEvent = {at: string; ok: boolean; unit?: string; message: string; seconds?: number; code?: string};
 type QualityImprovement = {id: string; unitId: string; book: string; unit: string; topic: string; question: string; before: number; after: number; at: string};
 type QualityLoop = {
  running: boolean; passes: number; target: number; status: 'scoring' | 'rewriting' | 'waiting';
@@ -49,7 +61,13 @@ type Status = {
  questionIntervalMs?: number;
  modelInferenceConcurrency?: number;
  modelInferenceQueue?: {maxConcurrent: number; active: {label: string; startedAt: number} | null; queued: number};
- autoActive: number; autoPhases: {unit: string; phase: string}[]; autoLastError: string; totalUnits: number;
+ autoActive: number; autoPhases: {unit: string; phase: string; seconds?: number}[]; autoLastError: string; totalUnits: number;
+ autoConcurrencyEffective?: number;
+ modelCallTimeoutRange?: {min: number; max: number; default: number};
+ autoBlock?: {code: string; reason: string} | null;
+ autoEvents?: AutoEvent[];
+ lineup?: Lineup;
+ ollamaRuntime?: {numCtx?: number; keepAlive?: string | number};
  settings?: {passageMode?: 'full-book' | 'summary-only'};
  telemetry?: Telemetry; coverage?: Coverage; qualityLoop?: QualityLoop;
 };
@@ -69,10 +87,24 @@ const angleLabel: Record<string, string> = {
  surpriz_baglam: '5. Şaşırtıcı Bağlam'
 };
 const pipelinePhaseLabel: Record<string, string> = {
- idle: 'Boşta / Yeni dalga bekleniyor',
- producing: 'Üretici dalgası çalışıyor',
- verifying_j1: '1. hakem kuyruğu denetliyor',
- verifying_j2: '2. hakem son onayı veriyor'
+ idle: 'Boşta / sıradaki soru bekleniyor',
+ blocked: 'Üretim bekliyor (aşağıdaki uyarıya bakın)',
+ loading: 'Model belleğe yükleniyor',
+ producing: 'Üretici soru yazıyor',
+ generating: 'Üretici soru yazıyor',
+ verifying: 'Hakemler denetliyor',
+ verifying_j1: '1. hakem denetliyor',
+ verifying_j2: '2. hakem son onayı veriyor',
+ fixing: 'Öz-düzeltme yapılıyor',
+ saving: 'Soru havuza kaydediliyor'
+};
+const fmtAgo = (iso?: string | null) => {
+ if (!iso) return 'henüz yok';
+ const sec = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
+ if (!Number.isFinite(sec)) return '—';
+ if (sec < 60) return `${sec} sn önce`;
+ if (sec < 3600) return `${Math.round(sec / 60)} dk önce`;
+ return `${Math.round(sec / 3600)} sa önce`;
 };
 const fmtTime = (iso?: string | null) => {
  if (!iso) return '—';
@@ -156,6 +188,22 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
+ const updateLineup = async (patch: Record<string, unknown>) => {
+  try {
+   const r = await fetch(`${api}/lineup`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(patch)
+   });
+   const data = await r.json();
+   if (!r.ok) throw Error(data.error || 'Model kadrosu güncellenemedi.');
+   setError('');
+   setChosenModel(''); setChosenVerifier(''); setChosenJudge2('');
+   await refresh();
+  } catch (e) {
+   setError(e instanceof Error ? e.message : 'Model kadrosu güncellenemedi.');
+  }
+ };
+
  const updateConfig = async (patch: Record<string, unknown>) => {
   try {
    const r = await fetch(`${api}/config`, {
@@ -172,7 +220,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  };
 
  const setTimeoutBudget = async () => {
-  const n = Number(timeoutInput);
+  // Kullanıcı saniye girer; sunucu milisaniye bekler.
+  const n = Math.round(Number(timeoutInput) * 1000);
   try {
    const r = await fetch(`${api}/timeout`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -206,6 +255,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  const filtered = items.filter(q => q.status === view);
  const completedWithQuestions = new Set(items.filter(q => q.status === 'approved' && read.includes(q.unitId)).map(q => q.unitId)).size;
  const tel = status?.telemetry;
+ const lineup = status?.lineup;
+ const timeoutRange = status?.modelCallTimeoutRange || {min: 5000, max: 900000, default: 120000};
  const cov = status?.coverage;
  const qg = status?.qualityLoop;
  const curator = status?.curator;
@@ -248,10 +299,19 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      <li><span>Onay oranı</span><b>%{tel?.approvalRate ?? 0}</b></li>
      <li><span>Üretim hızı</span><b>{tel?.secondsPerItem ? `${tel.secondsPerItem} sn/soru` : `${tel?.questionsPerMinute ?? 0} soru/dk`}</b></li>
      <li><span>Boru hattı</span><b>{pipelinePhaseLabel[tel?.pipelinePhase || 'idle'] || tel?.pipelinePhase || '—'}</b></li>
-     <li><span>Aktif yuvalar</span><b>{status?.autoActive ?? 0} / {status?.autoConcurrency ?? 1}</b></li>
+     <li><span>Aktif soru hattı</span><b>{status?.autoActive ?? 0} / {status?.autoConcurrencyEffective ?? status?.autoConcurrency ?? 1}</b></li>
+     <li><span>Son onaylanan soru</span><b>{fmtAgo(tel?.lastApprovedAt)}</b></li>
+     <li><span>Deneme / zaman aşımı / altyapı hatası</span><b>{tel?.attemptsTotal ?? 0} / {tel?.timeouts ?? 0} / {tel?.infraErrors ?? 0}</b></li>
      <li><span>Zorluk</span><b>K {status?.difficultyCounts?.kolay ?? 0} · O {status?.difficultyCounts?.orta ?? 0} · Z {status?.difficultyCounts?.zor ?? 0}</b></li>
      <li><span>Üretilen / Reddedilen</span><b>{status?.count ?? 0} / {status?.rejected ?? 0}</b></li>
     </ul>
+    {status?.autoPhases && status.autoPhases.length > 0 && (
+     <p className="engine-foot">
+      Şu an: {status.autoPhases.slice(0, 3).map((p, i) => (
+       <span key={`${p.unit}-${i}`}>{i > 0 ? ' · ' : ''}<b>{p.unit}</b> — {pipelinePhaseLabel[p.phase] || p.phase}{typeof p.seconds === 'number' ? ` (${p.seconds} sn)` : ''}</span>
+      ))}
+     </p>
+    )}
     <p className="engine-foot">Her soru: kitap pasajından kanıt → tek-doğru ön kontrolü → 1. hakem → 2. hakem → gerekirse öz-düzeltme. Kolay/orta/zor dengesi korunur.</p>
    </section>
 
@@ -309,9 +369,39 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     <div className="preset-bar">
      <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
      <span className="preset-btn active" title="Tek soru üretimi; kitap kaynağı ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
-     <span className="jarvis-badge ok" style={{marginLeft: 8}}>
-      🔒 Uygulama içi model kuyruğu: 1 etkin çağrı
+     <span className={`jarvis-badge ${lineup?.coResident === false ? 'warn' : 'ok'}`} style={{marginLeft: 8}}>
+      {lineup?.coResident === false ? '⚠ Modeller VRAM\'e birlikte sığmıyor: tek hat, sırayla' : `🔒 Aynı anda en çok ${status?.modelInferenceConcurrency ?? 1} model çağrısı`}
      </span>
+    </div>
+
+    {status?.autoBlock && (
+     <div className="lineup-alert" role="alert">
+      <b>Üretim şu an ilerlemiyor:</b> {status.autoBlock.reason}
+      {lineup?.recommended?.pullCommand && (status.autoBlock.code === 'no_models' || status.autoBlock.code === 'model_missing') && (
+       <code>{lineup.recommended.pullCommand}</code>
+      )}
+     </div>
+    )}
+
+    <div className="lineup-box">
+     <div className="lineup-head">
+      <b>Model kadrosu</b>
+      <span className={`jarvis-badge ${lineup?.auto ? 'ok' : 'neutral'}`}>{lineup?.auto ? 'Otomatik seçim' : 'Elle sabitlenmiş roller var'}</span>
+      <label htmlFor="lineup-profile">Profil</label>
+      <select id="lineup-profile" value={lineup?.profile || 'dengeli'} onChange={e => updateLineup({profile: e.target.value})}>
+       {(lineup?.profiles || [{id: 'dengeli', label: 'Dengeli', description: ''}]).map(p => <option key={p.id} value={p.id} title={p.description}>{p.label}</option>)}
+      </select>
+      {!lineup?.auto && <button className="outline" onClick={() => updateLineup({auto: true})}>Otomatik seçime dön</button>}
+     </div>
+     <p className="lineup-line">
+      Üretici <b>{lineup?.model || '—'}</b>{lineup?.pinned?.model ? ' 📌' : ''} · 1. hakem <b>{lineup?.verifierModel || '—'}</b>{lineup?.pinned?.verifierModel ? ' 📌' : ''} · 2. hakem <b>{lineup?.judge2Model || '—'}</b>{lineup?.pinned?.judge2Model ? ' 📌' : ''}
+      {typeof lineup?.estimatedVramGb === 'number' && typeof lineup?.vramGb === 'number' ? ` · tahmini VRAM ${lineup.estimatedVramGb.toFixed(1)} / ${lineup.vramGb} GB${lineup.vramDetected ? '' : ' (kart algılanamadı, varsayım)'}` : ''}
+      {status?.ollamaRuntime?.numCtx ? ` · bağlam ${status.ollamaRuntime.numCtx} token` : ''}
+     </p>
+     {lineup?.warnings?.map((w, i) => <p className="lineup-warn" key={i}>⚠ {w}</p>)}
+     {lineup?.recommended?.missing && lineup.recommended.missing.length > 0 && (
+      <p className="lineup-line">Önerilen kadro için eksik model: <code>{lineup.recommended.pullCommand}</code></p>
+     )}
     </div>
 
     <div className="model-select">
@@ -363,14 +453,35 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      <span>{status?.modelInferenceQueue?.active
       ? `Çalışıyor: ${status.modelInferenceQueue.active.label}`
       : 'Boşta'} · {status?.modelInferenceQueue?.queued ?? 0} bekleyen · aynı anda {status?.modelInferenceConcurrency ?? 1} çağrı</span>
-     <label htmlFor="concurrency-choice" style={{marginLeft: 10}}>Paralel yuva (1-8)</label>
-     <select id="concurrency-choice" value={status?.autoConcurrency ?? 4} onChange={e => setConcurrency(Number(e.target.value))}>
+     <label htmlFor="concurrency-choice" style={{marginLeft: 10}}>Aynı anda hazırlanan soru (1-8)</label>
+     <select id="concurrency-choice" value={status?.autoConcurrency ?? 2} onChange={e => setConcurrency(Number(e.target.value))}>
       {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>{n}</option>)}
      </select>
-     <label htmlFor="timeout-choice" style={{marginLeft: 10}}>İstek zaman aşımı ms (1000-25000 · soru başına maks 25 sn)</label>
-     <input id="timeout-choice" type="number" min={1000} max={300000} step={1000} value={timeoutInput} placeholder={String(status?.autoTimeoutMs || 25000)} onChange={e => setTimeoutInput(e.target.value)}/>
+     {typeof status?.autoConcurrencyEffective === 'number' && status.autoConcurrencyEffective !== status.autoConcurrency && (
+      <span>(şu an etkin: {status.autoConcurrencyEffective})</span>
+     )}
+     <label htmlFor="timeout-choice" style={{marginLeft: 10}}>
+      Model çağrısı süre tavanı, saniye ({Math.round(timeoutRange.min / 1000)}–{Math.round(timeoutRange.max / 1000)})
+     </label>
+     <input id="timeout-choice" type="number" min={Math.round(timeoutRange.min / 1000)} max={Math.round(timeoutRange.max / 1000)} step={5} value={timeoutInput} placeholder={String(Math.round((status?.autoTimeoutMs || timeoutRange.default) / 1000))} onChange={e => setTimeoutInput(e.target.value)}/>
      <button className="outline" onClick={setTimeoutBudget} disabled={!timeoutInput}>Uygula</button>
     </div>
+    <p className="lineup-line" style={{marginTop: -4}}>
+     Süre tavanı <b>tek bir model çağrısı</b> içindir (şu an {Math.round((status?.autoTimeoutMs || timeoutRange.default) / 1000)} sn); bir soru üretici + iki hakem çağrısından oluşur ve toplamı bu süreden uzun olabilir. Modelin ilk yüklenmesi bu süreye sayılmaz.
+    </p>
+
+    {status?.autoEvents && status.autoEvents.length > 0 && (
+     <div className="event-log" aria-label="Son üretim olayları">
+      <b>Son olaylar</b>
+      {status.autoEvents.slice(0, 6).map((ev, i) => (
+       <div className={`event-row ${ev.ok ? 'ok' : 'fail'}`} key={`${ev.at}-${i}`}>
+        <span>{fmtTime(ev.at)}</span>
+        <span>{ev.ok ? '✓' : '✗'}</span>
+        <span>{ev.unit ? `${ev.unit}: ` : ''}{ev.message}{typeof ev.seconds === 'number' ? ` (${ev.seconds} sn)` : ''}</span>
+       </div>
+      ))}
+     </div>
+    )}
 
     <p>
      Depolama: {status?.storage ? `${(status.storage.total / 1e9).toFixed(2)} / ${(status.storage.limit / 1e9).toFixed(0)} GB` : 'hesaplanıyor'} ·
@@ -380,7 +491,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     <p>
      Havuz: <b>{status?.count || 0}</b> üretildi ({status?.approved || 0} onaylı, {status?.rejected || 0} reddedilmiş) ·
      Sınır: onaylı havuz {(status?.questionCapacity || 20000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 20000).toLocaleString('tr-TR')} ·
-     Hedef tempo: {(status?.questionIntervalMs || 5000) / 1000} sn/soru ·
+     Soru başlatma aralığı: en az {(status?.questionIntervalMs || 2000) / 1000} sn ·
      Tamamlanan {read.length} ünitenin {completedWithQuestions} tanesinde hazır soru var.
     </p>
    </div>

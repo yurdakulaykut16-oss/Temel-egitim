@@ -145,46 +145,82 @@ ollama list
 
 Listede indirdiğin modeller görünmeli. Uygulama açılışında **Durumu yenile**'ye veya hiçbir şeye basmadan bekledikten sonra modellerin otomatik atandığını göreceksin.
 
-> **Not:** Tek bir model bile indirsen (örneğin sadece `qwen3:8b`) uygulama açılışta durmaz; tüm rolleri otomatik o modele yerleştirir ve açılışta bir kez `tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder` uzman profillerini senin adına oluşturur. Gerçek bağımsız denetim için **2. hakem olarak farklı bir model ailesi** (`gemma3:12b` / `gemma3:4b`) bulundurman önerilir.
+> **Not:** Tek bir model bile indirsen (örneğin sadece `qwen3:8b`) uygulama açılışta durmaz; üretici ve iki hakem rolünü o modele verir ve stüdyoda "bağımsız ikinci hakem yok" uyarısı gösterir. Gerçek bağımsız denetim için **farklı aileden ikinci bir model** (`gemma3:4b`) kurman yeterlidir; uygulama onu kendiliğinden 2. hakem yapar. Kadro seçimi her zaman kurulu modellere göre yapılır: kurulu olmayan bir model yüzünden üretim beklemez.
 
-### 4.1 Hız ayarları (paralel yuvalar · 20k havuz)
+### 4.1 Hız ve süre ayarları (soru üretimi neden duruyordu, şimdi nasıl çalışıyor)
 
-Uygulama varsayılan olarak **paralel** çalışır ve her soru **tam modelle iki hakem onayından** geçer:
+Önceki sürümde stüdyo saatlerce açık kalsa bile **tek soru üretmeyebiliyordu**. Sebep model kalitesi değil, çağrı düzeniydi:
 
-- **Paralel model yuvaları (varsayılan 4):** Üretici ve iki hakemin Ollama çağrıları uygulama içindeki kuyruktan geçer; aynı anda en fazla **4 model çağrısı** çalışır (1–8 arası ayarlanabilir). Böylece 4 soru üretim hattı aynı anda ilerler; yine de her soru tek tek pasaja, iki bağımsız hakeme ve öz-düzeltme kapısına takılır. VRAM'in yetmiyorsa `TEMPO_AUTO_CONCURRENCY=2` (hatta `1`) yapabilirsin; güçlü GPU'da 6–8'e kadar çıkabilir.
-- **Ollama tarafı da paralelleştirin (önerilir):** Ollama servisini `setx OLLAMA_NUM_PARALLEL "4"` ile başlatıp yeniden aç; böylece 4 eşzamanlı istek gerçekten aynı model örneği üzerinde bir arada işlenir ve hız neredeyse 4 katına yaklaşır. Bu değişken olmadan da 4 yuva çalışır ama istekler Ollama tarafında sıraya girebilir.
-- **Seri moda dönüş:** Eski davranışın (1 yuva + 5 sn hedef tempo) tamamını `TEMPO_AUTO_CONCURRENCY=1` ile geri alabilirsin ya da ayarlar dosyasındaki `autoConcurrency: 1` yapılabilir. Arayüzden yuva sayısı **Soru stüdyosu > Bağlantı** bölümünden de değiştirebilirsin.
-- **20.000 kayıt havuz sınırı:** Onaylı havuz 20.000'e ulaşınca küratör en zayıf ve tekrar soruları ayıklayıp havuzu ~18.500 civarına indirir; üretim hiç durmaz.
-- **Soru başına mutlak 25 saniye sınırı:** Bir soru üretimi için generator + 2 hakem onayının 25 saniye içinde bitmesi gerekir; süre dolarsa o soru havuza **eklenmez** ve yuva hemen yeni üretime döner (süre ayarı `1000–25000` ms arasında kısıtlıdır, 25 saniyenin üstü reddedilir). Yavaş bir model soruları bu sınırda sık sık düşürebilir — o durumda `fastThink` açık kalsın ve gerekirse `TEMPO_AUTO_CONCURRENCY=2` ile yuva sayısını azaltın.
-- **Hafif varsayılanlar:** üretici `qwen3:8b`, 2. hakem `gemma3:4b`, `keep_alive=0` (model çağrıdan sonra boşaltılır; VRAM'de üst üste model birikmez). Otomatik evrim ve alt-saniye tüm-bot sürüsü kapalıdır.
+| Eski davranış | Sonuç | Şimdi |
+| --- | --- | --- |
+| Soru başına **25 sn mutlak tavan** (üretici + 2 hakem + kuyruk bekleme dahil) | Gerçek ekran kartında bir soru 30–90 sn sürer; her deneme çöpe gidiyordu | Tavan **model çağrısı başına** uygulanır (varsayılan 120 sn, 5 sn–15 dk arası ayarlanır). Model yüklenmesi bu süreye sayılmaz |
+| `keep_alive=0` | Model **her çağrıdan sonra** VRAM'den atılıp yeniden yükleniyordu | Model 30 dk bellekte kalır (`TEMPO_OLLAMA_KEEP_ALIVE`) |
+| `num_ctx` her çağrıda prompt uzunluğuna göre değişiyordu | Ollama bağlam boyutu değişince modeli **yeniden yükler** | `num_ctx` sabittir (4096, `TEMPO_NUM_CTX`); model bir kez yüklenir |
+| 13.000 karakterlik üretici promptu | Bağlam penceresine sığmayan kısım sessizce kesiliyordu | Prompt bağlam bütçesine göre kurulur; kaynak metin her zaman tam ve en sonda yer alır |
+| 4 paralel hat + iki hakem aynı anda | Ollama model başına tek istek işlediği için yalnızca kuyruk uzuyordu | Varsayılan 2 hat; modeller VRAM'e birlikte sığmıyorsa otomatik tek hat |
+| Rol modeli kurulu değilse üretim **sessizce** bekliyordu | Ekranda hiçbir açıklama yoktu | Kadro kurulu modellerden otomatik seçilir; engel varsa stüdyoda ve terminalde nedeni yazar |
+| Küçük biçim hataları (cevap "B", şık "A) …", kanıtta bir kelime farkı) | Doğru soru reddediliyordu | Model çağrısı yapmadan onarılır; içerik kontrolleri aynen korunur |
 
-Daha hızlı/yoğun çalışmak istersen (opsiyonel):
+**Model kadrosu otomatik seçilir.** Uygulama `ollama list` çıktısına ve ekran kartı belleğine bakar; üretici ve 1. hakem için kurulu en yetenekli genel amaçlı modeli, 2. hakem için **farklı aileden** ve onunla birlikte VRAM'e sığan modeli seçer. Kod, embedding ve görüntü modelleri soru yazımında kullanılmaz. Stüdyodaki **Model kadrosu** kutusundan profili (`Hızlı` / `Dengeli` / `Kalite`) değiştirebilir, bir rolü elle sabitleyebilir (📌) ya da **Otomatik seçime dön** diyebilirsin.
+
+12 GB ekran kartı (RTX 3080 Ti) için önerilen ve test edilen kadro:
 
 ```powershell
-# Kalıcı olsun (yeni PowerShell pencereleri için):
-setx OLLAMA_FLASH_ATTENTION "1"
-setx OLLAMA_KV_CACHE_TYPE "q8_0"
-setx OLLAMA_MAX_LOADED_MODELS "1"
-setx OLLAMA_NUM_PARALLEL "1"
-# Ollama'yı kapatıp yeniden aç
+ollama pull qwen3:8b
+ollama pull gemma3:4b
 ```
 
-*(Modellerin üst üste binmemesi için Ollama tarafında da tek model/tek istek önerilir.)*
+İkisi birlikte yaklaşık 10 GB VRAM kullanır ve hiç model takası yapılmaz. Daha büyük tek bir model (ör. 14B) üretimi yavaşlatır ve ikinci hakemle birlikte belleğe sığmaz; 12 GB'ta önerilmez.
+
+Ollama servis ayarları (bir kez yapılır, sonra Ollama kapatılıp yeniden açılır):
+
+```powershell
+setx OLLAMA_MAX_LOADED_MODELS "2"
+setx OLLAMA_NUM_PARALLEL "1"
+setx OLLAMA_FLASH_ATTENTION "1"
+setx OLLAMA_KV_CACHE_TYPE "q8_0"
+```
+
+> `OLLAMA_MAX_LOADED_MODELS` **1 ise** üretici ile 2. hakem her soruda birbirini bellekten atar ve her soru iki model yüklemesi bekler. Daha önce `1` yaptıysan `2` yap. Stüdyo bu durumu fark ederse "model sürekli yeniden yükleniyor" uyarısı gösterir.
+
+**Üretimi izlemek.** `npm run dev` terminalinde artık her soru için bir satır görürsün:
+
+```
+[tempo] Model kadrosu: üretici=qwen3:8b · 1. hakem=qwen3:8b · 2. hakem=gemma3:4b · bağlam=4096 · bellekte tutma=30m
+[tempo] ✓ 2-3 onaylandı (orta, 41.2 sn) — Antrenman yükünün temel bileşenleri…
+[tempo] ✗ 0-1 altyapı hatası (model_timeout): qwen3:8b 120 sn içinde yanıtı tamamlayamadı…
+```
+
+Stüdyoda **Son onaylanan soru**, **Deneme / zaman aşımı / altyapı hatası** sayaçları ve **Son olaylar** listesi aynı bilgiyi verir. Reddedilen soruları da terminalde görmek için `TEMPO_VERBOSE=1`, hiç satır istemiyorsan `TEMPO_QUIET=1` kullan.
 
 Ortam değişkenleriyle ince ayar:
 
 | Değişken | Varsayılan | Açıklama |
 | --- | --- | --- |
-| `OLLAMA_MODEL` | `qwen3:8b` | Üretici model |
-| `OLLAMA_JUDGE2_MODEL` | `gemma3:4b` | 2. hakem modeli |
-| `OLLAMA_AUTO_TIMEOUT_MS` | `25000` | Soru başına mutlak üretim süresi (ms); 25000 üst sınırdır |
-| `TEMPO_OLLAMA_KEEP_ALIVE` | `0` | `0` = model çağrıdan sonra boşaltılır; `5m` gibi bir süre de verilebilir |
-| `TEMPO_UNLOAD_STALE_PINS` | `0` | `1` yapılınca açılışta VRAM'deki eski modeller boşaltılır |
+| `OLLAMA_MODEL` | otomatik | Üretici modeli sabitler (boşsa kurulu modellerden seçilir) |
+| `OLLAMA_VERIFIER_MODEL` | otomatik | 1. hakem modelini sabitler |
+| `OLLAMA_JUDGE2_MODEL` | otomatik | 2. hakem modelini sabitler |
+| `TEMPO_LINEUP_PROFILE` | `dengeli` | Otomatik kadro profili: `hizli`, `dengeli`, `kalite` |
+| `TEMPO_VRAM_GB` | algılanır | Ekran kartı belleği (GB); algılanamazsa 12 kabul edilir |
+| `OLLAMA_AUTO_TIMEOUT_MS` | `120000` | **Tek model çağrısının** süre tavanı (5000–900000 ms). Stüdyodan saniye olarak da ayarlanır |
+| `TEMPO_FIRST_TOKEN_TIMEOUT_MS` | `300000` | Model yüklenmesi dahil ilk yanıt parçası için beklenen en uzun süre |
+| `TEMPO_NUM_CTX` | `4096` | Sabit bağlam penceresi (token). Büyütmek VRAM kullanımını artırır |
+| `TEMPO_OLLAMA_KEEP_ALIVE` | `30m` | Modelin çağrılar arasında bellekte tutulma süresi |
+| `TEMPO_AUTO_CONCURRENCY` | `2` | Aynı anda hazırlanan soru sayısı (1–8) |
+| `TEMPO_QUESTION_INTERVAL_MS` | `2000` | İki soru başlatma arasındaki en kısa süre (ms) |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
-| `TEMPO_QUESTION_INTERVAL_MS` | `5000` | Hedef üretim temposu (ms); model yavaşsa tempo kendiliğinden uzar |
-| `TEMPO_AUTO_CONCURRENCY` | `4` | Paralel üretim yuvası sayısı (1–8); `1` eski seri davranışı verir |
-| `OLLAMA_NUM_PARALLEL` | `1` | Ollama servisinin aynı model üzerinde aynı anda işlediği istek sayısı; `4` önerilir |
 | `TEMPO_PARAGRAPH_QUESTION_RATIO` | `0.12` | Paragraf (parçaya dayalı) soruların sıklığı; `0` yapılınca hiç üretilmez |
+| `TEMPO_VERBOSE` / `TEMPO_QUIET` | `0` | Terminal günlüğünü ayrıntılandırır / kapatır |
+
+**Sorun giderme**
+
+| Stüdyoda / terminalde görülen | Anlamı ve çözüm |
+| --- | --- |
+| "Ollama'ya ulaşılamıyor" | Ollama çalışmıyor. `ollama serve` ya da Ollama uygulamasını aç; uygulama kendiliğinden yeniden bağlanır |
+| "Ollama'da kurulu model yok" | Yukarıdaki iki `ollama pull` komutunu çalıştır |
+| `model_timeout` sık tekrarlanıyor | Model ekran kartına sığmayıp işlemciye taşıyor olabilir: `ollama ps` çıktısında `100% GPU` yazmalı. Yazmıyorsa daha küçük kadro seç (`Hızlı` profil) ya da süre tavanını yükselt |
+| "model sürekli yeniden yükleniyor" | `OLLAMA_MAX_LOADED_MODELS` değerini `2` yap ve Ollama'yı yeniden başlat |
+| Onay oranı çok düşük | Terminalde `TEMPO_VERBOSE=1` ile ret gerekçelerine bak; stüdyodaki **Reddedilenler** sekmesi hakem gerekçelerini gösterir |
 
 ### 4.2 Soru ve çeldirici kalitesi
 

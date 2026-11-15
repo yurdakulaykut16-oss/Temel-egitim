@@ -1,4 +1,4 @@
-// Paralel turbo doğrulaması: varsayılan yuva sayısı 4, model çağrıları üst üste biner,
+// Paralel doğrulama: varsayılan 2 soru hattı, model çağrıları üst üste biner,
 // her soru YİNE iki bağımsız hakemle tam onaydan geçer; /concurrency ayarı 1-8 aralığında çalışır.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -58,7 +58,7 @@ test('paralel yuvalar: 4 eşzamanlı üretim, tam çift-hakem doğrulaması, /co
     };
    } else {
     const tag = `p-${calls}`;
-    const diffM = prompt.match(/tam olarak şöyle olmalı: (KOLAY|ORTA|ZOR):/);
+    const diffM = prompt.match(/(?:tam olarak şöyle olmalı|Sorunun zorluk seviyesi): (KOLAY|ORTA|ZOR):/);
     const difficulty = diffM ? diffM[1].toLocaleLowerCase('tr-TR') : 'kolay';
     const q = mkQ(tag);
     difficultyByQuestion.set(q, difficulty);
@@ -80,7 +80,7 @@ test('paralel yuvalar: 4 eşzamanlı üretim, tam çift-hakem doğrulaması, /co
   process.env.OLLAMA_JUDGE2_MODEL = 'fake:j2';
   process.env.TEMPO_DATA_DIR = dir;
   process.env.TEMPO_OFFLINE_ONLY = '1';
-  delete process.env.TEMPO_AUTO_CONCURRENCY;   // varsayılan 4 yuva ile açılmalı
+  delete process.env.TEMPO_AUTO_CONCURRENCY;   // varsayılan 2 hat ile açılmalı
   delete process.env.TEMPO_DISABLE_AUTOLOOP;
 
   const mod = await import('../server/ollama.mjs');
@@ -103,8 +103,10 @@ test('paralel yuvalar: 4 eşzamanlı üretim, tam çift-hakem doğrulaması, /co
   }
   const elapsed = Date.now() - t0;
 
-  assert.equal(status.autoConcurrency, 4, 'varsayılan yuva sayısı 4 olmalı');
-  assert.equal(status.modelInferenceConcurrency, 4, 'model kuyruğu 4 yuva ile açılmalı');
+  // Varsayılan 2: tek ekran kartında 4 paralel hat, Ollama'nın model başına tek istek
+  // işlemesi yüzünden yalnızca kuyruk süresini (ve zaman aşımlarını) artırıyordu.
+  assert.equal(status.autoConcurrency, 2, 'varsayılan paralel soru hattı 2 olmalı');
+  assert.equal(status.modelInferenceConcurrency, 2, 'model kuyruğu 2 yuva ile açılmalı');
   assert.ok((status.approved || 0) >= 4, `en az 4 soru onaylanmalıydı; görülen: ${status?.approved}, err: ${status?.autoLastError}`);
   assert.ok(peak >= 2, `model çağrıları üst üste binebilmeli; görülen eşzamanlı tepe: ${peak}`);
   assert.ok(calls >= (status.approved || 0) * 3, `her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}`);
