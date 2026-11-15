@@ -90,7 +90,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
       return {question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu',questionType:'kavram'};
      })};
     }else{
-     const difficultyMatch=prompt.match(/tam olarak şöyle olmalı: (KOLAY|ORTA|ZOR):/);
+     const difficultyMatch=prompt.match(/(?:tam olarak şöyle olmalı|Sorunun zorluk seviyesi): (KOLAY|ORTA|ZOR):/);
      const difficulty=difficultyMatch?difficultyMatch[1].toLocaleLowerCase('tr-TR'):'kolay';
      const question=makeQuestion(`${calls}`,text);
      difficultyByQuestion.set(question,difficulty);
@@ -114,7 +114,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   let status=await (await fetch(`${base}/api/ollama/status`)).json();
   assert.equal(status.autoRunning,true);
   assert.equal(status.autoConcurrency,1);
-  assert.equal(status.autoTimeoutMs,25000);
+  assert.equal(status.autoTimeoutMs,120000,'model çağrısı başına süre tavanı varsayılan 120 sn');
   assert.equal(status.settings.preset,'balanced');
   assert.equal(status.settings.turboQualityLock,false);
   assert.equal(status.settings.selfCorrection,true);
@@ -128,14 +128,19 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   let approved=0;
   for(let i=0;i<600 && approved<4;i++){await sleep(100);status=await (await fetch(`${base}/api/ollama/status`)).json();approved=status.approved}
   assert.ok(approved>=4,`en az 4 soru onaylanmalıydı, görülen: ${approved}, tel: ${JSON.stringify(status.telemetry)}, err: ${status.autoLastError}`);
-  assert.equal(status.questionIntervalMs,5000,'hedef üretim temposu 5 sn olmalı');
+  assert.equal(status.questionIntervalMs,2000,'iki soru başlatma arası en az 2 sn');
+  assert.equal(status.autoBlock,null,'üretim sürerken engel bildirimi olmamalı');
+  assert.equal(status.lineup.ok,true);
+  assert.ok(status.telemetry.attemptsTotal>=approved,'deneme sayacı ilerlemeli');
+  assert.ok(status.telemetry.lastApprovedAt,'son onay zamanı görünmeli');
+  assert.ok(status.autoEvents.some(e=>e.ok===true),'son olaylar listesinde onaylanan soru görünmeli');
 
-  // Üretim temposu: sorular 5 saniyelik hedef tempodan hızlı üst üste bindirilmemeli
+  // Üretim temposu: sorular en az başlatma aralığı kadar arayla gelir, üst üste binmez
   const tempoQuestions=await (await fetch(`${base}/api/ollama/questions`)).json();
   const createdTimes=tempoQuestions.items.map(x=>Date.parse(x.createdAt)).sort((a,b)=>a-b);
   const gaps=createdTimes.slice(1).map((t,i)=>t-createdTimes[i]);
   assert.ok(gaps.length>=1,`tempo ölçümü için en az 2 soru gerekli, görülen: ${createdTimes.length}`);
-  assert.ok(Math.min(...gaps)>=4500,`sorular arası süre en az ~5 sn olmalı, görülen en kısa aralık: ${Math.min(...gaps)}ms`);
+  assert.ok(Math.min(...gaps)>=1000,`sorular başlatma aralığından (2 sn) belirgin hızlı üst üste gelmemeli, görülen en kısa aralık: ${Math.min(...gaps)}ms`);
   assert.ok(peak<=1,`modeller asla üst üste binmemeli; görülen eşzamanlı istek tepe değeri: ${peak}`);
   assert.ok(calls>=approved*3,`her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}, soru: ${approved}`);
   assert.ok(status.coverage.coveredPassages>=2,'birden fazla kitap pasajı taranmış olmalı');

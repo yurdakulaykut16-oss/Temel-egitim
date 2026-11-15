@@ -34,10 +34,15 @@ import { HundredAiCouncil, DIFFICULTY_TIERS_4 } from './hundred-ai-council.mjs';
 import { SerialTaskQueue } from './model-inference-queue.mjs';
 import { createSummaryGrounding, SUMMARY_GROUNDING_DEFAULT_MIN } from './summary-grounding.mjs';
 import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
+import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './ollama-client.mjs';
+import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
+import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
 
 const execFileAsync = promisify(execFile);
 const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
-const DEFAULT_AUTO_CONCURRENCY = Number.isFinite(envConcurrency) && envConcurrency >= 1 ? Math.min(8, Math.round(envConcurrency)) : 4;
+// Varsayılan 2 yuva: bir soru hakemdeyken sıradaki sorunun üretimi başlar (boru hattı).
+// Tek ekran kartında daha fazla yuva hız kazandırmaz; yalnızca Ollama kuyruğunu şişirir.
+const DEFAULT_AUTO_CONCURRENCY = Number.isFinite(envConcurrency) && envConcurrency >= 1 ? Math.min(8, Math.round(envConcurrency)) : 2;
 const modelInferenceQueue = new SerialTaskQueue(DEFAULT_AUTO_CONCURRENCY);
 
 const contexts = JSON.parse(await readFile(new URL('./contexts.json', import.meta.url), 'utf8'));
@@ -441,17 +446,51 @@ let lastNexusDevelopAt = 0;
 let lastNexusBuildAt = 0;
 let lastNexusAutoApplyAt = 0;
 
-const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:8b';
-const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:4b';
+// Önerilen kadro (kurulu değilse eldeki modellerden otomatik kadro kurulur; bkz. model-lineup.mjs).
+const RECOMMENDED_GENERATOR_MODEL = 'qwen3:8b';
+const RECOMMENDED_JUDGE2_MODEL = 'gemma3:4b';
+const defaultModel = process.env.OLLAMA_MODEL || RECOMMENDED_GENERATOR_MODEL;
+const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || RECOMMENDED_JUDGE2_MODEL;
+
+// --- ZAMAN AŞIMLARI ---------------------------------------------------------------
+// Eski sürümde bir sorunun TAMAMI (model yükleme + üretim + iki hakem + düzeltme) için
+// 25 saniyelik mutlak bir tavan vardı ve sayaç istek daha kuyruktayken başlıyordu. Model
+// yüklemesi tek başına bu süreyi aşabildiği için hiçbir soru tamamlanamıyordu.
+// Artık süre MODEL ÇAĞRISI başına ve üç ayrı bekçiyle ölçülür:
+//   1) ilk yanıt (kuyruk + model yükleme + prompt okuma)  → FIRST_TOKEN_TIMEOUT_MS
+//   2) tokenlar arası sessizlik (model takıldı mı?)        → IDLE_TOKEN_TIMEOUT_MS
+//   3) ilk tokendan sonra toplam üretim süresi             → autoTimeoutMs (ayar)
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
-const QUESTION_HARD_TIMEOUT_MS = 25_000; // Bir soru üretimi için mutlak üst sınır (kullanıcı gereksinimi)
-const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.min(QUESTION_HARD_TIMEOUT_MS, Math.round(envDefaultTimeout)) : QUESTION_HARD_TIMEOUT_MS;
-// Hedef üretim temposu: her 5 saniyede bir yeni soru. Model çağrıları tek kuyruktan
-// sırayla geçtiği için bu bir "en az bekleme" süresidir; üretim daha uzun sürerse
-// sıradaki soru hemen peşine gelir (asla üst üste binmez).
+const MODEL_CALL_TIMEOUT_MIN_MS = 5_000;
+const MODEL_CALL_TIMEOUT_MAX_MS = 900_000;
+const MODEL_CALL_TIMEOUT_DEFAULT_MS = 120_000;
+// Geriye dönük ad: testler ve eski uç noktalar bu sabiti "üst sınır" olarak kullanır.
+const QUESTION_HARD_TIMEOUT_MS = MODEL_CALL_TIMEOUT_MAX_MS;
+const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= MODEL_CALL_TIMEOUT_MIN_MS
+ ? Math.min(MODEL_CALL_TIMEOUT_MAX_MS, Math.round(envDefaultTimeout))
+ : MODEL_CALL_TIMEOUT_DEFAULT_MS;
+const envFirstToken = Number(process.env.TEMPO_FIRST_TOKEN_TIMEOUT_MS);
+const FIRST_TOKEN_TIMEOUT_MS = Number.isFinite(envFirstToken) && envFirstToken >= 1_000 ? Math.round(envFirstToken) : 300_000;
+const envIdleToken = Number(process.env.TEMPO_IDLE_TOKEN_TIMEOUT_MS);
+const IDLE_TOKEN_TIMEOUT_MS = Number.isFinite(envIdleToken) && envIdleToken >= 1_000 ? Math.round(envIdleToken) : 60_000;
+// Bir sorunun tüm adımları için güvenlik ağı (yuva sızıntısını önler; normalde hiç devreye girmez).
+const UNIT_SAFETY_TIMEOUT_MS = 25 * 60_000;
+
+// İki soru başlatma arasındaki en az süre. Üretim daha uzun sürerse sıradaki soru hemen
+// peşine gelir; bu değer yalnızca çok hızlı hata döngülerinin Ollama'yı dövmesini önler.
 const envInterval = Number(process.env.TEMPO_QUESTION_INTERVAL_MS);
-const QUESTION_INTERVAL_MS = Number.isFinite(envInterval) && envInterval >= 500 ? Math.round(envInterval) : 5_000;
-const defaultKeepAlive = process.env.TEMPO_OLLAMA_KEEP_ALIVE ?? '0';
+const QUESTION_INTERVAL_MS = Number.isFinite(envInterval) && envInterval >= 0 ? Math.round(envInterval) : 2_000;
+
+// --- MODELİ BELLEKTE TUT ----------------------------------------------------------
+// keep_alive=0 her çağrıdan sonra modeli boşaltıyordu (her çağrı = yeniden yükleme).
+// Varsayılan artık 30 dakika; üretim sürdükçe model VRAM'de kalır.
+const defaultKeepAlive = process.env.TEMPO_OLLAMA_KEEP_ALIVE && process.env.TEMPO_OLLAMA_KEEP_ALIVE.trim()
+ ? process.env.TEMPO_OLLAMA_KEEP_ALIVE.trim()
+ : '30m';
+// Tüm çağrılar için SABİT bağlam penceresi: değişen num_ctx Ollama'nın modeli yeniden
+// yüklemesine yol açar. 4096 token; kitap pasajı + kurallar + çıktı için yeterlidir ve
+// qwen3:8b + gemma3:4b çiftinin 12 GB VRAM'de birlikte kalmasını sağlar.
+const DEFAULT_NUM_CTX = clampNumCtx(process.env.TEMPO_NUM_CTX, 4096);
 
 const DIFFICULTIES = ['kolay', 'orta', 'zor'];
 const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama', 'en_iyi_secim'];
@@ -505,6 +544,7 @@ function isTransportOrTimeoutError(err) {
  const code = String(err?.code || err?.cause?.code || '');
  if (['ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT', 'EHOSTUNREACH', 'UND_ERR_CONNECT_TIMEOUT'].includes(code)) return true;
  if (name === 'AbortError' || name === 'TimeoutError') return true;
+ if (err instanceof OllamaError && (isTimeoutKind(err.kind) || ['connection', 'model_missing', 'busy', 'aborted'].includes(err.kind))) return true;
  return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNRESET|fetch failed|timed out|timeout|zaman aşım|HTTP 404|model .* not found|network/i.test(msg);
 }
 
@@ -551,18 +591,178 @@ function writeSettings(patch) {
  settingsQueue = run.then(() => {}, () => {});
  return run;
 }
+// --- OLLAMA İSTEMCİSİ + MODEL KADROSU ---------------------------------------------
+const ollama = createOllamaClient({ base, keepAlive: defaultKeepAlive, numCtx: DEFAULT_NUM_CTX });
+
+const validModelName = v => typeof v === 'string' && v.length <= 200 && Boolean(v.trim());
+
+/** Kurulu modeller (ayrıntılı). Kısa süreli önbellek: zamanlayıcı ve /status aynı listeyi paylaşır. */
+let installedCache = { at: 0, list: null, connected: false };
+let installedInflight = null;
+async function installedModelsDetailed(maxAgeMs = 4000) {
+ if (Date.now() - installedCache.at <= maxAgeMs) return installedCache;
+ if (!installedInflight) {
+  installedInflight = (async () => {
+   const list = await ollama.listModels(2500);
+   installedCache = { at: Date.now(), list: list || [], connected: Array.isArray(list) };
+   return installedCache;
+  })().finally(() => { installedInflight = null; });
+ }
+ return installedInflight;
+}
+
+/** Ekran kartı belleği (GB): TEMPO_VRAM_GB > nvidia-smi > 12 GB varsayımı. */
+let vramProbe = { at: 0, gb: null, detected: false, name: null };
+async function detectedVram() {
+ const envGb = Number(process.env.TEMPO_VRAM_GB);
+ if (Number.isFinite(envGb) && envGb >= 2) return { gb: envGb, detected: true, name: 'TEMPO_VRAM_GB' };
+ if (Date.now() - vramProbe.at > 300_000) {
+  vramProbe.at = Date.now();
+  try {
+   const hw = await hardwareOpt.detectLocalHardware();
+   if (hw?.gpu?.detected && hw.gpu.vramTotalMb > 1024) {
+    vramProbe = { at: Date.now(), gb: +(hw.gpu.vramTotalMb / 1024).toFixed(1), detected: true, name: hw.gpu.name || 'GPU' };
+   } else {
+    vramProbe = { at: Date.now(), gb: null, detected: false, name: null };
+   }
+  } catch {}
+ }
+ return { gb: vramProbe.gb || 12, detected: vramProbe.detected, name: vramProbe.name };
+}
+
+/**
+ * Elle sabitlenen roller. Yalnızca kullanıcının arayüzden seçtiği (lineupPins) ya da ortam
+ * değişkeniyle verdiği modeller sabit sayılır. Eski sürümlerin settings.json'a kendiliğinden
+ * yazdığı model adları (ör. tempo-ogretmen) sabit SAYILMAZ; kadro otomatik kurulur.
+ */
+function pinnedRoles(settings) {
+ const pins = settings?.lineupPins && typeof settings.lineupPins === 'object' ? settings.lineupPins : {};
+ const pick = (key, envName) => (pins[key] === true && validModelName(settings[key]) ? settings[key] : (validModelName(process.env[envName]) ? process.env[envName] : null));
+ return {
+  model: pick('model', 'OLLAMA_MODEL'),
+  verifierModel: pick('verifierModel', 'OLLAMA_VERIFIER_MODEL'),
+  judge2Model: pick('judge2Model', 'OLLAMA_JUDGE2_MODEL')
+ };
+}
+
+/** Açık bir kullanıcı/eğitim eylemiyle seçilen rol modellerini sabitleyerek kaydeder. */
+async function writePinnedModels(patch) {
+ const cur = (await readSettings()).lineupPins;
+ const pins = { ...(cur && typeof cur === 'object' ? cur : {}) };
+ for (const key of ['model', 'verifierModel', 'judge2Model']) if (validModelName(patch[key])) pins[key] = true;
+ await writeSettings({ ...patch, lineupPins: pins });
+}
+
+function lineupProfileOf(settings) {
+ if (LINEUP_PROFILES[settings?.lineupProfile]) return settings.lineupProfile;
+ if (LINEUP_PROFILES[process.env.TEMPO_LINEUP_PROFILE]) return process.env.TEMPO_LINEUP_PROFILE;
+ return 'dengeli';
+}
+
+let lineupMemo = { key: '', plan: null };
+/**
+ * Soru hattının üç rolü için o an kullanılacak modeller.
+ * Kurulu model listesi alınabildiyse roller HER ZAMAN kurulu modellerden seçilir; böylece
+ * "seçili model kurulu değil → üretim sessizce duruyor" durumu oluşamaz.
+ */
+async function currentLineup({ maxAgeMs = 4000 } = {}) {
+ const [settings, inst, vram] = await Promise.all([readSettings(), installedModelsDetailed(maxAgeMs), detectedVram()]);
+ const pinned = pinnedRoles(settings);
+ const profile = lineupProfileOf(settings);
+ if (!inst.list.length) {
+  const model = pinned.model || defaultModel;
+  return {
+   ok: false,
+   connected: inst.connected,
+   reason: inst.connected ? 'no_models' : 'offline',
+   installedNames: [],
+   profile,
+   model,
+   verifierModel: pinned.verifierModel || model,
+   judge2Model: pinned.judge2Model || defaultJudge2Model,
+   pinned: { model: Boolean(pinned.model), verifierModel: Boolean(pinned.verifierModel), judge2Model: Boolean(pinned.judge2Model) },
+   coResident: true, independentJudge: true, crossFamilyJudge: true,
+   vramGb: vram.gb, vramDetected: vram.detected, gpuName: vram.name,
+   warnings: [], notes: [], candidates: []
+  };
+ }
+ const key = JSON.stringify([inst.list.map(m => `${m.name}:${m.size}`), pinned, profile, vram.gb, ollama.numCtx]);
+ if (lineupMemo.key !== key) {
+  lineupMemo = { key, plan: planLineup(inst.list, { vramGb: vram.gb, numCtx: ollama.numCtx, profile, pinned }) };
+ }
+ const plan = lineupMemo.plan;
+ return {
+  ...plan,
+  connected: true,
+  reason: plan.ok ? '' : 'no_usable_model',
+  installedNames: inst.list.map(m => m.name),
+  vramDetected: vram.detected,
+  gpuName: vram.name,
+  // Kullanılabilir model bulunamadıysa (yalnızca gömme modelleri kurulu vb.) adlar yine de dolu kalsın.
+  model: plan.model || pinned.model || defaultModel,
+  verifierModel: plan.verifierModel || plan.model || pinned.verifierModel || defaultModel,
+  judge2Model: plan.judge2Model || plan.model || pinned.judge2Model || defaultJudge2Model
+ };
+}
+
+/** Arayüze/duruma verilecek kadro özeti. */
+/**
+ * Model her çağrıda yeniden yükleniyorsa (ör. OLLAMA_MAX_LOADED_MODELS=1 iken iki farklı
+ * model kullanılıyor ya da VRAM yetmiyor) bunu Ollama'nın bildirdiği yükleme sürelerinden
+ * anlar ve kullanıcıya somut çözümle birlikte gösterir.
+ */
+function reloadWarnings() {
+ const out = [];
+ try {
+  const perModel = ollama.snapshot().perModel || {};
+  for (const [name, m] of Object.entries(perModel)) {
+   if (m.calls >= 6 && m.loads >= 4 && m.loads / m.calls >= 0.4 && m.avgLoadMs >= 1500) {
+    out.push(`${name} sürekli yeniden yükleniyor (${m.calls} çağrının ${m.loads} tanesinde, ortalama ${(m.avgLoadMs / 1000).toFixed(1)} sn). Ollama'da OLLAMA_MAX_LOADED_MODELS değerini 2 yapıp Ollama'yı yeniden başlat; sorun sürerse "Hızlı" profile geç.`);
+   }
+  }
+ } catch {}
+ return out;
+}
+
+function publicLineup(lineup) {
+ return {
+  ok: lineup.ok,
+  reason: lineup.reason || '',
+  profile: lineup.profile,
+  profiles: Object.entries(LINEUP_PROFILES).map(([id, p]) => ({ id, label: p.label, description: p.description })),
+  model: lineup.model,
+  verifierModel: lineup.verifierModel,
+  judge2Model: lineup.judge2Model,
+  pinned: lineup.pinned || {},
+  auto: !(lineup.pinned?.model || lineup.pinned?.verifierModel || lineup.pinned?.judge2Model),
+  coResident: lineup.coResident !== false,
+  independentJudge: lineup.independentJudge !== false,
+  crossFamilyJudge: lineup.crossFamilyJudge !== false,
+  estimatedVramGb: lineup.estimatedVramGb ?? null,
+  vramGb: lineup.vramGb ?? null,
+  vramDetected: Boolean(lineup.vramDetected),
+  gpuName: lineup.gpuName || null,
+  warnings: [...(lineup.warnings || []), ...reloadWarnings()],
+  notes: lineup.notes || [],
+  candidates: (lineup.candidates || []).slice(0, 40),
+  recommended: (() => {
+   const wanted = [RECOMMENDED_GENERATOR_MODEL, RECOMMENDED_JUDGE2_MODEL];
+   const have = new Set((lineup.installedNames || []).map(n => String(n).replace(/:latest$/, '')));
+   const missing = lineup.connected === false ? [] : wanted.filter(m => !have.has(m));
+   const toPull = missing.length ? missing : wanted;
+   return { generator: RECOMMENDED_GENERATOR_MODEL, judge2: RECOMMENDED_JUDGE2_MODEL, missing, pullCommand: toPull.map(m => `ollama pull ${m}`).join(' ; ') };
+  })()
+ };
+}
+
 async function selectedModel() {
- const v = await readSettings();
- return typeof v.model === 'string' && v.model.length <= 200 && v.model.trim() ? v.model : defaultModel;
+ return (await currentLineup()).model;
 }
-async function selectedVerifierModel(model) {
- const v = await readSettings();
- if (typeof v.verifierModel === 'string' && v.verifierModel.length <= 200 && v.verifierModel.trim()) return v.verifierModel;
- return process.env.OLLAMA_VERIFIER_MODEL || model;
+async function selectedVerifierModel() {
+ return (await currentLineup()).verifierModel;
 }
-async function selectedJudgeModel(key, fallback) {
- const v = await readSettings();
- return typeof v[key] === 'string' && v[key].length <= 200 && v[key].trim() ? v[key] : fallback;
+async function selectedJudgeModel() {
+ return (await currentLineup()).judge2Model;
 }
 async function selectedEvolverModel(model) {
  const v = await readSettings();
@@ -575,19 +775,21 @@ async function autoRunningEnabled() {
  return v.autoRunning !== false;
 }
 async function autoConcurrencyLimit() {
- // Paralel yuva sayısı: ayar (kalıcı) yoksa ortam değişkeni, o da yoksa 4.
- // 1'e sabitlenmiş eski davranış TEMPO_AUTO_CONCURRENCY=1 ya da ayar ile geri alınır.
+ // Paralel soru yuvası: ayar (kalıcı) yoksa ortam değişkeni, o da yoksa 2.
+ // Not: eski sürümün "autoConcurrency" anahtarı (varsayılan 4) bilerek okunmaz; yeni anahtar
+ // "parallelUnits"tir. Böylece eski ayar dosyası yeni hattı yavaşlatamaz.
  const v = await readSettings();
- const n = Number(v.autoConcurrency);
+ const n = Number(v.parallelUnits);
  const limit = Number.isFinite(n) && n >= 1 ? Math.min(8, Math.round(n)) : DEFAULT_AUTO_CONCURRENCY;
  if (modelInferenceQueue.maxConcurrent !== limit) modelInferenceQueue.setMaxConcurrent(limit);
  return limit;
 }
+/** Tek bir model çağrısının (ilk tokendan sonraki) üretim süresi tavanı. */
 async function autoTimeoutMs() {
+ // Eski "autoTimeoutMs" anahtarı (en fazla 25.000) bilerek okunmaz; yeni anahtar "modelCallTimeoutMs".
  const v = await readSettings();
- const n = Number.isFinite(v.autoTimeoutMs) ? Math.round(v.autoTimeoutMs) : defaultAutoTimeoutMs;
- // 25 saniye mutlak üst sınır: bu süreyi aşan soru havuza giremez, yuva hemen boşalır.
- return Math.max(1000, Math.min(QUESTION_HARD_TIMEOUT_MS, n));
+ const n = Number.isFinite(v.modelCallTimeoutMs) ? Math.round(v.modelCallTimeoutMs) : defaultAutoTimeoutMs;
+ return Math.max(MODEL_CALL_TIMEOUT_MIN_MS, Math.min(MODEL_CALL_TIMEOUT_MAX_MS, n));
 }
 async function getPipelineConfig() {
  // Hafif ama kaliteyi koruyan varsayılan: tek soru, kitap pasajı, self-correction
@@ -657,7 +859,30 @@ function selectPassageForUnit(ctx, items, passageMode) {
  let minCount = Infinity;
  for (const count of usage.values()) if (count < minCount) minCount = count;
  const leastUsed = list.filter(p => (usage.get(p.id) || 0) === minCount);
- return leastUsed[unitItems.length % leastUsed.length] || list[0];
+ // Aynı pasajda takılıp kalma: en az kullanılanlar arasından, bu oturumda en az DENENEN
+ // (ve şu an başka bir yuvada işlenmeyen) pasaj seçilir. Bir pasajdan soru çıkmıyorsa
+ // sıradaki denemede otomatik olarak bir sonrakine geçilir.
+ let best = null;
+ let bestTries = Infinity;
+ const offset = unitItems.length % leastUsed.length;
+ for (let i = 0; i < leastUsed.length; i++) {
+  const p = leastUsed[(offset + i) % leastUsed.length];
+  const tries = passageAttempts.get(p.id) || 0;
+  if (tries < bestTries) { best = p; bestTries = tries; }
+ }
+ return best || list[0];
+}
+
+/** Oturum içi pasaj deneme sayaçları (başarısız denemeler pasajı sıranın sonuna iter). */
+const passageAttempts = new Map();
+function notePassageAttempt(passage) {
+ if (!passage?.id) return;
+ passageAttempts.set(passage.id, (passageAttempts.get(passage.id) || 0) + 1);
+}
+function notePassageSuccess(passage) {
+ if (!passage?.id) return;
+ // Başarılı pasajın cezası silinir; kullanım sayısı zaten havuzdan hesaplanır.
+ passageAttempts.set(passage.id, Math.max(0, (passageAttempts.get(passage.id) || 1) - 1));
 }
 
 let busy = false;
@@ -708,7 +933,15 @@ const telemetry = {
  loadNs: 0,
  recentApprovedTimestamps: [],
  rejectionReasons: {},
- groundingRejected: 0
+ groundingRejected: 0,
+ // Altyapı kaynaklı başarısızlıklar (zaman aşımı, bağlantı, model yok). İçerik reddi DEĞİLDİR;
+ // ayrı sayılır ki "0 üretildi / 0 reddedildi" görüntüsünün arkasındaki gerçek neden görünsün.
+ infraErrors: 0,
+ timeouts: 0,
+ formatRepairs: 0,
+ lastApprovedAt: 0,
+ lastAttemptAt: 0,
+ lastOutcome: null
 };
 
 function recordRejection(reasonKey, detail) {
@@ -722,6 +955,24 @@ function recordEvalMetrics(apiResponse) {
  if (Number.isFinite(apiResponse.eval_count)) telemetry.evalTokens += apiResponse.eval_count;
  if (Number.isFinite(apiResponse.eval_duration)) telemetry.evalNs += apiResponse.eval_duration;
  if (Number.isFinite(apiResponse.load_duration)) telemetry.loadNs += apiResponse.load_duration;
+}
+
+/**
+ * Boru hattının o anki aşaması. Toplu (batched) modda eski değişken kullanılır; doğrudan
+ * modda çalışan yuvaların aşamalarından türetilir (eski sürümde doğrudan modda hiç
+ * güncellenmediği için ekranda hep "Boşta" yazıyordu).
+ */
+function livePipelinePhase() {
+ if (pipelinePhase !== 'idle') return pipelinePhase;
+ const phases = [...autoControllers.values()].map(x => x?.phase).filter(Boolean);
+ if (busy && phase && phase !== 'idle') phases.push(phase);
+ if (!phases.length) return autoState.blockCode ? 'blocked' : 'idle';
+ const has = p => phases.includes(p);
+ if (has('generating') || has('fixing')) return 'producing';
+ if (has('verifying') || has('verifying_j1')) return 'verifying_j1';
+ if (has('verifying_j2')) return 'verifying_j2';
+ if (has('saving')) return 'saving';
+ return 'loading';
 }
 
 function getTelemetrySnapshot() {
@@ -749,9 +1000,16 @@ function getTelemetrySnapshot() {
   avgVerifyMs,
   tokensPerSecond,
   loadSecondsTotal: +(telemetry.loadNs / 1e9).toFixed(1),
-  pipelinePhase,
+  pipelinePhase: livePipelinePhase(),
   evolvingNow,
-  rejectionReasons: telemetry.rejectionReasons
+  rejectionReasons: telemetry.rejectionReasons,
+  rejectedTotal: telemetry.rejectedPreflight + telemetry.rejectedJudges,
+  infraErrors: telemetry.infraErrors,
+  timeouts: telemetry.timeouts,
+  formatRepairs: telemetry.formatRepairs,
+  lastApprovedAt: telemetry.lastApprovedAt ? new Date(telemetry.lastApprovedAt).toISOString() : null,
+  lastAttemptAt: telemetry.lastAttemptAt ? new Date(telemetry.lastAttemptAt).toISOString() : null,
+  lastOutcome: telemetry.lastOutcome
  };
 }
 
@@ -1172,75 +1430,57 @@ async function runModel(which, input, temperature, signal, numPredict = 900, opt
  return modelInferenceQueue.run(which, () => runModelRequest(which, input, temperature, signal, numPredict, opts), { signal });
 }
 
-async function runModelRequest(which, input, temperature, signal, numPredict = 900, { fastThink = true, numCtx = 4096, botRole = null, isSprint = false } = {}) {
- const start = Date.now();
+// Rol başına örnekleme ayarları. Bunlar "örnekleme" seçenekleridir; modelin yeniden
+// yüklenmesine yol açmaz. (num_ctx / num_gpu / num_batch gibi çalıştırıcı seçenekleri
+// bilerek gönderilmez — bkz. ollama-client.mjs.)
+const ROLE_SAMPLING = {
+ generator: { top_p: 0.92, top_k: 50, repeat_penalty: 1.03 },
+ judge: { top_p: 0.85, top_k: 30, repeat_penalty: 1.0 },
+ evolver: { top_p: 0.9, top_k: 40, repeat_penalty: 1.05 },
+ qwenCodeSandbox: { top_p: 0.9, top_k: 40, repeat_penalty: 1.05 }
+};
+
+function recordClientMetrics(metrics) {
+ if (!metrics) return;
+ recordEvalMetrics({ eval_count: metrics.evalTokens, eval_duration: metrics.evalNs, load_duration: metrics.loadNs });
+}
+
+/**
+ * Tek model çağrısı. Uygulama kuyruğundaki yuvasını aldıktan SONRA çalışır; bu yüzden
+ * zaman aşımı sayaçları kuyrukta bekleme süresini saymaz.
+ *
+ * opts.schema          → Ollama yapılandırılmış çıktı şeması (JSON şeması)
+ * opts.totalTimeoutMs  → ilk tokendan sonraki üretim tavanı (varsayılan: ayar)
+ * opts.fastThink       → true ise think:false gönderilir (düşünen modellerde hız)
+ */
+async function runModelRequest(which, input, temperature, signal, numPredict = 900, { fastThink = true, botRole = null, schema = null, totalTimeoutMs = null, firstTokenTimeoutMs = null, onProgress = null } = {}) {
  const roleInferred = botRole || (
   /hakem|judge|psikometri/i.test(String(which)) ? 'judge'
    : /mimar|evolver/i.test(String(which)) ? 'evolver'
     : /coder|code/i.test(String(which)) ? 'qwenCodeSandbox'
      : 'generator'
  );
- const evolvedOpts = paramMatrix.getRuntimeInferenceOptions(cachedParamState, roleInferred, {
-  temperature,
-  numCtx,
-  numPredict
- });
- const hwAdjusted = cachedHardwareProfile
-  ? hardwareOpt.buildRuntimeOptions(cachedHardwareProfile, {
-     ...evolvedOpts,
-     temperature,
-     num_predict: numPredict,
-     num_ctx: Math.max(numCtx, evolvedOpts.num_ctx || numCtx)
-    }, { role: roleInferred, isSprint })
-  : {
-     ...evolvedOpts,
-     temperature,
-     num_predict: numPredict,
-     num_ctx: Math.max(numCtx, evolvedOpts.num_ctx || numCtx)
-    };
- const payload = {
-  model: which,
-  prompt: input,
-  stream: false,
-  format: 'json',
-  // Ollama unloads this model after the request by default, avoiding several
-  // role models staying resident in a small GPU's VRAM at once.
-  keep_alive: defaultKeepAlive,
-  options: hwAdjusted
- };
- if (fastThink && !unsupportedThinkModels.has(which)) {
-  payload.think = false;
- }
-
- let r = await fetch(`${base}/api/generate`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload),
-  signal
- });
-
- if (!r.ok && payload.think !== undefined && r.status === 400) {
-  unsupportedThinkModels.add(which);
-  delete payload.think;
-  r = await fetch(`${base}/api/generate`, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json' },
-   body: JSON.stringify(payload),
-   signal
-  });
- }
-
- if (!r.ok) {
-  throw Error(`Ollama (${which}) HTTP ${r.status}: ${(await r.text()).slice(0, 250)}`);
- }
- const result = await r.json();
- recordEvalMetrics(result);
- const elapsed = Date.now() - start;
+ const callTimeout = Number.isFinite(totalTimeoutMs) && totalTimeoutMs > 0 ? totalTimeoutMs : await autoTimeoutMs();
  try {
-  const parsed = extractJsonLoose(result.response);
-  return { parsed, elapsed };
- } catch {
-  throw Error(`${which} geçerli JSON üretmedi.`);
+  const r = await ollama.generate({
+   model: which,
+   prompt: input,
+   schema,
+   temperature,
+   numPredict,
+   sampling: ROLE_SAMPLING[roleInferred] || ROLE_SAMPLING.generator,
+   think: fastThink ? false : null,
+   signal,
+   firstTokenTimeoutMs: Number.isFinite(firstTokenTimeoutMs) && firstTokenTimeoutMs > 0 ? firstTokenTimeoutMs : FIRST_TOKEN_TIMEOUT_MS,
+   idleTimeoutMs: IDLE_TOKEN_TIMEOUT_MS,
+   totalTimeoutMs: callTimeout,
+   onProgress
+  });
+  recordClientMetrics(r.metrics);
+  return { parsed: r.parsed, elapsed: r.elapsed, metrics: r.metrics };
+ } catch (e) {
+  if (e?.metrics) recordClientMetrics(e.metrics);
+  throw e;
  }
 }
 
@@ -1440,18 +1680,94 @@ function buildAvoidErrorsSnippet() {
  return msgs.length ? `\nÖNCEKİ HATALARDAN KAÇIN: ${msgs.join(' ')}` : '';
 }
 
-function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTypes, policy = null, jarvisMemory = null, researchMemory = null, adaptiveQuality = null, targetAngles = null, studentProfile = null, apexState = null, trainerState = null) {
+// --- YAPILANDIRILMIŞ ÇIKTI ŞEMALARI -------------------------------------------------
+// Alan sırası bilinçlidir: model önce kaynaktan KANITI seçer, sonra o kanıta soru yazar.
+const BLOOM_LEVELS = ['hatirlama', 'kavrama', 'uygulama', 'analiz'];
+function generatorSchema(qType) {
+ const isParagraph = qType === PARAGRAPH_QUESTION_TYPE;
+ const properties = {
+  evidence: { type: 'string' },
+  ...(isParagraph ? { paragraph: { type: 'string' } } : {}),
+  question: { type: 'string' },
+  options: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
+  answer: { type: 'string' },
+  explanation: { type: 'string' },
+  topic: { type: 'string' },
+  questionType: { type: 'string' },
+  questionAngle: { type: 'string' },
+  bloomLevel: { type: 'string', enum: BLOOM_LEVELS }
+ };
+ return {
+  type: 'object',
+  properties,
+  required: ['evidence', ...(isParagraph ? ['paragraph'] : []), 'question', 'options', 'answer', 'explanation', 'topic', 'questionType', 'questionAngle', 'bloomLevel']
+ };
+}
+// Hakem önce kanıtı ve gerekçeyi yazar, sonra cevabı seçer (karar öncesi kısa akıl yürütme).
+const JUDGE_SCHEMA = {
+ type: 'object',
+ properties: {
+  evidence: { type: 'string' },
+  reason: { type: 'string' },
+  answer: { type: 'string' },
+  singleCorrect: { type: 'boolean' },
+  dualAnswerRisk: { type: 'boolean' },
+  secondBestOption: { type: 'string' },
+  supported: { type: 'boolean' },
+  distractorPlausible: { type: 'boolean' },
+  qualityOk: { type: 'boolean' },
+  qualityScore: { type: 'integer' },
+  examPotential: { type: 'integer' },
+  difficulty: { type: 'string', enum: DIFFICULTIES },
+  bloomLevel: { type: 'string', enum: BLOOM_LEVELS }
+ },
+ required: ['evidence', 'reason', 'answer', 'singleCorrect', 'dualAnswerRisk', 'secondBestOption', 'supported', 'distractorPlausible', 'qualityOk', 'qualityScore', 'examPotential', 'difficulty', 'bloomLevel']
+};
+
+const GENERATOR_NUM_PREDICT = 640;
+const GENERATOR_NUM_PREDICT_PARAGRAPH = 960;
+const JUDGE_NUM_PREDICT = 400;
+
+/** Üretici promptunun (kaynak metin dahil) kullanabileceği karakter bütçesi. */
+function generatorPromptBudget(model, numPredict = GENERATOR_NUM_PREDICT) {
+ return ollama.promptBudgetChars(model, numPredict);
+}
+
+/**
+ * İsteğe bağlı ipucu bloklarını öncelik sırasıyla, bütçeyi aşmadan ekler.
+ * Bütçeye sığmayan blok atlanır; kaynak metin ve zorunlu kurallar asla kırpılmaz.
+ */
+function packOptionalBlocks(blocks, maxChars) {
+ let used = 0;
+ const out = [];
+ for (const block of blocks) {
+  const text = typeof block === 'string' ? block : '';
+  if (!text.trim()) continue;
+  if (used + text.length > maxChars) continue;
+  out.push(text);
+  used += text.length;
+ }
+ return out.join('');
+}
+
+function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTypes, policy = null, jarvisMemory = null, researchMemory = null, adaptiveQuality = null, targetAngles = null, studentProfile = null, apexState = null, trainerState = null, promptOpts = {}) {
  const existingQuestions = [...questionBank, ...items].filter(x => x.unitId === ctx.id);
- const avoidQuestions = existingQuestions.slice(-18).map(x => x.question).join(' / ');
- const recentAnswers = existingQuestions.slice(-16).map(x => x.answer).filter(Boolean).join(', ');
+ // Tekrar listesi: önce AYNI pasajdan yazılmış sorular (asıl tekrar riski), sonra ünitenin son soruları.
+ const samePassage = passage ? existingQuestions.filter(x => x.passageId === passage.id).slice(-8) : [];
+ const samePassageSet = new Set(samePassage);
+ const recentOthers = existingQuestions.filter(x => !samePassageSet.has(x)).slice(-(12 - samePassage.length));
+ const avoidPool = [...recentOthers, ...samePassage];
+ const clip = (s, n) => (String(s || '').length > n ? `${String(s).slice(0, n - 1)}…` : String(s || ''));
+ const avoidQuestions = avoidPool.map(x => clip(x.question, 130)).join(' / ');
+ const recentAnswers = [...new Set(avoidPool.map(x => clip(x.answer, 60)).filter(Boolean))].slice(-10).join(', ');
  const recentOptionSets = existingQuestions.slice(-6)
   .map(x => Array.isArray(x.options) ? x.options.filter(o => o !== x.answer).slice(0, 2).join(' + ') : '')
   .filter(Boolean)
   .join(' / ');
  const diffMap = {
-  kolay: policy?.difficultyDirectives?.kolay || 'KOLAY (Yüksek Sınav Kalitesi): Net temel kavramı veya ilkeyi ölçmeli ama sığ olmamalı; güçlü çeldiricilerle tam doğruya hazırlamalı.',
-  orta: policy?.difficultyDirectives?.orta || 'ORTA (Yüksek Sınav Kalitesi): İki bilgiyi birleştirme, karşılaştırma veya kavram tuzağını ayırt etme gerektirmeli.',
-  zor: policy?.difficultyDirectives?.zor || 'ZOR (Yüksek Sınav Kalitesi): Saha vakası, ince ayrım, ters köşe veya çok adımlı analizle tam doğru hedeflemeli.'
+  kolay: policy?.difficultyDirectives?.kolay || 'KOLAY: Metindeki tek bir temel kavramı, tanımı veya ilkeyi doğrudan ölç; sığ olmasın, çeldiriciler yine güçlü olsun.',
+  orta: policy?.difficultyDirectives?.orta || 'ORTA: Metindeki iki bilgiyi ilişkilendirmeyi, karşılaştırmayı veya birbirine yakın iki kavramı ayırt etmeyi gerektirsin.',
+  zor: policy?.difficultyDirectives?.zor || 'ZOR: Saha vakası, ince kavram ayrımı, ters köşe ya da çok adımlı çıkarım gerektirsin; yine de cevap metinden kesin olarak çıkarılabilsin.'
  };
  const exemplars = buildExemplarsSnippet(ctx, items);
  const avoidErr = buildAvoidErrorsSnippet();
@@ -1465,7 +1781,7 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
  const layeredWorkflowHint = hundredAiCouncil.buildLayeredWorkflowDirective(ctx.id);
  const ragCrossHint = precisionEngine.getRagCrossContextBlock(ctx, passage);
  const perf = lessonEngine.formatStudentPerformance(ctx.id, studentProfile);
- const perfHint = perf.answered > 0 ? `\nÖĞRENCİ PERFORMANS SİNYALİ: ${perf.summaryText} (Zorlandığı/yavaş kaldığı yerleri kalıcı ezberle çözecek net, öğretici, şaşırtıcı sorular kur!)` : '';
+ const perfHint = perf.answered > 0 ? `\nÖĞRENCİ PERFORMANS SİNYALİ: ${perf.summaryText} (Zorlandığı yerleri kalıcı öğretecek net sorular kur.)` : '';
  const policyRule = policy?.generatorAddendum ? `\nEK POLİTKA DİREKTİFİ: ${policy.generatorAddendum}` : '';
  const sourceText = passage ? passage.text : ctx.text;
  const pageInfo = passage?.pages?.length ? ` (Kitap s. ${passage.pages.join(', ')})` : '';
@@ -1478,17 +1794,66 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
   const qAngle = angles[0] || 'dogrudan_tanim';
   const typeHint = QUESTION_TYPE_HINTS[qType] || '';
   const angleHint = QUESTION_ANGLE_HINTS[qAngle] || '';
+  const isParagraph = qType === PARAGRAPH_QUESTION_TYPE;
   const coverageHint = buildConceptCoverageSnippet(ctx, items, passage);
   const bookSeedHint = buildBookSeedSnippet(ctx, items);
-  return `Sen ÖSYM sınav komisyonunda görevli uzman Türkçe antrenörlük soru yazarısın. KENDİNE ŞUNU SOR: "Ben ÖSYM'de soru hazırlayan bir uzman olsaydım bu konudan adayı gerçekten ayırt edecek nasıl bir soru hazırlardım?" HEDEF: Öğrenciyi sınavda 5 kitaptan çıkacak 100 sorunun tamamında 100/100 FULL DOĞRU seviyesine çıkarmak! Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, KESİNLİKLE TEK doğru cevaplı dört seçenekli, SINAVDA ÇIKMA POTANSİYELİ YÜKSEK ve ÖSYM TÜRKÇESİYLE ÖRÜLMÜŞ BİR özgün soru üret (I-II-III öncüllü, saha vakalı veya ince kavram ayrımlı kur!).
+
+  // 1) ZORUNLU BAŞLIK: görev + hedefler + kurallar + çıktı biçimi (her çağrıda aynı iskelet).
+  const head = `Sen antrenörlük temel eğitim sınavı için ÖSYM tarzında soru yazan uzman bir ölçme-değerlendirme yazarısın. En altta verilen KONU ANLATIMI metnine dayanarak, KESİNLİKLE TEK doğru cevabı olan, dört seçenekli, özgün BİR sınav sorusu yaz.
 Sorunun zorluk seviyesi: ${diffMap[diff]}
 Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
-${DISTRACTOR_ENGINEERING_RULES}
-${qType === PARAGRAPH_QUESTION_TYPE ? PARAGRAPH_QUESTION_RULES : ''}
-KAYNAK SINIRI (ÇOK ÖNEMLİ): YALNIZCA aşağıdaki konu anlatımında ve bu ünitenin kitap pasajlarında GEÇEN kavramlarla soru kur; özetlerde/kitapta bulunmayan hiçbir bilgi, terim veya sayı uydurma.${bookSeedHint}
-TEKRAR YASAĞI (ÇOK ÖNEMLİ): Aşağıda listelenen sorulara BENZER bir soru kurma. Aynı kavramı soracaksan bile soru kökünü, kalıbı, şıkları ve doğru cevabı değiştir; iki soru asla tıpatıp aynı veya tek kelime farklı olmasın.${coverageHint}
-JSON döndür: question (soru)${qType === PARAGRAPH_QUESTION_TYPE ? ', paragraph (KONU ANLATIMINDAN birebir alınmış 3-5 cümlelik parça)' : ''}, options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kalıcı ezber için kısa özlü öğretici gerekçe + püf noktası), evidence (anlatımdan birebir en az 15 karakter alıntı), topic (kısa konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint} Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.${recentAnswers ? ` FARKLI CEVAPLAR SEÇ: ${recentAnswers}.` : ''}${recentOptionSets ? ` YAKIN ZAMANDA KULLANILAN ÇELDİRİCİLERİ TEKRAR KULLANMA: ${recentOptionSets}.` : ''}${exemplars}${avoidErr} KONU ANLATIMI: ${sourceText}`;
+
+YAZIM SIRASI:
+1) KONU ANLATIMI'ndan sınavda sorulmaya değer TEK bir bilgi seç; o bilgiyi içeren cümleyi "evidence" alanına HARFİ HARFİNE kopyala (kısaltma, birleştirme, yeniden yazma yok).
+2) Yalnızca o bilgiyi ölçen, açık ve tek yargılı bir soru kökü yaz.
+3) Doğru cevabı yaz; ardından aynı kavram ailesinden, metne göre KESİN YANLIŞ üç çeldirici yaz.
+
+ÖSYM SORU KOMİSYONU KURALLARI (uymayan soru otomatik reddedilir):
+- KAYNAK SINIRI: Soru, doğru cevap ve çeldiriciler yalnızca KONU ANLATIMI'nda geçen kavramlarla kurulur. Metinde olmayan bilgi, terim, sayı veya isim uydurma.${isParagraph ? '' : ' Soru kökünde "metne göre", "parçaya göre", "yukarıdaki metinde" gibi ifadeler kullanma; aday metni görmez.'}
+- TEK DOĞRU: Yalnızca bir şık doğru olmalı; diğer üçü metne göre açıkça yanlış olmalı. İki şık aynı anlama gelmemeli, bir şık diğerini kapsamamalı.
+- ÇELDİRİCİLER: Dört şık aynı türden (hepsi kavram adı ya da hepsi aynı kalıpta ifade) ve benzer uzunlukta olmalı; en uzun şık en kısanın 2 katını geçmesin, doğru şık diğerlerinden belirgin uzun olmasın. Çeldiricileri adayın gerçekten karıştıracağı komşu kavramlardan seç; konuyla ilgisiz dolgu şık yazma.
+- YASAK: "Hepsi", "Hiçbiri", "Yukarıdakilerin hepsi", "A ve B" türü şıklar; şıkların başına A) B) gibi harf koymak; doğru cevabın ayırt edici kelimesini soru kökünde kullanmak.
+- OLUMSUZ KÖK: "değildir / yanlıştır / söylenemez" kullanırsan bu kelimeyi BÜYÜK HARFLE yaz ve diğer üç şıkkın metne göre doğru olduğundan emin ol.
+- DİL: Akıcı ve kusursuz sınav Türkçesi; soru kökü en fazla 300 karakter.
+- TEKRAR YASAĞI: Aşağıda listelenen eski sorulara benzer soru kurma; farklı bir bilgi, farklı bir kök ve farklı bir doğru cevap seç.
+${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
+ÇIKTI: Yalnızca tek bir JSON nesnesi döndür. Alanlar: evidence (KONU ANLATIMI'ndan birebir kopyalanmış, doğru cevabı kanıtlayan cümle; en az 20 karakter)${isParagraph ? ', paragraph (KONU ANLATIMI\'ndan birebir alınmış 3-5 cümlelik parça)' : ''}, question (soru kökü), options (4 farklı metin), answer (options içindeki doğru şıkkın metni, birebir aynı), explanation (1-2 cümle: neden doğru + akılda tutma ipucu), topic (2-5 kelimelik konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").`;
+
+  // 2) ZORUNLU KUYRUK: kaynak metin her zaman EN SONDA ve TAM olarak yer alır.
+  const tail = `\nKitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}.\nKONU ANLATIMI: ${sourceText}`;
+
+  // ÖSYM komisyonu yazım protokolünün genel maddeleri yukarıdaki KURALLAR bölümünde zaten
+  // (tekrarsız) yer alır; buraya yalnızca üniteye özgü çeldirici kavram tuzakları eklenir.
+  const osymTrapIndex = String(osymHint || '').indexOf('BU ÜNİTE İÇİN ÖSYM ÇELDİRİCİ KAVRAM TUZAKLARI');
+  const osymUnitTraps = osymTrapIndex >= 0 ? `\n${String(osymHint).slice(osymTrapIndex)}` : '';
+
+  // 3) İSTEĞE BAĞLI BLOKLAR: öncelik sırasıyla ve bağlam penceresine sığdığı kadar.
+  //    (Eski sürüm hepsini koşulsuz ekliyor, prompt 13.000 karaktere çıkıyor ve Ollama
+  //     bağlam penceresine sığmayan kısmı SESSİZCE kesiyordu.)
+  const budget = Number.isFinite(promptOpts?.budgetChars) ? promptOpts.budgetChars : generatorPromptBudget(promptOpts?.model || '', isParagraph ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT);
+  const freeChars = Math.max(0, Math.min(3200, budget - head.length - tail.length));
+  const optional = packOptionalBlocks([
+   axiomHint,
+   osymUnitTraps,
+   avoidQuestions ? `\nBU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.` : '',
+   jarvisHint,
+   researchHint,
+   coverageHint,
+   bookSeedHint,
+   recentAnswers ? `\nFARKLI BİR DOĞRU CEVAP SEÇ (yakın zamanda kullanılanlar): ${recentAnswers}.` : '',
+   policyRule,
+   avoidErr,
+   perfHint,
+   recentOptionSets ? `\nYAKIN ZAMANDA KULLANILAN ÇELDİRİCİLERİ TEKRAR KULLANMA: ${recentOptionSets}.` : '',
+   exemplars,
+   tvgfbfStyleHint,
+   ragCrossHint,
+   trainerHint,
+   layeredWorkflowHint,
+   apexHint
+  ], freeChars);
+  return `${head}${optional}${tail}`;
  }
 
  const specs = targetDifficulties.map((d, i) => `Soru ${i + 1}: zorluk=${d.toUpperCase()} (${diffMap[d]}), tip=${targetTypes[i]}, açı=${angles[i]} (${QUESTION_ANGLE_HINTS[angles[i]] || ''})`).join('\n');
@@ -1504,7 +1869,7 @@ ${specs}
 - KAYNAK SINIRI: Yalnızca konu anlatımında ve bu ünitenin kitap pasajlarında geçen kavramlar kullanılmalı; kaynakta olmayan terim, sayı veya bilgi UYDURULMAMALI.${buildBookSeedSnippet(ctx, items)}
 ${DISTRACTOR_ENGINEERING_RULES}
 ${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? PARAGRAPH_QUESTION_RULES : ''}
-JSON döndür: {"questions": [ {question, options, answer, explanation, evidence, topic, questionType, questionAngle, bloomLevel${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? ', paragraph (yalnızca paragraf tipinde)' : ''}}, ... ]}${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint}
+JSON döndür: {"questions": [ {question, options, answer, explanation, evidence, topic, questionType, questionAngle, bloomLevel${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? ', paragraph (yalnızca paragraf tipinde)' : ''}}, ... ]}${axiomHint}${policyRule}${jarvisHint}${researchHint}${perfHint}
 Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}.
 TEKRARLAMA: ${avoidQuestions}.${recentAnswers ? ` FARKLI KAVRAMLAR: ${recentAnswers}.` : ''}${exemplars}${avoidErr}
 KONU ANLATIMI: ${sourceText}`;
@@ -1512,11 +1877,29 @@ KONU ANLATIMI: ${sourceText}`;
 
 function buildVerifierPrompt(ctx, draft, passage = null, policy = null, apexState = null) {
  const sourceText = passage ? passage.text : ctx.text;
- const policyRule = policy?.judgeAddendum ? ` EK KURAL: ${policy.judgeAddendum}` : '';
- const apexJudge = apex.getBotDirectiveBlock(apexState, 'judge');
+ const policyRule = policy?.judgeAddendum ? `\nEK KURAL: ${policy.judgeAddendum}` : '';
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
- const tvgfbfStyleBlock = tvgfbfSwarm.getUnitStylePromptBlock(ctx.id);
- return `Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin ve psikometri uzmanısın ("ÖSYM bu soruyu iptal etmeden yayımlar mıydı?" ölçütüyle denetle). Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, BİRDEN FAZLA SEÇENEK DOĞRU VEYA KISMEN DOĞRU KABUL EDİLEBİLİRSE, doğru şık belirgin biçimde uzun/ipuçlu ise, Türkçe dilbilgisi bozuksa, şıklardan biri konuyla tamamen alakasız/komik bir dolgu şık ise, şıklar aynı kavram ailesinden değilse veya ÖSYM seçiciliği taşımıyorsa reddet (singleCorrect=false ve qualityOk=false yap; gerekçeyi reason alanında belirt). Zorluğu kendi başına sınıflandır: "kolay", "orta" veya "zor"; ayrıca ÖSYM sınavında çıkma potansiyelini (examPotential: 1-5) puanla.${policyRule}${apexJudge}${axiomBlock}${tvgfbfStyleBlock} Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean: YALNIZCA TEK doğru şık kesin ise true), dualAnswerRisk (boolean: ikinci bir şıkkın kısmen de olsa doğru sayılma riski varsa true), secondBestOption (varsa en yakın çeldirici metni, yoksa boş), supported (boolean), qualityOk (boolean), qualityScore (1-5), examPotential (1-5), difficulty ("kolay"|"orta"|"zor"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz"), distractorPlausible (boolean: dört şık da aynı kavram ailesinden, birbirine yakın ve "az kalsın doğru" niteliğinde mi; alakasız/saçma şık varsa false), evidence (anlatımdan birebir >15 karakter), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${sourceText}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
+ const paragraphBlock = typeof draft.paragraph === 'string' && draft.paragraph.trim() ? `\nPARÇA: ${draft.paragraph.trim()}` : '';
+ return `Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin ve ölçme-değerlendirme uzmanısın. Aşağıdaki soruyu, doğru cevabı bilmeden, YALNIZCA verilen KONU ANLATIMI'na dayanarak bağımsız çöz ve denetle ("ÖSYM bu soruyu iptal etmeden yayımlar mıydı?"). Dış bilgi kullanma.
+
+ADIMLAR:
+1) Soruyu oku; KONU ANLATIMI'nda cevabı kanıtlayan cümleyi bul ve "evidence" alanına birebir kopyala (15 karakterden uzun).
+2) Dört seçeneği tek tek metinle karşılaştır, kısa gerekçeni "reason" alanına yaz (en fazla 2 cümle, Türkçe).
+3) Doğru seçeneğin metnini "answer" alanına SEÇENEKLER'deki haliyle birebir yaz. Soru metinle çözülemiyorsa answer boş kalsın ve supported=false olsun.
+
+KARAR ALANLARI:
+- singleCorrect: metne göre YALNIZCA bir seçenek doğruysa true.
+- dualAnswerRisk: metne göre İKİNCİ bir seçenek de doğru ya da savunulabilir ise true (yalnızca benzer görünmesi yetmez); o seçeneği secondBestOption alanına yaz, yoksa boş bırak.
+- supported: doğru cevap KONU ANLATIMI'nda açıkça destekleniyorsa true; anlatımda öğretilmeyen bilgi gerekiyorsa false.
+- distractorPlausible: yanlış seçenekler konuyla ilgili, aynı kavram ailesinden ve ciddi ise true; alakasız/komik ya da "hepsi/hiçbiri" türü bir seçenek varsa false.
+- qualityOk: soru kökü açık, Türkçesi düzgün, doğru şık uzunluğuyla kendini belli etmiyor ve soru sınavda sorulabilir nitelikteyse true.
+- qualityScore (1-5) ve examPotential (1-5: sınavda çıkma potansiyeli).
+- difficulty: "kolay" (metindeki tek bilgiyi doğrudan hatırlama), "orta" (iki bilgiyi ilişkilendirme ya da yakın kavramları ayırt etme), "zor" (vaka, ince ayrım ya da çok adımlı çıkarım).
+- bloomLevel: "hatirlama" | "kavrama" | "uygulama" | "analiz".
+Yalnızca JSON döndür: evidence, reason, answer, singleCorrect, dualAnswerRisk, secondBestOption, supported, distractorPlausible, qualityOk, qualityScore, examPotential, difficulty, bloomLevel.${policyRule}${axiomBlock}
+KONU ANLATIMI: ${sourceText}${paragraphBlock}
+SORU: ${draft.question}
+SEÇENEKLER: ${JSON.stringify(draft.options)}`;
 }
 
 function buildBatchVerifierPrompt(ctx, itemsList, passage = null, policy = null, apexState = null) {
@@ -1533,10 +1916,18 @@ KONU ANLATIMI: ${sourceText}
 ${packed}`;
 }
 
-function parseJudgeVerdict(check, jm, draft, ctx, passage) {
+function parseJudgeVerdict(rawCheck, jm, draft, ctx, passage) {
+ // Biçim onarımı: "true"/"B"/"Kolay" gibi sapmalar ve kanıtın kaynaktaki gerçek cümleye
+ // eşlenmesi. İçerik kararı (hangi şık, tek doğru mu, destekli mi) hakemindir; değiştirilmez.
+ const check = normalizeVerdict(rawCheck, draft.options, `${passage?.text || ''}\n${ctx?.text || ''}`);
  if (check?.dualAnswerRisk === true) {
-  telemetry.dualAnswerBlocked++;
-  throw Error(`Bağımsız denetçi (${jm}) soruda ikinci bir doğru şık riski (dualAnswerRisk) tespit etti${check.secondBestOption ? ` (${check.secondBestOption})` : ''}; soru kaydedilmedi.`);
+  // Hakem ikinci doğru şıkkı ADIYLA gösterebiliyorsa ya da tek-doğru onayı vermiyorsa kesin ret.
+  const second = typeof check.secondBestOption === 'string' ? check.secondBestOption : '';
+  const namedOther = Boolean(second) && draft.options.includes(second) && second !== check.answer;
+  if (namedOther || check.singleCorrect !== true) {
+   telemetry.dualAnswerBlocked++;
+   throw Error(`Bağımsız denetçi (${jm}) soruda ikinci bir doğru şık riski (dualAnswerRisk) tespit etti${second ? ` (${second})` : ''}; soru kaydedilmedi.`);
+  }
  }
  if (check?.distractorPlausible === false) {
   telemetry.rejectedPreflight++;
@@ -1569,25 +1960,66 @@ function difficultyAccepted(agreedDifficulty, targetDifficulty, ctx, items, smar
  return counts[agreedDifficulty] <= minCount + 2;
 }
 
+/**
+ * İki hakemin zorluk etiketini tek karara bağlar.
+ * - Aynı etiket → o etiket.
+ * - Komşu etiketler (kolay/orta ya da orta/zor) → sınır sorudur; hedef zorluk ikisinden biriyse
+ *   hedef, değilse 1. hakemin etiketi alınır. (Eski sürüm doğru cevapta anlaşılmış kusursuz bir
+ *   soruyu yalnızca bu etiket farkı yüzünden çöpe atıyordu.)
+ * - "kolay" ile "zor" → gerçek görüş ayrılığı; soru reddedilir (null).
+ */
+function resolveJudgedDifficulty(judges, targetDifficulty) {
+ const labels = judges.map(j => j.difficulty);
+ const unique = [...new Set(labels)];
+ if (unique.length === 1) return { difficulty: unique[0], agreement: 'unanimous' };
+ const idx = labels.map(d => DIFFICULTIES.indexOf(d));
+ if (Math.max(...idx) - Math.min(...idx) >= 2) return null;
+ if (labels.includes(targetDifficulty)) return { difficulty: targetDifficulty, agreement: 'adjacent' };
+ return { difficulty: labels[0], agreement: 'adjacent' };
+}
+
 async function trySelfCorrect(parsedDraft, critiqueReason, ctx, model, targetDifficulty, passage, signal, fastThink) {
  const sourceText = passage ? passage.text : ctx.text;
  const diag = parsedDraft ? precisionEngine.evaluateDraftFull(parsedDraft, ctx, passage) : null;
  const surgicalHints = diag && (diag.errors?.length || diag.warnings?.length)
   ? `\nPSİKOMETRİ VE DOĞRULUK CERRAHİSİ (${diag.precisionScore}/100):\n- Hatalar: ${(diag.errors || []).join(' | ') || 'Yok'}\n- Uyarılar: ${(diag.warnings || []).join(' | ') || 'Yok'}`
   : '';
- const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
- const fixPrompt = `Aşağıdaki çok seçenekli soru taslağı denetçi tarafından şu gerekçeyle reddedildi: "${critiqueReason}".${surgicalHints}${axiomBlock}
-Lütfen yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu veya çeldiricilerini düzelt; KESİNLİKLE TEK DOĞRU CEVAPLI (asla ikinci bir doğru seçenek ihtimali bırakma!), eşit uzunlukta 4 şıklı, kök sızıntısız, hedef zorlukta (${targetDifficulty}) JSON üret: question, options, answer, explanation, evidence, topic${typeof parsedDraft?.paragraph === 'string' && parsedDraft.paragraph.trim() ? ', paragraph (ESKİ TASLAKTAKİ PARÇAYI KELİMESİ KELİMESİNE AYNEN KORU; değiştirme!)' : ''}.
+ const hasParagraph = typeof parsedDraft?.paragraph === 'string' && parsedDraft.paragraph.trim();
+ const fixPrompt = `Aşağıdaki çok seçenekli soru taslağı denetimde şu gerekçeyle reddedildi: "${String(critiqueReason || '').slice(0, 400)}".${surgicalHints}
+Yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu düzelt. Gerekirse soru kökünü ve çeldiricileri baştan yaz; ama sonuç KESİNLİKLE TEK DOĞRU CEVAPLI olsun (ikinci bir doğru seçenek ihtimali bırakma), dört şık aynı kavram ailesinden ve benzer uzunlukta olsun (en uzun şık en kısanın 2 katını geçmesin), soru kökü doğru cevabı sızdırmasın, "hepsi/hiçbiri" kullanılmasın, hedef zorluk "${targetDifficulty}" olsun.
+Yalnızca JSON döndür: evidence (KONU ANLATIMI'ndan birebir kopyalanmış cümle)${hasParagraph ? ', paragraph (ESKİ TASLAKTAKİ PARÇAYI KELİMESİ KELİMESİNE AYNEN KORU; değiştirme!)' : ''}, question, options (4 metin), answer (options içindeki doğru metin), explanation, topic, questionType, questionAngle, bloomLevel.
 ESKİ TASLAK: ${JSON.stringify(parsedDraft)}
 KONU ANLATIMI: ${sourceText}`;
- const numCtx = Math.min(8192, Math.max(4096, Math.ceil((fixPrompt.length + 1200) / 3)));
- const { parsed, elapsed } = await runModel(model, fixPrompt, 0.35, signal, 900, { fastThink, numCtx });
+ const { parsed, elapsed } = await runModel(model, fixPrompt, 0.35, signal, hasParagraph ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT, {
+  fastThink,
+  botRole: 'generator',
+  schema: generatorSchema(hasParagraph ? PARAGRAPH_QUESTION_TYPE : 'kavram')
+ });
  telemetry.genCalls++;
  telemetry.totalGenMs += elapsed;
- return parsed;
+ const picked = Array.isArray(parsed?.questions) ? parsed.questions[0] : parsed;
+ const fixed = normalizeDraft(picked, `${passage?.text || ''}\n${ctx?.text || ''}`).draft;
+ // Düzeltme çıktısı tip/açı alanlarını atladıysa eski taslaktakileri koru.
+ if (fixed && typeof fixed === 'object') {
+  for (const key of ['questionType', 'questionAngle', 'bloomLevel']) {
+   if ((typeof fixed[key] !== 'string' || !fixed[key].trim()) && typeof parsedDraft?.[key] === 'string') fixed[key] = parsedDraft[key];
+  }
+  if (hasParagraph && (typeof fixed.paragraph !== 'string' || !fixed.paragraph.trim())) fixed.paragraph = parsedDraft.paragraph;
+ }
+ return fixed;
 }
 
-// --- TEKLİ DOĞRUDAN ÜRETİM (Manuel /api/ollama/generate ve direct mod, <1sn garantili) ---
+function preflightRejectionKey(message) {
+ const msg = String(message || '');
+ if (/örtüş|uzun|kalitesiz|alakasız|çeldirici|sızdır|kapsadığı|simetri/i.test(msg)) return 'distractor_hygiene';
+ if (/Kaynak alıntısı|kaynak alıntısı|evidence|sayısal ifade/i.test(msg)) return 'evidence';
+ if (/Soru alanları|Seçenekler veya cevap|geçerli bir nesne|paragraph|Paragraf/i.test(msg)) return 'format';
+ if (/zaten kayıtlı|benzer/i.test(msg)) return 'duplicate';
+ if (/özet|kaynakta|kapsam|temellen/i.test(msg)) return 'grounding';
+ return 'preflight_other';
+}
+
+// --- TEKLİ DOĞRUDAN ÜRETİM (Manuel /api/ollama/generate ve sürekli üretim hattı) ---
 async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal, onPhase, opts = {}) {
  const tStart = performance.now();
  const [cfg, policy, jarvisMemory, researchMemory, studentProfile, apexState, trainerState, items] = await Promise.all([
@@ -1613,9 +2045,11 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  if (resultAudit.invalid || resultAudit.duplicates) throw Error('Havuz denetiminde biçim veya birebir tekrar hatası var; üretim durduruldu.');
 
  const passage = passageMode === 'full-book' ? selectPassageForUnit(ctx, items, passageMode) : null;
+ notePassageAttempt(passage);
  const targetDifficulty = nextDifficulty(ctx, items);
  const targetType = nextQuestionType(ctx, items);
  const targetAngle = nextQuestionAngle(ctx, items);
+ const repairSource = `${passage?.text || ''}\n${ctx?.text || ''}`;
 
  const runInstantLocalFallback = async (reason = 'subsecond-local') => {
   onPhase?.('generating');
@@ -1643,17 +2077,20 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
 
  onPhase?.('generating');
  telemetry.attemptsTotal++;
- const prompt = buildGeneratorPrompt(ctx, items, passage, [targetDifficulty], [targetType], policy, jarvisMemory, researchMemory, adaptiveQuality, [targetAngle], studentProfile, apexState, trainerState);
- const numCtx = subSecondEnabled ? 2560 : Math.min(8192, Math.max(4096, Math.ceil((prompt.length + 1500) / 3)));
- const numPredictGen = subSecondEnabled ? 320 : 950;
- const temp = Math.max(0.4, Math.min(0.95, 0.75 + (policy?.temperatureOffset || 0)));
+ const isParagraphTarget = targetType === PARAGRAPH_QUESTION_TYPE;
+ const numPredictGen = subSecondEnabled ? 320 : (isParagraphTarget ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT);
+ const prompt = buildGeneratorPrompt(ctx, items, passage, [targetDifficulty], [targetType], policy, jarvisMemory, researchMemory, adaptiveQuality, [targetAngle], studentProfile, apexState, trainerState, {
+  model,
+  budgetChars: generatorPromptBudget(model, numPredictGen)
+ });
+ const temp = Math.max(0.4, Math.min(0.95, 0.7 + (policy?.temperatureOffset || 0)));
 
  let rawParsed, genElapsed;
  try {
   const genSig = subSecondEnabled
    ? AbortSignal.any([signal, AbortSignal.timeout(Math.max(250, Math.min(720, Math.round(subSecondBudgetMs * 0.55))))].filter(Boolean))
    : signal;
-  const r = await runModel(model, prompt, temp, genSig, numPredictGen, { fastThink, numCtx, isSprint: subSecondEnabled });
+  const r = await runModel(model, prompt, temp, genSig, numPredictGen, { fastThink, botRole: 'generator', schema: generatorSchema(targetType) });
   rawParsed = r.parsed;
   genElapsed = r.elapsed;
   telemetry.genCalls++;
@@ -1666,47 +2103,82 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  }
 
  let parsed = Array.isArray(rawParsed?.questions) ? rawParsed.questions[0] : rawParsed;
+ {
+  const repaired = normalizeDraft(parsed, repairSource);
+  parsed = repaired.draft;
+  if (repaired.fixes.length) telemetry.formatRepairs += repaired.fixes.length;
+ }
  let draft;
  try {
   draft = validate(parsed, ctx, items, model, passage, policy);
  } catch (e) {
-  telemetry.rejectedPreflight++;
-  recordRejection(e.message.includes('örtüş') || e.message.includes('uzun') || e.message.includes('kalitesiz') || e.message.includes('alakasız') ? 'distractor_hygiene' : e.message.includes('Kaynak') ? 'evidence' : 'duplicate');
   // Çeldirici kalitesi/simetrisi yüzünden elenen taslaklar hemen çöpe gitmesin:
   // model şıkları aynı kavram ailesinden, birbirine yakın ve "az kalsın doğru"
   // olacak şekilde bir kez daha yazmayı denesin (kalite korunur, soru kaybolmaz).
+  let recovered = false;
   if (selfCorrection && isDistractorQualityError(e.message)) {
    try {
+    onPhase?.('fixing');
     const fixed = await trySelfCorrect(parsed, e.message, ctx, model, targetDifficulty, passage, signal, fastThink);
     const fixedDraft = validate(fixed, ctx, items, model, passage, policy);
     parsed = fixed;
     draft = fixedDraft;
     telemetry.refinedSucceeded++;
-   } catch {
-    throw e;
+    recovered = true;
+   } catch (fixErr) {
+    // Altyapı hatası (zaman aşımı, bağlantı) içerik reddi gibi sayılmasın; olduğu gibi yukarı çıksın.
+    if (fixErr instanceof OllamaError && !['bad_json', 'truncated_output', 'empty'].includes(fixErr.kind)) throw fixErr;
    }
-  } else {
+  }
+  if (!recovered) {
+   telemetry.rejectedPreflight++;
+   recordRejection(preflightRejectionKey(e.message));
+   await appendTrace({ type: 'rejected_preflight', unitId: ctx.id, passageId: passage?.id, draft: parsed, reason: e.message });
    throw e;
   }
  }
 
- onPhase?.('verifying');
- const checkPrompt = buildVerifierPrompt(ctx, draft, passage, policy, apexState);
- const vCtx = subSecondEnabled ? 2048 : Math.min(8192, Math.max(4096, Math.ceil((checkPrompt.length + 800) / 3)));
+ // --- İKİ BAĞIMSIZ HAKEM ---
+ // Kadro VRAM'e birlikte sığıyorsa iki hakem aynı anda çalışır (hız). Sığmıyorsa sırayla
+ // çalışır ve 1. hakem reddederse 2. hakem modeli hiç yüklenmez (boşuna model takası yok).
  const judgeModels = [verifierModel, judge2Model];
- const vStart = Date.now();
- let rawChecks;
+ const sameJudgeModel = verifierModel === judge2Model;
+ const parallelJudges = opts.parallelJudges ?? (!sameJudgeModel && (await currentLineup()).coResident !== false);
+ const judgeNumPredict = subSecondEnabled ? 140 : JUDGE_NUM_PREDICT;
+ const runJudge = (jm, promptText, sig, index) => runModel(jm, promptText, sameJudgeModel && index === 1 ? 0.45 : 0.15, sig, judgeNumPredict, { fastThink, botRole: 'judge', schema: JUDGE_SCHEMA });
+ const judgeDraft = async (candidate, sig) => {
+  const promptText = buildVerifierPrompt(ctx, candidate, passage, policy, apexState);
+  const vStart = Date.now();
+  try {
+   if (parallelJudges) {
+    onPhase?.('verifying');
+    const raws = await Promise.all(judgeModels.map((jm, i) => runJudge(jm, promptText, sig, i)));
+    telemetry.verifyCalls += raws.length;
+    return raws.map((r, i) => parseJudgeVerdict(r.parsed, judgeModels[i], candidate, ctx, passage));
+   }
+   const verdicts = [];
+   for (let i = 0; i < judgeModels.length; i++) {
+    onPhase?.(i === 0 ? 'verifying_j1' : 'verifying_j2');
+    const r = await runJudge(judgeModels[i], promptText, sig, i);
+    telemetry.verifyCalls++;
+    verdicts.push(parseJudgeVerdict(r.parsed, judgeModels[i], candidate, ctx, passage));
+   }
+   return verdicts;
+  } finally {
+   telemetry.totalVerifyMs += Date.now() - vStart;
+  }
+ };
+ const isInfraError = e => e instanceof OllamaError && !['bad_json', 'truncated_output', 'empty'].includes(e.kind);
+
+ let judges = [];
  try {
   const remBudget = Math.max(250, Math.round(subSecondBudgetMs - (performance.now() - tStart)));
   const judgeSig = subSecondEnabled
    ? AbortSignal.any([signal, AbortSignal.timeout(remBudget)].filter(Boolean))
    : signal;
-  rawChecks = await Promise.all(judgeModels.map(m => runModel(m, checkPrompt, 0.2, judgeSig, subSecondEnabled ? 140 : 550, { fastThink, numCtx: vCtx, botRole: 'judge', isSprint: subSecondEnabled })));
-  telemetry.verifyCalls += judgeModels.length;
-  telemetry.totalVerifyMs += Date.now() - vStart;
- } catch (e) {
-  if (subSecondEnabled && isTransportOrTimeoutError(e)) {
-   const osym = localAiTeam.constructor ? null : null;
+  judges = await judgeDraft(draft, judgeSig);
+ } catch (judgeErr) {
+  if (subSecondEnabled && isTransportOrTimeoutError(judgeErr)) {
    const jFallback = [verifierModel, judge2Model].map(jm => ({
     model: `${jm}:subsecond-local-judge`,
     answer: draft.answer,
@@ -1721,35 +2193,28 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
    onPhase?.('saving');
    return finalize(parsed, ctx, model, { judges: jFallback, answer: draft.answer, difficulty: targetDifficulty, qualityScore: 4.75, examPotential: 4.8, subSecondVerified: true }, passage, policy, adaptiveQuality, targetAngle);
   }
-  throw e;
- }
-
- let judges = [];
- try {
-  for (let i = 0; i < rawChecks.length; i++) {
-   judges.push(parseJudgeVerdict(rawChecks[i].parsed, judgeModels[i], draft, ctx, passage));
-  }
- } catch (judgeErr) {
-  if (selfCorrection) {
-   try {
-    const fixed = await trySelfCorrect(parsed, judgeErr.message, ctx, model, targetDifficulty, passage, signal, fastThink);
-    const fixedDraft = validate(fixed, ctx, items, model, passage, policy);
-    const fixPrompt = buildVerifierPrompt(ctx, fixedDraft, passage, policy);
-    const fixChecks = await Promise.all(judgeModels.map(m => runModel(m, fixPrompt, 0.2, signal, 550, { fastThink, numCtx: vCtx })));
-    judges = fixChecks.map((c, idx) => parseJudgeVerdict(c.parsed, judgeModels[idx], fixedDraft, ctx, passage));
-    parsed = fixed;
-    draft = fixedDraft;
-    telemetry.refinedSucceeded++;
-   } catch (fixErr) {
-    telemetry.rejectedJudges++;
-    recordRejection(fixErr.message.includes('dualAnswerRisk') ? 'dual_answer' : 'judge_disagree');
-    await appendTrace({ type: 'rejected', unitId: ctx.id, passageId: passage?.id, draft: parsed, reason: fixErr.message });
-    throw judgeErr;
-   }
-  } else {
+  // Altyapı hatası (zaman aşımı, bağlantı, model yok) içerik reddi değildir.
+  if (isInfraError(judgeErr)) throw judgeErr;
+  const rejectAsJudge = async err => {
    telemetry.rejectedJudges++;
-   recordRejection(judgeErr.message.includes('dualAnswerRisk') ? 'dual_answer' : 'judge_disagree');
-   await appendTrace({ type: 'rejected', unitId: ctx.id, passageId: passage?.id, draft: parsed, reason: judgeErr.message });
+   recordRejection(/dualAnswerRisk/.test(err.message) ? 'dual_answer' : err instanceof OllamaError ? 'judge_output' : 'judge_disagree');
+   await appendTrace({ type: 'rejected', unitId: ctx.id, passageId: passage?.id, draft: parsed, reason: err.message });
+  };
+  if (!selfCorrection) {
+   await rejectAsJudge(judgeErr);
+   throw judgeErr;
+  }
+  try {
+   onPhase?.('fixing');
+   const fixed = await trySelfCorrect(parsed, judgeErr.message, ctx, model, targetDifficulty, passage, signal, fastThink);
+   const fixedDraft = validate(fixed, ctx, items, model, passage, policy);
+   judges = await judgeDraft(fixedDraft, signal);
+   parsed = fixed;
+   draft = fixedDraft;
+   telemetry.refinedSucceeded++;
+  } catch (fixErr) {
+   if (isInfraError(fixErr)) throw fixErr;
+   await rejectAsJudge(fixErr);
    throw judgeErr;
   }
  }
@@ -1761,13 +2226,13 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   await appendTrace({ type: 'rejected', unitId: ctx.id, passageId: passage?.id, draft: parsed, judges, reason: 'answer_mismatch' });
   throw Error(`Bağımsız denetçiler aynı doğru cevapta birleşmedi (${judges.map(j => j.answer).join(' / ')}); soru kaydedilmedi.`);
  }
- const agreedDifficulties = new Set(judges.map(j => j.difficulty));
- if (agreedDifficulties.size !== 1) {
+ const resolvedDifficulty = resolveJudgedDifficulty(judges, targetDifficulty);
+ if (!resolvedDifficulty) {
   telemetry.rejectedJudges++;
   recordRejection('difficulty_disagree');
   throw Error(`Bağımsız denetçiler bu sorunun zorluğunda görüş birliğine varamadı (${judges.map(j => j.difficulty).join(' / ')}); soru kaydedilmedi.`);
  }
- const agreedDifficulty = [...agreedDifficulties][0];
+ const agreedDifficulty = resolvedDifficulty.difficulty;
  if (!difficultyAccepted(agreedDifficulty, targetDifficulty, ctx, items, smartDifficulty)) {
   telemetry.rejectedJudges++;
   recordRejection('difficulty_target');
@@ -1776,9 +2241,19 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  const avgQuality = +(judges.reduce((s, j) => s + (j.qualityScore || 4), 0) / judges.length).toFixed(2);
  const avgExamPot = +(judges.reduce((s, j) => s + (j.examPotential || j.qualityScore || 4), 0) / judges.length).toFixed(2);
  const bloomLevel = judges.find(j => j.bloomLevel)?.bloomLevel;
- const verification = { judges, answer: draft.answer, difficulty: agreedDifficulty, qualityScore: avgQuality, examPotential: avgExamPot, ...(bloomLevel ? { bloomLevel } : {}) };
+ const verification = {
+  judges,
+  answer: draft.answer,
+  difficulty: agreedDifficulty,
+  qualityScore: avgQuality,
+  examPotential: avgExamPot,
+  ...(resolvedDifficulty.agreement !== 'unanimous' ? { difficultyAgreement: resolvedDifficulty.agreement } : {}),
+  ...(bloomLevel ? { bloomLevel } : {})
+ };
  onPhase?.('saving');
- return finalize(parsed, ctx, model, verification, passage, policy, adaptiveQuality, targetAngle);
+ const record = await finalize(parsed, ctx, model, verification, passage, policy, adaptiveQuality, targetAngle);
+ notePassageSuccess(passage);
+ return record;
 }
 
 // --- HIZLANDIRILMIŞ KUYRUKLU & TOPLU HAKEMLİ BORU HATTI ---
@@ -1952,7 +2427,7 @@ async function runBatchedCycle(model, verifierModel, judge2Model, limit, timeout
  const masterController = new AbortController();
  const masterEntry = { unit: 'boru-hattı', phase: 'generating' };
  autoControllers.set(masterController, masterEntry);
- const masterTimer = setTimeout(() => masterController.abort(), Math.max(timeoutMs, 25000) * 3);
+ const masterTimer = setTimeout(() => masterController.abort(), Math.max(timeoutMs, UNIT_SAFETY_TIMEOUT_MS));
 
  try {
   const items = await load();
@@ -2190,7 +2665,7 @@ JSON döndür: {"reason": "neden bu iyileştirmeyi yaptın", "generatorAddendum"
 
   let parsed = null;
   try {
-   const r = await runModel(evolverModel, prompt, 0.35, signal || AbortSignal.timeout(760), 320, { fastThink: true, numCtx: 2560 });
+   const r = await runModel(evolverModel, prompt, 0.35, signal || null, 320, { fastThink: true });
    parsed = r.parsed;
   } catch (e) {
    if (!isTransportOrTimeoutError(e)) throw e;
@@ -2223,14 +2698,99 @@ async function waitForPipelineIdle(maxMs = 60_000) {
  return true;
 }
 
-async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = QUESTION_HARD_TIMEOUT_MS, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
+/** Hata nesnesini kullanıcıya gösterilecek kısa Türkçe mesaja ve telemetri anahtarına çevirir. */
+function describePipelineError(e) {
+ if (e instanceof OllamaError) {
+  if (isTimeoutKind(e.kind)) {
+   return { key: 'model_timeout', infra: true, timeout: true, message: `Zaman aşımı — ${e.message} Daha küçük/hızlı bir model seç ya da "model çağrısı süre tavanı"nı yükselt.` };
+  }
+  if (e.kind === 'aborted') return { key: 'aborted', infra: false, silent: true, message: 'Üretim durduruldu.' };
+  if (e.kind === 'connection') return { key: 'ollama_offline', infra: true, message: `Ollama'ya ulaşılamadı (${base}). Ollama uygulamasının açık olduğundan emin ol.` };
+  if (e.kind === 'model_missing') return { key: 'model_missing', infra: true, message: `Model Ollama'da bulunamadı (${e.model || '?'}). "ollama pull ${e.model || RECOMMENDED_GENERATOR_MODEL}" ile indir ya da başka bir model seç.` };
+  if (e.kind === 'oom') return { key: 'ollama_oom', infra: true, message: `Model belleğe sığmadı (${e.model || '?'}). Daha küçük bir model seç ya da başka GPU uygulamalarını kapat. Ayrıntı: ${e.message}` };
+  if (e.kind === 'busy') return { key: 'ollama_busy', infra: true, message: 'Ollama kuyruğu dolu; istek yeniden denenecek.' };
+  if (e.kind === 'http') return { key: 'ollama_http', infra: true, message: e.message };
+  return { key: 'model_output', infra: false, countAsPreflight: true, message: e.message };
+ }
+ if (e?.name === 'AbortError' || e?.name === 'TimeoutError') {
+  return { key: 'aborted', infra: false, silent: true, message: 'Üretim zaman aşımına uğradı veya durduruldu.' };
+ }
+ // İçerik reddi: sayaçlar generateAndVerify içinde zaten işlendi.
+ return { key: null, infra: false, message: e?.message || String(e) };
+}
+
+const autoState = {
+ blockCode: '',
+ blockReason: '',
+ lastLaunchAt: 0,
+ consecutiveInfraErrors: 0,
+ backoffUntil: 0,
+ lastLoggedBlock: '',
+ lastLineupSig: '',
+ effectiveConcurrency: DEFAULT_AUTO_CONCURRENCY,
+ recentEvents: []
+};
+
+function pushAutoEvent(event) {
+ autoState.recentEvents.unshift({ at: new Date().toISOString(), ...event });
+ if (autoState.recentEvents.length > 12) autoState.recentEvents.length = 12;
+}
+
+const tempoLog = (...args) => {
+ if (process.env.TEMPO_QUIET === '1') return;
+ console.log('[tempo]', ...args);
+};
+
+function noteUnitOutcome(ctx, outcome) {
+ telemetry.lastAttemptAt = Date.now();
+ telemetry.lastOutcome = outcome;
+ pushAutoEvent({ unit: ctx.id, ...outcome });
+}
+
+function handleUnitFailure(ctx, e, { manual = false } = {}) {
+ const info = describePipelineError(e);
+ if (info.silent) return info;
+ if (info.infra) {
+  telemetry.infraErrors++;
+  if (info.timeout) telemetry.timeouts++;
+  recordRejection(info.key);
+  if (!manual) {
+   autoState.consecutiveInfraErrors++;
+   // Üst üste altyapı hatasında geri çekil: 3 sn, 6 sn, 12 sn … en fazla 60 sn.
+   const wait = Math.min(60_000, 3_000 * 2 ** Math.min(5, autoState.consecutiveInfraErrors - 1));
+   autoState.backoffUntil = Date.now() + wait;
+  }
+  tempoLog(`✗ ${ctx.id} altyapı hatası (${info.key}): ${info.message}`);
+ } else {
+  if (!manual) autoState.consecutiveInfraErrors = 0;
+  if (info.countAsPreflight) {
+   telemetry.rejectedPreflight++;
+   recordRejection(info.key);
+  }
+  if (process.env.TEMPO_VERBOSE === '1') tempoLog(`· ${ctx.id} elendi: ${info.message}`);
+ }
+ noteUnitOutcome(ctx, { ok: false, kind: info.key || 'rejected', infra: Boolean(info.infra), message: info.message.slice(0, 300) });
+ return info;
+}
+
+function handleUnitSuccess(ctx, record, startedAt) {
+ autoState.consecutiveInfraErrors = 0;
+ autoState.backoffUntil = 0;
+ telemetry.lastApprovedAt = Date.now();
+ const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
+ noteUnitOutcome(ctx, { ok: true, kind: 'approved', difficulty: record?.difficulty, seconds: Number(secs), message: String(record?.question || '').slice(0, 160) });
+ tempoLog(`✓ ${ctx.id} onaylandı (${record?.difficulty || '?'}, ${secs} sn) — ${String(record?.question || '').slice(0, 90)}`);
+}
+
+async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = UNIT_SAFETY_TIMEOUT_MS, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
  if (busy || autoControllers.size > 0) throw Error('Soru üretim hattı zaten çalışıyor; istekler sırayla tamamlanacak.');
  const cfg = await getPipelineConfig();
  busy = true; phase = 'loading'; lastError = '';
  controller = new AbortController();
  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+ const startedAt = Date.now();
  try {
-  return await generateAndVerify(ctx, model, verifierModel, judge2Model, controller.signal, p => { phase = p; }, {
+  const record = await generateAndVerify(ctx, model, verifierModel, judge2Model, controller.signal, p => { phase = p; }, {
    passageMode: cfg.passageMode,
    smartDifficulty: cfg.smartDifficulty,
    selfCorrection: cfg.selfCorrection,
@@ -2238,28 +2798,74 @@ async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeo
    forceSubSecond,
    subSecondBudgetMs
   });
+  telemetry.lastApprovedAt = Date.now();
+  noteUnitOutcome(ctx, { ok: true, kind: 'approved', difficulty: record?.difficulty, seconds: +((Date.now() - startedAt) / 1000).toFixed(1), message: String(record?.question || '').slice(0, 160) });
+  return record;
  } catch (e) {
-  lastError = e.name === 'AbortError' ? 'Üretim zaman aşımına uğradı veya durduruldu.' : e.message;
+  const info = handleUnitFailure(ctx, e, { manual: true });
+  lastError = info.message;
+  // İçerik redlerinde özgün mesaj korunur (çağıran taraf ve testler bu metne bakar).
+  if (info.key && !info.silent) {
+   const wrapped = Error(info.message);
+   wrapped.cause = e;
+   throw wrapped;
+  }
   throw e;
  } finally {
   clearTimeout(timeout); busy = false; phase = 'idle'; controller = undefined;
  }
 }
 
-function launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg) {
- const entry = { unit: ctx.id, phase: 'loading' };
+function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg, extra = {}) {
+ const startedAt = Date.now();
+ const entry = { unit: ctx.id, phase: 'loading', startedAt, model };
  const ctrl = new AbortController();
  autoControllers.set(ctrl, entry);
- const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
- const run = generateAndVerify(ctx, model, verifierModel, judge2Model, ctrl.signal, p => { entry.phase = p; }, {
+ // Güvenlik ağı: tek tek model çağrılarının kendi bekçileri var; bu yalnızca yuva sızıntısını önler.
+ const timeout = setTimeout(() => ctrl.abort(), UNIT_SAFETY_TIMEOUT_MS);
+ if (typeof timeout.unref === 'function') timeout.unref();
+ const run = generateAndVerify(ctx, model, verifierModel, judge2Model, ctrl.signal, p => { entry.phase = p; entry.phaseAt = Date.now(); }, {
   passageMode: cfg.passageMode,
   smartDifficulty: cfg.smartDifficulty,
   selfCorrection: cfg.selfCorrection,
-  fastThink: cfg.fastThink
+  fastThink: cfg.fastThink,
+  ...(typeof extra.parallelJudges === 'boolean' ? { parallelJudges: extra.parallelJudges } : {})
  })
-  .catch(e => { autoLastError = e.name === 'AbortError' ? 'Üretim zaman aşımına uğradı veya durduruldu.' : e.message; })
+  .then(record => { handleUnitSuccess(ctx, record, startedAt); })
+  .catch(e => {
+   const info = handleUnitFailure(ctx, e);
+   if (!info.silent) autoLastError = info.message;
+  })
   .finally(() => { clearTimeout(timeout); autoControllers.delete(ctrl); });
  return run;
+}
+
+/**
+ * Havuz denetimi (biçim/birebir tekrar) bozuksa üretim başlayamaz. Eski sürümde bu durum
+ * sessizce sonsuza dek sürüyordu. Burada bozuk kayıtlar ve sonradan gelen birebir tekrarlar
+ * havuzdan çıkarılır; içerik kaybı olmaz (tekrarın ilk kopyası kalır).
+ */
+async function healPoolForAudit() {
+ return withSaveLock(async () => {
+  const items = await load();
+  const seen = new Set(questionBank.map(q => norm(q?.question)));
+  const kept = [];
+  let removedInvalid = 0, removedDuplicate = 0;
+  for (const q of items) {
+   const valid = q && typeof q.question === 'string' && typeof q.answer === 'string' && Array.isArray(q.options) && q.options.length === 4 && q.options.includes(q.answer) && q.options.every(x => typeof x === 'string') && new Set(q.options.map(norm)).size === 4;
+   if (!valid) { removedInvalid++; continue; }
+   const key = norm(q.question);
+   if (seen.has(key)) { removedDuplicate++; continue; }
+   seen.add(key);
+   kept.push(q);
+  }
+  if (removedInvalid || removedDuplicate) {
+   await save(kept);
+   await appendTrace({ type: 'pool_healed', removedInvalid, removedDuplicate });
+   tempoLog(`Havuz onarıldı: ${removedInvalid} bozuk kayıt, ${removedDuplicate} birebir tekrar çıkarıldı.`);
+  }
+  return { removedInvalid, removedDuplicate };
+ });
 }
 
 async function triggerJarvisReflect(evolverModel) {
@@ -3059,14 +3665,37 @@ async function triggerJarvisTrain(currentModel, skipEnvCheck = false) {
   approvedCount,
   skipEnvCheck,
   onSwapGeneratorModel: async newModelName => {
-   await writeSettings({ model: newModelName, verifierModel: newModelName });
+   await writePinnedModels({ model: newModelName, verifierModel: newModelName });
   }
  });
 }
 
-// KESİNTİSİZ ÜRETİM DÖNGÜSÜ: Soru üretimi ne olursa olsun ASLA durmaz!
+function setAutoBlock(code, reason) {
+ autoState.blockCode = code;
+ autoState.blockReason = reason;
+ // Geri çekilme (backoff) zaten "✗ … altyapı hatası" satırıyla yazıldı; geri sayım her
+ // saniye değiştiği için ayrıca günlüğe düşülmez. Diğer engeller koda göre BİR kez yazılır.
+ if (code && code !== 'backoff' && autoState.lastLoggedBlock !== code) {
+  autoState.lastLoggedBlock = code;
+  tempoLog(`Soru üretimi bekliyor — ${reason}`);
+ }
+ if (!code && autoState.lastLoggedBlock) {
+  autoState.lastLoggedBlock = '';
+ }
+}
+
+function describeLineup(lineup) {
+ const pin = k => (lineup.pinned?.[k] ? ' (elle seçildi)' : '');
+ return `üretici=${lineup.model}${pin('model')} · 1. hakem=${lineup.verifierModel}${pin('verifierModel')} · 2. hakem=${lineup.judge2Model}${pin('judge2Model')}`;
+}
+
+// KESİNTİSİZ ÜRETİM DÖNGÜSÜ
+// Her turda: Ollama bağlı mı → kurulu modellerden kadro kur → havuz sağlıklı mı → boş yuva
+// varsa yeni soru başlat. Üretimi engelleyen HER durum hem konsola hem arayüze yazılır;
+// hiçbir koşulda sessizce beklemez.
 async function autoScheduler() {
  while (!autoLoopStopping) {
+  let nextSleep = 500;
   try {
    if (autoLoopStopping) break;
 
@@ -3080,55 +3709,85 @@ async function autoScheduler() {
     }
    }
 
-   if (await autoRunningEnabled()) {
-    const limit = await autoConcurrencyLimit();
+   if (!(await autoRunningEnabled())) {
+    setAutoBlock('', '');
+    nextSleep = 1000;
+   } else {
+    const limitSetting = await autoConcurrencyLimit();
     const cfg = await getPipelineConfig();
-    let models = [];
-    try {
-     const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(2500) });
-     if (r.ok) models = ((await r.json()).models || []).map(x => x.name);
-    } catch {}
+    const lineup = await currentLineup();
 
-    if (models.length) {
-     await ensureRolesAutoAssigned(models, false).catch(() => {});
-     const model = await selectedModel();
-     const verifierModel = await selectedVerifierModel(model);
-     const judge2Model = await selectedJudgeModel('judge2Model', defaultJudge2Model);
+    if (!lineup.connected) {
+     setAutoBlock('offline', `Ollama'ya ulaşılamıyor (${base}). Ollama uygulamasını aç; bağlanınca üretim kendiliğinden başlar.`);
+     nextSleep = 3000;
+    } else if (!lineup.ok) {
+     setAutoBlock('no_models', `Ollama bağlı ama soru yazabilecek kurulu model yok. PowerShell'de şunu çalıştır: ollama pull ${RECOMMENDED_GENERATOR_MODEL} ; ollama pull ${RECOMMENDED_JUDGE2_MODEL}`);
+     nextSleep = 5000;
+    } else {
+     const sig = `${lineup.model}|${lineup.verifierModel}|${lineup.judge2Model}`;
+     if (sig !== autoState.lastLineupSig) {
+      autoState.lastLineupSig = sig;
+      tempoLog(`Model kadrosu: ${describeLineup(lineup)} · bağlam=${ollama.numCtx} · bellekte tutma=${ollama.keepAlive}${lineup.coResident ? '' : ' · modeller VRAM\'e birlikte sığmıyor (sıralı hakem modu)'}`);
+      for (const w of lineup.warnings || []) tempoLog(`Uyarı: ${w}`);
+     }
+     // Kadro VRAM'e birlikte sığmıyorsa paralel yuva model takasını çoğaltır; tek yuvaya inilir.
+     // Aynısı, Ollama modelleri fiilen takas ediyorsa da geçerlidir (ölçülen yükleme sürelerinden anlaşılır).
+     const thrashing = reloadWarnings().length > 0;
+     if (thrashing && !autoState.thrashLogged) {
+      autoState.thrashLogged = true;
+      for (const w of reloadWarnings()) tempoLog(`Uyarı: ${w}`);
+     }
+     const limit = lineup.coResident && !thrashing ? limitSetting : 1;
+     autoState.effectiveConcurrency = limit;
 
-     if (models.includes(model) && models.includes(verifierModel) && models.includes(judge2Model)) {
-      if (cfg.pipelineMode === 'batched') {
-       if (autoControllers.size === 0) {
-        const items = await load();
-        const a = audit(items);
-        if (!a.invalid && !a.duplicates) {
-         await runBatchedCycle(model, verifierModel, judge2Model, limit, await autoTimeoutMs(), cfg);
-        }
-       }
-      } else if (!busy && autoControllers.size < limit) {
+     if (cfg.pipelineMode === 'batched') {
+      setAutoBlock('', '');
+      if (autoControllers.size === 0) {
        const items = await load();
        const a = audit(items);
        if (!a.invalid && !a.duplicates) {
-        const ctx = contexts[autoCursor++ % contexts.length];
-        const waveStart = Date.now();
-        const timeoutMs = await autoTimeoutMs();
-        if (limit <= 1) {
-         await launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg);
-         // Her 5 saniyede bir yeni soru: üretim erken biterse kalan süre kadar dinlen.
-         const restMs = QUESTION_INTERVAL_MS - (Date.now() - waveStart);
-         if (restMs > 0) await sleep(restMs);
-        } else {
-         // Paralel turbo: yuva boşaldıkça hemen doldur; model çağrıları kuyrukta sınırlı sayıda çalışır.
-         launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg);
-        }
+        await runBatchedCycle(lineup.model, lineup.verifierModel, lineup.judge2Model, limit, UNIT_SAFETY_TIMEOUT_MS, cfg);
        }
       }
+     } else if (busy) {
+      nextSleep = 300;
+     } else if (Date.now() < autoState.backoffUntil) {
+      setAutoBlock('backoff', `Son denemeler altyapı hatasıyla bitti; ${Math.ceil((autoState.backoffUntil - Date.now()) / 1000)} sn sonra yeniden denenecek. Son hata: ${autoLastError || '—'}`);
+      nextSleep = 1000;
+     } else if (autoControllers.size < limit && Date.now() - autoState.lastLaunchAt >= QUESTION_INTERVAL_MS) {
+      let items = await load();
+      let a = audit(items);
+      if (a.invalid || a.duplicates) {
+       await healPoolForAudit().catch(() => {});
+       items = await load();
+       a = audit(items);
+      }
+      if (a.invalid || a.duplicates) {
+       setAutoBlock('pool_audit', `Soru havuzunda ${a.invalid} bozuk kayıt ve ${a.duplicates} birebir tekrar var; otomatik onarılamadı. .tempo-data/questions.json dosyasını yedekleyip sil.`);
+       nextSleep = 5000;
+      } else {
+       setAutoBlock('', '');
+       const ctx = contexts[autoCursor++ % contexts.length];
+       autoState.lastLaunchAt = Date.now();
+       const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
+        parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model
+       });
+       // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
+       if (limit <= 1) await run;
+       nextSleep = limit <= 1 ? Math.max(50, QUESTION_INTERVAL_MS - (Date.now() - autoState.lastLaunchAt)) : 200;
+      }
+     } else {
+      if (autoState.blockCode === 'backoff' || autoState.blockCode === 'pool_audit') setAutoBlock('', '');
+      nextSleep = 200;
      }
     }
    }
   } catch (e) {
    autoLastError = e.message || String(e);
+   tempoLog(`Zamanlayıcı hatası: ${autoLastError}`);
+   nextSleep = 1500;
   }
-  await sleep((await autoConcurrencyLimit()) > 1 ? 250 : 1500);
+  await sleep(nextSleep);
  }
 }
 
@@ -3419,9 +4078,9 @@ KONU KAYNAĞI: ${sourceText}
 
 MEVCUT SORU (iyileştirilecek):
 ${JSON.stringify(current, null, 1)}`;
- const numCtx = Math.min(8192, Math.max(2560, Math.ceil((prompt.length + 1200) / 3)));
- const { parsed } = await runModel(model, prompt, 0.55, AbortSignal.timeout(150_000), 1100, { fastThink: true, numCtx });
- return parsed && typeof parsed === 'object' ? parsed : null;
+ const { parsed } = await runModel(model, prompt, 0.55, null, 800, { fastThink: true, botRole: 'generator' });
+ if (!parsed || typeof parsed !== 'object') return null;
+ return normalizeDraft(parsed, `${passage?.text || ''}\n${ctx?.text || ''}`).draft;
 }
 
 async function qualityImprovementPass() {
@@ -3673,20 +4332,17 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path !== '/stop') lastInteractiveApiAt = Date.now();
      let models = [], connected = false;
      if (['/status', '/jarvis', '/hardware'].includes(path)) {
-      try {
-       const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(2500) });
-       if (r.ok) {
-        models = ((await r.json()).models || []).map(x => x.name);
-        connected = true;
-       }
-      } catch {}
+      const inst = await installedModelsDetailed(1500);
+      models = inst.list.map(x => x.name);
+      connected = inst.connected;
      }
      if (models.length) {
       cachedConnectedModels = models;
      }
-     const model = await selectedModel();
-     const verifierModel = await selectedVerifierModel(model);
-     const judge2Model = await selectedJudgeModel('judge2Model', defaultJudge2Model);
+     const lineup = await currentLineup();
+     const model = lineup.model;
+     const verifierModel = lineup.verifierModel;
+     const judge2Model = lineup.judge2Model;
      const evolverModel = await selectedEvolverModel(model);
 
      if (req.method === 'GET' && path === '/voicestudio/catalog') {
@@ -3838,8 +4494,8 @@ export function ollamaPlugin() {
       }
       try {
        const prompt = `Aşağıdaki dört seçenekli çoktan seçmeli sorunun YALNIZCA SORU KÖKÜNÜ, aynı bilgiyi ölçecek biçimde farklı ve doğal Türkçeyle yeniden yaz. Kurallar:\n- Doğru cevabı ve seçeneklerin METNİNİ asla değiştirme, yeni seçenek uydurma.\n- Soru kökündeki anlamı, kavramı ve olumsuzluk/olumsuzluk yokluğunu birebir koru.\n- Farklı kalıp kullan: "Aşağıdakilerden hangisi X?" yerine "X aşağıdakilerden hangisidir?" gibi.\n- SADECE JSON döndür: {"question": "..."}\n\nSoru: ${question}\nDoğru cevap: ${answer}\nSeçenekler: ${JSON.stringify(options)}`;
-       const raw = await runModel(model, prompt, 0.3, AbortSignal.timeout(20000), 220);
-       const parsed = extractJsonLoose(raw);
+       const raw = await runModel(model, prompt, 0.3, null, 220);
+       const parsed = raw?.parsed && typeof raw.parsed === 'object' ? raw.parsed : null;
        const rewritten = typeof parsed?.question === 'string' ? parsed.question.trim() : '';
        const normRewritten = norm(rewritten);
        if (
@@ -4039,7 +4695,7 @@ export function ollamaPlugin() {
       });
       const approvedCount = items.filter(x => x.status === 'approved').length;
       const sinceTrain = Math.max(0, approvedCount - (jMemory.lastTrainedApprovedCount || 0));
-      const autoPhases = [...autoControllers.values()].filter(x => x.unit !== 'boru-hattı').map(x => ({ unit: x.unit, phase: x.phase }));
+      const autoPhases = [...autoControllers.values()].filter(x => x.unit !== 'boru-hattı').map(x => ({ unit: x.unit, phase: x.phase, ...(x.startedAt ? { seconds: Math.round((Date.now() - x.startedAt) / 1000) } : {}) }));
       const difficultyCounts = { kolay: 0, orta: 0, zor: 0 };
       const angleCounts = {};
       for (const a of QUESTION_ANGLES) angleCounts[a] = 0;
@@ -4109,11 +4765,20 @@ export function ollamaPlugin() {
        subSecondAllBots: pipelineConfig.subSecondAllBots,
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
+       autoConcurrencyEffective: lineup.coResident === false || reloadWarnings().length > 0 ? 1 : autoConcurrency,
+       modelCallTimeoutRange: { min: MODEL_CALL_TIMEOUT_MIN_MS, max: MODEL_CALL_TIMEOUT_MAX_MS, default: MODEL_CALL_TIMEOUT_DEFAULT_MS },
+       firstTokenTimeoutMs: FIRST_TOKEN_TIMEOUT_MS,
        questionIntervalMs: QUESTION_INTERVAL_MS,
        modelInferenceConcurrency: modelInferenceQueue.snapshot().maxConcurrent,
        modelInferenceQueue: modelInferenceQueue.snapshot(),
        autoActive: autoPhases.length,
        autoPhases, autoLastError,
+       // Üretimi o an engelleyen durum (boşsa engel yok) ve son olaylar: "neden soru gelmiyor?"
+       // sorusunun cevabı her zaman ekranda görünür.
+       autoBlock: autoState.blockCode ? { code: autoState.blockCode, reason: autoState.blockReason } : null,
+       autoEvents: autoState.recentEvents,
+       lineup: publicLineup(lineup),
+       ollamaRuntime: ollama.snapshot(),
        totalUnits: contexts.length,
        settings: pipelineConfig,
        telemetry: telSnap,
@@ -5120,8 +5785,15 @@ export function ollamaPlugin() {
       if (!tagNames.includes(chosen)) {
        return respond(res, 400, { error: 'Model yerel Ollama listesinde bulunamadı.' });
       }
-      await writeSettings({ [roleKey]: chosen });
-      return respond(res, 200, { role, model: chosen, localExecutionOnly: true, zeroApiRequired: true });
+      const patch = { [roleKey]: chosen };
+      if (roleKey !== 'evolverModel') {
+       // Kullanıcının elle seçtiği rol sabitlenir; otomatik kadro bu role dokunmaz.
+       const curPins = (await readSettings()).lineupPins;
+       patch.lineupPins = { ...(curPins && typeof curPins === 'object' ? curPins : {}), [roleKey]: true };
+      }
+      await writeSettings(patch);
+      installedCache.at = 0;
+      return respond(res, 200, { role, model: chosen, pinned: roleKey !== 'evolverModel', localExecutionOnly: true, zeroApiRequired: true });
      }
 
 
@@ -5131,7 +5803,7 @@ export function ollamaPlugin() {
       if (!Number.isFinite(n) || Math.round(n) !== n || n < 1 || n > 8) {
        return respond(res, 400, { error: 'Eşzamanlı üretim yuvası 1 ile 8 arasında bir tam sayı olmalı.' });
       }
-      await writeSettings({ autoConcurrency: n });
+      await writeSettings({ parallelUnits: n });
       const slots = modelInferenceQueue.setMaxConcurrent(n);
       return respond(res, 200, { autoConcurrency: n, modelInferenceConcurrency: slots });
      }
@@ -5139,11 +5811,41 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/timeout') {
       const input = await body(req);
       const n = Number(input.value);
-      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1000 || n > QUESTION_HARD_TIMEOUT_MS) {
-       return respond(res, 400, { error: '1000 ile 25000 (ms) arasında bir tam sayı gerekir; bir soru en fazla 25 saniyede hazırlanır.' });
+      if (!Number.isFinite(n) || Math.round(n) !== n || n < MODEL_CALL_TIMEOUT_MIN_MS || n > MODEL_CALL_TIMEOUT_MAX_MS) {
+       return respond(res, 400, { error: `${MODEL_CALL_TIMEOUT_MIN_MS} ile ${MODEL_CALL_TIMEOUT_MAX_MS} (ms) arasında bir tam sayı gerekir. Bu değer TEK bir model çağrısının üretim süresi tavanıdır; model yükleme ve kuyruk beklemesi bu süreye dahil değildir.` });
       }
-      await writeSettings({ autoTimeoutMs: n });
+      await writeSettings({ modelCallTimeoutMs: n });
       return respond(res, 200, { autoTimeoutMs: n });
+     }
+
+     // Model kadrosu: otomatik seçime dön ({auto:true}), tek bir rolün sabitini kaldır ({unpin:'judge2'})
+     // ya da kadro profilini değiştir ({profile:'hizli'|'dengeli'|'kalite'}).
+     if (req.method === 'POST' && path === '/lineup') {
+      if (busy) return respond(res, 409, { error: 'Üretim sürerken kadro değiştirilemez.' });
+      const input = await body(req);
+      const cur = await readSettings();
+      const patch = {};
+      if (input?.auto === true) patch.lineupPins = {};
+      if (typeof input?.unpin === 'string') {
+       const key = { model: 'model', verifier: 'verifierModel', judge2: 'judge2Model' }[input.unpin];
+       if (!key) return respond(res, 400, { error: 'Geçersiz rol.' });
+       const pins = { ...(cur.lineupPins && typeof cur.lineupPins === 'object' ? cur.lineupPins : {}) };
+       delete pins[key];
+       patch.lineupPins = pins;
+      }
+      if (input?.profile !== undefined) {
+       if (!LINEUP_PROFILES[input.profile]) return respond(res, 400, { error: 'Geçersiz kadro profili (hizli | dengeli | kalite).' });
+       patch.lineupProfile = input.profile;
+      }
+      if (!Object.keys(patch).length) return respond(res, 400, { error: 'auto, unpin veya profile alanlarından biri gerekli.' });
+      await writeSettings(patch);
+      installedCache.at = 0;
+      const next = await currentLineup({ maxAgeMs: 0 });
+      return respond(res, 200, { ok: true, lineup: publicLineup(next) });
+     }
+
+     if (req.method === 'GET' && path === '/lineup') {
+      return respond(res, 200, { ok: true, lineup: publicLineup(await currentLineup({ maxAgeMs: 0 })) });
      }
 
      if (req.method === 'POST' && path === '/config') {
@@ -5365,7 +6067,7 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/jarvis/rollback-model') {
       try {
        const resRb = await jarvis.rollbackModel(async prevModel => {
-        await writeSettings({ model: prevModel, verifierModel: prevModel });
+        await writePinnedModels({ model: prevModel, verifierModel: prevModel });
        });
        return respond(res, 200, { ok: true, ...resRb });
       } catch (e) {
@@ -5498,7 +6200,8 @@ export function ollamaPlugin() {
       const passages = passagesByUnit.get(ctx.id) || [];
       const cfg = await getPipelineConfig();
       const budget = Number(cfg.subSecondBudgetMs || SUBSECOND_BOT_BUDGET_MS);
-      const questionTimeoutMs = await autoTimeoutMs();
+      // Süre tavanı model ÇAĞRISI başına uygulanır; tüm ünite için yalnızca emniyet sınırı vardır.
+      const questionTimeoutMs = UNIT_SAFETY_TIMEOUT_MS;
 
       const botRuns = await Promise.all([
        timedBot('questionGeneratorAndDualJudge', () =>

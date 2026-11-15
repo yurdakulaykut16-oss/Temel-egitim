@@ -62,8 +62,15 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
  const post=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-0']})});
  try{
   const status=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(status.verifierInstalled,true);
-  assert.equal(status.verifierModel,'fake:1');assert.equal(status.judge2Model,'gemma3:4b');
-  assert.equal(status.judge2Installed,false);
+  assert.equal(status.verifierModel,'fake:1');
+  // 2. hakem elle seçilmedi: kurulu OLMAYAN varsayılan (gemma3:4b) yerine kurulu modellerden
+  // üreticiden farklı olanı otomatik atanır; üretim "model kurulu değil" diye asla beklemez.
+  assert.equal(status.judge2Model,'fake:2');
+  assert.equal(status.judge2Installed,true);
+  assert.equal(status.lineup.ok,true);
+  assert.equal(status.lineup.pinned.model,true,'OLLAMA_MODEL ortam değişkeni sabit seçim sayılır');
+  assert.equal(status.lineup.pinned.judge2Model,false);
+  assert.equal(status.autoBlock,null);
   assert.ok(status.coverage.totalPassages>=500,'tam kitap pasajları yüklenmiş olmalı');
   assert.equal(status.settings.preset,'balanced');
   assert.equal(status.settings.turboQualityLock,false);
@@ -159,14 +166,18 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   let disagreeResponse=await post02();assert.equal(disagreeResponse.status,502);
   assert.match((await disagreeResponse.json()).error,/birleşmedi/);
 
-  judge2DisagreesAnswer=false;judge2Difficulty='orta';
+  // Hakemler "kolay" ile "zor" diyorsa bu gerçek bir görüş ayrılığıdır: soru reddedilir.
+  judge2DisagreesAnswer=false;judge2Difficulty='zor';
   let difficultySplit=await post02();assert.equal(difficultySplit.status,502);
   assert.match((await difficultySplit.json()).error,/görüş birliğine varamadı/);
 
-  judge2DisagreesAnswer=false;judge2Difficulty='kolay';
+  // Komşu etiketler ("kolay" / "orta") sınır sorusudur: doğru cevapta anlaşılmış soru çöpe
+  // atılmaz; hedef zorluk iki etiketten biriyse o etiketle kaydedilir.
+  judge2DisagreesAnswer=false;judge2Difficulty='orta';
   let agreedOk=await post02();assert.equal(agreedOk.status,200);
   const item02=(await agreedOk.json()).item;assert.equal(item02.difficulty,'kolay');
-  assert.deepEqual(item02.verification.judges.map(j=>j.difficulty),['kolay','kolay']);
+  assert.deepEqual(item02.verification.judges.map(j=>j.difficulty),['kolay','orta']);
+  assert.equal(item02.verification.difficultyAgreement,'adjacent');
   assert.deepEqual(item02.verification.judges.map(j=>j.model).sort(),['fake:1','fake:2']);
 
   // Sayısal düşündürücü çeldiriciler ("20 dakika" vs "30 dakika") ASLA yanlışlıkla elenmemeli!
@@ -211,18 +222,31 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(rbJson.policy.source,'rollback');
   assert.equal(rbJson.policy.customRuleCode,'');
 
-  // Timeout ayarı: varsayılan 25000ms (mutlak tavan 25 sn), 1000-25000 aralığında ayarlanabilir
-  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,25000);
-  let timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:8000})});
+  // Süre tavanı artık SORU başına değil MODEL ÇAĞRISI başınadır (varsayılan 120 sn, 5 sn - 15 dk).
+  // Eski 25 sn'lik mutlak tavan model yüklemesini bile karşılamıyor ve üretimi tamamen durduruyordu.
+  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,120000);
+  assert.deepEqual(statusWithTimeout.modelCallTimeoutRange,{min:5000,max:900000,default:120000});
+  const setT=value=>fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value})});
+  let timeoutRes=await setT(8000);
   assert.equal(timeoutRes.status,200);assert.equal((await timeoutRes.json()).autoTimeoutMs,8000);
   assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).autoTimeoutMs,8000);
-  timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:500})});
-  assert.equal(timeoutRes.status,400);
-  timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:30000})});
-  assert.equal(timeoutRes.status,400,'25 saniyenin üzeri reddedilmeli');
-  timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:25000})});
-  assert.equal(timeoutRes.status,200,'25000 tam sınırda kabul edilmeli');
-  assert.equal((await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:180000})})).status,400,'eski 180s değeri artık reddedilmeli');
+  assert.equal((await setT(500)).status,400);
+  assert.equal((await setT(4999)).status,400,'5 saniyenin altı reddedilmeli');
+  assert.equal((await setT(60000)).status,200,'kullanıcının istediği 60 sn artık kabul edilmeli');
+  assert.equal((await setT(180000)).status,200);
+  assert.equal((await setT(900000)).status,200,'üst sınır 15 dakika');
+  assert.equal((await setT(900001)).status,400);
+  assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).autoTimeoutMs,900000);
+
+  // Kadro: otomatik seçime dönüş ve profil değişimi
+  let lineupRes=await fetch(`${base}/api/ollama/lineup`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({profile:'nope'})});
+  assert.equal(lineupRes.status,400);
+  lineupRes=await fetch(`${base}/api/ollama/lineup`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({auto:true,profile:'kalite'})});
+  assert.equal(lineupRes.status,200);
+  const lineupBody=(await lineupRes.json()).lineup;
+  assert.equal(lineupBody.profile,'kalite');
+  assert.equal(lineupBody.model,'fake:1','elle seçim kaldırılınca OLLAMA_MODEL ortam değişkenine dönülür');
+  assert.notEqual(lineupBody.judge2Model,lineupBody.model,'2. hakem üreticiden farklı model olmalı');
 
  }finally{await close(app);await close(fake);await rm(dir,{recursive:true,force:true})}
 });

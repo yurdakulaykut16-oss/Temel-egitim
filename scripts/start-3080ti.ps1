@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 $env:OLLAMA_FLASH_ATTENTION = "1"
 $env:OLLAMA_KV_CACHE_TYPE = "q8_0"
 $env:OLLAMA_MAX_LOADED_MODELS = "3"
-$env:OLLAMA_NUM_PARALLEL = "4"
+$env:OLLAMA_NUM_PARALLEL = "1"
 $env:OLLAMA_KEEP_ALIVE = "-1"
 
 Write-Host "RTX 3080 Ti GPU & VRAM kontrol ediliyor..." -ForegroundColor Cyan
