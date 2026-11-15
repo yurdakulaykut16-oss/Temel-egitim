@@ -74,7 +74,9 @@ test('plan: sonuç vermeyen adım atlanır, üretim sıradaki konuyla sürer', a
   console.log(`\nSıra: ${seq.slice(0, 8).join(', ')} · atlanan: ${(status.plan.parked || []).map(p => p.key).join(', ')}`);
 
   assert.ok(!items.some(q => q.unitId === first.id), 'hakemlerin reddettiği konudan soru kaydedilmemeli');
-  assert.deepEqual(seq.slice(0, 4), [`${second.id}:kolay`, `${second.id}:kolay`, `${third.id}:orta`, `${third.id}:orta`], 'takılan adım atlanıp sıradaki konuya geçilmeli; farklı zorluk kendi kotasına yazılmalı');
+  // Varsayılan ayarda iki konu aynı anda çalışır; bu yüzden sıra değil içerik sınanır.
+  assert.deepEqual(items.filter(q => q.unitId === second.id).map(q => q.difficulty), ['kolay', 'kolay'], 'takılan adım atlanıp sıradaki konu doldurulmalı');
+  assert.deepEqual(items.filter(q => q.unitId === third.id).map(q => q.difficulty), ['orta', 'orta'], 'farklı zorluk kendi kotasına yazılmalı');
   assert.equal(items.filter(q => q.unitId === third.id).length, 2, 'orta kotası (2) dolunca fazlası kaydedilmemeli');
   assert.ok(items.some(q => q.unitId === contexts[3].id), 'üretim 4. konuyla sürmeli');
 
@@ -82,7 +84,7 @@ test('plan: sonuç vermeyen adım atlanır, üretim sıradaki konuyla sürer', a
   assert.ok(parkedKeys.includes(`${first.id}|kolay`) && parkedKeys.includes(`${third.id}|kolay`), `atlanan adımlar bildirilmeli: ${parkedKeys.join(', ')}`);
   const saved = JSON.parse(await readFile(join(dir, 'production-plan.json'), 'utf8'));
   assert.ok(saved.parked[`${first.id}|kolay`], 'atlanan adım dosyaya yazılmalı (yeniden başlatınca baştan denenmesin)');
-  assert.equal(saved.parked[`${first.id}|kolay`].failures, 3);
+  assert.equal(saved.parked[`${first.id}|kolay`].failures, 3, 'sayaç adım başına tutulur: araya giren diğer konunun soruları onu sıfırlamaz');
   const third1 = items.find(q => q.unitId === third.id);
   assert.equal(third1.verification.targetDifficulty, 'kolay', 'hedef zorluk kayıtta görünmeli');
  } catch (e) {

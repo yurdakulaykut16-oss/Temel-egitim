@@ -238,7 +238,8 @@ Otomatik üretim konuları rastgele dolaşmaz; sabit bir plan izler:
 2. **2. tur — orta:** aynı sırayla her konuya 50 orta soru.
 3. **3. tur — zor:** aynı sırayla her konuya 50 zor soru.
 
-- Bir konunun kotası dolmadan sıradaki konuya geçilmez; bu yüzden plan sürerken aynı anda tek soru hazırlanır.
+- **İki konu aynı anda:** "Aynı anda hazırlanan soru" ayarı kadar konu birlikte doldurulur (varsayılan 2): 1. ve 2. konu aynı anda çalışır, biri 50'ye ulaşınca 3. konu başlar. Aynı konuda aynı anda iki soru hazırlanmaz (birbirinin tekrarını üretmesin diye). Ayarı 1 yaparsan konular teker teker dolar. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek konuya inilir.
+- Bir konunun kotası dolmadan o hat sıradaki konuya geçmez.
 - **Sorular yalnızca o konunun özetinden kurulur.** Kitap pasajı kullanılmaz; kanıt cümlesi konu özetinde geçmeyen soru reddedilir. Tekrarı azaltmak için her soruda özetin en az soru sorulmuş cümlesi odak olarak verilir.
 - Hakemler bir soruyu hedeften farklı zorlukta bulursa (ör. kolay turunda "orta") ve o konunun o zorluktaki kotası dolmamışsa soru o zorlukla kaydedilir ve ileriki tura sayılır; kota doluysa reddedilir.
 - **Konu özetleri kısadır (11–26 cümle).** Bir konudan aynı zorlukta 50 farklı soru çıkmayabilir. Bir adımda üst üste 25 deneme soru çıkarmazsa adım **atlanır**, sıradaki konuya geçilir ve stüdyoda "Atlanan adımlar" olarak gösterilir; diğer adımlar bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).

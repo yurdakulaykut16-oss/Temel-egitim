@@ -52,7 +52,7 @@ type CuratorReport = {
 type PlanStep = {key: string; pass: number; difficulty: string; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; quota: number};
 type ProductionPlan = {
  enabled: boolean; quota?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
- current?: PlanStep | null; streak?: number; parked?: PlanStep[];
+ current?: PlanStep | null; working?: (PlanStep & {streak?: number})[]; parallel?: number; parked?: PlanStep[];
  passes?: {pass: number; difficulty: string; done: number; target: number; unitsDone: number; units: number}[];
 };
 type Status = {
@@ -400,22 +400,23 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        </span>
        <span>Toplam <b>{plan.totalDone ?? 0}</b> / {plan.totalTarget ?? 0} soru</span>
       </div>
-      {plan.current && (
-       <>
+      {(plan.working || []).map(step => (
+       <div key={step.key}>
         <p className="lineup-line">
-         Şu an: <b>{plan.current.bookNo}. kitap {plan.current.unitNo}. konu — {plan.current.unit}</b> ({plan.current.book}) · {plan.current.difficulty} <b>{plan.current.done} / {plan.current.quota}</b>
-         {(plan.streak ?? 0) >= 5 ? ` · üst üste ${plan.streak} deneme sonuçsuz (${plan.stuckLimit} olunca bu adım atlanır)` : ''}
+         {(plan.working || []).length > 1 ? 'Aynı anda: ' : 'Şu an: '}<b>{step.bookNo}. kitap {step.unitNo}. konu — {step.unit}</b> ({step.book}) · {step.difficulty} <b>{step.done} / {step.quota}</b>
+         {(step.streak ?? 0) >= 5 ? ` · üst üste ${step.streak} deneme sonuçsuz (${plan.stuckLimit} olunca bu adım atlanır)` : ''}
         </p>
-        <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={plan.current.quota} aria-valuenow={plan.current.done}>
-         <span style={{width: `${Math.min(100, Math.round((plan.current.done / Math.max(1, plan.current.quota)) * 100))}%`}}/>
+        <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={step.quota} aria-valuenow={step.done}>
+         <span style={{width: `${Math.min(100, Math.round((step.done / Math.max(1, step.quota)) * 100))}%`}}/>
         </div>
-       </>
-      )}
+       </div>
+      ))}
       <p className="lineup-line">
        {(plan.passes || []).map(p => `${p.pass}. tur ${p.difficulty}: ${p.done}/${p.target} (${p.unitsDone}/${p.units} konu)`).join(' · ')}
       </p>
       <p className="lineup-line">
-       Sıra: 1. kitabın 1. konusundan başlayarak her konuya {plan.quota} kolay soru; bütün konular bitince her konuya {plan.quota} orta, sonra {plan.quota} zor. Sorular yalnızca konu özetinden kurulur.
+       Sıra: 1. kitabın 1. konusundan başlayarak her konuya {plan.quota} kolay soru; bütün konular bitince her konuya {plan.quota} orta, sonra {plan.quota} zor.
+       {(plan.parallel ?? 1) > 1 ? ` Sıradaki ${plan.parallel} konu aynı anda hazırlanır; biri dolunca sıradaki konu başlar.` : ''} Sorular yalnızca konu özetinden kurulur.
       </p>
       {(plan.parked || []).length > 0 && (
        <p className="lineup-warn">

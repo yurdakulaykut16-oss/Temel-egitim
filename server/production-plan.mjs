@@ -6,7 +6,11 @@
 //   2. tur (ORTA) : aynı sıra, her konuya 50 soru
 //   3. tur (ZOR)  : aynı sıra, her konuya 50 soru
 //
-// Bir adım (konu + zorluk) kotası dolmadan sıradaki adıma geçilmez. Konu özeti kısa olduğu
+// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) sıradaki ilk N adım birlikte çalışır:
+// ör. 1. ve 2. konu aynı anda dolar, biri bitince 3. konu başlar. Aynı konuda aynı anda iki soru
+// hazırlanmaz (tekrar üretmesin diye).
+//
+// Bir adım (konu + zorluk) kotası dolmadan o yuva sıradaki adıma geçmez. Konu özeti kısa olduğu
 // için kota dolmayabilir: üst üste çok sayıda deneme sonuç vermezse adım "atlanır" (park
 // edilir) ve sıradakine geçilir; tüm adımlar bittiğinde atlananlar yeniden denenir.
 //
@@ -77,27 +81,30 @@ export function countApproved(items) {
 /**
  * Planın anlık durumu.
  * @param parked  { [stepKey]: {...} } — atlanan adımlar
- * @returns { current, complete, allParked, totalDone, totalTarget, parkedSteps, steps, counts }
+ * @returns { current, queue, complete, allParked, totalDone, totalTarget, parkedSteps, steps, counts }
  *   current: sıradaki (kotası dolmamış ve atlanmamış) ilk adım; yoksa null.
+ *   queue: kotası dolmamış ve atlanmamış bütün adımlar, plan sırasıyla.
  *   allParked: geriye yalnızca atlanan adımlar kaldıysa true (çağıran taraf park listesini temizleyip yeniden dener).
  */
 export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, parked = {} }) {
  const steps = buildPlanSteps(contexts, quota);
  const counts = countApproved(items);
- let current = null;
  let totalDone = 0;
  const parkedSteps = [];
+ const queue = [];
  for (const step of steps) {
   const done = Math.min(quota, counts.get(step.key) || 0);
   totalDone += done;
   if (done >= quota) continue;
   if (parked[step.key]) { parkedSteps.push({ ...step, done }); continue; }
-  if (!current) current = { ...step, done };
+  queue.push({ ...step, done });
  }
+ const current = queue[0] || null;
  const totalTarget = steps.length * quota;
  const complete = totalDone >= totalTarget;
  return {
   current,
+  queue,
   complete,
   allParked: !complete && !current && parkedSteps.length > 0,
   totalDone,
@@ -106,6 +113,22 @@ export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, park
   steps,
   counts
  };
+}
+
+/**
+ * Sıradan, aynı anda çalışacak adımları seçer: plan sırasıyla ilk `limit` adım; aynı konu
+ * iki kez seçilmez ve `busyUnits` içindeki (o an sorusu hazırlanan) konular atlanır.
+ */
+export function pickPlanSteps(queue, limit = 1, busyUnits = new Set()) {
+ const picked = [];
+ const seen = new Set(busyUnits);
+ for (const step of queue || []) {
+  if (picked.length >= limit) break;
+  if (seen.has(step.unitId)) continue;
+  seen.add(step.unitId);
+  picked.push(step);
+ }
+ return picked;
 }
 
 /** Bir konu için plan sırasına göre sıradaki zorluk: kotası dolmamış ilk kova (hepsi doluysa null). */
@@ -123,30 +146,26 @@ export function planAcceptsDifficulty(unitId, agreedDifficulty, targetDifficulty
 }
 
 /**
- * Üst üste sonuçsuz denemeleri sayar; sınır aşılınca adımı park eder.
- * state: { parked: {key: {at, failures, done}}, streakKey, streak } — JSON'a yazılabilir.
+ * Üst üste sonuçsuz denemeleri ADIM BAŞINA sayar; sınır aşılınca adımı park eder.
+ * (Aynı anda iki adım çalışırken birinin sonucu diğerinin sayacını etkilemez.)
+ * state: { parked: {key: {at, failures, done}}, streaks: {key: sayı} } — JSON'a yazılabilir.
  * outcome: 'approved' (hedef kovaya soru girdi) | 'rejected' (soru elendi) | 'other' (sayılmaz)
  */
 export function notePlanOutcome(state, step, outcome, { stuckLimit = DEFAULT_PLAN_STUCK_LIMIT, now = Date.now(), done = 0 } = {}) {
- const next = {
-  parked: { ...(state?.parked || {}) },
-  streakKey: state?.streakKey || '',
-  streak: Number.isFinite(state?.streak) ? state.streak : 0
- };
+ const next = { parked: { ...(state?.parked || {}) }, streaks: { ...(state?.streaks || {}) } };
  if (!step?.key) return { state: next, parkedNow: false };
- if (next.streakKey !== step.key) { next.streakKey = step.key; next.streak = 0; }
  if (outcome === 'approved') {
-  next.streak = 0;
+  delete next.streaks[step.key];
   return { state: next, parkedNow: false };
  }
  if (outcome !== 'rejected') return { state: next, parkedNow: false };
- next.streak += 1;
- if (next.streak >= stuckLimit) {
-  next.parked[step.key] = { at: new Date(now).toISOString(), failures: next.streak, done };
-  next.streak = 0;
-  next.streakKey = '';
+ const streak = (next.streaks[step.key] || 0) + 1;
+ if (streak >= stuckLimit) {
+  next.parked[step.key] = { at: new Date(now).toISOString(), failures: streak, done };
+  delete next.streaks[step.key];
   return { state: next, parkedNow: true };
  }
+ next.streaks[step.key] = streak;
  return { state: next, parkedNow: false };
 }
 
@@ -157,11 +176,11 @@ export function sanitizePlanState(raw, contexts) {
  if (raw && typeof raw.parked === 'object' && raw.parked) {
   for (const [key, value] of Object.entries(raw.parked)) if (valid.has(key)) parked[key] = value && typeof value === 'object' ? value : {};
  }
- return {
-  parked,
-  streakKey: typeof raw?.streakKey === 'string' && valid.has(raw.streakKey) ? raw.streakKey : '',
-  streak: Number.isFinite(raw?.streak) && raw.streak > 0 ? Math.floor(raw.streak) : 0
- };
+ const streaks = {};
+ if (raw && typeof raw.streaks === 'object' && raw.streaks) {
+  for (const [key, value] of Object.entries(raw.streaks)) if (valid.has(key) && Number.isFinite(value) && value > 0) streaks[key] = Math.floor(value);
+ }
+ return { parked, streaks };
 }
 
 // --- YALNIZCA ÖZETTEN SORU ---------------------------------------------------------

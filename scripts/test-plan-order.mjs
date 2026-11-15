@@ -3,6 +3,8 @@
 // İstenen düzen: 1. tur her konuya sırayla N kolay soru (1. kitabın 1. konusundan başlayarak),
 // tüm konular bitince 2. tur N orta, sonra 3. tur N zor. Sorular yalnızca konu özetinden kurulur.
 // Test kotayı 1'e indirir; böylece 29 konu + 2. turun ilk adımları kısa sürede görülür.
+// Sıra birebir sınansın diye tek soru hattı kullanılır; iki konunun birlikte üretimi
+// scripts/test-plan-parallel.mjs içinde sınanır.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -35,7 +37,7 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   process.env.TEMPO_PLAN_QUOTA = '1';
   process.env.TEMPO_QUESTION_INTERVAL_MS = '20';
   delete process.env.TEMPO_PLAN;
-  delete process.env.TEMPO_AUTO_CONCURRENCY;
+  process.env.TEMPO_AUTO_CONCURRENCY = '1';
   delete process.env.TEMPO_DISABLE_AUTOLOOP;
 
   const mod = await import('../server/ollama.mjs');
@@ -73,7 +75,6 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   const genRequests = sim.stats.requests.filter(r => r.role === 'generator');
   assert.ok(genRequests.length >= WANT && genRequests.every(r => r.focus), 'üretici istemi her soruda özetten bir odak cümlesi vermeli');
   assert.ok(genRequests.every(r => !r.bookSeed), 'yalnızca-özet modunda kitap sorusu örneği isteme eklenmemeli');
-  assert.ok(sim.stats.peakConcurrent <= 2, 'plan sürerken tek soru üretilir');
 
   // /status plan özeti.
   assert.equal(midStatus.plan.enabled, true);

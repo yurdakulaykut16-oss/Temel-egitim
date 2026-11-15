@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  buildPlanSteps, planSnapshot, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
- sanitizePlanState, evidenceWithinSummary, pickFocusSentence, splitSummarySentences,
+ sanitizePlanState, evidenceWithinSummary, pickFocusSentence, splitSummarySentences, pickPlanSteps,
  planConfigFromEnv, describeStep, stepKey
 } from '../server/production-plan.mjs';
 
@@ -69,30 +69,54 @@ test('atlanan adım geçilir; geriye yalnızca atlananlar kalınca allParked bil
  assert.equal(snap.allParked, true);
 });
 
-test('takılma sayacı: yalnızca üst üste retler sayılır; sınırda adım park edilir', () => {
- const step = buildPlanSteps(contexts, 50)[0];
- let state = { parked: {}, streakKey: '', streak: 0 };
+test('aynı anda iki konu: sıradaki ilk N adım seçilir; aynı konu iki kez ve meşgul konu seçilmez', () => {
+ const [a, b, c] = contexts;
+ let snap = planSnapshot({ contexts, items: [], quota: 50 });
+ assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(a.id, 'kolay'), stepKey(b.id, 'kolay')]);
+ assert.deepEqual(pickPlanSteps(snap.queue, 1).map(s => s.key), [stepKey(a.id, 'kolay')]);
+ // 1. konuda soru hazırlanıyorsa boş yuva 2. konuya gider; ikisi de meşgulse 3. konuya DEĞİL, hiçbirine (N=2 sınırı çağıranda).
+ assert.deepEqual(pickPlanSteps(snap.queue, 1, new Set([a.id])).map(s => s.key), [stepKey(b.id, 'kolay')]);
+ // 1. konu doldu → 2. ve 3. konu birlikte.
+ snap = planSnapshot({ contexts, items: many(50, a.id, 'kolay'), quota: 50 });
+ assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(b.id, 'kolay'), stepKey(c.id, 'kolay')]);
+ // Tur sınırı: son konunun kolayı ile ilk konunun ortası birlikte çalışabilir.
+ const last = contexts[contexts.length - 1];
+ const pass1ButLast = contexts.slice(0, -1).flatMap(x => many(50, x.id, 'kolay'));
+ snap = planSnapshot({ contexts, items: pass1ButLast, quota: 50 });
+ assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(last.id, 'kolay'), stepKey(a.id, 'orta')]);
+ // Aynı konunun iki adımı (atlanan kolay yeniden denenirken ortası da sıradaysa) birlikte seçilmez.
+ const onlyA = contexts.flatMap(x => ['kolay', 'orta', 'zor'].flatMap(d => (x.id === a.id && d !== 'zor' ? [] : many(50, x.id, d))));
+ snap = planSnapshot({ contexts, items: onlyA, quota: 50 });
+ assert.deepEqual(snap.queue.map(s => s.key), [stepKey(a.id, 'kolay'), stepKey(a.id, 'orta')]);
+ assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(a.id, 'kolay')]);
+});
+
+test('takılma sayacı: adım başına üst üste retler sayılır; sınırda adım park edilir', () => {
+ const [step, other] = buildPlanSteps(contexts, 50);
+ let state = { parked: {}, streaks: {} };
  let res;
  for (let i = 0; i < 4; i++) { res = notePlanOutcome(state, step, 'rejected', { stuckLimit: 5 }); state = res.state; }
- assert.equal(state.streak, 4); assert.equal(res.parkedNow, false);
+ assert.equal(state.streaks[step.key], 4); assert.equal(res.parkedNow, false);
  res = notePlanOutcome(state, step, 'other', { stuckLimit: 5 }); state = res.state;
- assert.equal(state.streak, 4, 'başka zorlukla kaydedilen soru sayacı değiştirmez');
+ assert.equal(state.streaks[step.key], 4, 'başka zorlukla kaydedilen soru sayacı değiştirmez');
+ // Aynı anda çalışan diğer adımın sonuçları bu adımın sayacını etkilemez.
+ state = notePlanOutcome(state, other, 'approved', { stuckLimit: 5 }).state;
+ state = notePlanOutcome(state, other, 'rejected', { stuckLimit: 5 }).state;
+ assert.equal(state.streaks[step.key], 4); assert.equal(state.streaks[other.key], 1);
  res = notePlanOutcome(state, step, 'approved', { stuckLimit: 5 }); state = res.state;
- assert.equal(state.streak, 0, 'hedef kovaya giren soru sayacı sıfırlar');
- for (let i = 0; i < 5; i++) { res = notePlanOutcome(state, step, 'rejected', { stuckLimit: 5, done: 12, now: 0 }); state = res.state; }
- assert.equal(res.parkedNow, true);
+ assert.equal(state.streaks[step.key], undefined, 'hedef kovaya giren soru sayacı sıfırlar');
+ for (let i = 0; i < 5; i++) {
+  res = notePlanOutcome(state, step, 'rejected', { stuckLimit: 5, done: 12, now: 0 }); state = res.state;
+  state = notePlanOutcome(state, other, 'approved', { stuckLimit: 5 }).state; // araya giren diğer adım
+ }
  assert.deepEqual(state.parked[step.key], { at: '1970-01-01T00:00:00.000Z', failures: 5, done: 12 });
- assert.equal(state.streak, 0);
-
- // Adım değişince sayaç yeni adım için sıfırdan başlar.
- const other = buildPlanSteps(contexts, 50)[1];
- state = notePlanOutcome({ parked: {}, streakKey: step.key, streak: 9 }, other, 'rejected', { stuckLimit: 50 }).state;
- assert.equal(state.streakKey, other.key); assert.equal(state.streak, 1);
+ assert.equal(state.streaks[step.key], undefined);
+ assert.equal(state.parked[other.key], undefined);
 
  // Bozuk dosya içeriği güvenli biçime gelir; planda olmayan adımlar atılır.
- assert.deepEqual(sanitizePlanState('bozuk', contexts), { parked: {}, streakKey: '', streak: 0 });
- const clean = sanitizePlanState({ parked: { [step.key]: { failures: 3 }, 'yok|kolay': {} }, streakKey: 'yok|zor', streak: -4 }, contexts);
- assert.deepEqual(Object.keys(clean.parked), [step.key]); assert.equal(clean.streakKey, ''); assert.equal(clean.streak, 0);
+ assert.deepEqual(sanitizePlanState('bozuk', contexts), { parked: {}, streaks: {} });
+ const clean = sanitizePlanState({ parked: { [step.key]: { failures: 3 }, 'yok|kolay': {} }, streaks: { [other.key]: 7.9, 'yok|zor': 3, [step.key]: -4 } }, contexts);
+ assert.deepEqual(Object.keys(clean.parked), [step.key]); assert.deepEqual(clean.streaks, { [other.key]: 7 });
 });
 
 test('konu içi zorluk ve kabul kuralı: kova doluysa o zorluk kabul edilmez', () => {

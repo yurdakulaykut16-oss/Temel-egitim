@@ -38,7 +38,7 @@ import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './o
 import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
 import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
 import {
- planConfigFromEnv, planSnapshot, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
+ planConfigFromEnv, planSnapshot, pickPlanSteps, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep
 } from './production-plan.mjs';
 
@@ -823,10 +823,10 @@ async function getPipelineConfig() {
 // 1. tur: her konuya sırayla 50 kolay · 2. tur: 50 orta · 3. tur: 50 zor. Sorular yalnızca
 // konu özetinden kurulur. TEMPO_PLAN=0 planı kapatır (eski dengeli dolaşım).
 const PLAN = planConfigFromEnv(process.env);
-let planState = { parked: {}, streakKey: '', streak: 0 };
+let planState = { parked: {}, streaks: {} };
 let planStateLoaded = false;
 let planLastSnapshot = null;
-let planLastLoggedKey = '';
+const planAnnounced = new Set(); // terminale "Plan: …" satırı yazılmış adımlar
 const planFocusRotation = new Map(); // unitId -> deneme sayacı (odak cümlesini döndürmek için)
 
 async function loadPlanState() {
@@ -849,28 +849,37 @@ async function savePlanState() {
  } catch { /* plan durumu yazılamazsa üretim durmaz; yalnızca atlananlar yeniden denenir */ }
 }
 
-/** Planın sıradaki adımı (plan kapalıysa ya da tamamlandıysa null). */
-async function currentPlanStep(items) {
- if (!PLAN.enabled) return null;
+/**
+ * Boş yuva için planın sıradaki adımı (plan kapalıysa, tamamlandıysa ya da sıradaki bütün
+ * konularda zaten soru hazırlanıyorsa null). Aynı anda N soru hazırlanıyorsa sıradaki ilk N
+ * konu birlikte çalışır; aynı konuda aynı anda iki soru hazırlanmaz.
+ */
+async function nextPlanStep(items, busyUnits = new Set()) {
+ if (!PLAN.enabled) return { step: null, planActive: false };
  await loadPlanState();
  let snap = planSnapshot({ contexts, items, quota: PLAN.quota, parked: planState.parked });
- if (snap.allParked) {
+ if (snap.allParked && busyUnits.size === 0) {
   // Geriye yalnızca atlanan adımlar kaldı: hepsi yeniden denenir.
   tempoLog(`Plan: sıradaki adımların hepsi tamamlandı; atlanan ${snap.parkedSteps.length} adım yeniden deneniyor.`);
-  planState = { parked: {}, streakKey: '', streak: 0 };
+  planState = { parked: {}, streaks: {} };
+  planAnnounced.clear();
   await savePlanState();
   snap = planSnapshot({ contexts, items, quota: PLAN.quota, parked: planState.parked });
  }
  planLastSnapshot = snap;
- const step = snap.current;
- if (step && step.key !== planLastLoggedKey) {
-  planLastLoggedKey = step.key;
-  tempoLog(`Plan: ${describeStep(step)} · ${step.done}/${step.quota} (toplam ${snap.totalDone}/${snap.totalTarget})`);
- } else if (!step && snap.complete && planLastLoggedKey !== 'complete') {
-  planLastLoggedKey = 'complete';
-  tempoLog(`Plan tamamlandı: ${snap.totalDone}/${snap.totalTarget} soru. Üretim dengeli dolaşımla sürüyor.`);
+ if (snap.complete) {
+  if (!planAnnounced.has('complete')) {
+   planAnnounced.add('complete');
+   tempoLog(`Plan tamamlandı: ${snap.totalDone}/${snap.totalTarget} soru. Üretim dengeli dolaşımla sürüyor.`);
+  }
+  return { step: null, planActive: false };
  }
- return step;
+ const [step] = pickPlanSteps(snap.queue, 1, busyUnits);
+ if (step && !planAnnounced.has(step.key)) {
+  planAnnounced.add(step.key);
+  tempoLog(`Plan: ${describeStep(step)} · ${step.done}/${step.quota} (toplam ${snap.totalDone}/${snap.totalTarget})`);
+ }
+ return { step: step || null, planActive: true };
 }
 
 /** Bir plan adımının sonucunu işler; üst üste sonuçsuz kalan adımı atlar. */
@@ -909,7 +918,9 @@ async function publicPlan(items) {
   totalTarget: snap.totalTarget,
   current: slim(snap.current),
   currentLabel: describeStep(snap.current),
-  streak: snap.current && planState.streakKey === snap.current.key ? planState.streak : 0,
+  // Aynı anda çalışan adımlar (plan sırasıyla ilk N konu) ve her birinin sonuçsuz deneme sayacı.
+  working: pickPlanSteps(snap.queue, Math.max(1, autoState.effectiveConcurrency || 1)).map(step => ({ ...slim(step), streak: planState.streaks[step.key] || 0 })),
+  parallel: Math.max(1, autoState.effectiveConcurrency || 1),
   passes,
   parked: snap.parkedSteps.map(slim)
  };
@@ -3898,9 +3909,7 @@ async function autoScheduler() {
       autoState.thrashLogged = true;
       for (const w of reloadWarnings()) tempoLog(`Uyarı: ${w}`);
      }
-     // Plan sürerken tek soru üretilir: adım (konu + zorluk) kotası dolmadan sıradakine geçilmez.
-     const planActive = PLAN.enabled && !(planLastSnapshot?.complete);
-     const limit = planActive ? 1 : (lineup.coResident && !thrashing ? limitSetting : 1);
+     const limit = lineup.coResident && !thrashing ? limitSetting : 1;
      autoState.effectiveConcurrency = limit;
 
      if (cfg.pipelineMode === 'batched') {
@@ -3930,16 +3939,23 @@ async function autoScheduler() {
        nextSleep = 5000;
       } else {
        setAutoBlock('', '');
-       const planStep = await currentPlanStep(items);
-       const ctx = (planStep && contexts.find(c => c.id === planStep.unitId)) || contexts[autoCursor++ % contexts.length];
-       autoState.lastLaunchAt = Date.now();
-       const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
-        parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model,
-        planStep
-       });
-       // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
-       if (limit <= 1) await run;
-       nextSleep = limit <= 1 ? Math.max(50, QUESTION_INTERVAL_MS - (Date.now() - autoState.lastLaunchAt)) : 200;
+       // Plan: sıradaki ilk N konu birlikte çalışır; o an sorusu hazırlanan konuya ikinci soru açılmaz.
+       const busyUnits = new Set([...autoControllers.values()].map(entry => entry.unit));
+       const { step: planStep, planActive } = await nextPlanStep(items, busyUnits);
+       if (planActive && !planStep) {
+        // Sıradaki bütün konularda zaten soru hazırlanıyor; yuva boşalınca yeniden bakılır.
+        nextSleep = 200;
+       } else {
+        const ctx = (planStep && contexts.find(c => c.id === planStep.unitId)) || contexts[autoCursor++ % contexts.length];
+        autoState.lastLaunchAt = Date.now();
+        const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
+         parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model,
+         planStep
+        });
+        // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
+        if (limit <= 1) await run;
+        nextSleep = limit <= 1 ? Math.max(50, QUESTION_INTERVAL_MS - (Date.now() - autoState.lastLaunchAt)) : 200;
+       }
       }
      } else {
       if (autoState.blockCode === 'backoff' || autoState.blockCode === 'pool_audit') setAutoBlock('', '');
@@ -4941,7 +4957,7 @@ export function ollamaPlugin() {
        subSecondAllBots: pipelineConfig.subSecondAllBots,
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
-       autoConcurrencyEffective: (PLAN.enabled && !planLastSnapshot?.complete) || lineup.coResident === false || reloadWarnings().length > 0 ? 1 : autoConcurrency,
+       autoConcurrencyEffective: lineup.coResident === false || reloadWarnings().length > 0 ? 1 : autoConcurrency,
        modelCallTimeoutRange: { min: MODEL_CALL_TIMEOUT_MIN_MS, max: MODEL_CALL_TIMEOUT_MAX_MS, default: MODEL_CALL_TIMEOUT_DEFAULT_MS },
        firstTokenTimeoutMs: FIRST_TOKEN_TIMEOUT_MS,
        questionIntervalMs: QUESTION_INTERVAL_MS,
