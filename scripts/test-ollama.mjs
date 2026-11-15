@@ -211,13 +211,18 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(rbJson.policy.source,'rollback');
   assert.equal(rbJson.policy.customRuleCode,'');
 
-  // Timeout ayarı: varsayılan 180000ms, 1000-300000 aralığında ayarlanabilir
-  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,180000);
+  // Timeout ayarı: varsayılan 25000ms (mutlak tavan 25 sn), 1000-25000 aralığında ayarlanabilir
+  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,25000);
   let timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:8000})});
   assert.equal(timeoutRes.status,200);assert.equal((await timeoutRes.json()).autoTimeoutMs,8000);
   assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).autoTimeoutMs,8000);
   timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:500})});
   assert.equal(timeoutRes.status,400);
+  timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:30000})});
+  assert.equal(timeoutRes.status,400,'25 saniyenin üzeri reddedilmeli');
+  timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:25000})});
+  assert.equal(timeoutRes.status,200,'25000 tam sınırda kabul edilmeli');
+  assert.equal((await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:180000})})).status,400,'eski 180s değeri artık reddedilmeli');
 
  }finally{await close(app);await close(fake);await rm(dir,{recursive:true,force:true})}
 });

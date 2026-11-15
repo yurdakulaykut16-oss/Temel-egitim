@@ -114,7 +114,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   let status=await (await fetch(`${base}/api/ollama/status`)).json();
   assert.equal(status.autoRunning,true);
   assert.equal(status.autoConcurrency,1);
-  assert.equal(status.autoTimeoutMs,180000);
+  assert.equal(status.autoTimeoutMs,25000);
   assert.equal(status.settings.preset,'balanced');
   assert.equal(status.settings.turboQualityLock,false);
   assert.equal(status.settings.selfCorrection,true);

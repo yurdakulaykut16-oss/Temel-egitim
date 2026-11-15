@@ -444,7 +444,8 @@ let lastNexusAutoApplyAt = 0;
 const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:8b';
 const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:4b';
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
-const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 180000;
+const QUESTION_HARD_TIMEOUT_MS = 25_000; // Bir soru üretimi için mutlak üst sınır (kullanıcı gereksinimi)
+const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.min(QUESTION_HARD_TIMEOUT_MS, Math.round(envDefaultTimeout)) : QUESTION_HARD_TIMEOUT_MS;
 // Hedef üretim temposu: her 5 saniyede bir yeni soru. Model çağrıları tek kuyruktan
 // sırayla geçtiği için bu bir "en az bekleme" süresidir; üretim daha uzun sürerse
 // sıradaki soru hemen peşine gelir (asla üst üste binmez).
@@ -585,7 +586,8 @@ async function autoConcurrencyLimit() {
 async function autoTimeoutMs() {
  const v = await readSettings();
  const n = Number.isFinite(v.autoTimeoutMs) ? Math.round(v.autoTimeoutMs) : defaultAutoTimeoutMs;
- return Math.max(1000, Math.min(300000, n));
+ // 25 saniye mutlak üst sınır: bu süreyi aşan soru havuza giremez, yuva hemen boşalır.
+ return Math.max(1000, Math.min(QUESTION_HARD_TIMEOUT_MS, n));
 }
 async function getPipelineConfig() {
  // Hafif ama kaliteyi koruyan varsayılan: tek soru, kitap pasajı, self-correction
@@ -2221,7 +2223,7 @@ async function waitForPipelineIdle(maxMs = 60_000) {
  return true;
 }
 
-async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = 180000, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
+async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = QUESTION_HARD_TIMEOUT_MS, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
  if (busy || autoControllers.size > 0) throw Error('Soru üretim hattı zaten çalışıyor; istekler sırayla tamamlanacak.');
  const cfg = await getPipelineConfig();
  busy = true; phase = 'loading'; lastError = '';
@@ -5137,8 +5139,8 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/timeout') {
       const input = await body(req);
       const n = Number(input.value);
-      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1000 || n > 300000) {
-       return respond(res, 400, { error: '1000 ile 300000 (ms) arasında bir tam sayı gerekir.' });
+      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1000 || n > QUESTION_HARD_TIMEOUT_MS) {
+       return respond(res, 400, { error: '1000 ile 25000 (ms) arasında bir tam sayı gerekir; bir soru en fazla 25 saniyede hazırlanır.' });
       }
       await writeSettings({ autoTimeoutMs: n });
       return respond(res, 200, { autoTimeoutMs: n });

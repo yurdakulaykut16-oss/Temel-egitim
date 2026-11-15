@@ -367,8 +367,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      <select id="concurrency-choice" value={status?.autoConcurrency ?? 4} onChange={e => setConcurrency(Number(e.target.value))}>
       {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>{n}</option>)}
      </select>
-     <label htmlFor="timeout-choice" style={{marginLeft: 10}}>İstek zaman aşımı ms (1000-300000)</label>
-     <input id="timeout-choice" type="number" min={1000} max={300000} step={1000} value={timeoutInput} placeholder={String(status?.autoTimeoutMs || 180000)} onChange={e => setTimeoutInput(e.target.value)}/>
+     <label htmlFor="timeout-choice" style={{marginLeft: 10}}>İstek zaman aşımı ms (1000-25000 · soru başına maks 25 sn)</label>
+     <input id="timeout-choice" type="number" min={1000} max={300000} step={1000} value={timeoutInput} placeholder={String(status?.autoTimeoutMs || 25000)} onChange={e => setTimeoutInput(e.target.value)}/>
      <button className="outline" onClick={setTimeoutBudget} disabled={!timeoutInput}>Uygula</button>
     </div>
 

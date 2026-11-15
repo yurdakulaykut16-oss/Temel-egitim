@@ -155,7 +155,8 @@ Uygulama varsayılan olarak **paralel** çalışır ve her soru **tam modelle ik
 - **Ollama tarafı da paralelleştirin (önerilir):** Ollama servisini `setx OLLAMA_NUM_PARALLEL "4"` ile başlatıp yeniden aç; böylece 4 eşzamanlı istek gerçekten aynı model örneği üzerinde bir arada işlenir ve hız neredeyse 4 katına yaklaşır. Bu değişken olmadan da 4 yuva çalışır ama istekler Ollama tarafında sıraya girebilir.
 - **Seri moda dönüş:** Eski davranışın (1 yuva + 5 sn hedef tempo) tamamını `TEMPO_AUTO_CONCURRENCY=1` ile geri alabilirsin ya da ayarlar dosyasındaki `autoConcurrency: 1` yapılabilir. Arayüzden yuva sayısı **Soru stüdyosu > Bağlantı** bölümünden de değiştirebilirsin.
 - **20.000 kayıt havuz sınırı:** Onaylı havuz 20.000'e ulaşınca küratör en zayıf ve tekrar soruları ayıklayıp havuzu ~18.500 civarına indirir; üretim hiç durmaz.
-- **Hafif varsayılanlar:** üretici `qwen3:8b`, 2. hakem `gemma3:4b`, istek zaman aşımı 180 sn, `keep_alive=0` (model çağrıdan sonra boşaltılır; VRAM'de üst üste model birikmez). Otomatik evrim ve alt-saniye tüm-bot sürüsü kapalıdır.
+- **Soru başına mutlak 25 saniye sınırı:** Bir soru üretimi için generator + 2 hakem onayının 25 saniye içinde bitmesi gerekir; süre dolarsa o soru havuza **eklenmez** ve yuva hemen yeni üretime döner (süre ayarı `1000–25000` ms arasında kısıtlıdır, 25 saniyenin üstü reddedilir). Yavaş bir model soruları bu sınırda sık sık düşürebilir — o durumda `fastThink` açık kalsın ve gerekirse `TEMPO_AUTO_CONCURRENCY=2` ile yuva sayısını azaltın.
+- **Hafif varsayılanlar:** üretici `qwen3:8b`, 2. hakem `gemma3:4b`, `keep_alive=0` (model çağrıdan sonra boşaltılır; VRAM'de üst üste model birikmez). Otomatik evrim ve alt-saniye tüm-bot sürüsü kapalıdır.
 
 Daha hızlı/yoğun çalışmak istersen (opsiyonel):
 
@@ -176,7 +177,7 @@ Ortam değişkenleriyle ince ayar:
 | --- | --- | --- |
 | `OLLAMA_MODEL` | `qwen3:8b` | Üretici model |
 | `OLLAMA_JUDGE2_MODEL` | `gemma3:4b` | 2. hakem modeli |
-| `OLLAMA_AUTO_TIMEOUT_MS` | `180000` | Tek model çağrısı zaman aşımı (ms) |
+| `OLLAMA_AUTO_TIMEOUT_MS` | `25000` | Soru başına mutlak üretim süresi (ms); 25000 üst sınırdır |
 | `TEMPO_OLLAMA_KEEP_ALIVE` | `0` | `0` = model çağrıdan sonra boşaltılır; `5m` gibi bir süre de verilebilir |
 | `TEMPO_UNLOAD_STALE_PINS` | `0` | `1` yapılınca açılışta VRAM'deki eski modeller boşaltılır |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
