@@ -9,25 +9,11 @@ import { JarvisCore } from './jarvis-core.mjs';
 import { ResearchAgent } from './research-agent.mjs';
 import { PoolCuratorBot } from './pool-curator.mjs';
 import { LessonEngine } from './lesson-engine.mjs';
-import {
- VideoDirector,
- VIDEO_SPEC_VERSION,
- isLegacyVideoRecord,
- VIDEO_THEMES,
- PHOTO_CLOUD_VIDEO_MODELS,
- VIDEO_GENERATION_POLICY,
- ALLOWED_VIDEO_PROVIDERS,
- isAllowedVideoModel,
- classifyVideoProvider
-} from './video-director.mjs';
 import { ApexArchitect } from './apex-architect.mjs';
-import { Mp4Renderer } from './mp4-renderer.mjs';
 import { buildKayseriReaction, generateAiKayseriReaction, extractKeyTermsFromUnit } from './kayseri-coach.mjs';
 import { IntelligenceTrainer } from './intelligence-trainer.mjs';
 import { GithubKnowledgeMiner } from './github-researcher.mjs';
 import { VoiceStudioManager } from './voice-studio.mjs';
-import { LocalVideoEngineHub, GITHUB_LOCAL_VIDEO_ENGINES } from './local-video-engines.mjs';
-import { Local3DAnimationEngine, LOCAL_3D_ANIMATION_PRESETS, LOCAL_3D_ENGINES_CATALOG } from './three-d-animation-engine.mjs';
 import { BotParameterMatrix } from './bot-parameter-matrix.mjs';
 import { MultiAiSwarmEvaluator } from './multi-ai-evaluator.mjs';
 import { QwenCodeLab } from './qwen-code-lab.mjs';
@@ -45,8 +31,12 @@ import { MultiFrameworkAgentOrchestrator } from './agent-frameworks.mjs';
 import { PrecisionQualityEngine } from './precision-quality-engine.mjs';
 import { TvgfbfScoutSwarm, TVGFBF_VERIFIED_PATTERNS } from './tvgfbf-scout-swarm.mjs';
 import { HundredAiCouncil, DIFFICULTY_TIERS_4 } from './hundred-ai-council.mjs';
+import { SerialTaskQueue } from './model-inference-queue.mjs';
+import { createSummaryGrounding, SUMMARY_GROUNDING_DEFAULT_MIN } from './summary-grounding.mjs';
+import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
 
 const execFileAsync = promisify(execFile);
+const modelInferenceQueue = new SerialTaskQueue();
 
 const contexts = JSON.parse(await readFile(new URL('./contexts.json', import.meta.url), 'utf8'));
 const questionBank = JSON.parse(await readFile(new URL('./question-bank.json', import.meta.url), 'utf8'));
@@ -58,6 +48,14 @@ try {
  bookStyleQuestionsRaw = null;
 }
 const bookStyleQuestions = Array.isArray(bookStyleQuestionsRaw?.questions) ? bookStyleQuestionsRaw.questions : [];
+
+let bookParallelRaw = null;
+try {
+ bookParallelRaw = JSON.parse(await readFile(new URL('./book-parallel-questions.json', import.meta.url), 'utf8'));
+} catch {
+ bookParallelRaw = null;
+}
+const bookParallelQuestions = Array.isArray(bookParallelRaw?.questions) ? bookParallelRaw.questions : [];
 
 let bookPassagesRaw = null;
 try {
@@ -84,6 +82,17 @@ for (const ctx of contexts) {
 
 const totalBookPassages = [...passagesByUnit.values()].reduce((sum, arr) => sum + arr.length, 0);
 
+/**
+ * KAYNAK TEMELLENDİRME: Havuza giren her soru, öğrencinin konu anlatım özetinde
+ * ve/veya kitabın ilgili pasajında geçen kavramlardan kurulmak zorundadır.
+ * Özetlerde ve kitapta karşılığı olmayan (uydurma) soru doğrudan reddedilir.
+ */
+const summaryGrounding = createSummaryGrounding({
+ contexts,
+ passagesByUnit,
+ minScore: Number(process.env.TEMPO_SUMMARY_GROUNDING_MIN ?? SUMMARY_GROUNDING_DEFAULT_MIN)
+});
+
 const dataDir = resolve(process.env.TEMPO_DATA_DIR || '.tempo-data');
 const dataFile = resolve(dataDir, 'questions.json');
 const studyFile = resolve(dataDir, 'study-materials.json');
@@ -91,8 +100,9 @@ const settingsFile = resolve(dataDir, 'settings.json');
 const ledgerFile = resolve(dataDir, 'ollama-created.json');
 const tracesFile = resolve(dataDir, 'rejected-traces.jsonl');
 const storageLimit = 100_000_000_000;
-const QUESTION_POOL_CAPACITY = 40000;
-const MAX_QUESTIONS = 45000;
+const QUESTION_POOL_CAPACITY = 20_000;
+const QUESTION_POOL_REFILL_TARGET = 18_500;
+const MAX_QUESTIONS = 20_000;
 const MAX_STUDY_ITEMS = 50000;
 const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
 
@@ -100,9 +110,11 @@ const verifier100 = new HundredWayVerifier(dataDir, process.cwd());
 const evolver = new SandboxEvolver(dataDir);
 const jarvis = new JarvisCore(dataDir, process.cwd());
 const researchAgent = new ResearchAgent(dataDir, { verifier100 });
-const poolCurator = new PoolCuratorBot(dataDir);
+const poolCurator = new PoolCuratorBot(dataDir, {
+ pruneThreshold: QUESTION_POOL_CAPACITY,
+ targetAfterPrune: QUESTION_POOL_REFILL_TARGET
+});
 const lessonEngine = new LessonEngine(dataDir);
-const videoDirector = new VideoDirector(dataDir);
 const apex = new ApexArchitect(dataDir);
 const trainer = new IntelligenceTrainer(dataDir);
 const githubMiner = new GithubKnowledgeMiner(dataDir, { verifier100 });
@@ -115,10 +127,7 @@ const coderCouncil = new CoderCouncilHub(dataDir, { verifier100 });
 const nexusModel = new NexusTitanFusionModel(dataDir, process.cwd(), { verifier100 });
 const githubMega = new GithubMegaCorpus(dataDir, { verifier100 });
 const bookSearch = new BookKnowledgeSearch({ contexts, passagesByUnit, questionBank });
-const mp4Renderer = new Mp4Renderer();
 const voiceStudio = new VoiceStudioManager(dataDir);
-const local3dEngine = new Local3DAnimationEngine({ getFfmpegPath: () => mp4Renderer.getFfmpegPath() });
-const localVideoHub = new LocalVideoEngineHub(dataDir, { mp4Renderer, voiceStudio, local3dEngine });
 const ragEngine = new HybridRagEngine({ projectRoot: process.cwd(), dataDir, bookSearch });
 const trainingHub = new TrainingFrameworksHub({ projectRoot: process.cwd(), dataDir });
 const agentOrchestrator = new MultiFrameworkAgentOrchestrator({
@@ -211,7 +220,7 @@ async function triggerAllAgentsCascade(scoutState = null) {
    qwenCodeLab.loadState().then(() => 'qwenCodeLab'),
    lessonEngine.listSummary(contexts.length).then(() => 'lessonEngine'),
    Promise.resolve().then(() => {
-    const fullAudit = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...items]);
+    const fullAudit = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
     lastPrecisionAuditSummary = {
      evaluatedCount: fullAudit.evaluatedCount,
      averagePrecisionScore: fullAudit.averagePrecisionScore,
@@ -224,7 +233,7 @@ async function triggerAllAgentsCascade(scoutState = null) {
     };
     return 'precisionQualityEngine';
    }),
-   hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]).then(async summary => {
+   hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]).then(async summary => {
     await hundredAiCouncil.evolveWithQwenCode(summary).catch(() => {});
     lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
     return 'hundredAiCouncil(100-AI)';
@@ -353,7 +362,6 @@ const projectLevelUp = new ProjectLevelUpOrchestrator({
  evolver,
  jarvis,
  apex,
- local3dEngine,
  contexts,
  loadItemsFn: () => load(),
  getTelemetryFn: () => getTelemetrySnapshot(),
@@ -363,8 +371,7 @@ const projectLevelUp = new ProjectLevelUpOrchestrator({
   return {
    approvedCount: items.filter(x => x.status === 'approved').length,
    unitsCount: contexts.length,
-   totalLessons: (await lessonEngine.listSummary(contexts.length))?.totalLessons ?? 0,
-   totalVideos: (await videoDirector.listSummary(contexts.length))?.totalVideos ?? 0
+   totalLessons: (await lessonEngine.listSummary(contexts.length))?.totalLessons ?? 0
   };
  },
  getTrainingPrepStatsFn: getTrainingPrepStatsFast
@@ -376,7 +383,6 @@ let cachedNexusModelState = null;
 let cachedGithubMegaSummary = null;
 let cachedHardwareProfile = null;
 let hardwarePullBootAttempted = false;
-const mp4RenderLocks = new Map();
 let jarvisReflecting = false;
 let apexEvolving = false;
 let trainerBusy = false;
@@ -391,15 +397,10 @@ let hyperBotEvolveBusy = false;
 let researchBusy = false;
 let curatorBusy = false;
 let lessonBusy = false;
-let videoBusy = false;
 let coachRunning = false;
 let ollamaUpgradeBusy = false;
 let lastInteractiveApiAt = Date.now();
 let lastOllamaConnectedSig = '';
-let continuousVideoCounter = 0;
-let continuousGeneratedTotal = 0;
-let replacedLegacyTotal = 0;
-let lastKnownLegacyRemaining = null;
 const ollamaUpgradeState = {
  running: false,
  upgradedCount: 0,
@@ -410,7 +411,6 @@ const ollamaUpgradeState = {
 };
 let researchCursor = 0;
 let lessonCursor = 0;
-let videoCursor = 0;
 let specialistsBootstrapAttempted = false;
 let lastWebResearchAt = 0;
 let lastGithubMineAt = 0;
@@ -422,8 +422,8 @@ let lastCoderSprintAt = 0;
 let lastNexusFusionAt = 0;
 let lastHyperBotEvolveAt = 0;
 let lastCuratorScanAt = 0;
+let lastPoolCapCheckAt = 0;
 let lastLessonEnhanceAt = 0;
-let lastVideoProduceAt = 0;
 let lastTrainerTickAt = 0;
 let lastApexTimeAt = 0;
 let lastCoachTrainPrepCount = 0;
@@ -446,14 +446,25 @@ let lastNexusDevelopAt = 0;
 let lastNexusBuildAt = 0;
 let lastNexusAutoApplyAt = 0;
 
-const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:14b';
-const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:12b';
-const defaultConcurrency = 6;
+const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:8b';
+const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:4b';
+const defaultConcurrency = 1;
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
-const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 45000;
+const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 180000;
+// Hedef üretim temposu: her 5 saniyede bir yeni soru. Model çağrıları tek kuyruktan
+// sırayla geçtiği için bu bir "en az bekleme" süresidir; üretim daha uzun sürerse
+// sıradaki soru hemen peşine gelir (asla üst üste binmez).
+const envInterval = Number(process.env.TEMPO_QUESTION_INTERVAL_MS);
+const QUESTION_INTERVAL_MS = Number.isFinite(envInterval) && envInterval >= 500 ? Math.round(envInterval) : 5_000;
+const defaultKeepAlive = process.env.TEMPO_OLLAMA_KEEP_ALIVE ?? '0';
 
 const DIFFICULTIES = ['kolay', 'orta', 'zor'];
-const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama'];
+const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama', 'en_iyi_secim'];
+// Paragraf (parçaya dayalı) sorular: sınavda bu kalıbın çıkıp çıkmadığı resmî olarak
+// doğrulanmadığı için ana akışı bozmasın diye SEYREK üretilir (ör. her 8 soruda bir).
+const PARAGRAPH_QUESTION_TYPE = 'paragraf';
+const envParaRatio = Number(process.env.TEMPO_PARAGRAPH_QUESTION_RATIO);
+const PARAGRAPH_QUESTION_RATIO = Number.isFinite(envParaRatio) ? Math.min(1, Math.max(0, envParaRatio)) : 0.12;
 const QUESTION_ANGLES = ['dogrudan_tanim', 'ters_eleme_istisna', 'saha_vakasi', 'karsilastirmali_tuzak', 'surpriz_baglam'];
 const QUESTION_ANGLE_HINTS = {
  dogrudan_tanim: '1. DOĞRUDAN TANIM AÇISI: Temel mekanizmayı, ölçütü veya kuralı net ve tam doğru hedefiyle sor.',
@@ -468,9 +479,28 @@ const QUESTION_TYPE_HINTS = {
  karsilastirma: 'KARŞILAŞTIRMA: Birbirine yakın iki kavram, dönem, yaklaşım veya sistem arasındaki ayırt edici farkı sor.',
  neden_sonuc: 'NEDEN-SONUÇ: Bir mekanizmanın, uygulamanın veya hatanın fizyolojik/psikolojik/yönetsel sonucunu ya da nedenini sor.',
  istisna: 'İSTİSNA (HANGİSİ DEĞİLDİR / YANLIŞTIR): 3 tamamen doğru, 1 kesin yanlış ifade kurarak istisnayı buldur.',
- uygulama: 'UYGULAMA: Bir kuralı, protokolü, ilkeyi veya hesaplamayı somut bir karar anına uygulat.'
+ uygulama: 'UYGULAMA: Bir kuralı, protokolü, ilkeyi veya hesaplamayı somut bir karar anına uygulat.',
+ en_iyi_secim: 'EN İYİ / EN UYGUN SEÇİM (ÇELDİRİCİ SORU): Dört şık da makul ve konuyla ilgili olsun; ancak yalnızca biri kaynağa göre tam ve en kapsamlı doğru olsun. "En uygun yaklaşım hangisidir?" kalıbını kullan; şıkları yaygın hatalı uygulamalardan ve eksik doğru yaklaşımlardan kur.',
+ paragraf: 'PARAGRAF (PARÇAYA DAYALI): Önce konu anlatımından BİREBİR alınmış kısa bir parça ver, sonra yalnızca o parça okunarak yanıtlanabilecek bir soru sor (parçanın ana fikri, parçadan çıkarılabilecek yargı, parçayla çelişen ifade, parçada vurgulanan ilke). Soru kökü parçaya gönderme yapmalı.'
 };
 const BANNED_OPTION_PATTERN = /\b(yukarıdakilerin hepsi|aşağıdakilerin hepsi|hiçbiri|tümü birden|hepsi doğrudur|yalnız a ve b|a ve b birlikte|her ikisi de)\b/i;
+
+// Çeldirici mühendisliği: dört şık da aynı kavram ailesinden, "az kalsın doğru" niteliğinde
+// ve birbirine yakın olmalı; alakasız/komik dolgu şıklar kesinlikle yasak.
+const DISTRACTOR_ENGINEERING_RULES = `ÇELDİRİCİ MÜHENDİSLİĞİ (EN KRİTİK KURAL — BU KURALA UYMAYAN SORU REDDEDİLİR):
+1) Dört şık da AYNI KAVRAM AİLESİNDEN olmalı: aynı ünitenin terimleri, aynı dilbilgisi kalıbı, birbirine çok yakın uzunluk (±%20) ve aynı ifade biçimi (hepsi isim tamlaması ya da hepsi cümle).
+2) Her çeldirici "AZ KALSIN DOĞRU" olmalı: yaygın yanılgı, birbirine karıştırılan iki kavramın yer değiştirmesi, bir koşulun/adımın eksik ya da fazla olması, yakın sayı/süre/değer, kısmen doğru ama eksik ifade, doğru kavramın yanlış bağlama uygulanması.
+3) KESİNLİKLE YASAK ŞIKLAR: konuyla alakasız veya komik dolgu şıklar ("Tahkim kurulu", "Bürokrasi", "İhmal" gibi), alay/mizah içeren ifadeler, "hepsi/hiçbiri" kalıpları, soru kökündeki ayırt edici kelimeyi aynen taşıyan şık, bariz şekilde diğerlerinden uzun/kısa şık.
+4) Doğru şık KAYNAKTA AÇIKÇA desteklenen TEK ifade olmalı; çeldiriciler kaynaktaki başka kavramlardan türetilmeli (uydurma değil) ama doğru kabul edilemeyecek kadar net biçimde yanlış/eksik olmalı.
+5) Şıkları yazmadan önce son kontrol: "Cevabı bilmeyen bir aday bu dört şık arasında gerçekten zorlanır mı? Dört şıktan biri bariz alakasız mı?" — Cevap hayırsa şıkları yeniden yaz.
+6) Çeldirici ağırlıklı soru kalıplarını da kullan: "hangisi yanlıştır/söylenemez", "hangisi ... dışında kalır", "en uygun/en kapsamlı yaklaşım hangisidir" (dört şık da makul ama yalnızca biri tam doğru).`;
+
+const PARAGRAPH_QUESTION_RULES = `PARAGRAF SORUSU EK KURALLARI (bu tipte zorunlu):
+1) "paragraph" alanına aşağıdaki KONU ANLATIMI'ndan BİREBİR (hiç değiştirmeden, kelimesi kelimesine) alınmış, art arda gelen 3-5 cümlelik, 250-800 karakterlik bir parça yaz. Uydurma cümle, kendi yorumun veya kaynakta geçmeyen bilgi KESİNLİKLE YASAK.
+2) "question" alanı yalnızca soru kökü olsun (en fazla 260 karakter) ve parçaya gönderme yapsın: "Bu parçaya göre ...", "Parçada vurgulanan ...", "Bu parçadan aşağıdaki yargıların hangisine ulaşılabilir?" gibi.
+3) Soru, parça okunmadan yanıtlanamayacak olsun: doğru cevap parçadaki bilgiyi DOĞRU YORUMLAMAYI gerektirsin (ana fikir / parçada desteklenen yargı / parçayla çelişen ifade / parçadan çıkarım).
+4) Dört şık da parçadaki kavramlarla ilişkili olsun; parçada geçen ama sorunun cevabı OLMAYAN ifadeleri ve yaygın yanlış yorumları çeldirici olarak kullan.
+5) "evidence" alanı, paragraph içinde geçen, kaynaktan birebir alınmış en az 15 karakterlik bir alıntı olsun.`;
 
 const unsupportedThinkModels = new Set();
 
@@ -544,19 +574,14 @@ async function selectedEvolverModel(model) {
  if (typeof v.evolverModel === 'string' && v.evolverModel.length <= 200 && v.evolverModel.trim()) return v.evolverModel;
  return process.env.OLLAMA_EVOLVER_MODEL || model;
 }
-async function selectedVideoModel(fallback) {
- const v = await readSettings();
- if (typeof v.videoModel === 'string' && v.videoModel.length <= 200 && v.videoModel.trim() && isAllowedVideoModel(v.videoModel)) return v.videoModel;
- return process.env.OLLAMA_VIDEO_MODEL || PHOTO_CLOUD_VIDEO_MODELS[0]?.id || fallback;
-}
 async function autoRunningEnabled() {
  const v = await readSettings();
+ // Sürekli soru üretimi varsayılan olarak açık; kullanıcı durdurursa kapalı kalır.
  return v.autoRunning !== false;
 }
 async function autoConcurrencyLimit() {
- const v = await readSettings();
- const n = Number.isFinite(v.autoConcurrency) ? Math.round(v.autoConcurrency) : defaultConcurrency;
- return Math.max(1, Math.min(contexts.length, n));
+ // Uygulama genelinde Ollama'ya aynı anda yalnızca tek istek gönderilir.
+ return defaultConcurrency;
 }
 async function autoTimeoutMs() {
  const v = await readSettings();
@@ -564,21 +589,21 @@ async function autoTimeoutMs() {
  return Math.max(1000, Math.min(300000, n));
 }
 async function getPipelineConfig() {
- // TEK MOD = TURBO (Kalite Kilidi AKTİF). Dengeli/Derin profilleri kaldırıldı; her çağrı 8 soru, kuyruklu boru hattı,
- // toplu kör hakem, self-correction, akıllı zorluk ve hızlı düşünme HER ZAMAN açıktır.
+ // Hafif ama kaliteyi koruyan varsayılan: tek soru, kitap pasajı, self-correction
+ // ve iki hakem. Model çağrıları ayrıca ortak kuyruktan sırayla geçirilir.
  const v = await readSettings();
- const preset = 'turbo';
- const turboQualityLock = true;
- const batchPerCall = 8;
- const pipelineMode = 'batched';
+ const preset = 'balanced';
+ const turboQualityLock = false;
+ const batchPerCall = 1;
+ const pipelineMode = 'direct';
  const fastThink = true;
  const selfCorrection = true;
  const passageMode = v.passageMode === 'summary-only' ? 'summary-only' : 'full-book';
  const smartDifficulty = true;
- const batchVerify = true;
- const generateStudyMaterials = true;
- const autoEvolve = true;
- const subSecondAllBots = v.subSecondAllBots !== false;
+ const batchVerify = false;
+ const generateStudyMaterials = false;
+ const autoEvolve = false;
+ const subSecondAllBots = v.subSecondAllBots === true;
  const subSecondBudgetMs = Number.isFinite(v.subSecondBudgetMs) ? Math.max(250, Math.min(980, Math.round(v.subSecondBudgetMs))) : SUBSECOND_BOT_BUDGET_MS;
  return {
   batchPerCall, pipelineMode, fastThink, selfCorrection,
@@ -599,7 +624,13 @@ function nextDifficulty(ctx, items, offset = 0) {
 
 function nextQuestionType(ctx, items, offset = 0) {
  const unitItems = items.filter(x => x.unitId === ctx.id);
- return QUESTION_TYPES[(unitItems.length + offset) % QUESTION_TYPES.length];
+ const slot = unitItems.length + offset;
+ // Paragraf soruları seyrek: her ~1/oran üretimde bir. Böylece havuz klasik soru
+ // tipleriyle dolarken uzun parçalı (okuduğunu anlama) sorular da araya girer.
+ if (PARAGRAPH_QUESTION_RATIO > 0 && slot > 0 && slot % Math.max(1, Math.round(1 / PARAGRAPH_QUESTION_RATIO)) === 0) {
+  return PARAGRAPH_QUESTION_TYPE;
+ }
+ return QUESTION_TYPES[slot % QUESTION_TYPES.length];
 }
 
 function nextQuestionAngle(ctx, items, offset = 0) {
@@ -678,11 +709,13 @@ const telemetry = {
  loadNs: 0,
  recentApprovedTimestamps: [],
  recentStudyTimestamps: [],
- rejectionReasons: {}
+ rejectionReasons: {},
+ groundingRejected: 0
 };
 
 function recordRejection(reasonKey, detail) {
  telemetry.rejectionReasons[reasonKey] = (telemetry.rejectionReasons[reasonKey] || 0) + 1;
+ if (reasonKey === 'grounding') telemetry.groundingRejected++;
  if (detail) autoLastError = detail;
 }
 
@@ -882,35 +915,10 @@ async function rawBody(req, maxBytes = 64 * 1024 * 1024) {
  for await (const chunk of req) {
   const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
   total += buf.length;
-  if (total > maxBytes) throw new Error('Video dosyası boyutu sınırı aşıyor.');
+  if (total > maxBytes) throw new Error('İstek gövdesi boyutu sınırı aşıyor.');
   chunks.push(buf);
  }
  return Buffer.concat(chunks);
-}
-async function sendMp4File(req, res, filePath) {
- const st = await stat(filePath);
- const total = st.size;
- const range = req.headers.range;
- res.setHeader('Content-Type', 'video/mp4');
- res.setHeader('Accept-Ranges', 'bytes');
- res.setHeader('Cache-Control', 'no-store');
- if (range && typeof range === 'string') {
-  const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
-  if (match) {
-   const start = match[1] ? Math.min(total - 1, Number(match[1])) : 0;
-   const end = match[2] ? Math.min(total - 1, Number(match[2])) : total - 1;
-   if (Number.isFinite(start) && Number.isFinite(end) && start <= end) {
-    res.statusCode = 206;
-    res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
-    res.setHeader('Content-Length', String(end - start + 1));
-    createReadStream(filePath, { start, end }).pipe(res);
-    return;
-   }
-  }
- }
- res.statusCode = 200;
- res.setHeader('Content-Length', String(total));
- createReadStream(filePath).pipe(res);
 }
 function respond(res, code, obj) {
  res.statusCode = code;
@@ -984,6 +992,66 @@ function similarity(a, b) {
 // 2. Doğru şıkkın uzunluk ipucu vermesi
 // 3. İki seçeneğin kavramsal olarak aşırı benzer/örtüşüyor veya alt-küme olması (çift-cevap riski!)
 // 4. Soru kökü sızıntısı, aşırı kesinlik kelimesi asimetrisi & ünite bilimsel aksiyom çelişkisi
+/**
+ * Paragraf (parçaya dayalı) sorularda parçanın kaynaktan BİREBİR alınıp alınmadığını
+ * ölçer: cümlelerin en az %70'i ünite/passage metninde aynen geçmelidir.
+ */
+function paragraphGrounding(paragraph, ctx, passage) {
+ const sourceNorm = norm(`${ctx?.text || ''} ${passage?.text || ''} ${fullUnitTextNorm.get(ctx?.id) || ''}`);
+ const sentences = String(paragraph)
+  .split(/(?<=[.!?])\s+/)
+  .map(x => norm(x))
+  .filter(x => x.length >= 25);
+ if (sentences.length < 2) {
+  return { ok: false, reason: 'Paragraf en az 2 tam cümleden oluşmalı ve kaynak anlatımdan birebir alınmalı.' };
+ }
+ let hit = 0;
+ for (const sentence of sentences) if (sourceNorm.includes(sentence)) hit++;
+ const ratio = hit / sentences.length;
+ if (ratio < 0.7) {
+  return {
+   ok: false,
+   reason: `Paragraf metni kaynak anlatımdan birebir alınmamış (cümlelerin yalnızca %${Math.round(ratio * 100)}'i kaynakta aynen geçiyor); paragraf sorularında parça kitaptan kelimesi kelimesine kopyalanmalı.`
+  };
+ }
+ return { ok: true, ratio };
+}
+
+/** İki sorunun seçenek takımlarının örtüşme oranı (0..1). */
+function optionOverlapRatio(a, b) {
+ const listA = Array.isArray(a?.options) ? a.options : [];
+ const listB = Array.isArray(b?.options) ? b.options : [];
+ if (!listA.length || !listB.length) return 0;
+ const setA = new Set(listA.map(o => norm(o)));
+ let inter = 0;
+ for (const o of listB) if (setA.has(norm(o))) inter++;
+ return inter / Math.max(4, listB.length);
+}
+
+/**
+ * Havuzdaki (ve kitap bankasındaki) sorularla birebir/çok benzer olup olmadığını
+ * yoklar. Yalnızca soru köküne değil; şık takımına ve doğru cevaba da bakar, böylece
+ * "tıpatıp benzeri" ve "aynı şıklarla yeniden yazılmış" sorular havuza girmez.
+ */
+function findDuplicateReason(draft, ctx, pool) {
+ const qNorm = norm(draft.question);
+ const answerNorm = norm(draft.answer);
+ for (const x of pool) {
+  if (!x || typeof x.question !== 'string') continue;
+  if (norm(x.question) === qNorm) return 'Aynı soru zaten kayıtlı.';
+  const sameUnit = x.unitId === ctx?.id;
+  const stemSim = sameUnit ? similarity(x.question, draft.question) : 0;
+  const optSim = optionOverlapRatio(draft, x);
+  if (optSim >= 1) return 'Bu şıkların tamamıyla aynı olduğu bir soru zaten kayıtlı.';
+  if (sameUnit && stemSim >= 0.78) return 'Bu ünite için çok benzer bir soru bulundu.';
+  if (sameUnit && stemSim >= 0.62 && norm(x.answer) === answerNorm) return 'Aynı cevabı ve kavramı paylaşan benzer bir soru bulundu.';
+  if (sameUnit && norm(x.answer) === answerNorm && optSim >= 0.5) return 'Aynı cevabı ve şıklarının çoğunu paylaşan bir soru zaten kayıtlı.';
+  if (sameUnit && stemSim >= 0.70 && optSim >= 0.5) return 'Kökü ve şıkları büyük ölçüde örtüşen bir soru bulundu.';
+  if (sameUnit && optSim >= 0.9) return 'Şıkları neredeyse aynı olan bir soru zaten kayıtlı.';
+ }
+ return null;
+}
+
 function checkDistractorHygiene(options, answer, meta = {}) {
  if (options.some(o => BANNED_OPTION_PATTERN.test(o))) {
   return 'Seçeneklerde "hepsi/hiçbiri" gibi kalitesiz ifade kullanıldı.';
@@ -994,10 +1062,21 @@ function checkDistractorHygiene(options, answer, meta = {}) {
   answer,
   explanation: meta.explanation || '',
   evidence: meta.evidence || '',
-  unitId: meta.unitId || ''
+  unitId: meta.unitId || '',
+  sourceText: meta.sourceText || ''
  });
  if (!psy.ok && psy.firstError) return psy.firstError;
  return null;
+}
+
+/**
+ * Şık kalitesi (çeldirici/simetri/uzunluk/kaynak sızıntısı) kaynaklı red mesajlarını
+ * ayırt eder; tekrar veya kaynak eksikliği gibi hatalarda model boşa yorulmasın.
+ */
+function isDistractorQualityError(message) {
+ const msg = String(message || '');
+ if (/zaten kayıtlı|benzer bir soru|Kaynak alıntısı|kaynak alıntısı/.test(msg)) return false;
+ return /çeldirici|alakasız|kalitesiz ifade|uzunluk|sızdırıyor|örtüşüyor|kapsadığı|simetri|çift doğru/i.test(msg);
 }
 
 function evidenceExists(evidence, ctx, passage) {
@@ -1017,22 +1096,44 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
  if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) {
   throw Error('Seçenekler veya cevap geçersiz.');
  }
- const hygieneErr = checkDistractorHygiene(options, answer, { question, explanation, evidence, unitId: ctx?.id || '' });
+ const hygieneErr = checkDistractorHygiene(options, answer, { question, explanation, evidence, unitId: ctx?.id || '', sourceText: passage?.text || ctx?.text || '' });
  if (hygieneErr) throw Error(hygieneErr);
+ // --- Paragraf (parçaya dayalı) soru: parça kaynaktan birebir alınmış olmalı ---
+ const rawParagraph = typeof o.paragraph === 'string' ? o.paragraph.trim() : '';
+ const stemRefsParagraph = /parçaya g|parçadan|parçada|paragrafta|paragraf|bu metne g|metne g|verilen metne|verilen parçaya/i.test(norm(question));
+ const wantsParagraph = o.questionType === 'paragraf' || stemRefsParagraph;
+ let paragraph = '';
+ if (wantsParagraph) {
+  if (rawParagraph.length < 180 || rawParagraph.length > 900) {
+   throw Error('Parçaya dayalı soruda "paragraph" alanı, konu anlatımından birebir alınmış 180-900 karakterlik bir parça olmalı.');
+  }
+  const paraGround = paragraphGrounding(rawParagraph, ctx, passage);
+  if (!paraGround.ok) throw Error(paraGround.reason);
+  paragraph = rawParagraph;
+ }
  const groundRes = precisionEngine.verifyEvidenceGrounding(evidence, ctx, passage);
  if (!groundRes.ok) {
   throw Error(groundRes.reason || 'Kaynak alıntısı ünite anlatımında veya kitap pasajında bulunamadı.');
+ }
+ // --- KAYNAK TEMELLENDİRME KAPISI: özetlerde/kitapta olmayan bilgi sorulamaz ---
+ // Parçaya dayalı sorularda parçanın kendisi de sorunun parçasıdır ve kaynaktan
+ // birebir alındığı zaten doğrulanmıştır; bu yüzden kapsama ölçümüne o da katılır.
+ const groundingRes = summaryGrounding.evaluate({
+  unitId: ctx.id,
+  question: paragraph ? `${question} ${paragraph}` : question,
+  options,
+  answer
+ });
+ if (!groundingRes.ok) {
+  recordRejection('grounding', groundingRes.reason);
+  throw Error(groundingRes.reason);
  }
  const fullPrec = precisionEngine.evaluateDraftFull({ question, options, answer, explanation, evidence }, ctx, passage);
  if (!fullPrec.ok && fullPrec.firstError) {
   throw Error(fullPrec.firstError);
  }
- if ([...questionBank, ...existing].some(x => norm(x.question) === norm(question))) {
-  throw Error('Aynı soru zaten kayıtlı.');
- }
- if ([...questionBank, ...existing].some(x => x.unitId === ctx.id && similarity(x.question, question) >= 0.82)) {
-  throw Error('Bu ünite için çok benzer bir soru bulundu.');
- }
+ const duplicateReason = findDuplicateReason({ question, options, answer }, ctx, [...questionBank, ...bookStyleQuestions, ...existing]);
+ if (duplicateReason) throw Error(duplicateReason);
  // Evolver AI tarafından kum havuzunda doğrulanan özel JS kuralını uygula
  if (policy?.customRuleCode) {
   try {
@@ -1087,11 +1188,15 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
   ...(fullPrec.styleSignals?.length ? { styleSignals: fullPrec.styleSignals } : {}),
   precisionTier: fullPrec.precisionScore >= 90 ? 'elite_osym' : fullPrec.precisionScore >= 78 ? 'strong' : 'standard',
   evidenceTier: groundRes.tier || 'direct',
+  ...(groundingRes.score !== null && groundingRes.score !== undefined
+   ? { grounding: { score: Number(groundingRes.score.toFixed(3)), inSource: true } }
+   : {}),
   ...(fullPrec.warnings?.length ? { precisionWarnings: fullPrec.warnings.slice(0, 4) } : {}),
   ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : {}),
   ...(typeof o.questionType === 'string' && QUESTION_TYPES.includes(o.questionType) ? { questionType: o.questionType } : {}),
   ...(typeof o.questionAngle === 'string' && QUESTION_ANGLES.includes(o.questionAngle) ? { questionAngle: o.questionAngle } : {}),
   ...(typeof o.bloomLevel === 'string' && o.bloomLevel.trim() ? { bloomLevel: o.bloomLevel.trim().slice(0, 40) } : {}),
+  ...(paragraph ? { paragraph, questionType: PARAGRAPH_QUESTION_TYPE } : {}),
   createdAt: new Date().toISOString()
  };
 }
@@ -1109,7 +1214,11 @@ function extractJsonLoose(rawText) {
  throw Error('JSON ayrıştırılamadı');
 }
 
-async function runModel(which, input, temperature, signal, numPredict = 900, { fastThink = true, numCtx = 4096, botRole = null, isSprint = false } = {}) {
+async function runModel(which, input, temperature, signal, numPredict = 900, opts = {}) {
+ return modelInferenceQueue.run(which, () => runModelRequest(which, input, temperature, signal, numPredict, opts), { signal });
+}
+
+async function runModelRequest(which, input, temperature, signal, numPredict = 900, { fastThink = true, numCtx = 4096, botRole = null, isSprint = false } = {}) {
  const start = Date.now();
  const roleInferred = botRole || (
   /hakem|judge|psikometri/i.test(String(which)) ? 'judge'
@@ -1140,7 +1249,9 @@ async function runModel(which, input, temperature, signal, numPredict = 900, { f
   prompt: input,
   stream: false,
   format: 'json',
-  keep_alive: cachedHardwareProfile?.keepAlive ?? '5m',
+  // Ollama unloads this model after the request by default, avoiding several
+  // role models staying resident in a small GPU's VRAM at once.
+  keep_alive: defaultKeepAlive,
   options: hwAdjusted
  };
  if (fastThink && !unsupportedThinkModels.has(which)) {
@@ -1179,17 +1290,10 @@ async function runModel(which, input, temperature, signal, numPredict = 900, { f
  }
 }
 
-async function runVideoDirectorModel(which, input, temperature, signal, numPredict = 2200, opts = {}) {
- if (!isAllowedVideoModel(which)) {
-  throw Error(`Videolar yalnızca Kimi ve Ollama modelleriyle oluşturulabilir (${which}).`);
- }
- // %100 Yerel çalıştırma: Harici Kimi API anahtarı veya bulut uç noktası kesinlikle istenmez/kullanılmaz.
- return runModel(which, input, temperature, signal, numPredict, { ...opts, botRole: 'videoDirector' });
-}
 
 async function finalize(parsed, ctx, model, verification, passage = null, policy = null, adaptiveQuality = null, targetAngle = null) {
  return withSaveLock(async () => {
-  const latest = await load();
+  let latest = await load();
   const record = validate(parsed, ctx, latest, model, passage, policy);
   record.verification = verification;
   record.difficulty = verification.difficulty;
@@ -1199,33 +1303,23 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   if (verification.bloomLevel && !record.bloomLevel) record.bloomLevel = verification.bloomLevel;
   record.curatedBy = 'ai-council';
 
-  // Adaptif kalite eşiği: JARVIS seviyesi yükseldikçe kalitesi eşik altında kalan soruyu AI kendi kendine eler!
+  // Adaptif kalite eşiği: düşük kaliteli taslaklar onay havuzuna alınmaz.
   const minQ = Number(adaptiveQuality?.minQualityScore || 3);
   if (Number.isFinite(record.qualityScore) && record.qualityScore < minQ) {
    record.status = 'rejected';
    record.curationReason = `AI Konseyi Kalite Eşiği (${adaptiveQuality?.title || 'Gelişmiş'}: ${record.qualityScore}/${minQ} altında)`;
+   latest = await makeRoomForQuestion(latest);
    latest.push(record);
-   await save(pruneRejectedTail(latest));
+   await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
    telemetry.rejectedJudges++;
    recordRejection('adaptive_quality_floor', record.curationReason);
    return record;
   }
 
   record.curationReason = `2 hakem + ${adaptiveQuality?.title || 'AI Konseyi'} tarafından otomatik onaylandı`;
-  // Havuz tavanına gelirse bile durma: en eski ve en düşük skorlu eski onaylıyı arşivle, kesintisiz yeni soru ekle!
-  if (latest.length >= MAX_QUESTIONS) {
-   let victimIdx = -1;
-   let worstScore = Infinity;
-   for (let i = 0; i < latest.length; i++) {
-    const q = latest[i];
-    const s = q.status === 'rejected' ? -10 : (q.qualityScore || 3);
-    if (s < worstScore) { worstScore = s; victimIdx = i; }
-   }
-   if (victimIdx !== -1) latest.splice(victimIdx, 1);
-  }
-
+  latest = await makeRoomForQuestion(latest);
   latest.push(record);
-  await save(pruneRejectedTail(latest));
+  await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
   telemetry.approvedTotal++;
   telemetry.recentApprovedTimestamps.push(Date.now());
   return record;
@@ -1242,6 +1336,44 @@ function pruneRejectedTail(items, maxRejected = 250) {
  return items.filter((_, i) => !toDrop.has(i));
 }
 
+function trimQuestionPool(items, limit = MAX_QUESTIONS) {
+ if (items.length <= limit) return items;
+ const keep = new Set(items.map((item, index) => ({
+  index,
+  score: item?.status === 'rejected'
+   ? -1000
+   : (Number(item?.qualityScore ?? item?.verification?.qualityScore ?? 3) * 100)
+    + (Number(item?.examPotential ?? item?.verification?.examPotential ?? 0) * 4)
+    + (Number(item?.precisionScore ?? 0) / 10)
+ })).sort((a, b) => b.score - a.score || b.index - a.index)
+  .slice(0, Math.max(0, limit))
+  .map(item => item.index));
+ return items.filter((_, index) => keep.has(index));
+}
+
+async function makeRoomForQuestion(items) {
+ let current = pruneRejectedTail(items);
+ const approvedCount = current.reduce((count, item) => count + (item?.status === 'approved' ? 1 : 0), 0);
+ if ((approvedCount >= QUESTION_POOL_CAPACITY || current.length >= MAX_QUESTIONS) && !curatorBusy) {
+  curatorBusy = true;
+  try {
+   const result = await poolCurator.scanAndPrune({
+    items: current,
+    forcePrune: true,
+    threshold: QUESTION_POOL_CAPACITY,
+    targetKeep: QUESTION_POOL_REFILL_TARGET
+   });
+   current = pruneRejectedTail(result.items || current);
+  } finally {
+   curatorBusy = false;
+   lastCuratorScanAt = Date.now();
+   lastPoolCapCheckAt = lastCuratorScanAt;
+  }
+ }
+ if (current.length >= MAX_QUESTIONS) current = trimQuestionPool(current, MAX_QUESTIONS - 1);
+ return current;
+}
+
 // Hakemlerin veya AI kurulunun elediği geçerli biçimli soruyu da havuzda "rejected" (otomatik elendi) olarak kayıt altına alır
 async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage = null) {
  if (!parsedDraft || typeof parsedDraft !== 'object') return;
@@ -1250,8 +1382,9 @@ async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage =
  if (!Array.isArray(options) || options.length !== 4 || options.some(x => typeof x !== 'string' || x.trim().length < 2)) return;
  if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) return;
  await withSaveLock(async () => {
-  const latest = await load();
+  let latest = await load();
   if ([...questionBank, ...latest].some(x => norm(x.question) === norm(question))) return;
+  latest = await makeRoomForQuestion(latest);
   latest.push({
    id: randomUUID(),
    unitId: ctx.id,
@@ -1270,8 +1403,62 @@ async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage =
    ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : {}),
    createdAt: new Date().toISOString()
   });
-  await save(pruneRejectedTail(latest));
+  await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
  }).catch(() => {});
+}
+
+/**
+ * Ünitede hangi kavramların çok/az sorulduğunu çıkarır; modeli az işlenmiş kavrama
+ * yönlendirerek arka planda üretilen soruların aynı kavram etrafında dönmesini engeller.
+ */
+function buildConceptCoverageSnippet(ctx, items, passage = null) {
+ const unitEntry = passagesByUnit.get(ctx?.id) || [];
+ const rawKeywords = [
+  ...(passage?.keywords || []),
+  ...(unitEntry[0]?.keywords || [])
+ ];
+ const keywords = [...new Set(rawKeywords.map(k => String(k || '').trim()).filter(k => k.length >= 4))];
+ if (!keywords.length) return '';
+ const pool = [...questionBank, ...items].filter(x => x && x.unitId === ctx?.id);
+ const coverage = new Map(keywords.map(k => [k, 0]));
+ for (const q of pool) {
+  const hay = norm(`${q.question || ''} ${q.answer || ''} ${(q.options || []).join(' ')} ${q.explanation || ''}`);
+  if (!hay) continue;
+  for (const k of coverage.keys()) {
+   if (hay.includes(norm(k))) coverage.set(k, coverage.get(k) + 1);
+  }
+ }
+ const sorted = [...coverage.entries()].sort((a, b) => a[1] - b[1]);
+ const fresh = sorted.filter(([, n]) => n <= 1).slice(0, 4).map(([k]) => k);
+ const saturated = sorted.filter(([, n]) => n >= 2).slice(-5).map(([k]) => k);
+ if (!fresh.length && !saturated.length) return '';
+ const parts = [];
+ if (fresh.length) parts.push(`Bu turda ŞU AZ İŞLENMİŞ KAVRAM(LAR)DAN BİRİNİ sor: ${fresh.join(', ')}.`);
+ if (saturated.length) parts.push(`Şu kavramlar bu ünitede yeterince soruldu, mümkünse FARKLI BİR KAVRAM seç: ${saturated.join(', ')}.`);
+ return `\nKAVRAM KAPSAMA YÖNLENDİRMESİ (tekrarı önlemek için): ${parts.join(' ')}`;
+}
+
+/**
+ * Bu ünitenin resmî kitap ("Neler Öğrendik?") sorularından, havuzda en az karşılanmış
+ * olanı örnek olarak gösterir: model aynı kavram ailesinden, aynı sınav tadında ama
+ * FARKLI yazılmış bir soru kurar. Böylece üretim kitabın kendi sorusuna yakın kalır.
+ */
+function buildBookSeedSnippet(ctx, items) {
+ const unitBook = bookStyleQuestions.filter(q => q.unitId === ctx?.id);
+ if (!unitBook.length) return '';
+ const pool = [...questionBank, ...items].filter(x => x && x.unitId === ctx?.id);
+ const scored = unitBook.map(q => {
+  let best = 0;
+  for (const p of pool) {
+   const sim = similarity(p.question || '', q.question || '');
+   if (sim > best) best = sim;
+  }
+  return { q, used: best };
+ });
+ scored.sort((a, b) => a.used - b.used);
+ const seeds = scored.slice(0, 2);
+ const lines = seeds.map(({ q }) => `Soru="${q.question}" | Doğru="${q.answer}" | Konu=${q.topic || ctx.unit}`);
+ return `\nKİTAP SORUSU ÖRNEĞİ (bu ünitenin gerçek kitap sorusu; AYNISINI YAZMA ama aynı kavram ailesinden, aynı ÖSYM tadında ve kitabın ölçtüğü bilgiyi ölçen bir soru kur): ${lines.join(' || ')}`;
 }
 
 function buildExemplarsSnippet(ctx, items) {
@@ -1301,8 +1488,12 @@ function buildAvoidErrorsSnippet() {
 
 function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTypes, policy = null, jarvisMemory = null, researchMemory = null, adaptiveQuality = null, targetAngles = null, studentProfile = null, apexState = null, trainerState = null) {
  const existingQuestions = [...questionBank, ...items].filter(x => x.unitId === ctx.id);
- const avoidQuestions = existingQuestions.slice(-10).map(x => x.question).join(' / ');
- const recentAnswers = existingQuestions.slice(-12).map(x => x.answer).filter(Boolean).join(', ');
+ const avoidQuestions = existingQuestions.slice(-18).map(x => x.question).join(' / ');
+ const recentAnswers = existingQuestions.slice(-16).map(x => x.answer).filter(Boolean).join(', ');
+ const recentOptionSets = existingQuestions.slice(-6)
+  .map(x => Array.isArray(x.options) ? x.options.filter(o => o !== x.answer).slice(0, 2).join(' + ') : '')
+  .filter(Boolean)
+  .join(' / ');
  const diffMap = {
   kolay: policy?.difficultyDirectives?.kolay || 'KOLAY (Yüksek Sınav Kalitesi): Net temel kavramı veya ilkeyi ölçmeli ama sığ olmamalı; güçlü çeldiricilerle tam doğruya hazırlamalı.',
   orta: policy?.difficultyDirectives?.orta || 'ORTA (Yüksek Sınav Kalitesi): İki bilgiyi birleştirme, karşılaştırma veya kavram tuzağını ayırt etme gerektirmeli.',
@@ -1333,11 +1524,17 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
   const qAngle = angles[0] || 'dogrudan_tanim';
   const typeHint = QUESTION_TYPE_HINTS[qType] || '';
   const angleHint = QUESTION_ANGLE_HINTS[qAngle] || '';
+  const coverageHint = buildConceptCoverageSnippet(ctx, items, passage);
+  const bookSeedHint = buildBookSeedSnippet(ctx, items);
   return `Sen ÖSYM sınav komisyonunda görevli uzman Türkçe antrenörlük soru yazarısın. KENDİNE ŞUNU SOR: "Ben ÖSYM'de soru hazırlayan bir uzman olsaydım bu konudan adayı gerçekten ayırt edecek nasıl bir soru hazırlardım?" HEDEF: Öğrenciyi sınavda 5 kitaptan çıkacak 100 sorunun tamamında 100/100 FULL DOĞRU seviyesine çıkarmak! Yalnızca aşağıdaki konu anlatımındaki bilgilerle çözülebilen, KESİNLİKLE TEK doğru cevaplı dört seçenekli, SINAVDA ÇIKMA POTANSİYELİ YÜKSEK ve ÖSYM TÜRKÇESİYLE ÖRÜLMÜŞ BİR özgün soru üret (I-II-III öncüllü, saha vakalı veya ince kavram ayrımlı kur!).
 Sorunun zorluk seviyesi: ${diffMap[diff]}
 Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
-ÖSYM Çeldirici ve Simetri Kuralı: 4 seçeneğin tamamı aynı üniteden mantıklı, birbirine çok yakın uzunlukta (±%25), aynı dilbilgisi/ek yapısında ve düşündürücü olsun; doğru şık asla diğerlerinden belirgin biçimde uzun olmasın; "hepsi/hiçbiri" yasak; doğru cevabı soru kökünde kelime olarak ele verme! Kaynakta bulunmayan bilgi isteme. JSON döndür: question (soru), options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kalıcı ezber için kısa özlü öğretici gerekçe + püf noktası), evidence (anlatımdan birebir en az 15 karakter alıntı), topic (kısa konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint} Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ BAZI SORULAR (tekrarlama): ${avoidQuestions}.${recentAnswers ? ` FARKLI CEVAPLAR SEÇ: ${recentAnswers}.` : ''}${exemplars}${avoidErr} KONU ANLATIMI: ${sourceText}`;
+${DISTRACTOR_ENGINEERING_RULES}
+${qType === PARAGRAPH_QUESTION_TYPE ? PARAGRAPH_QUESTION_RULES : ''}
+KAYNAK SINIRI (ÇOK ÖNEMLİ): YALNIZCA aşağıdaki konu anlatımında ve bu ünitenin kitap pasajlarında GEÇEN kavramlarla soru kur; özetlerde/kitapta bulunmayan hiçbir bilgi, terim veya sayı uydurma.${bookSeedHint}
+TEKRAR YASAĞI (ÇOK ÖNEMLİ): Aşağıda listelenen sorulara BENZER bir soru kurma. Aynı kavramı soracaksan bile soru kökünü, kalıbı, şıkları ve doğru cevabı değiştir; iki soru asla tıpatıp aynı veya tek kelime farklı olmasın.${coverageHint}
+JSON döndür: question (soru)${qType === PARAGRAPH_QUESTION_TYPE ? ', paragraph (KONU ANLATIMINDAN birebir alınmış 3-5 cümlelik parça)' : ''}, options (4 farklı metin), answer (options içindeki tam doğru metin), explanation (kalıcı ezber için kısa özlü öğretici gerekçe + püf noktası), evidence (anlatımdan birebir en az 15 karakter alıntı), topic (kısa konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint} Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}. BU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.${recentAnswers ? ` FARKLI CEVAPLAR SEÇ: ${recentAnswers}.` : ''}${recentOptionSets ? ` YAKIN ZAMANDA KULLANILAN ÇELDİRİCİLERİ TEKRAR KULLANMA: ${recentOptionSets}.` : ''}${exemplars}${avoidErr} KONU ANLATIMI: ${sourceText}`;
  }
 
  const specs = targetDifficulties.map((d, i) => `Soru ${i + 1}: zorluk=${d.toUpperCase()} (${diffMap[d]}), tip=${targetTypes[i]}, açı=${angles[i]} (${QUESTION_ANGLE_HINTS[angles[i]] || ''})`).join('\n');
@@ -1345,11 +1542,15 @@ Soru tipi: ${typeHint}
 ${specs}
 ÖSYM Komisyonu Kuralları:
 - Kolay da olsa orta da olsa zor da olsa her soru gerçek ÖSYM seçiciliğinde ve kalıcı öğretici olmalı (sığ ezber sorma).
-- Tüm 4 şık birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; "hepsi/hiçbiri" yasak.
+- Tüm 4 şık aynı kavram ailesinden, birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; konuyla alakasız/komik dolgu şık KESİNLİKLE yasak; "hepsi/hiçbiri" yasak.
 - Her yanlış şık anlatıma göre kesinlikle YANLIŞ olmalı; soru kökünde doğru cevaba kelime sızıntısı olmamalı.
 - Her sorunun "evidence" alanı KONU ANLATIMI içinden kelime kelime alınmış en az 15 karakterlik bir alıntı olsun.
 - Kısa ama püf noktasını öğreten explanation yaz.
-JSON döndür: {"questions": [ {question, options, answer, explanation, evidence, topic, questionType, questionAngle, bloomLevel}, ... ]}${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint}
+- Sorular birbirinin aynısı veya tek kelime farklısı OLMAMALI; her soru farklı kavram, farklı kalıp ve farklı doğru cevap kullanmalı.${buildConceptCoverageSnippet(ctx, items, passage)}
+- KAYNAK SINIRI: Yalnızca konu anlatımında ve bu ünitenin kitap pasajlarında geçen kavramlar kullanılmalı; kaynakta olmayan terim, sayı veya bilgi UYDURULMAMALI.${buildBookSeedSnippet(ctx, items)}
+${DISTRACTOR_ENGINEERING_RULES}
+${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? PARAGRAPH_QUESTION_RULES : ''}
+JSON döndür: {"questions": [ {question, options, answer, explanation, evidence, topic, questionType, questionAngle, bloomLevel${targetTypes.includes(PARAGRAPH_QUESTION_TYPE) ? ', paragraph (yalnızca paragraf tipinde)' : ''}}, ... ]}${osymHint}${axiomHint}${tvgfbfStyleHint}${layeredWorkflowHint}${ragCrossHint}${policyRule}${apexHint}${trainerHint}${jarvisHint}${researchHint}${perfHint}
 Kitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}.
 TEKRARLAMA: ${avoidQuestions}.${recentAnswers ? ` FARKLI KAVRAMLAR: ${recentAnswers}.` : ''}${exemplars}${avoidErr}
 KONU ANLATIMI: ${sourceText}`;
@@ -1361,7 +1562,7 @@ function buildVerifierPrompt(ctx, draft, passage = null, policy = null, apexStat
  const apexJudge = apex.getBotDirectiveBlock(apexState, 'judge');
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
  const tvgfbfStyleBlock = tvgfbfSwarm.getUnitStylePromptBlock(ctx.id);
- return `Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin ve psikometri uzmanısın ("ÖSYM bu soruyu iptal etmeden yayımlar mıydı?" ölçütüyle denetle). Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, BİRDEN FAZLA SEÇENEK DOĞRU VEYA KISMEN DOĞRU KABUL EDİLEBİLİRSE, doğru şık belirgin biçimde uzun/ipuçlu ise, Türkçe dilbilgisi bozuksa veya ÖSYM seçiciliği taşımıyorsa reddet (singleCorrect=false ve dualAnswerRisk=true yap). Zorluğu kendi başına sınıflandır: "kolay", "orta" veya "zor"; ayrıca ÖSYM sınavında çıkma potansiyelini (examPotential: 1-5) puanla.${policyRule}${apexJudge}${axiomBlock}${tvgfbfStyleBlock} Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean: YALNIZCA TEK doğru şık kesin ise true), dualAnswerRisk (boolean: ikinci bir şıkkın kısmen de olsa doğru sayılma riski varsa true), secondBestOption (varsa en yakın çeldirici metni, yoksa boş), supported (boolean), qualityOk (boolean), qualityScore (1-5), examPotential (1-5), difficulty ("kolay"|"orta"|"zor"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz"), evidence (anlatımdan birebir >15 karakter), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${sourceText}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
+ return `Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin ve psikometri uzmanısın ("ÖSYM bu soruyu iptal etmeden yayımlar mıydı?" ölçütüyle denetle). Aşağıdaki soruyu YALNIZ verilen anlatıma göre bağımsız çöz. Soru, anlatımda öğretilmeyen bilgiye ihtiyaç duyuyorsa, BİRDEN FAZLA SEÇENEK DOĞRU VEYA KISMEN DOĞRU KABUL EDİLEBİLİRSE, doğru şık belirgin biçimde uzun/ipuçlu ise, Türkçe dilbilgisi bozuksa, şıklardan biri konuyla tamamen alakasız/komik bir dolgu şık ise, şıklar aynı kavram ailesinden değilse veya ÖSYM seçiciliği taşımıyorsa reddet (singleCorrect=false ve qualityOk=false yap; gerekçeyi reason alanında belirt). Zorluğu kendi başına sınıflandır: "kolay", "orta" veya "zor"; ayrıca ÖSYM sınavında çıkma potansiyelini (examPotential: 1-5) puanla.${policyRule}${apexJudge}${axiomBlock}${tvgfbfStyleBlock} Dış bilgi kullanma. JSON döndür: answer (dört seçenekten tam doğru metin, çözemiyorsan boş), singleCorrect (boolean: YALNIZCA TEK doğru şık kesin ise true), dualAnswerRisk (boolean: ikinci bir şıkkın kısmen de olsa doğru sayılma riski varsa true), secondBestOption (varsa en yakın çeldirici metni, yoksa boş), supported (boolean), qualityOk (boolean), qualityScore (1-5), examPotential (1-5), difficulty ("kolay"|"orta"|"zor"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz"), distractorPlausible (boolean: dört şık da aynı kavram ailesinden, birbirine yakın ve "az kalsın doğru" niteliğinde mi; alakasız/saçma şık varsa false), evidence (anlatımdan birebir >15 karakter), reason (kısa Türkçe gerekçe). KONU ANLATIMI: ${sourceText}\nSORU: ${draft.question}\nSEÇENEKLER: ${JSON.stringify(draft.options)}`;
 }
 
 function buildBatchVerifierPrompt(ctx, itemsList, passage = null, policy = null, apexState = null) {
@@ -1382,6 +1583,11 @@ function parseJudgeVerdict(check, jm, draft, ctx, passage) {
  if (check?.dualAnswerRisk === true) {
   telemetry.dualAnswerBlocked++;
   throw Error(`Bağımsız denetçi (${jm}) soruda ikinci bir doğru şık riski (dualAnswerRisk) tespit etti${check.secondBestOption ? ` (${check.secondBestOption})` : ''}; soru kaydedilmedi.`);
+ }
+ if (check?.distractorPlausible === false) {
+  telemetry.rejectedPreflight++;
+  recordRejection('distractor_hygiene', 'Hakem çeldiricileri alakasız/zayıf buldu');
+  throw Error(`Bağımsız denetçi (${jm}) çeldiricilerin aynı kavram ailesinden ve "az kalsın doğru" niteliğinde olmadığını bildirdi (distractorPlausible=false); soru kaydedilmedi.`);
  }
  if (!check || check.singleCorrect !== true || check.supported !== true || check.qualityOk !== true || typeof check.answer !== 'string' || !draft.options.includes(check.answer) || typeof check.evidence !== 'string' || !evidenceExists(check.evidence, ctx, passage) || typeof check.reason !== 'string' || !check.reason.trim() || !DIFFICULTIES.includes(check.difficulty)) {
   throw Error(`Bağımsız denetçilerden biri (${jm}) soruyu, tek doğru cevabı, kaliteyi, zorluk etiketini veya kaynak dayanağını doğrulayamadı; soru kaydedilmedi.`);
@@ -1417,7 +1623,7 @@ async function trySelfCorrect(parsedDraft, critiqueReason, ctx, model, targetDif
   : '';
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
  const fixPrompt = `Aşağıdaki çok seçenekli soru taslağı denetçi tarafından şu gerekçeyle reddedildi: "${critiqueReason}".${surgicalHints}${axiomBlock}
-Lütfen yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu veya çeldiricilerini düzelt; KESİNLİKLE TEK DOĞRU CEVAPLI (asla ikinci bir doğru seçenek ihtimali bırakma!), eşit uzunlukta 4 şıklı, kök sızıntısız, hedef zorlukta (${targetDifficulty}) JSON üret: question, options, answer, explanation, evidence, topic.
+Lütfen yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu veya çeldiricilerini düzelt; KESİNLİKLE TEK DOĞRU CEVAPLI (asla ikinci bir doğru seçenek ihtimali bırakma!), eşit uzunlukta 4 şıklı, kök sızıntısız, hedef zorlukta (${targetDifficulty}) JSON üret: question, options, answer, explanation, evidence, topic${typeof parsedDraft?.paragraph === 'string' && parsedDraft.paragraph.trim() ? ', paragraph (ESKİ TASLAKTAKİ PARÇAYI KELİMESİ KELİMESİNE AYNEN KORU; değiştirme!)' : ''}.
 ESKİ TASLAK: ${JSON.stringify(parsedDraft)}
 KONU ANLATIMI: ${sourceText}`;
  const numCtx = Math.min(8192, Math.max(4096, Math.ceil((fixPrompt.length + 1200) / 3)));
@@ -1564,11 +1770,11 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  ]);
  const adaptiveQuality = jarvis.computeAdaptiveQuality(jarvisMemory, researchMemory, getTelemetrySnapshot(), apexState, trainerState);
  const fastThink = opts.fastThink ?? cfg.fastThink;
- const selfCorrection = opts.selfCorrection ?? false;
- const passageMode = opts.passageMode ?? 'summary-only';
- const smartDifficulty = opts.smartDifficulty ?? false;
+ const selfCorrection = opts.selfCorrection ?? cfg.selfCorrection;
+ const passageMode = opts.passageMode ?? cfg.passageMode;
+ const smartDifficulty = opts.smartDifficulty ?? cfg.smartDifficulty;
  const forceSubSecond = Boolean(opts.forceSubSecond);
- const subSecondEnabled = cfg.subSecondAllBots !== false;
+ const subSecondEnabled = cfg.subSecondAllBots === true;
  const subSecondBudgetMs = Number(opts.subSecondBudgetMs || cfg.subSecondBudgetMs || SUBSECOND_BOT_BUDGET_MS);
 
  const resultAudit = audit(items);
@@ -1633,8 +1839,23 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   draft = validate(parsed, ctx, items, model, passage, policy);
  } catch (e) {
   telemetry.rejectedPreflight++;
-  recordRejection(e.message.includes('örtüş') || e.message.includes('uzun') || e.message.includes('kalitesiz') ? 'distractor_hygiene' : e.message.includes('Kaynak') ? 'evidence' : 'duplicate');
-  throw e;
+  recordRejection(e.message.includes('örtüş') || e.message.includes('uzun') || e.message.includes('kalitesiz') || e.message.includes('alakasız') ? 'distractor_hygiene' : e.message.includes('Kaynak') ? 'evidence' : 'duplicate');
+  // Çeldirici kalitesi/simetrisi yüzünden elenen taslaklar hemen çöpe gitmesin:
+  // model şıkları aynı kavram ailesinden, birbirine yakın ve "az kalsın doğru"
+  // olacak şekilde bir kez daha yazmayı denesin (kalite korunur, soru kaybolmaz).
+  if (selfCorrection && isDistractorQualityError(e.message)) {
+   try {
+    const fixed = await trySelfCorrect(parsed, e.message, ctx, model, targetDifficulty, passage, signal, fastThink);
+    const fixedDraft = validate(fixed, ctx, items, model, passage, policy);
+    parsed = fixed;
+    draft = fixedDraft;
+    telemetry.refinedSucceeded++;
+   } catch {
+    throw e;
+   }
+  } else {
+   throw e;
+  }
  }
 
  onPhase?.('verifying');
@@ -2163,16 +2384,29 @@ JSON döndür: {"reason": "neden bu iyileştirmeyi yaptın", "generatorAddendum"
  }
 }
 
-async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = 120000, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
- if (busy) throw Error('Bir üretim zaten devam ediyor.');
+// Manuel üretim isteği, arka planda çalışan ünitenin bitmesini kısa bir süre bekler;
+// böylece kullanıcı "üretimi durdur" demek zorunda kalmaz ama hatlar yine de üst üste binmez.
+async function waitForPipelineIdle(maxMs = 60_000) {
+ const deadline = Date.now() + maxMs;
+ while (busy || autoControllers.size > 0) {
+  if (Date.now() >= deadline) return false;
+  await sleep(250);
+ }
+ return true;
+}
+
+async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = 180000, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
+ if (busy || autoControllers.size > 0) throw Error('Soru üretim hattı zaten çalışıyor; istekler sırayla tamamlanacak.');
+ const cfg = await getPipelineConfig();
  busy = true; phase = 'loading'; lastError = '';
  controller = new AbortController();
  const timeout = setTimeout(() => controller.abort(), timeoutMs);
  try {
   return await generateAndVerify(ctx, model, verifierModel, judge2Model, controller.signal, p => { phase = p; }, {
-   passageMode: 'summary-only',
-   smartDifficulty: false,
-   selfCorrection: false,
+   passageMode: cfg.passageMode,
+   smartDifficulty: cfg.smartDifficulty,
+   selfCorrection: cfg.selfCorrection,
+   fastThink: cfg.fastThink,
    forceSubSecond,
    subSecondBudgetMs
   });
@@ -2189,7 +2423,7 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg) 
  const ctrl = new AbortController();
  autoControllers.set(ctrl, entry);
  const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
- generateAndVerify(ctx, model, verifierModel, judge2Model, ctrl.signal, p => { entry.phase = p; }, {
+ const run = generateAndVerify(ctx, model, verifierModel, judge2Model, ctrl.signal, p => { entry.phase = p; }, {
   passageMode: cfg.passageMode,
   smartDifficulty: cfg.smartDifficulty,
   selfCorrection: cfg.selfCorrection,
@@ -2197,6 +2431,7 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg) 
  })
   .catch(e => { autoLastError = e.name === 'AbortError' ? 'Üretim zaman aşımına uğradı veya durduruldu.' : e.message; })
   .finally(() => { clearTimeout(timeout); autoControllers.delete(ctrl); });
+ return run;
 }
 
 async function triggerJarvisReflect(evolverModel) {
@@ -2312,36 +2547,17 @@ function pickBestModel(models, patterns, exclude = []) {
  return models.find(m => !exclude.includes(m)) || models[0];
 }
 
-function pickBestVideoModel(models) {
- return pickBestModel(models, [
-  /^kimi-k3\.1-pro:cloud$/i,
-  /^kimi.*:cloud$/i,
-  /kimi/i,
-  /^glm-5\.3-flash:cloud$/i,
-  /^glm.*:cloud$/i,
-  /^deepseek-v4\.1-flash:cloud$/i,
-  /^deepseek.*:cloud$/i,
-  /:cloud$/i,
-  /^tempo-ogretmen/i,
-  /qwen3/i,
-  /qwen2\.5(?!.*coder)/i,
-  /gemma/i,
-  /llama/i
- ]);
-}
 
-// Sıfır tıklama: Kurulu modellerden Üretici, 1. Hakem, 2. Hakem, Evrimci, Video (Kimi/GLM/DeepSeek :cloud öncelikli) ve Qwen Coder rollerini otomatik doldurur
+// Sıfır tıklama: Kurulu modellerden Üretici, 1. Hakem, 2. Hakem, Evrimci ve Qwen Coder rollerini otomatik doldurur
 async function ensureRolesAutoAssigned(installedModels, createSpecialistsIfMissing = false) {
  if (!Array.isArray(installedModels) || !installedModels.length) return { changed: false, models: [] };
  const jCfg = await jarvis.loadConfig();
  if (jCfg.autoAssignRoles === false) return { changed: false, models: installedModels };
 
- const settingsNow = await readSettings();
  const curGen = await selectedModel();
  const curVer = await selectedVerifierModel(curGen);
  const curJ2 = await selectedJudgeModel('judge2Model', defaultJudge2Model);
  const curEvo = await selectedEvolverModel(curGen);
- const curVideo = await selectedVideoModel(curEvo);
  const patch = {};
 
  if (!installedModels.includes(curGen)) {
@@ -2358,10 +2574,6 @@ async function ensureRolesAutoAssigned(installedModels, createSpecialistsIfMissi
  }
  if (!installedModels.includes(curEvo)) {
   patch.evolverModel = pickBestModel(installedModels, [/^tempo-mimar/i, /qwen3/i, /qwen2\.5/i, /gemma/i]) || activeGen;
- }
- const bestVideo = pickBestVideoModel(installedModels);
- if (!installedModels.includes(curVideo) || (!settingsNow.videoModelLocked && /:cloud$/i.test(bestVideo) && !/:cloud$/i.test(curVideo))) {
-  patch.videoModel = bestVideo || patch.evolverModel || curEvo;
  }
 
  let changed = false;
@@ -2579,470 +2791,11 @@ async function triggerLessonEnhance(unitId, fallbackModel, { forceReframe = fals
  }
 }
 
-async function resolveActiveVideoSetup(overrideModel = null, overrideEngineId = '') {
- const settingsNow = await readSettings();
- const curGen = await selectedModel();
- const curEvo = await selectedEvolverModel(curGen);
- const explicitVideo = typeof settingsNow.videoModel === 'string' && settingsNow.videoModel.trim() && isAllowedVideoModel(settingsNow.videoModel)
-  ? settingsNow.videoModel.trim()
-  : '';
- let installedModels = [];
- let ollamaReachable = false;
- try {
-  const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(700) });
-  if (r.ok) {
-   const tags = await r.json().catch(() => null);
-   installedModels = Array.isArray(tags?.models) ? tags.models.map(m => m.name) : [];
-   ollamaReachable = true;
-  }
- } catch {}
- const picked = overrideModel && typeof overrideModel === 'string' && overrideModel.trim() && isAllowedVideoModel(overrideModel, installedModels)
-  ? overrideModel.trim()
-  : (explicitVideo && (settingsNow.videoModelLocked || !installedModels.length || installedModels.includes(explicitVideo) || /:cloud$/i.test(explicitVideo))
-   ? explicitVideo
-   : (pickBestVideoModel(installedModels) || explicitVideo || process.env.OLLAMA_VIDEO_MODEL || PHOTO_CLOUD_VIDEO_MODELS[0]?.id || curEvo || 'kimi-k3.1-pro:cloud'));
- const localState = await localVideoHub.loadState().catch(() => ({ preferredEngineId: 'tempo-cinema-pro' }));
- const activeEngineId = overrideEngineId && typeof overrideEngineId === 'string' && overrideEngineId.trim()
-  ? overrideEngineId.trim()
-  : (localState.preferredEngineId || 'tempo-cinema-pro');
- return {
-  activeVideoModel: picked,
-  generatorProvider: classifyVideoProvider(picked),
-  activeEngineId,
-  ollamaReachable,
-  installedModels
- };
-}
 
-async function ensureUnitMp4(unitId, forceRebuild = false, variantId = '', speedProfile = 'turbo', opts = {}) {
- const safeId = String(unitId || '0-0').replace(/[^a-zA-Z0-9_-]/g, '');
- const safeVar = variantId ? String(variantId).replace(/[^a-zA-Z0-9_-]/g, '') : '';
- const lockKey = `${safeId}::${safeVar}`;
- if (mp4RenderLocks.has(lockKey)) {
-  return mp4RenderLocks.get(lockKey);
- }
- const task = (async () => {
-  const outPath = videoDirector.mp4Path(safeId, safeVar);
-  if (!forceRebuild && (await videoDirector.hasMp4(safeId, safeVar))) {
-   return { path: outPath, cached: true };
-  }
-  const ctx = contexts.find(c => c.id === safeId) || contexts[0];
-  const [savedVideo, lesson, studentProfile, localState] = await Promise.all([
-   videoDirector.loadVideo(safeId, safeVar),
-   lessonEngine.loadLesson(safeId),
-   evolver.loadStudentProfile(),
-   localVideoHub.loadState().catch(() => ({ preferredEngineId: 'tempo-cinema-pro' }))
-  ]);
-  const inferredTheme = safeVar.startsWith('tiktok_kayseri') ? 'tiktok_kayseri'
-   : safeVar.startsWith('terim_avcisi') ? 'terim_avcisi'
-    : safeVar.startsWith('hamam_bocegi') ? 'hamam_bocegi_komedi'
-     : safeVar.startsWith('shorts') ? 'shorts_hizli'
-      : safeVar.startsWith('stadyum') ? 'stadyum_spikeri'
-       : safeVar.startsWith('super') ? 'super_kahraman'
-        : safeVar.startsWith('lab') ? 'lab_deney' : 'morpa_klasik';
-  const engineId = opts.engineId || localState.preferredEngineId || 'tempo-cinema-pro';
-  const video = savedVideo || videoDirector.buildFallbackVideo(ctx, passagesByUnit.get(ctx.id) || [], lesson, studentProfile, null, inferredTheme, '', { aiVideoEngine: engineId });
-  return await localVideoHub.dispatchLocalRender({
-   engineId,
-   preferLiveNeural: true,
-   video,
-   outMp4Path: outPath,
-   speedProfile: speedProfile === 'hd' ? 'cinema' : 'turbo'
-  });
- })().finally(() => {
-  mp4RenderLocks.delete(lockKey);
- });
- mp4RenderLocks.set(lockKey, task);
- return task;
-}
 
-const AUTO_BG_THEMES = ['tiktok_kayseri', 'hamam_bocegi_komedi', 'terim_avcisi', 'shorts_hizli', 'stadyum_spikeri', 'super_kahraman', 'lab_deney', 'morpa_klasik'];
 
-// Tüm 29 ünite/bölümü eksiksiz doldurur, mevcut eski TikTok videolarını yerinde yenileriyle değiştirir (Phase 2) ve kesintisiz yeni TikTok videoları üretmeye devam eder (Phase 3)!
-async function fillNextMissingUnitVideo(fallbackModel = null, { count = 1, speedProfile = 'turbo', instantOnly = false, useAiModels = true, engineId = '', aiTimeoutMs = 6000, regenerateLegacy = true, replaceLegacyFirst = false, continuous = true, maxVariantsPerUnit = 8 } = {}) {
- if (videoBusy) return { filled: 0, totalUnits: contexts.length };
- videoBusy = true;
- try {
-  const setup = await resolveActiveVideoSetup(fallbackModel, engineId);
-  const [feedAll, studentProfile, apexState, localDetection] = await Promise.all([
-   videoDirector.listAllFeedVideos(),
-   evolver.loadStudentProfile(),
-   apex.loadState(),
-   localVideoHub.detectLocalEngines().catch(() => ({ engines: [], preferredEngineId: 'tempo-cinema-pro' }))
-  ]);
-  const liveNeuralIds = ['comfyui-wan22', 'ltx2-local', 'short-video-maker', 'moneyprinter-turbo', 'cogvideox-local', 'mochi-local'];
-  const liveNeuralEngine = liveNeuralIds
-   .map(id => (localDetection.engines || []).find(e => e.id === id))
-   .find(e => e?.available);
-  const chosenEngine = (engineId && engineId !== 'auto')
-   ? engineId
-   : (setup.activeEngineId && setup.activeEngineId !== 'auto' && setup.activeEngineId !== 'tempo-cinema-pro')
-    ? setup.activeEngineId
-    : (liveNeuralEngine ? liveNeuralEngine.id : 'tempo-cinema-pro');
+// Sürekli zekâ döngüsü: eğitmen, konsey ve araştırma botlarını arka planda ilerletir.
 
-  const mp4ByUnit = new Map();
-  for (const v of feedAll) {
-   if (!v.hasMp4) continue;
-   if (!mp4ByUnit.has(v.unitId)) mp4ByUnit.set(v.unitId, new Set());
-   mp4ByUnit.get(v.unitId).add(v.themeStyle);
-  }
-  const tiktokUnitsSet = new Set(feedAll.filter(v => v.hasMp4 && (v.noQuestions || v.themeStyle === 'tiktok_kayseri')).map(v => v.unitId));
-  const missingUnits = contexts.filter(c => !mp4ByUnit.has(c.id) || !tiktokUnitsSet.has(c.id));
-
-  // Faz 2: Eski (legacy) veya MP4'süz / videoSpecVersion < 2 TikTok videolarını yerinde tespit et!
-  // Not: MP4'ü hiç derlenmemiş eski subsec-* artıklarını ise kalabalık yapmaması için temizleriz.
-  const staleSubsecItems = regenerateLegacy
-   ? feedAll.filter(v => !v.hasMp4 && String(v.variantId || '').startsWith('subsec-'))
-   : [];
-  if (staleSubsecItems.length) {
-   await Promise.allSettled(
-    staleSubsecItems.slice(0, Math.max(8, count * 3)).map(st => videoDirector.deleteVariant(st.unitId, st.variantId))
-   );
-  }
-
-  const staleDroppedIds = new Set(staleSubsecItems.slice(0, Math.max(8, count * 3)).map(s => s.id));
-  const legacyItemsAll = regenerateLegacy
-   ? feedAll.filter(v => !staleDroppedIds.has(v.id) && (v.isLegacy || !v.hasMp4 || !v.aiVideoModel || !v.model || !v.upgradedAt || Number(v.videoSpecVersion || 1) < VIDEO_SPEC_VERSION))
-   : [];
-
-  const desiredCount = Math.max(1, count);
-  const plan = [];
-  const usedUnitsInBatch = new Set();
-
-  const enqueueMissing = () => {
-   for (const ctx of missingUnits) {
-    if (plan.length >= desiredCount) break;
-    const existingThemes = mp4ByUnit.get(ctx.id) || new Set();
-    const themeStyle = !tiktokUnitsSet.has(ctx.id)
-     ? 'tiktok_kayseri'
-     : (AUTO_BG_THEMES.find(t => !existingThemes.has(t)) || AUTO_BG_THEMES[(videoCursor++) % AUTO_BG_THEMES.length]);
-    plan.push({
-     phase: 'missing',
-     ctx,
-     themeStyle,
-     variantId: `${themeStyle}-${Date.now().toString(36)}-${plan.length}`,
-     replacedFromLegacy: false,
-     prevVersion: 1,
-     angleIndex: continuousVideoCounter++
-    });
-    usedUnitsInBatch.add(ctx.id);
-   }
-  };
-
-  const enqueueLegacy = () => {
-   for (const oldItem of legacyItemsAll) {
-    if (plan.length >= desiredCount) break;
-    const ctx = contexts.find(c => c.id === oldItem.unitId);
-    if (!ctx) continue;
-    const themeStyle = AUTO_BG_THEMES.includes(oldItem.themeStyle) ? oldItem.themeStyle : 'tiktok_kayseri';
-    plan.push({
-     phase: 'replace_legacy',
-     ctx,
-     themeStyle,
-     variantId: oldItem.variantId || '',
-     replacedFromLegacy: true,
-     prevVersion: Number(oldItem.version || 1),
-     angleIndex: continuousVideoCounter++
-    });
-   }
-  };
-
-  if (replaceLegacyFirst) {
-   enqueueLegacy();
-   enqueueMissing();
-  } else {
-   enqueueMissing();
-   enqueueLegacy();
-  }
-
-  // Faz 3 (Sürekli TikTok Üretimi): Eksik ve eski kalmadığında bile yeni açılardan yeni TikTok videoları üretmeye devam et!
-  if (!plan.length && continuous !== false && contexts.length) {
-   const diversifyUnits = contexts.filter(c => (mp4ByUnit.get(c.id)?.size || 0) < 3);
-   for (let k = 0; k < desiredCount; k++) {
-    const ctx = diversifyUnits.length
-     ? diversifyUnits[(videoCursor++) % diversifyUnits.length]
-     : contexts[(videoCursor++) % contexts.length];
-    const themeStyle = AUTO_BG_THEMES[(continuousVideoCounter + k) % AUTO_BG_THEMES.length];
-    plan.push({
-     phase: 'continuous',
-     ctx,
-     themeStyle,
-     variantId: `${themeStyle}-${Date.now().toString(36)}-${k}`,
-     replacedFromLegacy: false,
-     prevVersion: 2,
-     angleIndex: continuousVideoCounter++
-    });
-   }
-  }
-
-  if (!plan.length) {
-   lastVideoProduceAt = Date.now();
-   lastKnownLegacyRemaining = legacyItemsAll.length;
-   return {
-    filled: 0,
-    replacedLegacyCount: 0,
-    continuousGeneratedCount: 0,
-    legacyRemaining: legacyItemsAll.length,
-    missingRemaining: 0,
-    totalUnits: contexts.length,
-    complete: true,
-    continuousActive: Boolean(continuous),
-    aiVideoModel: setup.activeVideoModel,
-    generatorProvider: setup.generatorProvider,
-    aiVideoEngine: chosenEngine,
-    videoPolicy: VIDEO_GENERATION_POLICY,
-    localExecutionOnly: true,
-    zeroApiRequired: true,
-    noApiKeyPrompts: true
-   };
-  }
-
-  const canUseAiModel = !instantOnly && useAiModels !== false && setup.ollamaReachable && setup.activeVideoModel && isAllowedVideoModel(setup.activeVideoModel, setup.installedModels);
-  const apexDirective = [
-   apex.getBotDirectiveBlock(apexState, 'videoDirector'),
-   apex.getBotDirectiveBlock(apexState, 'localVideoStudio')
-  ].filter(Boolean).join('\n');
-
-  const jobs = [];
-  let aiScriptedCount = 0;
-  for (let i = 0; i < plan.length; i++) {
-   const step = plan[i];
-   const ctx = step.ctx;
-   const passages = passagesByUnit.get(ctx.id) || [];
-   const lesson = await lessonEngine.loadLesson(ctx.id);
-   let vid = null;
-   if (canUseAiModel) {
-    try {
-     vid = await videoDirector.produceUnitVideo({
-      ctx, passages, lesson, studentProfile,
-      themeStyle: step.themeStyle,
-      saveAsVariant: false,
-      variantId: step.variantId,
-      noQuestions: true,
-      apexDirective,
-      aiVideoEngine: chosenEngine,
-      runModelFn: runVideoDirectorModel,
-      model: setup.activeVideoModel,
-      signal: AbortSignal.timeout(aiTimeoutMs)
-     });
-     if (vid) {
-      if (step.replacedFromLegacy) {
-       vid.replacedFromLegacy = true;
-       vid.replacedLegacyAt = new Date().toISOString();
-      }
-      aiScriptedCount++;
-     }
-    } catch {}
-   }
-   if (!vid) {
-    vid = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, null, step.themeStyle, '', {
-     noQuestions: true,
-     variantId: step.variantId,
-     replacedFromLegacy: step.replacedFromLegacy,
-     prevVersion: step.prevVersion,
-     angleIndex: step.angleIndex,
-     aiModel: setup.activeVideoModel,
-     aiVideoEngine: chosenEngine,
-     generatorProvider: setup.generatorProvider
-    });
-    if (step.variantId) vid.variantId = step.variantId;
-   }
-   jobs.push({
-    video: vid,
-    outMp4Path: videoDirector.mp4Path(ctx.id, step.variantId),
-    unitId: ctx.id,
-    variantId: step.variantId,
-    phase: step.phase
-   });
-  }
-
-  let filled = 0;
-  let replacedLegacyNow = 0;
-  let continuousNow = 0;
-  let actualEngineUsed = chosenEngine;
-  if (jobs.length) {
-   if (chosenEngine !== 'tempo-cinema-pro') {
-    for (const job of jobs) {
-     try {
-      const r = await localVideoHub.dispatchLocalRender({
-       engineId: chosenEngine,
-       preferLiveNeural: true,
-       video: job.video,
-       outMp4Path: job.outMp4Path,
-       speedProfile: speedProfile === 'hd' ? 'cinema' : 'turbo'
-      });
-      if (r?.path) {
-       actualEngineUsed = r.engineId || chosenEngine;
-       job.video.aiVideoEngine = actualEngineUsed;
-       job.video.audioMuxed = Boolean(r.audioMuxed);
-       await videoDirector.saveVideo(job.video, job.variantId);
-       filled++;
-       if (job.phase === 'replace_legacy') replacedLegacyNow++;
-       else if (job.phase === 'continuous') continuousNow++;
-       if (job.phase === 'continuous') {
-        await videoDirector.pruneExcessUnitVariants(job.unitId, { maxVariants: maxVariantsPerUnit }).catch(() => {});
-       }
-      }
-     } catch {}
-    }
-   } else {
-    const results = await mp4Renderer.renderBatchMp4(jobs, { concurrency: Math.min(4, jobs.length), speedProfile }).catch(() => []);
-    for (let i = 0; i < jobs.length; i++) {
-     if (results[i]?.ok) {
-      jobs[i].video.aiVideoEngine = 'tempo-cinema-pro';
-      await videoDirector.saveVideo(jobs[i].video, jobs[i].variantId);
-      filled++;
-      if (jobs[i].phase === 'replace_legacy') replacedLegacyNow++;
-      else if (jobs[i].phase === 'continuous') continuousNow++;
-      if (jobs[i].phase === 'continuous') {
-       await videoDirector.pruneExcessUnitVariants(jobs[i].unitId, { maxVariants: maxVariantsPerUnit }).catch(() => {});
-      }
-     }
-    }
-    if (filled > 0) {
-     const curHub = await localVideoHub.loadState().catch(() => null);
-     if (curHub) {
-      await localVideoHub.saveState({
-       lastRenderStats: {
-        totalRenders: (curHub.lastRenderStats?.totalRenders || 0) + filled,
-        lastEngineId: 'tempo-cinema-pro',
-        lastRenderedAt: new Date().toISOString()
-       }
-      }).catch(() => {});
-     }
-    }
-   }
-  }
-  replacedLegacyTotal += replacedLegacyNow;
-  continuousGeneratedTotal += continuousNow;
-  const remainingAfter = Math.max(0, legacyItemsAll.length - staleSubsecItems.length - replacedLegacyNow);
-  lastKnownLegacyRemaining = remainingAfter;
-  lastVideoProduceAt = Date.now();
-  return {
-   filled,
-   replacedLegacyCount: replacedLegacyNow,
-   continuousGeneratedCount: continuousNow,
-   replacedLegacyTotal,
-   continuousGeneratedTotal,
-   legacyRemaining: remainingAfter,
-   missingRemaining: Math.max(0, missingUnits.length - jobs.filter(j => j.phase === 'missing').length),
-   totalUnits: contexts.length,
-   continuousActive: Boolean(continuous),
-   aiVideoModel: setup.activeVideoModel,
-   generatorProvider: setup.generatorProvider,
-   aiVideoEngine: actualEngineUsed,
-   aiScriptedCount,
-   videoPolicy: VIDEO_GENERATION_POLICY,
-   localExecutionOnly: true,
-   zeroApiRequired: true,
-   noApiKeyPrompts: true
-  };
- } finally {
-  videoBusy = false;
- }
-}
-
-async function triggerVideoProduce(unitId, fallbackModel, forcedMode = null, opts = {}) {
- const isManual = Boolean(unitId);
- if (!isManual && videoBusy) return null;
- if (!isManual) videoBusy = true;
- try {
-  const [studentProfile, vCfg, apexState, trainerState] = await Promise.all([
-   evolver.loadStudentProfile(),
-   videoDirector.loadConfig(),
-   apex.loadState(),
-   trainer.loadState()
-  ]);
-  if (!unitId && vCfg.autoProduceVideos === false) return null;
-  let ctx = unitId ? contexts.find(c => c.id === unitId) : null;
-  let chosenTheme = opts.themeStyle || '';
-  if (!ctx) {
-   // Çok yanlış yapılan ünite varsa hemen "hata_kurtarma" + eğlenceli video üret!
-   const rescueUnit = contexts.find(c => lessonEngine.formatStudentPerformance(c.id, studentProfile).needsReread);
-   if (rescueUnit) {
-    const existingVid = await videoDirector.loadVideo(rescueUnit.id);
-    if (!existingVid || existingVid.situationMode !== 'hata_kurtarma') {
-     ctx = rescueUnit;
-    }
-   }
-  }
-  if (!ctx) {
-   const idx = videoCursor++;
-   ctx = contexts[idx % contexts.length];
-   if (!chosenTheme) {
-    chosenTheme = AUTO_BG_THEMES[Math.floor(idx / contexts.length) % AUTO_BG_THEMES.length];
-   }
-  }
-  if (!chosenTheme) chosenTheme = 'morpa_klasik';
-  const videoHint = trainer.getVideoEnrichmentHint(trainerState, ctx.id);
-  const fullVideoDirective = [
-   apex.getBotDirectiveBlock(apexState, 'videoDirector'),
-   apex.getBotDirectiveBlock(apexState, 'localVideoStudio'),
-   videoHint ? `20x EĞİTİM SİNEMA VURGUSU: ${videoHint}` : ''
-  ].filter(Boolean).join('\n');
-
-  const passages = passagesByUnit.get(ctx.id) || [];
-  const lesson = await lessonEngine.loadLesson(ctx.id);
-  const saveAsVariant = opts.saveAsVariant !== undefined
-   ? Boolean(opts.saveAsVariant)
-   : Boolean(!isManual && chosenTheme !== 'morpa_klasik');
-  const variantId = typeof opts.variantId === 'string' && opts.variantId
-   ? opts.variantId
-   : (saveAsVariant ? `${chosenTheme}-${Date.now().toString(36)}` : '');
-
-  let video;
-  const resolvedVideoModel = isAllowedVideoModel(fallbackModel) ? fallbackModel : (PHOTO_CLOUD_VIDEO_MODELS[0]?.id || 'kimi-k3.1-pro:cloud');
-  const localVideoCfg = await localVideoHub.loadState().catch(() => ({ preferredEngineId: 'tempo-cinema-pro' }));
-  const resolvedEngine = opts.engineId || localVideoCfg.preferredEngineId || 'tempo-cinema-pro';
-  if (opts.instantTurbo) {
-   video = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, forcedMode, chosenTheme, opts.customIdea || '', {
-    aiModel: resolvedVideoModel,
-    aiVideoEngine: resolvedEngine
-   });
-   if (variantId) video.variantId = variantId;
-   await videoDirector.saveVideo(video, variantId);
-  } else {
-   try {
-    video = await videoDirector.produceUnitVideo({
-     ctx,
-     passages,
-     lesson,
-     studentProfile,
-     forcedMode,
-     themeStyle: chosenTheme,
-     customIdea: opts.customIdea || '',
-     variantId,
-     saveAsVariant,
-     apexDirective: fullVideoDirective,
-     aiVideoEngine: resolvedEngine,
-     runModelFn: runVideoDirectorModel,
-     model: resolvedVideoModel
-    });
-   } catch (e) {
-    if (opts.fallbackOnError) {
-     video = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, forcedMode, chosenTheme, opts.customIdea || '', {
-      aiModel: resolvedVideoModel,
-      aiVideoEngine: resolvedEngine
-     });
-     if (variantId) video.variantId = variantId;
-     await videoDirector.saveVideo(video, variantId);
-    } else {
-     throw e;
-    }
-   }
-  }
-  lastVideoProduceAt = Date.now();
-  // Senaryodan (Kimi / Ollama) doğrudan gömülü .mp4 dosyasını yerel derleyici ile oluştur! (Harici 3. parti video servisi çağrılmaz)
-  if (opts.deferMp4Render) {
-   setTimeout(() => { ensureUnitMp4(ctx.id, true, video.variantId || '', opts.speedProfile || 'turbo').catch(() => {}); }, 60).unref?.();
-  } else {
-   ensureUnitMp4(ctx.id, true, video.variantId || '', opts.speedProfile || 'turbo').catch(() => {});
-  }
-  return video;
- } finally {
-  if (!isManual) videoBusy = false;
- }
-}
 
 async function triggerContinuousIntelligenceTick(batchUnits = 4) {
  if (trainerBusy) return null;
@@ -3207,10 +2960,10 @@ async function triggerHyperBotEvolveCycle() {
  if (hyperBotEvolveBusy) return null;
  hyperBotEvolveBusy = true;
  try {
-  const [items, study, policy, lessonsSummary, videosSummary, feedAll, studentProfile] = await Promise.all([
+  const [items, study, policy, lessonsSummary, studentProfile] = await Promise.all([
    load(), loadStudy(), evolver.loadPolicy(),
-   lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length),
-   videoDirector.listAllFeedVideos(), evolver.loadStudentProfile()
+   lessonEngine.listSummary(contexts.length),
+   evolver.loadStudentProfile()
   ]);
   const swarmRes = await multiAiEval.evaluateAndEvolve({
    paramMatrix: null,
@@ -3219,8 +2972,6 @@ async function triggerHyperBotEvolveCycle() {
    contexts,
    passagesByUnit,
    lessonsSummary,
-   videosSummary,
-   feedVideos: (feedAll || []).filter(v => v.hasMp4),
    evolver,
    policy,
    studentProfile,
@@ -3250,7 +3001,7 @@ async function runPrecisionAuditAuto() {
  precisionAuditBusy = true;
  try {
   const items = await load().catch(() => []);
-  const report = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...items]);
+  const report = precisionEngine.auditPool([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
   lastPrecisionAuditSummary = {
    evaluatedCount: report.evaluatedCount,
    averagePrecisionScore: report.averagePrecisionScore,
@@ -3274,7 +3025,7 @@ async function runHundredAiSolveAuto() {
  hundredAiBusy = true;
  try {
   const items = await load().catch(() => []);
-  const pool = [...questionBank, ...bookStyleQuestions, ...items];
+  const pool = [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items];
   const summary = await hundredAiCouncil.calibratePoolWith100AIs(pool);
   lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
   lastHundredAiSolveAt = Date.now();
@@ -3290,7 +3041,7 @@ async function runHundredAiEvolveAuto() {
  hundredAiEvolveBusy = true;
  try {
   const items = await load().catch(() => []);
-  const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]);
+  const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
   const evolved = await hundredAiCouncil.evolveWithQwenCode(summary);
   lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
   lastHundredAiEvolveAt = Date.now();
@@ -3481,13 +3232,12 @@ async function triggerApexEvolve(evolverModel, installedModels = []) {
  if (apexEvolving) return null;
  apexEvolving = true;
  try {
-  const [jCfg, items, studentProfile, curatorReport, lessonsSummary, videosSummary, rMem] = await Promise.all([
+  const [jCfg, items, studentProfile, curatorReport, lessonsSummary, rMem] = await Promise.all([
    jarvis.loadConfig(),
    load(),
    evolver.loadStudentProfile(),
    poolCurator.loadReport(),
    lessonEngine.listSummary(contexts.length),
-   videoDirector.listSummary(contexts.length),
    researchAgent.loadMemory()
   ]);
   const coderModel = installedModels.includes(jCfg.coderModel) ? jCfg.coderModel : evolverModel;
@@ -3504,7 +3254,6 @@ async function triggerApexEvolve(evolverModel, installedModels = []) {
    studentProfile,
    curatorReport,
    lessonsSummary,
-   videosSummary,
    researchMemory: rMem,
    paramMatrix,
    multiAiEval,
@@ -3538,6 +3287,17 @@ async function autoScheduler() {
  while (!autoLoopStopping) {
   try {
    if (autoLoopStopping) break;
+
+   // Enforce the 20k pool cap even when the user pauses question generation.
+   if (!curatorBusy && Date.now() - lastPoolCapCheckAt >= 15_000) {
+    lastPoolCapCheckAt = Date.now();
+    const storedItems = await load();
+    const approvedCount = storedItems.filter(item => item.status === 'approved').length;
+    if (approvedCount >= QUESTION_POOL_CAPACITY || storedItems.length > MAX_QUESTIONS) {
+     await runPoolCuratorScan({ forcePrune: true }).catch(() => {});
+    }
+   }
+
    if (await autoRunningEnabled()) {
     const limit = await autoConcurrencyLimit();
     const cfg = await getPipelineConfig();
@@ -3562,12 +3322,16 @@ async function autoScheduler() {
          await runBatchedCycle(model, verifierModel, judge2Model, limit, await autoTimeoutMs(), cfg);
         }
        }
-      } else if (autoControllers.size < limit) {
+      } else if (!busy && autoControllers.size < limit) {
        const items = await load();
        const a = audit(items);
        if (!a.invalid && !a.duplicates) {
         const ctx = contexts[autoCursor++ % contexts.length];
-        launchAutoUnit(ctx, model, verifierModel, judge2Model, await autoTimeoutMs(), cfg);
+        const waveStart = Date.now();
+        await launchAutoUnit(ctx, model, verifierModel, judge2Model, await autoTimeoutMs(), cfg);
+        // Her 5 saniyede bir yeni soru: üretim erken biterse kalan süre kadar dinlen.
+        const restMs = QUESTION_INTERVAL_MS - (Date.now() - waveStart);
+        if (restMs > 0) await sleep(restMs);
        }
       }
      }
@@ -3576,12 +3340,12 @@ async function autoScheduler() {
   } catch (e) {
    autoLastError = e.message || String(e);
   }
-  await sleep(60);
+  await sleep(1500);
  }
 }
 
 // OLLAMA BAĞLANDIĞINDA PROJE VE TÜM AI BOTLARI 100x ULTRA-SINGULARITY SEVİYESİNE OTOMATİK YÜKSELTEN KASKAD!
-async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force = false, renderVideosNow = false } = {}) {
+async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force = false } = {}) {
  const models = Array.isArray(installedModels) ? installedModels.filter(Boolean) : [];
  const isMock = models.some(m => /^fake:/i.test(m));
  const liveOllama = models.length > 0 && !isMock;
@@ -3598,20 +3362,17 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    await ensureRolesAutoAssigned(models, true).catch(() => {});
    await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: models, profile: cachedHardwareProfile }).catch(() => {});
   }
-  const [model, evolverModel, verifierModel, judge2Model, videoModel, jCfg, items, study, studentProfile, policy, lessonsSummary, videosSummary, feedAll] = await Promise.all([
+  const [model, evolverModel, verifierModel, judge2Model, jCfg, items, study, studentProfile, policy, lessonsSummary] = await Promise.all([
    selectedModel(),
    selectedEvolverModel(await selectedModel()),
    selectedVerifierModel(await selectedModel()),
    selectedJudgeModel('judge2Model', defaultJudge2Model),
-   selectedVideoModel(await selectedEvolverModel(await selectedModel())),
    jarvis.loadConfig(),
    load(),
    loadStudy(),
    evolver.loadStudentProfile(),
    evolver.loadPolicy(),
    lessonEngine.listSummary(contexts.length),
-   videoDirector.listSummary(contexts.length),
-   videoDirector.listAllFeedVideos()
   ]);
 
   await paramMatrix.syncBackbones({
@@ -3619,21 +3380,13 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    verifierModel,
    judge2Model,
    evolverModel,
-   videoModel,
    coderModel: jCfg.coderModel
   }).catch(() => {});
 
   const telSnap = getTelemetrySnapshot();
   const preferredCoder = models.includes(jCfg.coderModel) ? jCfg.coderModel : (models.includes(evolverModel) ? evolverModel : (models[0] || null));
-  const activeVideoModel = models.includes(videoModel) ? videoModel : pickBestVideoModel(models);
 
   // 1) Tüm AI botlarını + 44+ model konseyini + 100-yöntem laboratuvarını + 40-aşamalı eğitmeni + çoklu swarm değerlendiriciyi paralel yükselt
-  const normalizedFeed = (feedAll || []).filter(v => v.hasMp4).map(item => ({
-   ...item,
-   noQuestions: true,
-   directAnswer: item.directAnswer || item.summary || item.unit,
-   keyTerms: Array.isArray(item.keyTerms) ? item.keyTerms : []
-  }));
 
   const skipDupCouncil = !force && (Date.now() - lastCoderSprintAt < 8_000) && cachedCoderCouncilState;
   const skipDupQwen = !force && (Date.now() - lastQwenTournamentAt < 8_000);
@@ -3653,8 +3406,6 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
     contexts,
     passagesByUnit,
     lessonsSummary,
-    videosSummary,
-    feedVideos: normalizedFeed,
     evolver,
     policy,
     studentProfile,
@@ -3743,39 +3494,6 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
   }
   nexusCycleRes = await triggerNexusFusionCycle(models, { withLiveLlm: Boolean(liveOllama && models.length) }).catch(() => null);
 
-  // 3) Bağlantı anında mevcut eski TikTok videolarının bir partisini hemen yerinde yenileriyle değiştir (MP4 render arka planda event-loop'u kilitlemeden çalışır)!
-  let videoRes = null;
-  if (renderVideosNow) {
-   videoRes = await fillNextMissingUnitVideo(activeVideoModel, {
-    count: liveOllama ? 3 : 2,
-    speedProfile: 'turbo',
-    instantOnly: false,
-    regenerateLegacy: true,
-    continuous: true,
-    aiTimeoutMs: liveOllama ? 12_000 : 4_000
-   }).catch(() => null);
-  } else {
-   videoRes = await fillNextMissingUnitVideo(activeVideoModel, {
-    count: liveOllama ? 3 : 2,
-    speedProfile: 'turbo',
-    instantOnly: true,
-    regenerateLegacy: true,
-    continuous: true,
-    aiTimeoutMs: 2_500
-   }).catch(() => null);
-   setTimeout(() => {
-    if (!autoLoopStopping && !videoBusy && Date.now() - lastInteractiveApiAt >= 3_500) {
-     fillNextMissingUnitVideo(activeVideoModel, {
-      count: 2,
-      speedProfile: 'turbo',
-      instantOnly: false,
-      regenerateLegacy: true,
-      continuous: true
-     }).catch(() => {});
-    }
-   }, 8_000).unref?.();
-  }
-
   cachedParamState = await paramMatrix.loadState().catch(() => cachedParamState);
   cachedLocalTeamState = await localAiTeam.loadState().catch(() => cachedLocalTeamState);
   cachedCoderCouncilState = await coderCouncil.loadState().catch(() => cachedCoderCouncilState);
@@ -3794,7 +3512,7 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    cumulativeUpgradeFactor: 150000,
    trainingScaleFactor: 3000000,
    trapDefenseTotal: 96,
-   botsUpgraded: 11,
+   botsUpgraded: 8,
    coderModelsUpgraded: cachedCoderCouncilState?.totalModels || 64,
    paramBoostOk: boostRes.status === 'fulfilled',
    swarmOk: swarmRes.status === 'fulfilled',
@@ -3810,22 +3528,30 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    jarvisReflected: Boolean(jarvisRes),
    nexusModelCreated: Boolean(nexusOllamaBuild?.created),
    nexusFusionCycle: nexusCycleRes?.state?.fusionCycles || cachedNexusModelState?.fusionCycles || 0,
-   videosReplacedNow: videoRes?.replacedLegacyCount || 0,
-   videosFilledNow: videoRes?.filled || 0,
-   legacyVideosRemaining: videoRes?.legacyRemaining ?? lastKnownLegacyRemaining,
    durationMs
   };
   ollamaUpgradeState.lastResult = summaryResult;
   await jarvis.addJournal(
    'ollama_connected_100x_upgrade',
    `100x Ultra-Singularity Tam Proje & Tüm Bot Yükseltmesi (${liveOllama ? `${models.length} Canlı Ollama Modeli` : 'Yerel 0-API'})`,
-   `11 bot, ${summaryResult.coderModelsUpgraded} model konseyi, 40-aşama eğitmen, 96-tuzak turnuvası ve ${summaryResult.videosFilledNow} TikTok videosu ${durationMs}ms içinde yükseltildi.`
+   `8 bot, ${summaryResult.coderModelsUpgraded} model konseyi, 40-aşama eğitmen, 96-tuzak turnuvası ${durationMs}ms içinde yükseltildi.`
   ).catch(() => {});
   return summaryResult;
  } finally {
   ollamaUpgradeState.running = false;
   ollamaUpgradeBusy = false;
  }
+}
+
+// Açılışta yalnızca model gerektirmeyen (0-API) yerel görevler bir kez, sırayla çalışır.
+// Model çağıran arka plan ajanları varsayılan olarak kapalıdır; isteyen
+// TEMPO_ENABLE_BACKGROUND_AGENTS=1 ile açabilir. Böylece açılış yükü düşük kalır.
+async function runZeroApiBootBurst() {
+ try {
+  await triggerLocalTeamFastCycle().catch(() => {});
+  await triggerQwenTournament({ useLiveLlm: false }).catch(() => {});
+  await triggerQwenGithubPrototypeLab({ forceWebMine: false }).catch(() => {});
+ } catch {}
 }
 
 // PROJE BAŞLADIĞI ANDAN İTİBAREN HİÇ DURMADAN MİLİSANİYELER İÇİNDE ÇALIŞAN 0-API TAKIM, 100-YÖNTEM YARIŞI, GITHUB PROTOTİP LAB & ÖSYM SORU KOMİSYONU DÖNGÜSÜ
@@ -3957,13 +3683,6 @@ async function backgroundCoachLoop() {
     if (parallelBgTasks.length) {
      await Promise.allSettled(parallelBgTasks);
     }
-    // 0.7) Kimi & Ollama video politikası aktifken harici Google Veo yoklaması kapalı tutulur
-    const vCfgLoop = await videoDirector.loadConfig().catch(() => ({ kimiOllamaOnly: true, autoUseGoogleFlow: false }));
-    if (vCfgLoop.kimiOllamaOnly === false && vCfgLoop.autoUseGoogleFlow === true) {
-     videoDirector.pollAllPendingGoogleFlowRenders().catch(() => {});
-    }
-
-    const legacyWaitMs = (lastKnownLegacyRemaining === null || lastKnownLegacyRemaining > 0) ? 2_500 : 5_000;
 
     if (models.length && !autoLoopStopping) {
      await ensureRolesAutoAssigned(models, true).catch(() => {});
@@ -3971,7 +3690,6 @@ async function backgroundCoachLoop() {
      const cfg = await getPipelineConfig();
      const model = await selectedModel();
      const evolverModel = await selectedEvolverModel(model);
-     const videoModel = await selectedVideoModel(evolverModel);
      const [jCfg, jMem] = await Promise.all([jarvis.loadConfig(), jarvis.loadMemory()]);
 
      if (models.includes(evolverModel) && !isMockOllama) {
@@ -3999,7 +3717,7 @@ async function backgroundCoachLoop() {
        await triggerJarvisInnovate(evolverModel, models).catch(() => {});
       }
 
-      // 4.5) 100x Ultra-Singularity ApexArchitect Çapraz-Bot Evrimi (Hem deneme hem zaman tetikleyicisiyle tüm 11 alt-sistemi sürekli yükseltir!)
+      // 4.5) 100x Ultra-Singularity ApexArchitect Çapraz-Bot Evrimi (Hem deneme hem zaman tetikleyicisiyle tüm 8 alt-sistemi sürekli yükseltir!)
       const apexStateNow = await apex.loadState();
       if (!apexEvolving && (apexStateNow.evolutionCycles === 0 || telemetry.attemptsTotal - lastApexCycleAtAttempt >= 14 || Date.now() - lastApexTimeAt >= 45_000)) {
        await triggerApexEvolve(evolverModel, models).catch(() => {});
@@ -4023,19 +3741,6 @@ async function backgroundCoachLoop() {
        await triggerLessonEnhance(null, evolverModel).catch(() => {});
       }
 
-      // 8) Kimi ve Ollama Modelleriyle Eski TikTok Videolarını Yerinde Değiştir + Sürekli Yeni TikTok Videoları Üret!
-      if (!videoBusy && !isMockOllama && Date.now() - telemetry.startedAt >= 8_000 && Date.now() - lastInteractiveApiAt >= 3_500 && Date.now() - lastVideoProduceAt >= legacyWaitMs) {
-       const activeVideoModel = models.includes(videoModel) ? videoModel : pickBestVideoModel(models);
-       const canRunKimiOrOllama = Boolean(activeVideoModel && models.includes(activeVideoModel) && isAllowedVideoModel(activeVideoModel, models));
-       await fillNextMissingUnitVideo(activeVideoModel, {
-        count: (lastKnownLegacyRemaining === null || lastKnownLegacyRemaining > 0) ? 2 : 1,
-        speedProfile: 'turbo',
-        instantOnly: !canRunKimiOrOllama,
-        regenerateLegacy: true,
-        continuous: true
-       }).catch(() => {});
-      }
-
       // 9) Sürekli SFT + DPO Veri Seti Hazırlığı (eski düğme kaldırıldı; hazır olunca kendiliğinden hazırlar) + Donanım Hazırsa Ağırlık Eğitimi
       const items = await load();
       const approvedNow = items.filter(x => x.status === 'approved').length;
@@ -4049,15 +3754,6 @@ async function backgroundCoachLoop() {
        }
       }
      }
-    } else if (!videoBusy && !isMockOllama && Date.now() - telemetry.startedAt >= 8_000 && Date.now() - lastInteractiveApiAt >= 3_500 && Date.now() - lastVideoProduceAt >= legacyWaitMs) {
-     // Ollama bağlı olmasa bile mevcut eski TikTok videoları arka planda yerinde yenilenir ve sürekli yeni TikTok videoları üretilir!
-     await fillNextMissingUnitVideo(null, {
-      count: (lastKnownLegacyRemaining === null || lastKnownLegacyRemaining > 0) ? 2 : 1,
-      speedProfile: 'turbo',
-      instantOnly: false,
-      regenerateLegacy: true,
-      continuous: true
-     }).catch(() => {});
     }
     // 10) Continue/Aider RAG + AutoGen/LangGraph/CrewAI + Axolotl/LLaMA-Factory QLoRA+DPO arka plan döngüsü
     if (!autoLoopStopping && !isMockOllama && Date.now() - telemetry.startedAt >= 4_000 && Date.now() - lastInteractiveApiAt >= 3_500) {
@@ -4120,27 +3816,25 @@ async function getTrainingReadiness(items) {
 }
 
 
-// Açılışta önceki oturumdan kalan süresiz ("Forever") GPU pinlerini temizler.
-// Eski sürümler keep_alive=-1 ile modelleri VRAM'de kilitliyordu; 12 GB kartta bu
-// yüzden büyük üretici modeli asla yüklenemiyordu ("0 soru/dk · Yeni dalga bekleniyor").
-// Boşaltma kapıları: TEMPO_UNLOAD_STALE_PINS=0 ile kapatılabilir.
+// Ollama'da önceden yüklenmiş modelleri boşaltmak varsayılan olarak yapılmaz;
+// kullanıcı isterse TEMPO_UNLOAD_STALE_PINS=1 ile açılış temizliğini seçebilir.
 async function unloadStalePinnedModelsAtBoot() {
  try {
-  if (process.env.TEMPO_UNLOAD_STALE_PINS === '0') return { ok: false, skipped: true };
+  if (process.env.TEMPO_UNLOAD_STALE_PINS !== '1') return { ok: false, skipped: true };
   const r = await fetch(`${base}/api/ps`, { signal: AbortSignal.timeout(2500) });
   if (!r.ok) return { ok: false };
   const loaded = ((await r.json()).models || []).map(m => m?.name || m?.model).filter(Boolean);
-  if (!loaded.length) return { ok: true, unloaded: [] };
-  const results = await Promise.allSettled(loaded.map(name =>
-   fetch(`${base}/api/generate`, {
+  const unloaded = [];
+  for (const name of loaded) {
+   const response = await fetch(`${base}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: name, prompt: '', stream: false, keep_alive: 0 }),
     signal: AbortSignal.timeout(5000)
-   }).then(() => name)
-  ));
-  const unloaded = results.filter(x => x.status === 'fulfilled').map(x => x.value);
-  console.log(`[tempo] Açılış: ${unloaded.length} sıkışmış GPU modeli boşaltıldı${unloaded.length ? ` (${unloaded.slice(0, 4).join(', ')})` : ''}`);
+   });
+   if (response.ok) unloaded.push(name);
+  }
+  console.log(`[tempo] Açılış temizliği: ${unloaded.length} model boşaltıldı${unloaded.length ? ` (${unloaded.slice(0, 4).join(', ')})` : ''}`);
   return { ok: true, unloaded };
  } catch {
   return { ok: false };
@@ -4155,9 +3849,12 @@ export function ollamaPlugin() {
    server?.httpServer?.once?.('close', stopOllamaLoops);
    if (!autoLoopStarted && process.env.TEMPO_DISABLE_AUTOLOOP !== '1') {
     autoLoopStarted = true;
-    unloadStalePinnedModelsAtBoot().catch(() => {});
+    if (process.env.TEMPO_UNLOAD_STALE_PINS === '1') unloadStalePinnedModelsAtBoot().catch(() => {});
     autoScheduler();
-    backgroundCoachLoop();
+    // The research/training coach performs many optional background jobs.
+    // Keep it off unless the user explicitly opts in via environment variable.
+    if (process.env.TEMPO_ENABLE_BACKGROUND_AGENTS === '1') backgroundCoachLoop();
+    else runZeroApiBootBurst();
    }
    server.middlewares.use('/api/ollama', async (req, res, next) => {
     try {
@@ -4165,7 +3862,7 @@ export function ollamaPlugin() {
      const path = urlObj.pathname;
      if (req.method === 'POST' && path !== '/stop') lastInteractiveApiAt = Date.now();
      let models = [], connected = false;
-     if (['/status', '/jarvis', '/videos', '/hardware'].includes(path)) {
+     if (['/status', '/jarvis', '/hardware'].includes(path)) {
       try {
        const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(2500) });
        if (r.ok) {
@@ -4176,19 +3873,11 @@ export function ollamaPlugin() {
      }
      if (models.length) {
       cachedConnectedModels = models;
-      // Yalnızca videoModel henüz kilitlenmemişse fotoğraf bulut modellerini (kimi-k3.1-pro:cloud vb.) önceliklendir
-      const settingsNow = await readSettings();
-      const curVideo = await selectedVideoModel(await selectedEvolverModel(await selectedModel()));
-      const bestVideo = pickBestVideoModel(models);
-      if (!settingsNow.videoModelLocked && /:cloud$/i.test(bestVideo) && (!models.includes(curVideo) || !/:cloud$/i.test(curVideo))) {
-       await writeSettings({ videoModel: bestVideo }).catch(() => {});
-      }
      }
      const model = await selectedModel();
      const verifierModel = await selectedVerifierModel(model);
      const judge2Model = await selectedJudgeModel('judge2Model', defaultJudge2Model);
      const evolverModel = await selectedEvolverModel(model);
-     const videoModel = await selectedVideoModel(evolverModel);
 
      if (req.method === 'GET' && path === '/voicestudio/catalog') {
       return respond(res, 200, await voiceStudio.getCatalog());
@@ -4198,134 +3887,9 @@ export function ollamaPlugin() {
       return respond(res, 200, { ok: true, ...(await voiceStudio.checkLocalVoiceStudio()) });
      }
 
-     if (req.method === 'GET' && path === '/videos/local-engines') {
-      return respond(res, 200, await localVideoHub.detectLocalEngines());
-     }
 
-     if (req.method === 'GET' && path === '/3d/engines') {
-      const [caps, videoHubCaps] = await Promise.all([
-       local3dEngine.detectCapabilities(),
-       localVideoHub.detectLocalEngines()
-      ]);
-      return respond(res, 200, {
-       ok: true,
-       ...caps,
-       presets: LOCAL_3D_ANIMATION_PRESETS,
-       catalog: LOCAL_3D_ENGINES_CATALOG,
-       localVideoEngines: videoHubCaps?.engines || []
-      });
-     }
 
-     if (req.method === 'POST' && path === '/3d/generate') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '0-0';
-      const ctx = contexts.find(c => c.id === unitId) || contexts[0];
-      const passages = passagesByUnit.get(ctx?.id || unitId) || [];
-      const keyPoints = Array.isArray(input?.keyPoints) && input.keyPoints.length
-       ? input.keyPoints
-       : extractKeyTermsFromUnit(ctx, passages).slice(0, 4);
-      const spec = local3dEngine.build3DAnimationSpec({
-       unitId: ctx?.id || unitId,
-       unitTitle: typeof input?.unitTitle === 'string' && input.unitTitle.trim() ? input.unitTitle.trim() : (ctx?.unit || 'Temel Eğitim 3D'),
-       book: typeof input?.book === 'string' && input.book.trim() ? input.book.trim() : (ctx?.book || 'Temel Eğitim'),
-       presetId: typeof input?.presetId === 'string' ? input.presetId : 'biomech_sprint',
-       environment: typeof input?.environment === 'string' ? input.environment : '',
-       choreography: typeof input?.choreography === 'string' ? input.choreography : '',
-       hologram: typeof input?.hologram === 'string' ? input.hologram : '',
-       cameraPath: typeof input?.cameraPath === 'string' ? input.cameraPath : '',
-       speed: Number(input?.speed || 1.0),
-       particleCount: Number(input?.particleCount || 24),
-       customPrompt: typeof input?.customPrompt === 'string' ? input.customPrompt : '',
-       keyPoints
-      });
-      const includeBlender = input?.includeBlenderScript !== false;
-      const blenderScript = includeBlender ? local3dEngine.generateBlenderScript(spec) : null;
-      const previewSvg = local3dEngine.renderProjected3DFrameSvg({
-       spec,
-       sceneIdx: 0,
-       dialogue: spec.scenes?.[0]?.dialogues?.[0] || null,
-       phase: 2,
-       totalPhases: 16
-      });
-      let savedVariantId = '';
-      if (input?.saveToUnit && ctx) {
-       const variantId = `3d-${spec.presetId}`;
-       await videoDirector.saveVideo(spec, variantId);
-       savedVariantId = variantId;
-      }
-      let mp4Result = null;
-      if (input?.renderMp4 && ctx) {
-       const ffmpegPath = await mp4Renderer.getFfmpegPath?.();
-       if (ffmpegPath) {
-        const variantId = savedVariantId || `3d-${spec.presetId}`;
-        if (!savedVariantId) await videoDirector.saveVideo(spec, variantId);
-        mp4Result = await localVideoHub.dispatchLocalRender({
-         engineId: 'tempo-3d-cinema-engine',
-         video: spec,
-         outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-         speedProfile: input?.speedProfile === 'hd' ? 'cinema' : 'turbo'
-        });
-        mp4Result.mp4Url = `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}&variantId=${encodeURIComponent(variantId)}&t=${Date.now()}`;
-        savedVariantId = variantId;
-       }
-      }
-      return respond(res, 200, {
-       ok: true,
-       zeroApi: true,
-       spec,
-       blenderScript,
-       previewSvg,
-       savedVariantId,
-       mp4: mp4Result
-      });
-     }
 
-     if (req.method === 'POST' && path === '/3d/render-mp4') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '0-0';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      const passages = passagesByUnit.get(ctx.id) || [];
-      const keyPoints = Array.isArray(input?.keyPoints) && input.keyPoints.length
-       ? input.keyPoints
-       : extractKeyTermsFromUnit(ctx, passages).slice(0, 4);
-      const spec = local3dEngine.build3DAnimationSpec({
-       unitId: ctx.id,
-       unitTitle: typeof input?.unitTitle === 'string' && input.unitTitle.trim() ? input.unitTitle.trim() : ctx.unit,
-       book: ctx.book,
-       presetId: typeof input?.presetId === 'string' ? input.presetId : 'biomech_sprint',
-       environment: typeof input?.environment === 'string' ? input.environment : '',
-       choreography: typeof input?.choreography === 'string' ? input.choreography : '',
-       hologram: typeof input?.hologram === 'string' ? input.hologram : '',
-       cameraPath: typeof input?.cameraPath === 'string' ? input.cameraPath : '',
-       speed: Number(input?.speed || 1.0),
-       particleCount: Number(input?.particleCount || 24),
-       customPrompt: typeof input?.customPrompt === 'string' ? input.customPrompt : '',
-       keyPoints
-      });
-      const variantId = typeof input?.variantId === 'string' && input.variantId.trim()
-       ? input.variantId.trim()
-       : `3d-${spec.presetId}`;
-      await videoDirector.saveVideo(spec, variantId);
-      try {
-       const renderRes = await localVideoHub.dispatchLocalRender({
-        engineId: 'tempo-3d-cinema-engine',
-        video: spec,
-        outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-        speedProfile: input?.speedProfile === 'hd' ? 'cinema' : 'turbo'
-       });
-       return respond(res, 200, {
-        ok: true,
-        hasMp4: true,
-        variantId,
-        spec,
-        ...renderRes,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}&variantId=${encodeURIComponent(variantId)}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Yerel 3D MP4 derlenemedi.' });
-      }
-     }
 
      if ((req.method === 'GET' || req.method === 'POST') && path === '/rag/query') {
       const input = req.method === 'POST' ? await body(req) : {};
@@ -4374,7 +3938,7 @@ export function ollamaPlugin() {
       }
       const items = await load();
       const scope = String(input?.scope ?? urlObj.searchParams.get('scope') ?? 'all');
-      const targetItems = scope === 'generated' ? items : [...questionBank, ...bookStyleQuestions, ...items];
+      const targetItems = scope === 'generated' ? items : [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items];
       const report = precisionEngine.auditPool(targetItems);
       lastPrecisionAuditSummary = {
        evaluatedCount: report.evaluatedCount,
@@ -4423,10 +3987,70 @@ export function ollamaPlugin() {
       });
      }
 
+     if (req.method === 'GET' && path === '/book-parallels') {
+      const unitFilter = urlObj.searchParams.get('unitId');
+      const filtered = unitFilter ? bookParallelQuestions.filter(q => q.unitId === unitFilter) : bookParallelQuestions;
+      return respond(res, 200, {
+       ok: true,
+       total: filtered.length,
+       unitsCovered: new Set(filtered.map(q => q.unitId)).size,
+       sourceTotal: bookParallelQuestions.length,
+       questions: filtered
+      });
+     }
+
+     /**
+      * Hata defterindeki yanlış soruyu "değiştirerek" yeniden sormak için: soru kökü
+      * yeniden yazılır, doğru cevap ve çeldiriciler korunur, şık sırası karıştırılır.
+      * Yerel model erişilebilirse modelle, değilse deterministik motorla üretir.
+      */
+     if (req.method === 'POST' && path === '/rephrase') {
+      const input = await body(req);
+      const question = typeof input?.question === 'string' ? input.question.trim() : '';
+      const answer = typeof input?.answer === 'string' ? input.answer.trim() : '';
+      const options = Array.isArray(input?.options) ? input.options.filter(o => typeof o === 'string' && o.trim()).map(o => o.trim()) : [];
+      if (question.length < 10 || !answer || options.length < 4) {
+       return respond(res, 400, { error: 'Yeniden yazmak için soru, doğru cevap ve 4 seçenek gerekli.' });
+      }
+      const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '';
+      const ctx = contexts.find(c => c.id === unitId) || null;
+      const fallbackSeed = String(input?.seed || question);
+      const deterministic = (() => {
+       const seedNum = [...fallbackSeed].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7);
+       const { text, strategy } = rephraseStem(question, seedNum);
+       const shuffled = [...new Set([answer, ...options.filter(o => o !== answer)])];
+       const rot = seedNum % Math.max(1, shuffled.length);
+       const rotated = [...shuffled.slice(rot), ...shuffled.slice(0, rot)];
+       return { question: text, options: rotated, answer, strategy, source: 'deterministic' };
+      })();
+      if (input?.useAi !== true || !ctx) {
+       return respond(res, 200, { ok: true, ...deterministic });
+      }
+      try {
+       const prompt = `Aşağıdaki dört seçenekli çoktan seçmeli sorunun YALNIZCA SORU KÖKÜNÜ, aynı bilgiyi ölçecek biçimde farklı ve doğal Türkçeyle yeniden yaz. Kurallar:\n- Doğru cevabı ve seçeneklerin METNİNİ asla değiştirme, yeni seçenek uydurma.\n- Soru kökündeki anlamı, kavramı ve olumsuzluk/olumsuzluk yokluğunu birebir koru.\n- Farklı kalıp kullan: "Aşağıdakilerden hangisi X?" yerine "X aşağıdakilerden hangisidir?" gibi.\n- SADECE JSON döndür: {"question": "..."}\n\nSoru: ${question}\nDoğru cevap: ${answer}\nSeçenekler: ${JSON.stringify(options)}`;
+       const raw = await runModel(model, prompt, 0.3, AbortSignal.timeout(20000), 220);
+       const parsed = extractJsonLoose(raw);
+       const rewritten = typeof parsed?.question === 'string' ? parsed.question.trim() : '';
+       const normRewritten = norm(rewritten);
+       if (
+        rewritten.length >= 15 && rewritten.length <= 700 &&
+        normRewritten !== norm(question) &&
+        // Model, kökü değil de seçenek metnini döndürdüyse kullanma.
+        !options.some(o => normRewritten === norm(o))
+       ) {
+        const guard = summaryGrounding.evaluate({ unitId: ctx.id, question: rewritten, options, answer });
+        if (guard.ok || guard.skipped) {
+         return respond(res, 200, { ok: true, question: rewritten, options: deterministic.options, answer, strategy: 'ai_model', source: model });
+        }
+       }
+      } catch {}
+      return respond(res, 200, { ok: true, ...deterministic });
+     }
+
      if (req.method === 'GET' && path === '/100-ai') {
       const items = await load().catch(() => []);
       if (!lastHundredAiSummary) {
-       await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]).catch(() => {});
+       await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]).catch(() => {});
        lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
       }
       return respond(res, 200, {
@@ -4441,7 +4065,7 @@ export function ollamaPlugin() {
       const items = await load().catch(() => []);
       const input = await body(req);
       const unitFilter = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : null;
-      const pool = [...questionBank, ...bookStyleQuestions, ...items].filter(q => !unitFilter || q.unitId === unitFilter);
+      const pool = [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items].filter(q => !unitFilter || q.unitId === unitFilter);
       const summary = await hundredAiCouncil.calibratePoolWith100AIs(pool);
       lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
       return respond(res, 200, { ok: true, ...summary, status: lastHundredAiSummary });
@@ -4450,7 +4074,7 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/100-ai/evolve') {
       if (!safeOrigin(req)) return respond(res, 403, { error: 'Bu işlem yalnız aynı kaynaktan yapılabilir.' });
       const items = await load().catch(() => []);
-      const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...items]);
+      const summary = await hundredAiCouncil.calibratePoolWith100AIs([...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items]);
       const evolved = await hundredAiCouncil.evolveWithQwenCode(summary);
       lastHundredAiSummary = hundredAiCouncil.getStatusSummary();
       return respond(res, 200, { ok: true, ...evolved, status: lastHundredAiSummary });
@@ -4460,7 +4084,7 @@ export function ollamaPlugin() {
       const unitFilter = urlObj.searchParams.get('unitId');
       const tierFilter = urlObj.searchParams.get('tier');
       const items = await load().catch(() => []);
-      const pool = [...questionBank, ...bookStyleQuestions, ...items].filter(q => q && q.status !== 'rejected' && (!unitFilter || q.unitId === unitFilter));
+      const pool = [...questionBank, ...bookStyleQuestions, ...bookParallelQuestions, ...items].filter(q => q && q.status !== 'rejected' && (!unitFilter || q.unitId === unitFilter));
       const fullCalibrated = pool.map(q => {
        const cal = hundredAiCouncil.solveQuestionWith100AIs(q);
        return {
@@ -4568,12 +4192,12 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'GET' && path === '/status') {
-      const [items, study, storage, autoRunning, autoConcurrency, autoTimeout, pipelineConfig, policy, history, studentProfile, jConfig, jMemory, jEnv, rMem, curatorReport, lessonsSummary, videosSummary, feedAll, apexState, trainerState, githubOss, githubMegaState, voiceStudioSummary, localVideoStatus, local3dSummary, rawParamState, swarmState, qwenLabState, localTeamState, hardwareSummary, coderState, verifier100State] = await Promise.all([
+      const [items, study, storage, autoRunning, autoConcurrency, autoTimeout, pipelineConfig, policy, history, studentProfile, jConfig, jMemory, jEnv, rMem, curatorReport, lessonsSummary, apexState, trainerState, githubOss, githubMegaState, voiceStudioSummary, rawParamState, swarmState, qwenLabState, localTeamState, hardwareSummary, coderState, verifier100State] = await Promise.all([
        load(), loadStudy(), storageUsage(), autoRunningEnabled(), autoConcurrencyLimit(), autoTimeoutMs(), getPipelineConfig(),
        evolver.loadPolicy(), evolver.loadHistory(), evolver.loadStudentProfile(),
        jarvis.loadConfig(), jarvis.loadMemory(), jarvis.inspectTrainingEnvironment(), researchAgent.loadMemory(),
-       poolCurator.loadReport(), lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length), videoDirector.listAllFeedVideos(), apex.loadState(),
-       trainer.loadState(), githubMiner.loadState(), githubMega.loadState(), voiceStudio.getSummary(), localVideoHub.detectLocalEngines(), local3dEngine.detectCapabilities(), paramMatrix.loadState(), multiAiEval.loadState(), qwenCodeLab.loadState(), localAiTeam.loadState(),
+       poolCurator.loadReport(), lessonEngine.listSummary(contexts.length), apex.loadState(),
+       trainer.loadState(), githubMiner.loadState(), githubMega.loadState(), voiceStudio.getSummary(), paramMatrix.loadState(), multiAiEval.loadState(), qwenCodeLab.loadState(), localAiTeam.loadState(),
        hardwareOpt.getSummary({ ollamaBaseUrl: connected ? base : null, installedModels: models }),
        coderCouncil.loadState(),
        verifier100.loadState()
@@ -4588,7 +4212,6 @@ export function ollamaPlugin() {
        verifierModel,
        judge2Model,
        evolverModel,
-       videoModel,
        coderModel: jConfig.coderModel
       }).catch(() => rawParamState);
       cachedParamState = paramState;
@@ -4598,20 +4221,11 @@ export function ollamaPlugin() {
       const qwenLabSummary = qwenCodeLab.getSummary(qwenLabState);
       const localTeamSummary = localAiTeam.getSummary(localTeamState);
       const coderCouncilSummary = coderCouncil.getSummary(coderState, { installedModels: models, botMatrixSummary: paramSummary });
-      const filledFeedUnits = new Set(feedAll.filter(v => v.hasMp4).map(v => v.unitId)).size;
-      const tiktokFeedSummary = {
-       totalUnits: contexts.length,
-       filledUnits: filledFeedUnits,
-       coveragePct: contexts.length ? Math.round((filledFeedUnits / contexts.length) * 100) : 0,
-       feedItemsCount: feedAll.filter(v => v.hasMp4).length,
-       tiktokCount: feedAll.filter(v => v.noQuestions || v.themeStyle === 'tiktok_kayseri' || v.themeStyle === 'terim_avcisi').length
-      };
-      const enrichedVideosSummary = { ...videosSummary, ...tiktokFeedSummary };
       const telSnap = getTelemetrySnapshot();
       const adaptiveQuality = jarvis.computeAdaptiveQuality(jMemory, rMem, telSnap, apexState);
       const liveDiagnostics = apex.diagnoseAllBots({
        items, contexts, passagesByUnit, telemetry: telSnap, studentProfile,
-       curatorReport, lessonsSummary, videosSummary: enrichedVideosSummary, researchMemory: rMem, jarvisMemory: jMemory
+       curatorReport, lessonsSummary, researchMemory: rMem, jarvisMemory: jMemory
       });
       const approvedCount = items.filter(x => x.status === 'approved').length;
       const sinceTrain = Math.max(0, approvedCount - (jMemory.lastTrainedApprovedCount || 0));
@@ -4632,8 +4246,7 @@ export function ollamaPlugin() {
        pool: {
         approvedCount,
         unitsCount: contexts.length,
-        totalLessons: lessonsSummary?.totalLessons ?? 0,
-        totalVideos: enrichedVideosSummary?.totalVideos ?? 0
+        totalLessons: lessonsSummary?.totalLessons ?? 0
        },
        teamState: localTeamState,
        codeLabState: qwenLabState,
@@ -4651,17 +4264,12 @@ export function ollamaPlugin() {
        agentOrchestrator.getStatus()
       ]);
       return respond(res, 200, {
-       connected, model, verifierModel, judge2Model, evolverModel, videoModel,
+       connected, model, verifierModel, judge2Model, evolverModel,
        installed: models.includes(model),
        verifierInstalled: models.includes(verifierModel),
        judge2Installed: models.includes(judge2Model),
        evolverInstalled: models.includes(evolverModel),
-       videoModelInstalled: models.includes(videoModel),
-       videoPolicy: VIDEO_GENERATION_POLICY,
-       allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-       videoProvider: classifyVideoProvider(videoModel),
        coderInstalled: models.includes(jConfig.coderModel),
-       cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
        installedCloudModels: models.filter(m => /:cloud$/i.test(m)),
        models, busy, phase, lastError, storage,
        count: items.length,
@@ -4680,19 +4288,8 @@ export function ollamaPlugin() {
        angleCounts,
        curator: curatorReport,
        lessons: lessonsSummary,
-       videos: enrichedVideosSummary,
-       tiktokFeed: tiktokFeedSummary,
-       continuousTikTok: {
-        active: true,
-        replacedLegacyTotal,
-        continuousGeneratedTotal,
-        legacyRemaining: videosSummary.legacyCount ?? feedAll.filter(v => v.isLegacy).length,
-        upgradedV2Count: videosSummary.upgradedV2Count ?? feedAll.filter(v => !v.isLegacy).length,
-        videoSpecVersion: VIDEO_SPEC_VERSION
-       },
        ollamaUpgrade: ollamaUpgradeState,
        voiceStudio: voiceStudioSummary,
-       localVideoEngines: localVideoStatus,
        upgradeFactorFromPrevious: 100,
        cumulativeUpgradeFactor: 150000,
        trainingScaleFactor: 3000000,
@@ -4707,6 +4304,9 @@ export function ollamaPlugin() {
        subSecondAllBots: pipelineConfig.subSecondAllBots,
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
+       questionIntervalMs: QUESTION_INTERVAL_MS,
+       modelInferenceConcurrency: 1,
+       modelInferenceQueue: modelInferenceQueue.snapshot(),
        autoActive: autoPhases.length,
        autoPhases, autoLastError,
        totalUnits: contexts.length,
@@ -4786,7 +4386,6 @@ export function ollamaPlugin() {
        verifier100: verifier100.getSummary(verifier100State),
        bookSearch: bookSearch.getSummary(),
        projectLevel: projectLevelSummary,
-       local3d: local3dSummary,
        ragSummary,
        trainingHub: trainingHubStatus,
        orchestrator: orchestratorStatus,
@@ -4806,13 +4405,12 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'GET' && path === '/intelligence') {
-      const [trainerState, githubOss, apexState, jMem, rMem, videosSummary, paramState, swarmState, coderState] = await Promise.all([
+      const [trainerState, githubOss, apexState, jMem, rMem, paramState, swarmState, coderState] = await Promise.all([
        trainer.loadState(),
        githubMiner.loadState(),
        apex.loadState(),
        jarvis.loadMemory(),
        researchAgent.loadMemory(),
-       videoDirector.listSummary(contexts.length),
        paramMatrix.loadState(),
        multiAiEval.loadState(),
        coderCouncil.loadState()
@@ -4840,13 +4438,7 @@ export function ollamaPlugin() {
        adaptiveQuality,
        parameterMatrix: paramSummary,
        swarmEval: multiAiEval.getSummary(swarmState),
-       coderCouncil: coderCouncil.getSummary(coderState, { installedModels: models, botMatrixSummary: paramSummary }),
-       googleFlow: {
-        zeroApiAutonomous: true,
-        flowTaggedCount: videosSummary.googleFlowTagged || 0,
-        flowEmbeddedCount: videosSummary.googleFlowEmbedded || 0,
-        flowPendingCount: videosSummary.googleFlowPending || 0
-       }
+       coderCouncil: coderCouncil.getSummary(coderState, { installedModels: models, botMatrixSummary: paramSummary })
       });
      }
 
@@ -4857,7 +4449,6 @@ export function ollamaPlugin() {
        verifierModel,
        judge2Model,
        evolverModel,
-       videoModel,
        coderModel: jCfg.coderModel
       });
       cachedParamState = synced;
@@ -4879,14 +4470,12 @@ export function ollamaPlugin() {
 
      if (req.method === 'POST' && (path === '/parameters/evolve' || path === '/swarm-evaluate')) {
       const input = await body(req);
-      const [items, study, studentProfile, curatorReport, lessonsSummary, videosSummary, feedVideos, policy, rMem, jMemory, jCfg] = await Promise.all([
+      const [items, study, studentProfile, curatorReport, lessonsSummary, policy, rMem, jMemory, jCfg] = await Promise.all([
        load(),
        loadStudy(),
        evolver.loadStudentProfile(),
        poolCurator.loadReport(),
        lessonEngine.listSummary(contexts.length),
-       videoDirector.listSummary(contexts.length),
-       videoDirector.listAllFeedVideos(),
        evolver.loadPolicy(),
        researchAgent.loadMemory(),
        jarvis.loadMemory(),
@@ -4897,19 +4486,12 @@ export function ollamaPlugin() {
        verifierModel,
        judge2Model,
        evolverModel,
-       videoModel,
        coderModel: jCfg.coderModel
       }).catch(() => {});
       const telSnap = getTelemetrySnapshot();
       const liveDiagnostics = apex.diagnoseAllBots({
        items, contexts, passagesByUnit, telemetry: telSnap, studentProfile,
-       curatorReport, lessonsSummary, videosSummary, researchMemory: rMem, jarvisMemory: jMemory
-      });
-      const normalizedFeed = (feedVideos || []).filter(v => v.hasMp4).map(item => {
-       const ctx = contexts.find(c => c.id === item.unitId);
-       const terms = item.keyTerms?.length ? item.keyTerms : (ctx ? extractKeyTermsFromUnit(ctx, passagesByUnit.get(ctx.id) || [], null) : []);
-       const dAns = (item.directAnswer || (ctx ? (ctx.text || '').split('.').slice(0, 2).join('. ').trim() : item.summary) || '').replace(/\?+\s*$/, '').trim();
-       return { ...item, noQuestions: true, directAnswer: dAns, keyTerms: terms };
+       curatorReport, lessonsSummary, researchMemory: rMem, jarvisMemory: jMemory
       });
       const swarmRes = await multiAiEval.evaluateAndEvolve({
        paramMatrix,
@@ -4918,8 +4500,6 @@ export function ollamaPlugin() {
        contexts,
        passagesByUnit,
        lessonsSummary,
-       videosSummary,
-       feedVideos: normalizedFeed,
        evolver,
        policy,
        studentProfile,
@@ -4993,13 +4573,11 @@ export function ollamaPlugin() {
        coderCouncil.runOvertrainSprint({ installedModels: tagsList, hardwareProfile: cachedHardwareProfile, paramMatrix: null, epochsPerModel: 1, distillDpo: true }),
        Promise.all([
         lessonEngine.listSummary(contexts.length),
-        videoDirector.listSummary(contexts.length),
-        videoDirector.listAllFeedVideos(),
         evolver.loadStudentProfile()
-       ]).then(([lessonsSummary, videosSummary, feedAll, studentProfile]) =>
+       ]).then(([lessonsSummary, studentProfile]) =>
         multiAiEval.evaluateAndEvolve({
-         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary, videosSummary,
-         feedVideos: feedAll.filter(v => v.hasMp4), evolver, policy, studentProfile,
+         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+         evolver, policy, studentProfile,
          source: 'sub-second-team-sprint'
         })
        )
@@ -5107,13 +4685,13 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/coder-council/team-develop') {
       const input = await body(req);
       const tDev = performance.now();
-      const [tagsList, items, study, policy, lessonsSummary, videosSummary, feedAll, studentProfile] = await Promise.all([
+      const [tagsList, items, study, policy, lessonsSummary, studentProfile] = await Promise.all([
        fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(700) })
         .then(r => (r.ok ? r.json() : null))
         .then(j => (Array.isArray(j?.models) ? j.models.map(x => x.name) : []))
         .catch(() => []),
        load(), loadStudy(), evolver.loadPolicy(),
-       lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length), videoDirector.listAllFeedVideos(),
+       lessonEngine.listSummary(contexts.length),
        evolver.loadStudentProfile()
       ]);
       const epochs = Math.max(1, Math.min(20, Number(input?.epochsPerModel || 3)));
@@ -5130,8 +4708,8 @@ export function ollamaPlugin() {
        localAiTeam.runFastTeamCycle({ items, contexts, evolver, policy, installedModels: tagsList, apex, jarvis, teamBudgetMs: cachedHardwareProfile?.teamBudgetMs || 900 }),
        qwenCodeLab.runHundredMethodTournament({ evolver, paramMatrix: null, jarvis, items, applyToProject: true }),
        multiAiEval.evaluateAndEvolve({
-        paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary, videosSummary,
-        feedVideos: feedAll.filter(v => v.hasMp4), evolver, policy, studentProfile,
+        paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+        evolver, policy, studentProfile,
         source: '40-model-non-ui-team-develop'
        })
       ]);
@@ -5386,164 +4964,8 @@ export function ollamaPlugin() {
       }
       return respond(res, 200, { summary: await lessonEngine.listSummary(contexts.length) });
      }
-     if (req.method === 'GET' && path === '/videos/mp4') {
-      const unitId = urlObj.searchParams.get('unitId') || '0-0';
-      const variantId = urlObj.searchParams.get('variantId') || '';
-      const speedProfile = urlObj.searchParams.get('profile') === 'hd' ? 'hd' : 'turbo';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       const force = urlObj.searchParams.get('rebuild') === '1';
-       await ensureUnitMp4(ctx.id, force, variantId, speedProfile);
-       return await sendMp4File(req, res, videoDirector.mp4Path(ctx.id, variantId));
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Gömülü MP4 video üretilemedi.' });
-      }
-     }
 
-     if (req.method === 'GET' && path === '/videos/feed') {
-      const limit = Math.max(1, Math.min(100, Number(urlObj.searchParams.get('limit') || 40)));
-      const themeFilter = urlObj.searchParams.get('theme') || '';
-      const shouldShuffle = urlObj.searchParams.get('shuffle') !== '0';
-      const setup = await resolveActiveVideoSetup();
-      let feed = await videoDirector.listAllFeedVideos();
-      // İlk açılışta en az 3 ünitenin TikTok videosu hazır değilse seçili 0-API AI video modelleriyle hızlıca üret
-      if (feed.length < 3 && !videoBusy) {
-       await fillNextMissingUnitVideo(setup.activeVideoModel, { count: 3, speedProfile: 'turbo', instantOnly: false, aiTimeoutMs: 3000 }).catch(() => {});
-       feed = await videoDirector.listAllFeedVideos();
-      }
-      // TikTok akışındaki kartlar ASLA soru sormaz; yalnızca gerçek MP4'ü hazır videolara net cevap + keyTerms + 0-API AI model bilgisini garanti et
-      let normalized = feed.filter(v => v.hasMp4).map(item => {
-       const ctx = contexts.find(c => c.id === item.unitId);
-       const terms = item.keyTerms?.length ? item.keyTerms : (ctx ? extractKeyTermsFromUnit(ctx, passagesByUnit.get(ctx.id) || [], null) : []);
-       const dAns = item.directAnswer || (ctx ? (ctx.text || '').split('.').slice(0, 2).join('. ').trim() : item.summary);
-       return {
-        ...item,
-        aiVideoModel: item.aiVideoModel || item.model || setup.activeVideoModel,
-        aiVideoEngine: item.aiVideoEngine || setup.activeEngineId || 'tempo-cinema-pro',
-        generatorProvider: item.generatorProvider || setup.generatorProvider,
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        zeroApi: true,
-        localExecutionOnly: true,
-        noApiKeyPrompts: true,
-        noQuestions: true,
-        directAnswer: dAns,
-        keyTerms: terms
-       };
-      });
-      if (themeFilter) normalized = normalized.filter(x => x.themeStyle === themeFilter);
-      if (shouldShuffle) {
-       // Farklı üniteleri birbirine karıştır (aynı üniteden iki video art arda gelmesin)
-       normalized = normalized.sort((a, b) => (a.unitId === b.unitId ? 0 : Math.random() - 0.5));
-      }
-      const filledSet = new Set(feed.filter(v => v.hasMp4).map(v => v.unitId));
-      const legacyRemaining = feed.filter(v => v.isLegacy).length;
-      const upgradedV2Count = feed.filter(v => !v.isLegacy && v.hasMp4).length;
-      return respond(res, 200, {
-       ok: true,
-       noQuestions: true,
-       activeVideoModel: setup.activeVideoModel,
-       activeVideoProvider: setup.generatorProvider,
-       activeVideoEngine: setup.activeEngineId || 'tempo-cinema-pro',
-       videoPolicy: VIDEO_GENERATION_POLICY,
-       videoSpecVersion: VIDEO_SPEC_VERSION,
-       localExecutionOnly: true,
-       zeroApiRequired: true,
-       noApiKeyPrompts: true,
-       items: normalized.slice(0, limit),
-       totalFeedCount: normalized.length,
-       legacyReplacement: {
-        legacyRemaining,
-        upgradedV2Count,
-        replacedLegacyTotal,
-        inProgress: videoBusy
-       },
-       continuousTikTok: {
-        active: true,
-        continuousGeneratedTotal
-       },
-       coverage: {
-        filledUnits: filledSet.size,
-        totalUnits: contexts.length,
-        coveragePct: contexts.length ? Math.round((filledSet.size / contexts.length) * 100) : 0
-       }
-      });
-     }
 
-     if (req.method === 'GET' && path === '/videos') {
-      const unitId = urlObj.searchParams.get('unitId');
-      const variantId = urlObj.searchParams.get('variantId') || '';
-      const vCfg = await videoDirector.loadConfig();
-      if (unitId) {
-       const ctx = contexts.find(c => c.id === unitId);
-       if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-       const [video, lesson, studentProfile, hasMp4, variants] = await Promise.all([
-        videoDirector.loadVideo(unitId, variantId),
-        lessonEngine.loadLesson(unitId),
-        evolver.loadStudentProfile(),
-        videoDirector.hasMp4(unitId, variantId),
-        videoDirector.listUnitVariants(unitId)
-       ]);
-       const situationMode = videoDirector.selectSituationMode(unitId, studentProfile);
-       const mp4Url = `/api/ollama/videos/mp4?unitId=${encodeURIComponent(unitId)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}`;
-       if (video) {
-        return respond(res, 200, {
-         video,
-         situationMode,
-         hasMp4,
-         mp4Url,
-         variants,
-         themes: VIDEO_THEMES,
-         videoModel,
-         videoModelInstalled: models.includes(videoModel),
-         videoPolicy: VIDEO_GENERATION_POLICY,
-         allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-         videoProvider: classifyVideoProvider(videoModel),
-         cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
-         localExecutionOnly: true,
-         zeroApiRequired: true,
-         noApiKeyPrompts: true,
-         hasGoogleFlowKey: false,
-         googleFlowModel: vCfg.googleFlowModel
-        });
-       }
-       const passages = passagesByUnit.get(ctx.id) || [];
-       return respond(res, 200, {
-        video: videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile),
-        situationMode,
-        hasMp4,
-        mp4Url,
-        variants,
-        themes: VIDEO_THEMES,
-        videoModel,
-        videoModelInstalled: models.includes(videoModel),
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-        videoProvider: classifyVideoProvider(videoModel),
-        cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
-        localExecutionOnly: true,
-        zeroApiRequired: true,
-        noApiKeyPrompts: true,
-        hasGoogleFlowKey: false,
-        googleFlowModel: vCfg.googleFlowModel
-       });
-      }
-      return respond(res, 200, {
-       summary: await videoDirector.listSummary(contexts.length),
-       themes: VIDEO_THEMES,
-       videoModel,
-       videoModelInstalled: models.includes(videoModel),
-       videoPolicy: VIDEO_GENERATION_POLICY,
-       allowedVideoProviders: ALLOWED_VIDEO_PROVIDERS,
-       videoProvider: classifyVideoProvider(videoModel),
-       cloudVideoModels: PHOTO_CLOUD_VIDEO_MODELS.map(m => ({ ...m, installed: models.includes(m.id) })),
-       localExecutionOnly: true,
-       zeroApiRequired: true,
-       noApiKeyPrompts: true,
-       hasGoogleFlowKey: false,
-       googleFlowModel: vCfg.googleFlowModel
-      });
-     }
      if (req.method === 'GET' && path === '/passages') {
       const unitId = urlObj.searchParams.get('unitId') || '0-0';
       const list = passagesByUnit.get(unitId) || [];
@@ -5872,14 +5294,11 @@ export function ollamaPlugin() {
       const input = await body(req);
       const chosen = input.model;
       const role = typeof input.role === 'string' ? input.role : 'model';
-      const roleKey = { model: 'model', verifier: 'verifierModel', judge2: 'judge2Model', evolver: 'evolverModel', video: 'videoModel' }[role];
+      const roleKey = { model: 'model', verifier: 'verifierModel', judge2: 'judge2Model', evolver: 'evolverModel' }[role];
       if (!roleKey) return respond(res, 400, { error: 'Geçersiz rol.' });
       const storage = await storageUsage();
       if (storage.total + 1_000_000 > storageLimit) return respond(res, 400, { error: '100 GB sınırına yaklaşıldı; ayar kaydedilmedi.' });
       if (typeof chosen !== 'string' || chosen.length > 200 || !chosen.trim()) return respond(res, 400, { error: 'Geçersiz model adı.' });
-      if (role === 'video' && !isAllowedVideoModel(chosen)) {
-       return respond(res, 400, { error: 'Video üretimi için yalnızca Kimi ve Ollama modelleri seçilebilir.' });
-      }
       let tags = null;
       let ollamaReachable = false;
       try {
@@ -5890,66 +5309,25 @@ export function ollamaPlugin() {
        }
       } catch {}
       const tagNames = Array.isArray(tags?.models) ? tags.models.map(x => x.name) : [];
-      if (role === 'video' && isAllowedVideoModel(chosen, tagNames) && (!ollamaReachable || tagNames.includes(chosen))) {
-       await writeSettings({ videoModel: chosen, videoModelLocked: true });
-       return respond(res, 200, {
-        role,
-        model: chosen,
-        localExecutionOnly: true,
-        zeroApiRequired: true,
-        noApiKeyPrompts: true,
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        videoProvider: classifyVideoProvider(chosen)
-       });
-      }
       if (!ollamaReachable) {
        return respond(res, 502, { error: 'Ollama model listesi alınamadı.' });
       }
       if (!tagNames.includes(chosen)) {
        return respond(res, 400, { error: 'Model yerel Ollama listesinde bulunamadı.' });
       }
-      if (role === 'video' && !isAllowedVideoModel(chosen, tagNames)) {
-       return respond(res, 400, { error: 'Video üretimi için yalnızca Kimi ve Ollama modelleri seçilebilir.' });
-      }
-      await writeSettings({ [roleKey]: chosen, ...(role === 'video' ? { videoModelLocked: true } : {}) });
+      await writeSettings({ [roleKey]: chosen });
       return respond(res, 200, { role, model: chosen, localExecutionOnly: true, zeroApiRequired: true });
      }
 
-     if (req.method === 'POST' && path === '/videos/pull-model') {
-      const input = await body(req);
-      const chosen = typeof input?.model === 'string' ? input.model.trim() : '';
-      if (!chosen || chosen.length > 160 || !/^[a-zA-Z0-9._:/-]+$/.test(chosen)) {
-       return respond(res, 400, { error: 'Geçersiz model adı.' });
-      }
-      if (!isAllowedVideoModel(chosen)) {
-       return respond(res, 400, { error: 'Video üretimi için yalnızca Kimi ve Ollama modelleri indirilebilir.' });
-      }
-      try {
-       const pullRes = await fetch(`${base}/api/pull`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: chosen, stream: false }),
-        signal: AbortSignal.timeout(120_000)
-       });
-       if (!pullRes.ok) {
-        const msg = await pullRes.text().catch(() => '');
-        return respond(res, 502, { error: msg || 'Ollama bulut modeli indirilemedi.' });
-       }
-       await writeSettings({ videoModel: chosen, videoModelLocked: true });
-       return respond(res, 200, { ok: true, model: chosen, zeroApiRequired: true });
-      } catch (e) {
-       return respond(res, 502, { error: e.message || 'Ollama bağlantı kuramadı.' });
-      }
-     }
 
      if (req.method === 'POST' && path === '/concurrency') {
       const input = await body(req);
       const n = Number(input.value);
-      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1 || n > contexts.length) {
-       return respond(res, 400, { error: `1 ile ${contexts.length} arasında bir tam sayı gerekir.` });
+      if (n !== 1) {
+       return respond(res, 400, { error: 'Model çakışmasını önlemek için uygulama eşzamanlılığı 1 ile sabittir.' });
       }
-      await writeSettings({ autoConcurrency: n });
-      return respond(res, 200, { autoConcurrency: n });
+      await writeSettings({ autoConcurrency: 1 });
+      return respond(res, 200, { autoConcurrency: 1, modelInferenceConcurrency: 1 });
      }
 
      if (req.method === 'POST' && path === '/timeout') {
@@ -5964,10 +5342,13 @@ export function ollamaPlugin() {
 
      if (req.method === 'POST' && path === '/config') {
       const input = await body(req);
-      const patch = {};
-      // TEK MOD = TURBO (Kalite Kilitli) — istemci ne gönderirse göndersin boru hattı daima 8 soru/çağrı + kuyruklu + kalite kilitli çalışır.
-      Object.assign(patch, { preset: 'turbo', batchPerCall: 8, fastThink: true, pipelineMode: 'batched', batchVerify: true, selfCorrection: true, smartDifficulty: true, passageMode: 'full-book', generateStudyMaterials: true, autoEvolve: true, turboQualityLock: true });
+      const patch = {
+       preset: 'balanced', batchPerCall: 1, fastThink: true, pipelineMode: 'direct',
+       batchVerify: false, selfCorrection: true, smartDifficulty: true,
+       generateStudyMaterials: false, autoEvolve: false, turboQualityLock: false
+      };
       if (input?.passageMode === 'summary-only') patch.passageMode = 'summary-only';
+      else patch.passageMode = 'full-book';
       if (input?.subSecondBudgetMs !== undefined) {
        const sb = Number(input.subSecondBudgetMs);
        if (!Number.isFinite(sb) || sb < 250 || sb > 980) return respond(res, 400, { error: 'subSecondBudgetMs 250 ile 980 (ms) arasında olmalı.' });
@@ -6088,308 +5469,16 @@ export function ollamaPlugin() {
       }
      }
 
-     if (req.method === 'POST' && path === '/videos/fill-all') {
-      const input = await body(req);
-      const count = input?.all ? contexts.length : Math.max(1, Math.min(29, Number(input?.count || 4)));
-      const reqModel = typeof input?.model === 'string' && input.model.trim() ? input.model.trim() : null;
-      if (reqModel && !isAllowedVideoModel(reqModel, models)) {
-       return respond(res, 400, { error: 'TikTok akışı videoları yalnızca API gerektirmeyen Kimi ve Ollama video modelleriyle oluşturulabilir.' });
-      }
-      if (reqModel && reqModel !== videoModel) {
-       await writeSettings({ videoModel: reqModel, videoModelLocked: true }).catch(() => {});
-      }
-      const reqEngine = typeof input?.engineId === 'string' && input.engineId.trim() ? input.engineId.trim() : '';
-      const validEngineIds = new Set(['', 'auto', ...GITHUB_LOCAL_VIDEO_ENGINES.map(e => e.id)]);
-      if (reqEngine && !validEngineIds.has(reqEngine)) {
-       return respond(res, 400, { error: 'Geçersiz yerel AI video motoru.' });
-      }
-      try {
-       const resFill = await fillNextMissingUnitVideo(reqModel, {
-        count,
-        speedProfile: input?.speedProfile === 'hd' ? 'hd' : 'turbo',
-        instantOnly: false,
-        engineId: reqEngine,
-        regenerateLegacy: input?.regenerateLegacy !== false,
-        continuous: input?.continuous !== false
-       });
-       return respond(res, 200, { ok: true, ...resFill });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Ünite videoları doldurulamadı.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/replace-legacy') {
-      const input = await body(req);
-      const count = input?.all ? 64 : Math.max(1, Math.min(64, Number(input?.count || 6)));
-      const reqModel = typeof input?.model === 'string' && input.model.trim() ? input.model.trim() : null;
-      if (reqModel && !isAllowedVideoModel(reqModel, models)) {
-       return respond(res, 400, { error: 'TikTok akışı videoları yalnızca API gerektirmeyen Kimi ve Ollama video modelleriyle değiştirilebilir.' });
-      }
-      try {
-       const resReplace = await fillNextMissingUnitVideo(reqModel, {
-        count,
-        speedProfile: input?.speedProfile === 'hd' ? 'hd' : 'turbo',
-        instantOnly: Boolean(input?.instantOnly),
-        regenerateLegacy: true,
-        replaceLegacyFirst: true,
-        continuous: true
-       });
-       return respond(res, 200, { ok: true, ...resReplace });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Eski TikTok videoları yerinde yenilenemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/generate') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const forcedMode = typeof input?.situationMode === 'string' ? input.situationMode : null;
-      const themeStyle = typeof input?.themeStyle === 'string' ? input.themeStyle : 'morpa_klasik';
-      const customIdea = typeof input?.customIdea === 'string' ? input.customIdea : '';
-      const saveAsVariant = Boolean(input?.saveAsVariant);
-      const variantId = typeof input?.variantId === 'string' ? input.variantId : '';
-      const instantTurbo = Boolean(input?.instantTurbo);
-      const speedProfile = input?.speedProfile === 'hd' ? 'hd' : 'turbo';
-      const requestedVideoModel = typeof input?.model === 'string' && input.model.trim() ? input.model.trim() : videoModel;
-      if (typeof input?.model === 'string' && input.model.trim() && !isAllowedVideoModel(requestedVideoModel, models)) {
-       return respond(res, 400, { error: 'Videolar yalnızca Kimi ve Ollama modelleriyle oluşturulabilir.' });
-      }
-      if (requestedVideoModel !== videoModel && typeof input?.model === 'string' && input.model.trim()) {
-       await writeSettings({ videoModel: requestedVideoModel, videoModelLocked: true }).catch(() => {});
-      }
-      const subSecondVideo = Boolean(input?.subSecond);
-      try {
-       const video = await triggerVideoProduce(unitId, requestedVideoModel, forcedMode, {
-        themeStyle,
-        customIdea,
-        saveAsVariant,
-        variantId,
-        instantTurbo: instantTurbo || subSecondVideo,
-        deferMp4Render: subSecondVideo,
-        fallbackOnError: true,
-        speedProfile
-       });
-       if (!video) return respond(res, 409, { error: 'Video yönetmeni şu an başka bir ünite üretiyor.' });
-       const activeVar = video.variantId || variantId || '';
-       const renderRes = subSecondVideo
-        ? null
-        : await ensureUnitMp4(unitId, true, activeVar, speedProfile).catch(() => null);
-       const variants = await videoDirector.listUnitVariants(unitId);
-       return respond(res, 200, {
-        ok: true,
-        localExecutionOnly: true,
-        zeroApiRequired: true,
-        noApiKeyPrompts: true,
-        videoPolicy: VIDEO_GENERATION_POLICY,
-        generatorProvider: classifyVideoProvider(requestedVideoModel),
-        video,
-        variants,
-        hasMp4: Boolean(renderRes),
-        mp4RenderingInBackground: subSecondVideo,
-        bytes: renderRes?.bytes || 0,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(unitId)}${activeVar ? `&variantId=${encodeURIComponent(activeVar)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 502, { error: e.message || '3D diyaloglu video üretilemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/batch-generate') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const ctx = contexts.find(c => c.id === unitId) || contexts[0];
-      const requestedThemes = Array.isArray(input?.themes) && input.themes.length
-       ? input.themes.slice(0, 6)
-       : ['hamam_bocegi_komedi', 'shorts_hizli', 'stadyum_spikeri'];
-      const customIdea = typeof input?.customIdea === 'string' ? input.customIdea : '';
-      const speedProfile = input?.speedProfile === 'hd' ? 'hd' : 'turbo';
-      try {
-       const [lesson, studentProfile] = await Promise.all([
-        lessonEngine.loadLesson(ctx.id),
-        evolver.loadStudentProfile()
-       ]);
-       const passages = passagesByUnit.get(ctx.id) || [];
-       const stamp = Date.now().toString(36);
-       const jobs = [];
-       const producedVideos = [];
-       for (let i = 0; i < requestedThemes.length; i++) {
-        const theme = String(requestedThemes[i]);
-        const vId = `${theme.replace(/[^a-zA-Z0-9_-]/g, '')}-${stamp}-${i}`;
-        const vid = videoDirector.buildFallbackVideo(ctx, passages, lesson, studentProfile, null, theme, customIdea);
-        vid.variantId = vId;
-        await videoDirector.saveVideo(vid, vId);
-        producedVideos.push(vid);
-        jobs.push({ video: vid, outMp4Path: videoDirector.mp4Path(ctx.id, vId) });
-       }
-       const renderResults = await mp4Renderer.renderBatchMp4(jobs, { concurrency: 3, speedProfile });
-       const variants = await videoDirector.listUnitVariants(ctx.id);
-       return respond(res, 200, {
-        ok: true,
-        unitId: ctx.id,
-        count: producedVideos.length,
-        renderedCount: renderResults.filter(r => r?.ok).length,
-        videos: producedVideos,
-        variants,
-        latestMp4Url: producedVideos[0]
-         ? `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}&variantId=${encodeURIComponent(producedVideos[0].variantId)}&t=${Date.now()}`
-         : ''
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Toplu hızlı MP4 üretimi başarısız.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/local-engines/select') {
-      const input = await body(req);
-      const engineId = typeof input?.engineId === 'string' ? input.engineId.trim() : 'auto';
-      const validIds = new Set(['auto', ...GITHUB_LOCAL_VIDEO_ENGINES.map(e => e.id)]);
-      if (!validIds.has(engineId)) return respond(res, 400, { error: 'Geçersiz yerel video motoru.' });
-      const saved = await localVideoHub.saveState({ preferredEngineId: engineId });
-      return respond(res, 200, { ok: true, state: saved, ...(await localVideoHub.detectLocalEngines()) });
-     }
 
-     if (req.method === 'POST' && path === '/videos/local-engines/discover') {
-      const disc = await localVideoHub.discoverGithubVideoEngines();
-      return respond(res, 200, { ok: true, ...disc });
-     }
 
-     if (req.method === 'POST' && path === '/videos/local-engines/render') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const variantId = typeof input?.variantId === 'string' ? input.variantId : '';
-      const engineId = typeof input?.engineId === 'string' ? input.engineId : 'auto';
-      const speedProfile = input?.speedProfile === 'turbo' ? 'turbo' : 'cinema';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       const [savedVideo, lesson, studentProfile] = await Promise.all([
-        videoDirector.loadVideo(ctx.id, variantId),
-        lessonEngine.loadLesson(ctx.id),
-        evolver.loadStudentProfile()
-       ]);
-       const video = savedVideo || videoDirector.buildFallbackVideo(ctx, passagesByUnit.get(ctx.id) || [], lesson, studentProfile, null, 'morpa_klasik');
-       if (!savedVideo) await videoDirector.saveVideo(video, variantId);
-       const renderRes = await localVideoHub.dispatchLocalRender({
-        engineId,
-        video,
-        outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-        speedProfile
-       });
-       return respond(res, 200, {
-        ok: true,
-        ...renderRes,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Yerel AI video motoru render hatası.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/render-mp4') {
-      const input = await body(req);
-      const unitId = typeof input?.unitId === 'string' ? input.unitId : '0-0';
-      const variantId = typeof input?.variantId === 'string' ? input.variantId : '';
-      const speedProfile = input?.speedProfile === 'hd' ? 'hd' : 'turbo';
-      const engineId = typeof input?.engineId === 'string' ? input.engineId : '';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       let renderRes;
-       if (engineId) {
-        const [savedVideo, lesson, studentProfile] = await Promise.all([
-         videoDirector.loadVideo(ctx.id, variantId),
-         lessonEngine.loadLesson(ctx.id),
-         evolver.loadStudentProfile()
-        ]);
-        const video = savedVideo || videoDirector.buildFallbackVideo(ctx, passagesByUnit.get(ctx.id) || [], lesson, studentProfile, null, 'morpa_klasik');
-        renderRes = await localVideoHub.dispatchLocalRender({
-         engineId,
-         video,
-         outMp4Path: videoDirector.mp4Path(ctx.id, variantId),
-         speedProfile: speedProfile === 'hd' ? 'cinema' : 'turbo'
-        });
-       } else {
-        renderRes = await ensureUnitMp4(ctx.id, true, variantId, speedProfile);
-       }
-       return respond(res, 200, {
-        ok: true,
-        hasMp4: true,
-        engineId: renderRes?.engineId || 'tempo-cinema-pro',
-        audioMuxed: Boolean(renderRes?.audioMuxed),
-        bytes: renderRes?.bytes || 0,
-        durationSec: renderRes?.durationSec || 0,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'MP4 video dosyası derlenemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/mp4') {
-      const unitId = urlObj.searchParams.get('unitId') || '0-0';
-      const variantId = urlObj.searchParams.get('variantId') || '';
-      const ctx = contexts.find(c => c.id === unitId);
-      if (!ctx) return respond(res, 404, { error: 'Ünite bulunamadı.' });
-      try {
-       const buf = await rawBody(req, 64 * 1024 * 1024);
-       if (!buf || buf.length < 64) return respond(res, 400, { error: 'Geçersiz video verisi.' });
-       const contentType = String(req.headers['content-type'] || 'video/webm');
-       const resTrans = await mp4Renderer.transcodeBufferToMp4(buf, videoDirector.mp4Path(ctx.id, variantId), contentType);
-       return respond(res, 200, {
-        ok: true,
-        hasMp4: true,
-        bytes: resTrans.bytes,
-        mp4Url: `/api/ollama/videos/mp4?unitId=${encodeURIComponent(ctx.id)}${variantId ? `&variantId=${encodeURIComponent(variantId)}` : ''}&t=${Date.now()}`
-       });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Tarayıcı kaydı MP4 formatına çevrilemedi.' });
-      }
-     }
 
-     if (req.method === 'POST' && path === '/videos/google-flow') {
-      const input = await body(req);
-      if (input?.action === 'save-config') {
-       const cfg = await videoDirector.saveConfig(input);
-       return respond(res, 200, { ok: true, config: cfg });
-      }
-      if (input?.action === 'poll') {
-       const pollRes = await videoDirector.pollAndEmbedGoogleFlowRender({
-        operationName: typeof input?.operationName === 'string' ? input.operationName : '',
-        unitId: typeof input?.unitId === 'string' ? input.unitId : '0-0',
-        variantId: typeof input?.variantId === 'string' ? input.variantId : ''
-       });
-       return respond(res, 200, { ok: true, ...pollRes });
-      }
-      const resFlow = await videoDirector.requestGoogleFlowRender({
-       unitId: typeof input?.unitId === 'string' ? input.unitId : '0-0',
-       variantId: typeof input?.variantId === 'string' ? input.variantId : '',
-       sceneId: typeof input?.sceneId === 'string' ? input.sceneId : 'scene-1',
-       prompt: typeof input?.prompt === 'string' ? input.prompt : '',
-       instantMp4Fallback: true
-      });
-      // 0-API Modu: Google Flow senaryosu & Veo yerel/otomatik motoruyla doğrudan gömülü MP4 derle
-      if (resFlow.zeroApiAutonomous || input?.renderMp4 !== false) {
-       await ensureUnitMp4(
-        typeof input?.unitId === 'string' ? input.unitId : '0-0',
-        true,
-        typeof input?.variantId === 'string' ? input.variantId : '',
-        'turbo'
-       ).catch(() => {});
-      }
-      return respond(res, 200, { ok: true, ...resFlow });
-     }
 
-     if (req.method === 'POST' && path === '/videos/google-flow-all') {
-      const input = await body(req);
-      const count = Math.max(1, Math.min(contexts.length, Number(input?.count || 4)));
-      try {
-       const fillRes = await fillNextMissingUnitVideo(null, { count, speedProfile: 'turbo', instantOnly: false });
-       const flowRes = await videoDirector.submitAllVideosToGoogleFlow({ limit: contexts.length });
-       return respond(res, 200, { ok: true, zeroApiAutonomous: true, localExecutionOnly: true, noApiKeyPrompts: true, fill: fillRes, flow: flowRes });
-      } catch (e) {
-       return respond(res, 500, { error: e.message || 'Toplu yerel otonom video senkronizasyonu başarısız.' });
-      }
-     }
 
      if (req.method === 'POST' && path === '/evolve') {
       try {
@@ -6616,10 +5705,10 @@ export function ollamaPlugin() {
       const tAll = performance.now();
       const unitIds = Array.isArray(input?.units) && input.units.length ? input.units : ['0-0'];
       const ctx = contexts.find(c => unitIds.includes(c.id)) || contexts[cursor++ % contexts.length];
-      const [items, study, policy, lessonsSummary, videosSummary, feedAll, studentProfile, jCfg] = await Promise.all([
+      const [items, study, policy, lessonsSummary, studentProfile, jCfg] = await Promise.all([
        load(), loadStudy(), evolver.loadPolicy(),
-       lessonEngine.listSummary(contexts.length), videoDirector.listSummary(contexts.length),
-       videoDirector.listAllFeedVideos(), evolver.loadStudentProfile(), jarvis.loadConfig()
+       lessonEngine.listSummary(contexts.length),
+       evolver.loadStudentProfile(), jarvis.loadConfig()
       ]);
 
       const timedBot = async (name, fn) => {
@@ -6635,12 +5724,13 @@ export function ollamaPlugin() {
       const passages = passagesByUnit.get(ctx.id) || [];
       const cfg = await getPipelineConfig();
       const budget = Number(cfg.subSecondBudgetMs || SUBSECOND_BOT_BUDGET_MS);
+      const questionTimeoutMs = await autoTimeoutMs();
 
       const botRuns = await Promise.all([
        timedBot('questionGeneratorAndDualJudge', () =>
         generateOneManual(ctx, model, verifierModel, judge2Model, {
-         timeoutMs: budget,
-         forceSubSecond: !connected || input?.forceSubSecond !== false,
+         timeoutMs: questionTimeoutMs,
+         forceSubSecond: Boolean(input?.forceSubSecond === true && cfg.subSecondAllBots),
          subSecondBudgetMs: budget
         })
        ),
@@ -6665,8 +5755,8 @@ export function ollamaPlugin() {
        ),
        timedBot('multiAiSwarmEvaluator', () =>
         multiAiEval.evaluateAndEvolve({
-         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary, videosSummary,
-         feedVideos: feedAll.filter(v => v.hasMp4), evolver, policy, studentProfile,
+         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+         evolver, policy, studentProfile,
          source: 'subsecond-all-bots-run'
         })
        ),
@@ -6683,24 +5773,6 @@ export function ollamaPlugin() {
         const les = lessonEngine.buildFallbackLesson(ctx, passages, studentProfile, null);
         await lessonEngine._atomicWrite(lessonEngine._lessonFile(ctx.id), les);
         return { unitId: ctx.id, sections: les.deepSections?.length || 0 };
-       }),
-       timedBot('videoDirectorInstant', async () => {
-        const subsecVariant = 'tiktok_kayseri-subsec';
-        const vid = videoDirector.buildFallbackVideo(ctx, passages, null, studentProfile, null, 'tiktok_kayseri', '', {
-         noQuestions: true,
-         variantId: subsecVariant,
-         angleIndex: continuousVideoCounter++,
-         aiModel: videoModel,
-         aiVideoEngine: 'tempo-cinema-pro'
-        });
-        vid.variantId = subsecVariant;
-        await videoDirector.saveVideo(vid, subsecVariant);
-        setTimeout(() => {
-         if (!autoLoopStopping && Date.now() - lastInteractiveApiAt >= 1_500) {
-          ensureUnitMp4(ctx.id, true, subsecVariant, 'turbo').catch(() => {});
-         }
-        }, 2_000).unref?.();
-        return { unitId: ctx.id, variantId: subsecVariant, scenes: vid.scenes?.length || 0, aiVideoModel: vid.aiVideoModel, zeroApi: true };
        }),
        timedBot('kayseriCoach', () =>
         buildKayseriReaction({
@@ -6749,7 +5821,9 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'POST' && path === '/generate') {
-      if (busy) return respond(res, 409, { error: 'Bir üretim zaten devam ediyor.' });
+      if (!(await waitForPipelineIdle(60_000))) {
+       return respond(res, 409, { error: 'Soru üretim hattı şu an meşgul; birkaç saniye sonra tekrar dene.' });
+      }
       const tGenReq = performance.now();
       const input = await body(req);
       const ids = Array.isArray(input.units) ? input.units.filter(x => typeof x === 'string') : [];
@@ -6758,7 +5832,7 @@ export function ollamaPlugin() {
       const ctx = candidates[cursor++ % candidates.length];
       try {
        const record = await generateOneManual(ctx, model, verifierModel, judge2Model, {
-        forceSubSecond: Boolean(input?.subSecond),
+        forceSubSecond: Boolean(input?.subSecond && (await getPipelineConfig()).subSecondAllBots),
         subSecondBudgetMs: Number.isFinite(Number(input?.subSecondBudgetMs)) ? Number(input.subSecondBudgetMs) : SUBSECOND_BOT_BUDGET_MS
        });
        const durationMs = +(performance.now() - tGenReq).toFixed(2);

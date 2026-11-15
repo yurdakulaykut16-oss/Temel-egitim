@@ -4,7 +4,7 @@ import {AlertCircle, BookOpen, Brain, Check, Code2, Cpu, Database, Gauge, Globe,
 type JudgeVerdict = {model: string; answer: string; difficulty?: 'kolay' | 'orta' | 'zor'; qualityScore?: number; examPotential?: number; bloomLevel?: string; dualAnswerRisk?: boolean; secondBestOption?: string; evidence: string; reason: string};
 export type GeneratedQuestion = {
  id: string; unitId: string; book: string; unit: string; topic: string;
- question: string; options: string[]; answer: string; explanation: string; evidence: string;
+ question: string; options: string[]; answer: string; explanation: string; evidence: string; paragraph?: string;
  status: 'approved' | 'rejected'; model: string; createdAt: string;
  difficulty?: 'kolay' | 'orta' | 'zor';
  curatedBy?: string; curationReason?: string;
@@ -164,18 +164,6 @@ type CuratorReport = {
  droppedSamples?: {unitId: string; reason: string; score: number; question: string}[];
 };
 type LessonsSummary = {totalUnits: number; enhancedCount: number; aiEnhancedCount: number; avgVersion: number; units: {unitId: string; version: number; source: string; updatedAt: string}[]};
-type VideosSummary = {
- totalUnits: number; producedCount: number; totalVariantsCount?: number; roachCount?: number;
- aiProducedCount: number; rescueCount: number; mp4Count?: number;
- filledUnits?: number; coveragePct?: number; tiktokCount?: number;
- hasGoogleFlowKey: boolean; googleFlowModel: string;
- units: {unitId: string; version: number; situationMode: string; source: string; sceneCount: number; updatedAt: string}[];
-};
-type LocalVideoEngineInfo = {
- id: string; name: string; repo: string; license: string; stars: string;
- category: string; endpoint: string; available: boolean; alwaysReady?: boolean;
- audioMuxReady?: boolean; detail?: string; description?: string;
-};
 type BotParamSummary = {
  botId: string;
  label: string;
@@ -601,22 +589,22 @@ type PrecisionQualitySummary = {
 };
 
 type Status = {
- connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean; evolverInstalled?: boolean; videoModelInstalled?: boolean; coderInstalled?: boolean;
- model: string; verifierModel: string; judge2Model: string; evolverModel?: string; videoModel?: string; models: string[];
- cloudVideoModels?: {id: string; label: string; badge: string; installed?: boolean}[];
- localVideoEngines?: {preferredEngineId: string; liveEnginesCount: number; totalCatalogCount: number; engines: LocalVideoEngineInfo[]};
+ connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean; evolverInstalled?: boolean; coderInstalled?: boolean;
+ model: string; verifierModel: string; judge2Model: string; evolverModel?: string; models: string[];
  voiceStudio?: {zeroApiRequired: boolean; totalFreeVoices: number; localAvailable: boolean; selectedVoiceId: string};
  busy: boolean; phase: string; storage?: {total: number; limit: number; modelsReserved: number};
  lastError: string; count: number; approved: number; rejected: number;
  trainingScaleFactor?: number; qwenBoostPercent?: number; addedIntelligenceBoostPercent?: number; zeroApiRequired?: boolean; trapDefenseTotal?: number; turboQualityLock?: boolean;
- tiktokFeed?: {totalUnits: number; filledUnits: number; coveragePct: number; feedItemsCount: number; tiktokCount: number};
  difficultyCounts?: {kolay: number; orta: number; zor: number};
  angleCounts?: Record<string, number>;
  curator?: CuratorReport;
  lessons?: LessonsSummary;
- videos?: VideosSummary;
  studyCounts?: StudyCounts;
  autoRunning: boolean; autoConcurrency: number; autoTimeoutMs: number;
+ questionCapacity?: number; maxQuestionsStored?: number;
+ questionIntervalMs?: number;
+ modelInferenceConcurrency?: number;
+ modelInferenceQueue?: {maxConcurrent: number; active: {label: string; startedAt: number} | null; queued: number};
  autoActive: number; autoPhases: {unit: string; phase: string}[]; autoLastError: string; totalUnits: number;
  settings?: PipelineSettings; telemetry?: Telemetry; coverage?: Coverage; training?: TrainingStatus; evolution?: EvolutionInfo;
  jarvis?: JarvisInfo;
@@ -633,14 +621,6 @@ type Status = {
  tvgfbfSwarm?: TvgfbfSwarmSummary;
  hundredAiCouncil?: HundredAiCouncilSummary;
  precisionQuality?: PrecisionQualitySummary;
- local3d?: {
-  ffmpegReady: boolean;
-  blenderInstalled: boolean;
-  manimInstalled: boolean;
-  presetsCount: number;
-  enginesCount: number;
-  zeroApi: boolean;
- };
  hardware?: HardwareSummary;
 };
 
@@ -648,7 +628,8 @@ const judgeLabel = (i: number) => (i === 0 ? 'Denetçi (1. hakem)' : '2. hakem')
 const difficultyLabel: Record<string, string> = {kolay: 'Kolay', orta: 'Orta', zor: 'Zor'};
 const typeLabel: Record<string, string> = {
  kavram: 'Kavram', vaka: 'Vaka Analizi', karsilastirma: 'Karşılaştırma',
- neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama'
+ neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama',
+ en_iyi_secim: 'En İyi Seçim', paragraf: 'Paragraf (Parçaya Dayalı)'
 };
 const angleLabel: Record<string, string> = {
  dogrudan_tanim: '1. Doğrudan Tanım',
@@ -678,14 +659,12 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  const [chosenVerifier, setChosenVerifier] = useState('');
  const [chosenJudge2, setChosenJudge2] = useState('');
  const [chosenEvolver, setChosenEvolver] = useState('');
- const [chosenVideo, setChosenVideo] = useState('');
  const [chosenCoder, setChosenCoder] = useState('');
  const [items, setItems] = useState<GeneratedQuestion[]>([]);
  const [audit, setAudit] = useState<Audit | null>(null);
  const [error, setError] = useState('');
  const [infoMsg, setInfoMsg] = useState('');
  const [view, setView] = useState<'approved' | 'rejected'>('approved');
- const [concurrencyInput, setConcurrencyInput] = useState('');
  const [timeoutInput, setTimeoutInput] = useState('');
  const [githubSearchQuery, setGithubSearchQuery] = useState('');
  const [githubSearchResults, setGithubSearchResults] = useState<GithubMegaProject[]>([]);
@@ -732,7 +711,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
- const selectModel = async (role: 'model' | 'verifier' | 'judge2' | 'evolver' | 'video', modelName: string) => {
+ const selectModel = async (role: 'model' | 'verifier' | 'judge2' | 'evolver', modelName: string) => {
   try {
    const r = await fetch(`${api}/select-model`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -744,28 +723,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    await refresh();
   } catch (e) {
    setError(e instanceof Error ? e.message : 'Model seçilemedi.');
-  }
- };
-
- const pullVideoCloudModel = async (modelName: string) => {
-  setBusyAction(`pull-${modelName}`);
-  setInfoMsg(`"${modelName}" (0-API) Ollama bulut modeli indiriliyor / etkinleştiriliyor…`);
-  try {
-   const r = await fetch(`${api}/videos/pull-model`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({model: modelName})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Model indirilemedi.');
-   setError('');
-   setChosenVideo(modelName);
-   setInfoMsg(`✓ "${modelName}" hazır — hiçbir API anahtarı girmeden video üretimi aktif!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Ollama çevrimdışı olsa bile 0-API Otonom video motoru her zaman hazır.');
-  } finally {
-   setBusyAction('');
   }
  };
 
@@ -781,23 +738,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    await refresh();
   } catch (e) {
    setError(e instanceof Error ? e.message : 'Ayar güncellenemedi.');
-  }
- };
-
- const setConcurrency = async () => {
-  const n = Number(concurrencyInput);
-  try {
-   const r = await fetch(`${api}/concurrency`, {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({value: n})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Eşzamanlılık ayarlanamadı.');
-   setError('');
-   setConcurrencyInput('');
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Eşzamanlılık ayarlanamadı.');
   }
  };
 
@@ -976,40 +916,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
 
 
 
- const selectLocalVideoEngine = async (engineId: string) => {
-  setBusyAction(`local-video-${engineId}`);
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/videos/local-engines/select`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({engineId})});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Yerel AI video motoru seçilemedi.');
-   setError('');
-   setInfoMsg(`Yerel GitHub AI Video Motoru güncellendi: ${engineId} (${data.liveEnginesCount || 1} yerel motor aktif, 0 API anahtarı).`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Yerel video motoru seçim hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
-
- const discoverLocalVideoEngines = async () => {
-  setBusyAction('discover-local-video');
-  setInfoMsg('');
-  try {
-   const r = await fetch(`${api}/videos/local-engines/discover`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'GitHub yerel video motorları taranamadı.');
-   setError('');
-   setInfoMsg(`GitHub Açık Kaynak AI Video Tarama (0-API): ${(data.repos || []).length} doğrulanmış proje (${(data.repos || []).slice(0, 3).map((x: {fullName: string}) => x.fullName).join(', ')})!`);
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'GitHub video tarama hatası.');
-  } finally {
-   setBusyAction('');
-  }
- };
-
 
 
 
@@ -1026,13 +932,13 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   <div className="page-title">
    <div className="eyebrow muted">GELİŞMİŞ YEREL YAPAY ZEKÂ · OLLAMA ÖĞRETMEN MOTORU v3</div>
    <h1>Soru stüdyosu<span className="accent">.</span></h1>
-   <p>5 ders kitabının tamamından (~2 milyon karakter, 1.021 bölüm) beslenen; ~1 saniye/soru hızında toplu kör hakemli, kesin tek doğru cevap garantili, kart/eşleştirme/tekrar üreten ve izole kum havuzunda kendini geliştiren yapay zekâ öğretmen stüdyosu.</p>
+   <p>Beş ders kitabındaki ilgili pasajlardan kaynak alan, tek soru üreten ve her soruyu iki hakeme sırayla denetleten çalışma alanı. Soru üretimi arka planda sürer; havuz 20.000 kayıtla sınırlandırılır.</p>
   </div>
 
   <div className="notice">
    <GraduationCap size={20}/>
    <span>
-    <b>Tam Otonom Kesintisiz Mimari (Sıfır Tıklama · Kesintisiz Üretim · Otonom Jüri):</b> Proje açıldığı andan itibaren yapay zekâlar rolleri otomatik devralır; bir grup hiç durmadan soru + çalışma materyali üretirken, arka plandaki koç katmanı <b>internet üzerinden dersleri araştırır, sınavda çıkabilecek soruları tahmin eder, diğer yapay zekâları sürekli eğitir</b> ve <b>AI Konseyi</b> havuzdaki soruları senin yerine kendi kendine onaylar veya eler.
+    <b>Sade, sıralı soru üretimi:</b> Üretici ve iki hakemin Ollama çağrıları tek kuyruktan, aynı anda yalnızca bir istek olacak şekilde çalışır. Her soru kitap kaynağı, tek-doğru ön kontrolü, iki hakem ve gerekirse düzeltmeden geçer. Ek araştırma/eğitim ajanları varsayılan olarak kapalıdır; arka plan soru üretimi ve havuz bakımı açıktır.
    </span>
   </div>
 
@@ -1041,7 +947,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    <div className="telemetry-card">
     <div className="telemetry-head"><Zap size={16}/><span>ÜRETİM HIZI</span></div>
     <strong>{tel?.secondsPerItem ? `${tel.secondsPerItem} sn` : `${tel?.questionsPerMinute ?? 0}`} <small>{tel?.secondsPerItem ? '/ soru' : 'soru/dk'}</small></strong>
-    <p>{tel?.questionsPerMinute ?? 0} soru/dk · {tel?.tokensPerSecond ? `${tel.tokensPerSecond} tok/sn` : 'Veri bekleniyor'} · {cfg?.batchPerCall || 8}/çağrı</p>
+    <p>{tel?.questionsPerMinute ?? 0} soru/dk · {tel?.tokensPerSecond ? `${tel.tokensPerSecond} tok/sn` : 'Veri bekleniyor'} · {cfg?.batchPerCall || 1}/çağrı</p>
    </div>
    <div className="telemetry-card">
     <div className="telemetry-head"><Gauge size={16}/><span>KART &amp; ÇİFT-CEVAP KALKANI</span></div>
@@ -1066,16 +972,15 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     <div className="eyebrow muted">BAĞLANTI & BORU HATTI DURUMU</div>
     <h2>{status?.connected ? 'Ollama bağlı' : 'Ollama bağlantısı yok'}</h2>
     <p>
-     Öğretmen model: <b>{status?.model || 'qwen3:14b'}</b> ({status?.connected ? (status.installed ? 'hazır' : 'kurulu değil') : 'bekleniyor'}) ·
+     Öğretmen model: <b>{status?.model || 'qwen3:8b'}</b> ({status?.connected ? (status.installed ? 'hazır' : 'kurulu değil') : 'bekleniyor'}) ·
      Boru hattı: <b>{pipelinePhaseLabel[tel?.pipelinePhase || 'idle'] || tel?.pipelinePhase}</b>
     </p>
 
-    {/* TEK MOD = TURBO (Kalite Kilidi AKTİF) — başka profil/mod yoktur, proje her zaman Turbo ile çalışır */}
     <div className="preset-bar">
      <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
-     <span className="preset-btn active" title="8 soru/çağrı · Toplu kör hakem · Self-correction & kolay/orta/zor kilidi HER ZAMAN AKTİF">⚡ Turbo (Kalite Kilitli) — 8 soru/çağrı · Toplu kör hakem · Self-correction & kolay/orta/zor kilidi</span>
+     <span className="preset-btn active" title="Bir soru üretimi; kitap kaynağı ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
      <span className="jarvis-badge ok" style={{marginLeft: 8}}>
-      🔒 Turbo Kalite Kilidi: AKTİF (Sıfır Saçmalama)
+      🔒 Uygulama içi model kuyruğu: 1 etkin çağrı
      </span>
     </div>
 
@@ -1127,76 +1032,11 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      <span>{status?.connected ? (status.evolverInstalled ? 'hazır' : 'kurulu değil') : 'bekleniyor'}</span>
     </div>
 
-    <div className="model-select">
-     <label htmlFor="video-choice">4. Video Yönetmeni (0-API Bulut)</label>
-     <select id="video-choice" value={chosenVideo || status?.videoModel || ''} onChange={e => setChosenVideo(e.target.value)} disabled={!status?.models.length || status.busy}>
-      <option value="" disabled>Model seç</option>
-      {status?.models.map(m => <option key={m} value={m}>{m}</option>)}
-     </select>
-     <button className="outline" onClick={() => selectModel('video', chosenVideo)} disabled={!chosenVideo || !!status?.busy}>Video Modeli Yap</button>
-     <span>{status?.connected ? (status.videoModelInstalled ? `hazır (${status.videoModel})` : '0-API Otonom aktif') : '0-API Otonom hazır'}</span>
-    </div>
-
     <div className="preset-bar" style={{marginTop: 8, marginBottom: 8}}>
-     <span className="preset-label">🎬 Önerilen 0-API Bulut Video Modelleri:</span>
-     {(status?.cloudVideoModels || [
-      {id: 'kimi-k3.1-pro:cloud', label: 'Kimi K3.1 Pro (:cloud)', badge: 'Önerilen', installed: false},
-      {id: 'glm-5.3-flash:cloud', label: 'GLM 5.3 Flash (:cloud)', badge: 'Hızlı', installed: false},
-      {id: 'deepseek-v4.1-flash:cloud', label: 'DeepSeek V4.1 Flash (:cloud)', badge: 'Keskin', installed: false}
-     ]).map(cm => (
-      <button
-       key={cm.id}
-       className={`preset-btn ${status?.videoModel === cm.id ? 'active' : ''}`}
-       disabled={!!busyAction}
-       title={`${cm.badge} · API anahtarı gerekmez`}
-       onClick={() => cm.installed ? selectModel('video', cm.id) : pullVideoCloudModel(cm.id)}
-      >
-       {cm.id.startsWith('kimi') ? '⭐' : cm.id.startsWith('glm') ? '⚡' : '🧠'} {cm.id} {cm.installed ? '✓' : (busyAction === `pull-${cm.id}` ? 'İniyor…' : '(Tek Tıkla Al)')}
-      </button>
-     ))}
-     <span className="jarvis-badge ok" style={{marginLeft: 6}}>
+     <span className="jarvis-badge ok">
       🎙️ VoiceStudio: {status?.voiceStudio?.totalFreeVoices ?? 62} Ücretsiz Ses · 0-API
      </span>
     </div>
-
-    {/* GITHUB AÇIK KAYNAK YEREL AI VİDEO ÜRETİCİLERİ HUB'I (0-API) */}
-    {status?.localVideoEngines && (
-     <div className="jarvis-box" style={{marginTop: 8, marginBottom: 10}}>
-      <div className="coverage-top" style={{marginBottom: 6}}>
-       <b>🎥 GitHub Profesyonel Yerel AI Video Üreticileri (0-API · {status.localVideoEngines.liveEnginesCount}/{status.localVideoEngines.totalCatalogCount} Yerel Hazır)</b>
-       <div style={{display: 'flex', gap: 6, flexWrap: 'wrap'}}>
-        <button className={`preset-btn ${status.localVideoEngines.preferredEngineId === 'auto' ? 'active' : ''}`} onClick={() => selectLocalVideoEngine('auto')} disabled={!!busyAction}>
-         Otomatik (En İyi Yerel)
-        </button>
-        <button className="outline" onClick={discoverLocalVideoEngines} disabled={!!busyAction}>
-         <Globe size={13}/> {busyAction === 'discover-local-video' ? 'Taranıyor…' : 'GitHub OSS Tara'}
-        </button>
-       </div>
-      </div>
-      <div className="jarvis-diff-grid">
-       {(status.localVideoEngines.engines || []).map(eng => (
-        <div className="jarvis-diff-card" key={eng.id} style={{display: 'flex', flexDirection: 'column', gap: 4}}>
-         <div className="coverage-top">
-          <span className={`jarvis-badge ${eng.available ? 'ok' : 'neutral'}`}>
-           {eng.available ? (eng.alwaysReady ? 'YERLEŞİK HAZIR ✓' : 'YEREL BAĞLI ✓') : 'YEREL BEKLEMEDE'}
-          </span>
-          <small>{eng.license} · ★{eng.stars}</small>
-         </div>
-         <b style={{fontSize: '0.88rem'}}>{eng.name}</b>
-         <p style={{margin: 0}}><small>{eng.repo} — {eng.detail || eng.description}</small></p>
-         <button
-          className={`preset-btn ${status.localVideoEngines?.preferredEngineId === eng.id ? 'active' : ''}`}
-          style={{marginTop: 'auto'}}
-          disabled={!!busyAction}
-          onClick={() => selectLocalVideoEngine(eng.id)}
-         >
-          {status.localVideoEngines?.preferredEngineId === eng.id ? 'Seçili Motor ✓' : 'Bu Motoru Seç'}
-         </button>
-        </div>
-       ))}
-      </div>
-     </div>
-    )}
 
     {/* İNCE KAPSAM AYARI — hız/kalite Turbo kilidinde sabittir */}
     <div className="config-grid">
@@ -1210,15 +1050,16 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Turbo Kalite Kilidi: <b>8 soru/çağrı · Toplu kör hakem (~1sn/soru) · Hızlı düşünme · Self-correction · Akıllı zorluk · Kart + Eşleştirme + Tekrar üretimi · Arka plan Öz-Evrim</b> — tümü kalıcı olarak açıktır, kapatılmaz.
+     🔒 Kalite hattı: <b>1 soru/çağrı · ilgili kitap pasajı · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · kolay/orta/zor dengesi.</b> Her soruda dört şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">
-     <label htmlFor="concurrency-choice">Eşzamanlı yuva (1-{status?.totalUnits || 29})</label>
-     <input id="concurrency-choice" type="number" min={1} max={status?.totalUnits || 29} value={concurrencyInput} placeholder={String(status?.autoConcurrency || 3)} onChange={e => setConcurrencyInput(e.target.value)}/>
-     <button className="outline" onClick={setConcurrency} disabled={!concurrencyInput}>Uygula</button>
-     <label htmlFor="timeout-choice" style={{marginLeft: 10}}>Zaman aşımı ms (1000-300000)</label>
-     <input id="timeout-choice" type="number" min={1000} max={300000} step={1000} value={timeoutInput} placeholder={String(status?.autoTimeoutMs || 45000)} onChange={e => setTimeoutInput(e.target.value)}/>
+     <label>Model kuyruğu</label>
+     <span>{status?.modelInferenceQueue?.active
+      ? `Çalışıyor: ${status.modelInferenceQueue.active.label}`
+      : 'Boşta'} · {status?.modelInferenceQueue?.queued ?? 0} bekleyen · aynı anda {status?.modelInferenceConcurrency ?? 1} çağrı</span>
+     <label htmlFor="timeout-choice" style={{marginLeft: 10}}>İstek zaman aşımı ms (1000-300000)</label>
+     <input id="timeout-choice" type="number" min={1000} max={300000} step={1000} value={timeoutInput} placeholder={String(status?.autoTimeoutMs || 180000)} onChange={e => setTimeoutInput(e.target.value)}/>
      <button className="outline" onClick={setTimeoutBudget} disabled={!timeoutInput}>Uygula</button>
     </div>
 
@@ -1229,11 +1070,13 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </p>
     <p>
      Havuz: <b>{status?.count || 0}</b> üretildi ({status?.approved || 0} onaylı, {status?.rejected || 0} reddedilmiş) ·
+     Sınır: onaylı havuz {(status?.questionCapacity || 20000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 20000).toLocaleString('tr-TR')} ·
+     Hedef tempo: {(status?.questionIntervalMs || 5000) / 1000} sn/soru ·
      Zorluk: Kolay {status?.difficultyCounts?.kolay || 0} · Orta {status?.difficultyCounts?.orta || 0} · Zor {status?.difficultyCounts?.zor || 0} ·
      Tamamlanan {read.length} ünitenin {completedWithQuestions} tanesinde hazır soru var.
     </p>
     <p>
-     Aktif yuvalar: <b>{status?.autoActive || 0} / {status?.autoConcurrency || 3}</b>
+     Aktif yuvalar: <b>{status?.autoActive || 0} / {status?.autoConcurrency || 1}</b>
      {status?.autoPhases?.length ? <>: {status.autoPhases.map((p, i) => <span key={i}>{i > 0 ? ', ' : ''}{p.unit} ({p.phase === 'generating' ? 'üretiliyor' : p.phase === 'verifying' ? 'denetleniyor' : p.phase === 'saving' ? 'kaydediliyor' : p.phase})</span>)}</> : ' — boşta'}
     </p>
    </div>
@@ -1379,7 +1222,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      </div>
 
      <p className="manifest-line" style={{marginTop: 10}}>
-      🤖 <b>Tamamen Otonom:</b> Rol atama, web araştırması, havuz taraması, konu anlatımı geliştirme, 3D video üretimi, ApexArchitect evrimi, sürekli zekâ eğitimi, Nexus-Titan tam proje geliştirme, GitHub OSS madenciliği, parametre evrimi, LoRA+DPO ağırlık eğitimi ve hot-swap — <b>tümü proje açıldığı andan itibaren arka planda kendiliğinden çalışır.</b> Hiçbir düğmeye basman gerekmez.
+      🤖 <b>Tamamen Otonom:</b> Rol atama, web araştırması, havuz taraması, konu anlatımı geliştirme, ApexArchitect evrimi, sürekli zekâ eğitimi, Nexus-Titan tam proje geliştirme, GitHub OSS madenciliği, parametre evrimi, LoRA+DPO ağırlık eğitimi ve hot-swap — <b>tümü proje açıldığı andan itibaren arka planda kendiliğinden çalışır.</b> Hiçbir düğmeye basman gerekmez.
      </p>
 
      {/* 20x OMEGA-4700x+ (+470,000%) APEXARCHITECT, +160,000% KESİNTİSİZ ZEKÂ EĞİTİMİ & 0-API YASAL GITHUB OSS PANELİ */}
@@ -1401,8 +1244,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <b> Kitap Pasaj Kapsamı:</b> %{apexData.diagnostics?.passageCovPct ?? 0} ·
         <b> Çekirdek Doğruluk:</b> %{apexData.diagnostics?.evalAccuracyScore ?? 0} ·
         <b> 96-Tuzak Zırhı:</b> {trainerData?.trapDefensePassed ?? 96}/{trainerData?.trapDefenseTotal ?? 96} ·
-        <b> 40-Aşamalı Eğitim Turu:</b> #{trainerData?.epochsCompleted ?? trainerData?.ticksTotal ?? 0} ({Object.keys(trainerData?.distilledUnits || {}).length}/{status.totalUnits} ünite damıtıldı) ·
-        <b> 29 Ünite TikTok MP4:</b> {status.tiktokFeed?.filledUnits ?? status.videos?.filledUnits ?? 0}/{status.totalUnits} (%{status.tiktokFeed?.coveragePct ?? status.videos?.coveragePct ?? 0})
+        <b> 40-Aşamalı Eğitim Turu:</b> #{trainerData?.epochsCompleted ?? trainerData?.ticksTotal ?? 0} ({Object.keys(trainerData?.distilledUnits || {}).length}/{status.totalUnits} ünite damıtıldı)
        </p>
         {ossData && (
          <p style={{margin: '4px 0'}}>
@@ -1614,7 +1456,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
           Soru Havuzu ({status.swarmEval.lastSubsystemScores.questionPool ?? 0}) ·
           Materyaller ({status.swarmEval.lastSubsystemScores.studyMaterials ?? 0}) ·
           Anlatım ({status.swarmEval.lastSubsystemScores.lessons ?? 0}) ·
-          Video/TikTok ({status.swarmEval.lastSubsystemScores.videosAndTiktok ?? 0}) ·
           Sandbox/48-Tuzak ({status.swarmEval.lastSubsystemScores.sandboxAndTraps ?? 0}) ·
           Parametre Matrisi ({status.swarmEval.lastSubsystemScores.parameterMatrix ?? 0})
          </small>
@@ -1647,7 +1488,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         <b> Güvenli Geri Alma:</b> {status.parameterMatrix.rollbackDepth} adım
        </p>
        <p className="manifest-line" style={{margin: '4px 0 8px'}}>
-        🤖 <b>Otonom Hyper-Evrim:</b> Tüm 11 bot + 64-Katman MoE, proje açıldığı andan itibaren arka planda sürekli evrimleşir (her ~14 sn); hiçbir düğmeye basman gerekmez.
+        🤖 <b>Otonom Hyper-Evrim:</b> Tüm 8 bot + 64-Katman MoE, proje açıldığı andan itibaren arka planda sürekli evrimleşir (her ~14 sn); hiçbir düğmeye basman gerekmez.
        </p>
        <div className="jarvis-diff-grid" style={{marginTop: 6}}>
         {(status.parameterMatrix.bots || []).map(bot => (
@@ -1825,7 +1666,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         • Projenin 8 çekirdek katmanını eşzamanlı ölçer, en zayıf darboğazı ({status.projectLevel.bottleneckPillar?.name || 'otomatik'}) hedefleyip yükseltir ve her adımı <b>100-Yollu Doğrulama Kapısından</b> (&lt;1sn, 0-API) geçirir.
        </p>
        <p className="manifest-line" style={{margin: '0 0 8px'}}>
-        🤖 <b>Otonom Seviye Atlama:</b> 8 çekirdek katman (BM25 arama, Türkçe ÖSYM & 96-Tuzak, 64-Katman MoE konseyi, 260k+ GitHub emilimi, 100-yollu doğrulama kapısı, eğitim hattı, 3D/video stüdyosu, Python QLoRA/DPO) proje açıldığı andan itibaren arka planda sürekli ölçülüp zayıfa odaklanılarak yükseltilir; her adım 100/100 kapısından geçer. Hiçbir düğmeye basman gerekmez.
+        🤖 <b>Otonom Seviye Atlama:</b> 8 çekirdek katman (BM25 arama, Türkçe ÖSYM & 96-Tuzak, 64-Katman MoE konseyi, 260k+ GitHub emilimi, 100-yollu doğrulama kapısı, eğitim hattı, Python QLoRA/DPO) proje açıldığı andan itibaren arka planda sürekli ölçülüp zayıfa odaklanılarak yükseltilir; her adım 100/100 kapısından geçer. Hiçbir düğmeye basman gerekmez.
        </p>
        <div className="jarvis-diff-grid">
         {(status.projectLevel.pillars || []).map(p => (
@@ -1892,7 +1733,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         </small>
        </p>
        <p className="manifest-line" style={{margin: '6px 0 8px'}}>
-        🤖 <b>Otonom Aşırı Eğitim:</b> {status.coderCouncil.totalModels} kodlayıcı + 11 botun DPO damıtma aşırı-eğitim turu <b>proje açılışından itibaren arka planda kesintisiz çalışır</b>; güçlü açık kaynak kodlayıcılar da Ollama bağlandığında kendiliğinden kurulur (indirme komutları README'de). Hiçbir düğmeye basman gerekmez.
+        🤖 <b>Otonom Aşırı Eğitim:</b> {status.coderCouncil.totalModels} kodlayıcı + 8 botun DPO damıtma aşırı-eğitim turu <b>proje açılışından itibaren arka planda kesintisiz çalışır</b>; güçlü açık kaynak kodlayıcılar da Ollama bağlandığında kendiliğinden kurulur (indirme komutları README'de). Hiçbir düğmeye basman gerekmez.
        </p>
        <div className="jarvis-diff-grid">
         {(status.coderCouncil.models || []).map(cm => (
@@ -1989,9 +1830,6 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       </p>
       <p style={{margin: 0}}>
        • <b>Konu Anlatımı Motoru (LessonEngine):</b> {status.lessons?.enhancedCount ?? 0} / {status.totalUnits} ünite zenginleştirildi ({status.lessons?.aiEnhancedCount ?? 0} tanesi AI v{status.lessons?.avgVersion || 1} — çok hata yapılan ünitelerde kodlamaları &amp; anlatımı otomatik baştan değiştirir ve &quot;Ya Çıkarsa?&quot; %100 köşeleri açıklar).
-      </p>
-      <p style={{margin: 0}}>
-       • <b>Gömülü MP4 &amp; Çoklu Tema Video Yönetmeni:</b> {status.videos?.producedCount ?? 0} / {status.totalUnits} ünite hazır ({status.videos?.totalVariantsCount ?? status.videos?.producedCount ?? 0} toplam video varyantı, {status.videos?.mp4Count ?? 0} gömülü .mp4, {status.videos?.roachCount ?? 0} Hamam Böceği Böcü komedisi, {status.videos?.aiProducedCount ?? 0} AI üretimi, {status.videos?.rescueCount ?? 0} Hata Kurtarma · dış Google bağlantısı yok · 0-API Yerel AI Motorları + Gömülü MP4 aktif).
       </p>
      </div>
 
@@ -2223,6 +2061,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        {q.styleScore !== undefined && <span className="precision-pill style">Kitap/TVGFBF %{q.styleScore}</span>}
        <span className={`jarvis-badge ${q.status === 'approved' ? 'ok' : 'warn'}`}>{q.status === 'approved' ? 'Otonom Onaylı' : 'Otonom Elendi'}</span>
       </div>
+      {q.paragraph && <blockquote className="question-paragraph">{q.paragraph}</blockquote>}
       <h3>{q.question}</h3>
       <ol>
        {q.options.map((o, i) => (

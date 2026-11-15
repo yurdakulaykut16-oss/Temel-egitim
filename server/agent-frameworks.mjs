@@ -174,9 +174,9 @@ export class MultiFrameworkAgentOrchestrator {
     taskOutput: `${ragHits.length} hibrit pasaj doğrulandı · Ana kaynak: ${lead.title} (${lead.source}).`
    },
    {
-    agent: 'QuestionAnd3DStrategist',
-    role: 'ÖSYM & 3D Pedagoji Tasarımcısı',
-    goal: 'Öğrenme bilgisini zorluk dengeli + 3D görselleştirmeye uygun kılmak',
+    agent: 'QuestionAndCodingStrategist',
+    role: 'ÖSYM & Çoklu Kodlama Pedagojisi Tasarımcısı',
+    goal: 'Öğrenme bilgisini zorluk dengeli + akılda kalıcı kodlamaya uygun kılmak',
     taskOutput: `Strateji: "${goal}" için çoklu bilişsel kodlama + DPO karşıt örnek tasarlandı.`
    },
    {

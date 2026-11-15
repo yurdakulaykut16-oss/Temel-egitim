@@ -661,17 +661,6 @@
   },
   {
     "unitId": "0-4",
-    "question": "Antrenmanda önce tek bir basit hareket, ardından iki hareketin birleştirilmesi çalışılıyor. Bu sıra neyi destekler?",
-    "answer": "Koordinasyonun aşamalı gelişimini",
-    "options": [
-      "Koordinasyonun aşamalı gelişimini",
-      "Yasaklı liste güncellemesini",
-      "Bütçe planlamasını",
-      "Hukuki karar vermeyi"
-    ]
-  },
-  {
-    "unitId": "0-4",
     "question": "Yön ve vücut pozisyonunu hızlı ve kontrollü değiştirme becerisi hangisidir?",
     "answer": "Çeviklik",
     "options": [
@@ -888,17 +877,6 @@
       "Tüm testler aynı özelliği ölçtüğü için",
       "Hiçbir ölçüm yapılmaması gerektiği için",
       "Sadece test adını değiştirmek için"
-    ]
-  },
-  {
-    "unitId": "0-6",
-    "question": "Mekik koşusu hangi kapasitenin tahmini amacıyla kullanılabilir?",
-    "answer": "Aerobik kapasite",
-    "options": [
-      "Aerobik kapasite",
-      "Hukuk bilgisi",
-      "İletişim kanalı",
-      "Yönetim hiyerarşisi"
     ]
   },
   {
@@ -1134,17 +1112,6 @@
   },
   {
     "unitId": "1-0",
-    "question": "Anatomik duruşta ellerin avuç içleri hangi yöne bakar?",
-    "answer": "Öne",
-    "options": [
-      "Öne",
-      "Arkaya",
-      "Yere",
-      "Zorunlu olarak birbirine"
-    ]
-  },
-  {
-    "unitId": "1-0",
     "question": "Gövdeye veya uzvun başlangıç noktasına daha yakın konum hangi terimle anlatılır?",
     "answer": "Proksimal",
     "options": [
@@ -1244,17 +1211,6 @@
   },
   {
     "unitId": "1-1",
-    "question": "Çok kısa süren patlayıcı bir harekette hangi sistemin katkısı özellikle yüksektir?",
-    "answer": "ATP-CP sistemi",
-    "options": [
-      "ATP-CP sistemi",
-      "Yalnız protein sentezi",
-      "Sadece yağ depolama",
-      "İletişim sistemi"
-    ]
-  },
-  {
-    "unitId": "1-1",
     "question": "Bir öğrenci enerji sistemlerinin sırayla açılıp tamamen kapandığını söylüyor. Doğru düzeltme hangisidir?",
     "answer": "Sistemler birlikte çalışır ve katkı oranları değişir",
     "options": [
@@ -1262,28 +1218,6 @@
       "Sadece tek sistem her zaman çalışır",
       "ATP egzersizde kullanılmaz",
       "Enerji sistemleri yalnız dinlenmede çalışır"
-    ]
-  },
-  {
-    "unitId": "1-1",
-    "question": "Protein sentezinde görev yapan hücresel yapı hangisidir?",
-    "answer": "Ribozom",
-    "options": [
-      "Ribozom",
-      "Tendon",
-      "Eklem kapsülü",
-      "Bağ"
-    ]
-  },
-  {
-    "unitId": "1-1",
-    "question": "Kas hücresinde kalsiyumun depolanması ve salınmasıyla ilgili yapı hangisidir?",
-    "answer": "Sarkoplazmik retikulum",
-    "options": [
-      "Sarkoplazmik retikulum",
-      "Ribozom",
-      "CAS",
-      "TİCİ"
     ]
   },
   {
@@ -2245,17 +2179,6 @@
   },
   {
     "unitId": "2-3",
-    "question": "Sporcunun mesajı yanlış anlamasına yol açan salondaki yüksek ses hangi iletişim ögesidir?",
-    "answer": "Gürültü",
-    "options": [
-      "Gürültü",
-      "Kaynak",
-      "Geri bildirim",
-      "Alıcı"
-    ]
-  },
-  {
-    "unitId": "2-3",
     "question": "Bir antrenörün sporcuya mesajını iletmek için kullandığı araç iletişimin hangi ögesidir?",
     "answer": "Kanal",
     "options": [
@@ -2333,17 +2256,6 @@
   },
   {
     "unitId": "2-4",
-    "question": "Bir uluslararası spor uyuşmazlığında CAS adı geçiyor. Bu kurum hangi alanla ilişkilidir?",
-    "answer": "Spor tahkimi",
-    "options": [
-      "Spor tahkimi",
-      "Kas fizyolojisi",
-      "Antrenman hacmi",
-      "Vitamin sentezi"
-    ]
-  },
-  {
-    "unitId": "2-4",
     "question": "Bir kulüp yönetmeliği değişmiş olabilir. Karar vermeden önce ne yapılmalıdır?",
     "answer": "Güncel mevzuat ve ilgili kurallar kontrol edilmeli",
     "options": [
@@ -2362,17 +2274,6 @@
       "Enerji sistemleri",
       "Anatomik düzlemler",
       "Vitamin sınıflaması"
-    ]
-  },
-  {
-    "unitId": "2-4",
-    "question": "CAS kısaltması aşağıdakilerden hangisiyle ilişkilidir?",
-    "answer": "Spor tahkimi",
-    "options": [
-      "Spor tahkimi",
-      "Fosfajen enerji",
-      "Denge çalışması",
-      "Motor gelişim dönemi"
     ]
   },
   {
@@ -2520,17 +2421,6 @@
   },
   {
     "unitId": "3-0",
-    "question": "Sporcu, antrenör ve ebeveyn ilişkisinde hangi tutum daha yapıcıdır?",
-    "answer": "Açık ve destekleyici iletişim",
-    "options": [
-      "Açık ve destekleyici iletişim",
-      "Sürekli aşağılama",
-      "Güvenliği yok sayma",
-      "İletişimi tamamen kesme"
-    ]
-  },
-  {
-    "unitId": "3-0",
     "question": "Bir çocuk üst düzey yarışmaya katılmasa da düzenli spor yapmaktan keyif alıyor. Çağdaş katılım yaklaşımı bu durumu nasıl değerlendirir?",
     "answer": "Yaşam boyu spor katılımı açısından anlamlıdır",
     "options": [
@@ -2586,17 +2476,6 @@
   },
   {
     "unitId": "3-1",
-    "question": "Başlangıcı ve bitişi belirgin tek bir şut hangi sınıftadır?",
-    "answer": "Kesikli beceri",
-    "options": [
-      "Kesikli beceri",
-      "Sürekli beceri",
-      "Sosyalleşme",
-      "Örgütleme"
-    ]
-  },
-  {
-    "unitId": "3-1",
     "question": "Sabit ve öngörülebilir bir ortamda uygulanan beceriye ne denir?",
     "answer": "Kapalı beceri",
     "options": [
@@ -2648,17 +2527,6 @@
       "Kaba beceri",
       "Yalnız açık beceri",
       "Statik döngü"
-    ]
-  },
-  {
-    "unitId": "3-1",
-    "question": "Birbiriyle bağlantılı hareketlerin oluşturduğu cimnastik dizisi hangi beceri sınıfına örnektir?",
-    "answer": "Seri beceri",
-    "options": [
-      "Seri beceri",
-      "Yalnız kesikli beceri",
-      "Refleksif hareket",
-      "Kaldıraç tipi"
     ]
   },
   {
@@ -2751,17 +2619,6 @@
   },
   {
     "unitId": "3-2",
-    "question": "Hareketin nerede yapıldığı hangi farkındalıkla ilgilidir?",
-    "answer": "Alan farkındalığı",
-    "options": [
-      "Alan farkındalığı",
-      "Efor farkındalığı",
-      "Tahkim farkındalığı",
-      "Doping farkındalığı"
-    ]
-  },
-  {
-    "unitId": "3-2",
     "question": "Çocuğun eğilip ağırlığını bir ayağından diğerine aktarması hangi temel hareket kategorisine yakındır?",
     "answer": "Dengeleme",
     "options": [
@@ -2769,17 +2626,6 @@
       "Nesne kontrolü",
       "Yalnız yer değiştirme",
       "Yasal denetim"
-    ]
-  },
-  {
-    "unitId": "3-2",
-    "question": "Hareketin nerede yapıldığını fark etmek hangi hareket kavramıdır?",
-    "answer": "Alan farkındalığı",
-    "options": [
-      "Alan farkındalığı",
-      "Efor farkındalığı",
-      "Mutlak değerlendirme",
-      "Dönüşümcü liderlik"
     ]
   },
   {
@@ -2868,39 +2714,6 @@
       "Bağıl değerlendirme",
       "Dönüşümcü liderlik",
       "Geriye dönüş"
-    ]
-  },
-  {
-    "unitId": "3-3",
-    "question": "Yaklaşık 2–7 yaş arasında koşma ve atlamanın gelişmesi hangi dönemle ilişkilidir?",
-    "answer": "Temel hareketler dönemi",
-    "options": [
-      "Temel hareketler dönemi",
-      "Yalnız refleksif dönem",
-      "Yönetim dönemi",
-      "Tahkim dönemi"
-    ]
-  },
-  {
-    "unitId": "3-3",
-    "question": "Gövde merkezinden uzuvlara doğru gelişim hangi ilkeyle ifade edilir?",
-    "answer": "İçten dışa gelişim",
-    "options": [
-      "İçten dışa gelişim",
-      "Geriye dönüşüm",
-      "Bağıl değerlendirme",
-      "Şiddet artışı"
-    ]
-  },
-  {
-    "unitId": "3-3",
-    "question": "Bir bebeğin istem dışı erken hareket tepkileri hangi hareket dönemiyle ilişkilidir?",
-    "answer": "Refleksif hareketler",
-    "options": [
-      "Refleksif hareketler",
-      "Spor tahkimi",
-      "İşletmecilik",
-      "Yalnız elit performans"
     ]
   },
   {
@@ -3011,17 +2824,6 @@
       "Tek başına değerlendirme kararı",
       "Pekiştirme",
       "Tahkim"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "Grup ortalamasını referans alarak başarıya karar vermek hangi değerlendirme türüdür?",
-    "answer": "Bağıl değerlendirme",
-    "options": [
-      "Bağıl değerlendirme",
-      "Mutlak değerlendirme",
-      "Yalnız ölçüm",
-      "Spor tahkimi"
     ]
   },
   {
@@ -3191,17 +2993,6 @@
   },
   {
     "unitId": "3-5",
-    "question": "Öğrenenin deneyimleriyle bilgiyi aktif olarak oluşturduğunu vurgulayan yaklaşım hangisidir?",
-    "answer": "Yapılandırmacılık",
-    "options": [
-      "Yapılandırmacılık",
-      "Yalnız bürokrasi",
-      "Spor tahkimi",
-      "Kaldıraç sınıflaması"
-    ]
-  },
-  {
-    "unitId": "3-5",
     "question": "Öğreticinin düzenli biçimde bilgiyi sunması hangi öğretim stratejisiyle ilişkilidir?",
     "answer": "Sunuş yoluyla öğretim",
     "options": [
@@ -3286,17 +3077,6 @@
       "POLICE",
       "VKİ",
       "ATP-CP"
-    ]
-  },
-  {
-    "unitId": "4-0",
-    "question": "Alman jimnastik akımıyla ilişkilendirilen isim kimdir?",
-    "answer": "Friedrich Jahn",
-    "options": [
-      "Friedrich Jahn",
-      "Pehr Henrik Ling",
-      "Thomas Arnold",
-      "Mayo"
     ]
   },
   {
@@ -3697,28 +3477,6 @@
   },
   {
     "unitId": "4-3",
-    "question": "Fair play aşağıdakilerden hangisini de içerir?",
-    "answer": "Rakibe saygı ve dürüstlük",
-    "options": [
-      "Rakibe saygı ve dürüstlük",
-      "Yalnız kazanma",
-      "Kuralları gizlice çiğneme",
-      "Şikeyi teşvik"
-    ]
-  },
-  {
-    "unitId": "4-3",
-    "question": "Hangisi fair play değerlerini zedeleyen bir etkendir?",
-    "answer": "Şiddet",
-    "options": [
-      "Şiddet",
-      "Rakibe saygı",
-      "Dürüstlük",
-      "Eşit mücadele"
-    ]
-  },
-  {
-    "unitId": "4-3",
     "question": "Oyuncunun rakibine dürüst ve saygılı davranması hangi spor değerini örnekler?",
     "answer": "Fair play",
     "options": [
@@ -3818,39 +3576,6 @@
   },
   {
     "unitId": "4-4",
-    "question": "Çocuğun sağlık ve güvenlik ihtiyaçlarının karşılanmaması hangi sorundur?",
-    "answer": "İhmal",
-    "options": [
-      "İhmal",
-      "Etkin dinleme",
-      "Ödüllendirme",
-      "Dönemleme"
-    ]
-  },
-  {
-    "unitId": "4-4",
-    "question": "Bir antrenör çocuğu sürekli aşağılayıp tehdit ediyor. Bu hangi istismar türüdür?",
-    "answer": "Duygusal istismar",
-    "options": [
-      "Duygusal istismar",
-      "Sadece sağlıklı geri bildirim",
-      "Yalnız ihmal",
-      "Fizyolojik adaptasyon"
-    ]
-  },
-  {
-    "unitId": "4-4",
-    "question": "Sürekli aşağılama hangi istismar türüne örnektir?",
-    "answer": "Duygusal istismar",
-    "options": [
-      "Duygusal istismar",
-      "Yalnız fiziksel istismar",
-      "Kuvvet gelişimi",
-      "Teknik hazırlık"
-    ]
-  },
-  {
-    "unitId": "4-4",
     "question": "Güvenli spor ortamı için hangi uygulama uygundur?",
     "answer": "Çocuk koruma politikası ve bildirim mekanizması",
     "options": [
@@ -3858,17 +3583,6 @@
       "Güvenlik endişelerini gizlemek",
       "Aşağılamayı normalleştirmek",
       "Temel bakım ihtiyaçlarını yok saymak"
-    ]
-  },
-  {
-    "unitId": "4-4",
-    "question": "Bir çocuğun temel güvenlik ve tıbbi bakım ihtiyacının karşılanmaması hangi kavramdır?",
-    "answer": "İhmal",
-    "options": [
-      "İhmal",
-      "Aktif dinleme",
-      "Pekiştirme",
-      "Fazla tamamlama"
     ]
   },
   {
@@ -3928,50 +3642,6 @@
   },
   {
     "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "21,3 kg/m²",
-    "options": [
-      "21,3 kg/m²",
-      "23,3 kg/m²",
-      "25,3 kg/m²",
-      "19,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "20,0 kg/m²",
-    "options": [
-      "20,0 kg/m²",
-      "22,0 kg/m²",
-      "24,0 kg/m²",
-      "18,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "18,7 kg/m²",
-    "options": [
-      "18,7 kg/m²",
-      "20,7 kg/m²",
-      "22,7 kg/m²",
-      "16,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "17,6 kg/m²",
-    "options": [
-      "17,6 kg/m²",
-      "19,6 kg/m²",
-      "21,6 kg/m²",
-      "15,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
     "question": "48 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
     "answer": "16,6 kg/m²",
     "options": [
@@ -3983,1047 +3653,35 @@
   },
   {
     "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "15,7 kg/m²",
+    "question": "Boyu 1,70 m ve ağırlığı 48 kg olan bir sporcunun VKİ’si hangi aralıkta yer alır?",
+    "answer": "18,5 kg/m²’nin altı (Zayıf)",
     "options": [
-      "15,7 kg/m²",
-      "17,7 kg/m²",
-      "19,7 kg/m²",
-      "13,7 kg/m²"
+      "18,5 kg/m²’nin altı (Zayıf)",
+      "18,5 – 24,9 kg/m² (Normal)",
+      "25,0 – 29,9 kg/m² (Fazla kilolu)",
+      "30,0 – 34,9 kg/m² (1. derece obez)"
     ]
   },
   {
     "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "14,8 kg/m²",
+    "question": "Ağırlığı 52 kg, boyu 1,60 m olan bir bireyin vücut kitle indeksi hangi sınıfta yer alır?",
+    "answer": "Normal",
     "options": [
-      "14,8 kg/m²",
-      "16,8 kg/m²",
-      "18,8 kg/m²",
-      "12,8 kg/m²"
+      "Normal",
+      "Zayıf",
+      "Fazla kilolu",
+      "1. derece obez"
     ]
   },
   {
     "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "14,0 kg/m²",
+    "question": "VKİ değeri 20,3 kg/m² olan ve boyu 1,60 m olarak ölçülen bir bireyin ağırlığı yaklaşık kaç kilogramdır?",
+    "answer": "52 kg",
     "options": [
-      "14,0 kg/m²",
-      "16,0 kg/m²",
-      "18,0 kg/m²",
-      "12,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "13,3 kg/m²",
-    "options": [
-      "13,3 kg/m²",
-      "15,3 kg/m²",
-      "17,3 kg/m²",
-      "11,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "48 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "12,6 kg/m²",
-    "options": [
-      "12,6 kg/m²",
-      "14,6 kg/m²",
-      "16,6 kg/m²",
-      "10,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,1 kg/m²",
-    "options": [
-      "23,1 kg/m²",
-      "25,1 kg/m²",
-      "27,1 kg/m²",
-      "21,1 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "21,6 kg/m²",
-    "options": [
-      "21,6 kg/m²",
-      "23,6 kg/m²",
-      "25,6 kg/m²",
-      "19,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "20,3 kg/m²",
-    "options": [
-      "20,3 kg/m²",
-      "22,3 kg/m²",
-      "24,3 kg/m²",
-      "18,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "19,1 kg/m²",
-    "options": [
-      "19,1 kg/m²",
-      "21,1 kg/m²",
-      "23,1 kg/m²",
-      "17,1 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "18,0 kg/m²",
-    "options": [
-      "18,0 kg/m²",
-      "20,0 kg/m²",
-      "22,0 kg/m²",
-      "16,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "17,0 kg/m²",
-    "options": [
-      "17,0 kg/m²",
-      "19,0 kg/m²",
-      "21,0 kg/m²",
-      "15,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "16,0 kg/m²",
-    "options": [
-      "16,0 kg/m²",
-      "18,0 kg/m²",
-      "20,0 kg/m²",
-      "14,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "15,2 kg/m²",
-    "options": [
-      "15,2 kg/m²",
-      "17,2 kg/m²",
-      "19,2 kg/m²",
-      "13,2 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "14,4 kg/m²",
-    "options": [
-      "14,4 kg/m²",
-      "16,4 kg/m²",
-      "18,4 kg/m²",
-      "12,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "52 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "13,7 kg/m²",
-    "options": [
-      "13,7 kg/m²",
-      "15,7 kg/m²",
-      "17,7 kg/m²",
-      "11,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "24,9 kg/m²",
-    "options": [
-      "24,9 kg/m²",
-      "26,9 kg/m²",
-      "28,9 kg/m²",
-      "22,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,3 kg/m²",
-    "options": [
-      "23,3 kg/m²",
-      "25,3 kg/m²",
-      "27,3 kg/m²",
-      "21,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "21,9 kg/m²",
-    "options": [
-      "21,9 kg/m²",
-      "23,9 kg/m²",
-      "25,9 kg/m²",
-      "19,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "20,6 kg/m²",
-    "options": [
-      "20,6 kg/m²",
-      "22,6 kg/m²",
-      "24,6 kg/m²",
-      "18,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "19,4 kg/m²",
-    "options": [
-      "19,4 kg/m²",
-      "21,4 kg/m²",
-      "23,4 kg/m²",
-      "17,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "18,3 kg/m²",
-    "options": [
-      "18,3 kg/m²",
-      "20,3 kg/m²",
-      "22,3 kg/m²",
-      "16,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "17,3 kg/m²",
-    "options": [
-      "17,3 kg/m²",
-      "19,3 kg/m²",
-      "21,3 kg/m²",
-      "15,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "16,4 kg/m²",
-    "options": [
-      "16,4 kg/m²",
-      "18,4 kg/m²",
-      "20,4 kg/m²",
-      "14,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "15,5 kg/m²",
-    "options": [
-      "15,5 kg/m²",
-      "17,5 kg/m²",
-      "19,5 kg/m²",
-      "13,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "56 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "14,7 kg/m²",
-    "options": [
-      "14,7 kg/m²",
-      "16,7 kg/m²",
-      "18,7 kg/m²",
-      "12,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "26,7 kg/m²",
-    "options": [
-      "26,7 kg/m²",
-      "28,7 kg/m²",
-      "30,7 kg/m²",
-      "24,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "25,0 kg/m²",
-    "options": [
-      "25,0 kg/m²",
-      "27,0 kg/m²",
-      "29,0 kg/m²",
-      "23,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,4 kg/m²",
-    "options": [
-      "23,4 kg/m²",
-      "25,4 kg/m²",
-      "27,4 kg/m²",
-      "21,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "22,0 kg/m²",
-    "options": [
-      "22,0 kg/m²",
-      "24,0 kg/m²",
-      "26,0 kg/m²",
-      "20,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "20,8 kg/m²",
-    "options": [
-      "20,8 kg/m²",
-      "22,8 kg/m²",
-      "24,8 kg/m²",
-      "18,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "19,6 kg/m²",
-    "options": [
-      "19,6 kg/m²",
-      "21,6 kg/m²",
-      "23,6 kg/m²",
-      "17,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "18,5 kg/m²",
-    "options": [
-      "18,5 kg/m²",
-      "20,5 kg/m²",
-      "22,5 kg/m²",
-      "16,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "17,5 kg/m²",
-    "options": [
-      "17,5 kg/m²",
-      "19,5 kg/m²",
-      "21,5 kg/m²",
-      "15,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "16,6 kg/m²",
-    "options": [
-      "16,6 kg/m²",
-      "18,6 kg/m²",
-      "20,6 kg/m²",
-      "14,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "60 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "15,8 kg/m²",
-    "options": [
-      "15,8 kg/m²",
-      "17,8 kg/m²",
-      "19,8 kg/m²",
-      "13,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "28,4 kg/m²",
-    "options": [
-      "28,4 kg/m²",
-      "30,4 kg/m²",
-      "32,4 kg/m²",
-      "26,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "26,6 kg/m²",
-    "options": [
-      "26,6 kg/m²",
-      "28,6 kg/m²",
-      "30,6 kg/m²",
-      "24,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "25,0 kg/m²",
-    "options": [
-      "25,0 kg/m²",
-      "27,0 kg/m²",
-      "29,0 kg/m²",
-      "23,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,5 kg/m²",
-    "options": [
-      "23,5 kg/m²",
-      "25,5 kg/m²",
-      "27,5 kg/m²",
-      "21,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "22,1 kg/m²",
-    "options": [
-      "22,1 kg/m²",
-      "24,1 kg/m²",
-      "26,1 kg/m²",
-      "20,1 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "20,9 kg/m²",
-    "options": [
-      "20,9 kg/m²",
-      "22,9 kg/m²",
-      "24,9 kg/m²",
-      "18,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "19,8 kg/m²",
-    "options": [
-      "19,8 kg/m²",
-      "21,8 kg/m²",
-      "23,8 kg/m²",
-      "17,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "18,7 kg/m²",
-    "options": [
-      "18,7 kg/m²",
-      "20,7 kg/m²",
-      "22,7 kg/m²",
-      "16,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "17,7 kg/m²",
-    "options": [
-      "17,7 kg/m²",
-      "19,7 kg/m²",
-      "21,7 kg/m²",
-      "15,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "64 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "16,8 kg/m²",
-    "options": [
-      "16,8 kg/m²",
-      "18,8 kg/m²",
-      "20,8 kg/m²",
-      "14,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "30,2 kg/m²",
-    "options": [
-      "30,2 kg/m²",
-      "32,2 kg/m²",
-      "34,2 kg/m²",
-      "28,2 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "28,3 kg/m²",
-    "options": [
-      "28,3 kg/m²",
-      "30,3 kg/m²",
-      "32,3 kg/m²",
-      "26,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "26,6 kg/m²",
-    "options": [
-      "26,6 kg/m²",
-      "28,6 kg/m²",
-      "30,6 kg/m²",
-      "24,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "25,0 kg/m²",
-    "options": [
-      "25,0 kg/m²",
-      "27,0 kg/m²",
-      "29,0 kg/m²",
-      "23,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,5 kg/m²",
-    "options": [
-      "23,5 kg/m²",
-      "25,5 kg/m²",
-      "27,5 kg/m²",
-      "21,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "22,2 kg/m²",
-    "options": [
-      "22,2 kg/m²",
-      "24,2 kg/m²",
-      "26,2 kg/m²",
-      "20,2 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "21,0 kg/m²",
-    "options": [
-      "21,0 kg/m²",
-      "23,0 kg/m²",
-      "25,0 kg/m²",
-      "19,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "19,9 kg/m²",
-    "options": [
-      "19,9 kg/m²",
-      "21,9 kg/m²",
-      "23,9 kg/m²",
-      "17,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "18,8 kg/m²",
-    "options": [
-      "18,8 kg/m²",
-      "20,8 kg/m²",
-      "22,8 kg/m²",
-      "16,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "68 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "17,9 kg/m²",
-    "options": [
-      "17,9 kg/m²",
-      "19,9 kg/m²",
-      "21,9 kg/m²",
-      "15,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "32,0 kg/m²",
-    "options": [
-      "32,0 kg/m²",
-      "34,0 kg/m²",
-      "36,0 kg/m²",
-      "30,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "30,0 kg/m²",
-    "options": [
-      "30,0 kg/m²",
-      "32,0 kg/m²",
-      "34,0 kg/m²",
-      "28,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "28,1 kg/m²",
-    "options": [
-      "28,1 kg/m²",
-      "30,1 kg/m²",
-      "32,1 kg/m²",
-      "26,1 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "26,4 kg/m²",
-    "options": [
-      "26,4 kg/m²",
-      "28,4 kg/m²",
-      "30,4 kg/m²",
-      "24,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "24,9 kg/m²",
-    "options": [
-      "24,9 kg/m²",
-      "26,9 kg/m²",
-      "28,9 kg/m²",
-      "22,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,5 kg/m²",
-    "options": [
-      "23,5 kg/m²",
-      "25,5 kg/m²",
-      "27,5 kg/m²",
-      "21,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "22,2 kg/m²",
-    "options": [
-      "22,2 kg/m²",
-      "24,2 kg/m²",
-      "26,2 kg/m²",
-      "20,2 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "21,0 kg/m²",
-    "options": [
-      "21,0 kg/m²",
-      "23,0 kg/m²",
-      "25,0 kg/m²",
-      "19,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "19,9 kg/m²",
-    "options": [
-      "19,9 kg/m²",
-      "21,9 kg/m²",
-      "23,9 kg/m²",
-      "17,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "72 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "18,9 kg/m²",
-    "options": [
-      "18,9 kg/m²",
-      "20,9 kg/m²",
-      "22,9 kg/m²",
-      "16,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "33,8 kg/m²",
-    "options": [
-      "33,8 kg/m²",
-      "35,8 kg/m²",
-      "37,8 kg/m²",
-      "31,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "31,6 kg/m²",
-    "options": [
-      "31,6 kg/m²",
-      "33,6 kg/m²",
-      "35,6 kg/m²",
-      "29,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "29,7 kg/m²",
-    "options": [
-      "29,7 kg/m²",
-      "31,7 kg/m²",
-      "33,7 kg/m²",
-      "27,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "27,9 kg/m²",
-    "options": [
-      "27,9 kg/m²",
-      "29,9 kg/m²",
-      "31,9 kg/m²",
-      "25,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "26,3 kg/m²",
-    "options": [
-      "26,3 kg/m²",
-      "28,3 kg/m²",
-      "30,3 kg/m²",
-      "24,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "24,8 kg/m²",
-    "options": [
-      "24,8 kg/m²",
-      "26,8 kg/m²",
-      "28,8 kg/m²",
-      "22,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,5 kg/m²",
-    "options": [
-      "23,5 kg/m²",
-      "25,5 kg/m²",
-      "27,5 kg/m²",
-      "21,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "22,2 kg/m²",
-    "options": [
-      "22,2 kg/m²",
-      "24,2 kg/m²",
-      "26,2 kg/m²",
-      "20,2 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "21,1 kg/m²",
-    "options": [
-      "21,1 kg/m²",
-      "23,1 kg/m²",
-      "25,1 kg/m²",
-      "19,1 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "76 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "20,0 kg/m²",
-    "options": [
-      "20,0 kg/m²",
-      "22,0 kg/m²",
-      "24,0 kg/m²",
-      "18,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "35,6 kg/m²",
-    "options": [
-      "35,6 kg/m²",
-      "37,6 kg/m²",
-      "39,6 kg/m²",
-      "33,6 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "33,3 kg/m²",
-    "options": [
-      "33,3 kg/m²",
-      "35,3 kg/m²",
-      "37,3 kg/m²",
-      "31,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "31,2 kg/m²",
-    "options": [
-      "31,2 kg/m²",
-      "33,2 kg/m²",
-      "35,2 kg/m²",
-      "29,2 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "29,4 kg/m²",
-    "options": [
-      "29,4 kg/m²",
-      "31,4 kg/m²",
-      "33,4 kg/m²",
-      "27,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "27,7 kg/m²",
-    "options": [
-      "27,7 kg/m²",
-      "29,7 kg/m²",
-      "31,7 kg/m²",
-      "25,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "26,1 kg/m²",
-    "options": [
-      "26,1 kg/m²",
-      "28,1 kg/m²",
-      "30,1 kg/m²",
-      "24,1 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "24,7 kg/m²",
-    "options": [
-      "24,7 kg/m²",
-      "26,7 kg/m²",
-      "28,7 kg/m²",
-      "22,7 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,4 kg/m²",
-    "options": [
-      "23,4 kg/m²",
-      "25,4 kg/m²",
-      "27,4 kg/m²",
-      "21,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "22,2 kg/m²",
-    "options": [
-      "22,2 kg/m²",
-      "24,2 kg/m²",
-      "26,2 kg/m²",
-      "20,2 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "80 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "21,0 kg/m²",
-    "options": [
-      "21,0 kg/m²",
-      "23,0 kg/m²",
-      "25,0 kg/m²",
-      "19,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,50 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "37,3 kg/m²",
-    "options": [
-      "37,3 kg/m²",
-      "39,3 kg/m²",
-      "41,3 kg/m²",
-      "35,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,55 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "35,0 kg/m²",
-    "options": [
-      "35,0 kg/m²",
-      "37,0 kg/m²",
-      "39,0 kg/m²",
-      "33,0 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,60 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "32,8 kg/m²",
-    "options": [
-      "32,8 kg/m²",
-      "34,8 kg/m²",
-      "36,8 kg/m²",
-      "30,8 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,65 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "30,9 kg/m²",
-    "options": [
-      "30,9 kg/m²",
-      "32,9 kg/m²",
-      "34,9 kg/m²",
-      "28,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,70 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "29,1 kg/m²",
-    "options": [
-      "29,1 kg/m²",
-      "31,1 kg/m²",
-      "33,1 kg/m²",
-      "27,1 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,75 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "27,4 kg/m²",
-    "options": [
-      "27,4 kg/m²",
-      "29,4 kg/m²",
-      "31,4 kg/m²",
-      "25,4 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,80 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "25,9 kg/m²",
-    "options": [
-      "25,9 kg/m²",
-      "27,9 kg/m²",
-      "29,9 kg/m²",
-      "23,9 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,85 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "24,5 kg/m²",
-    "options": [
-      "24,5 kg/m²",
-      "26,5 kg/m²",
-      "28,5 kg/m²",
-      "22,5 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,90 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "23,3 kg/m²",
-    "options": [
-      "23,3 kg/m²",
-      "25,3 kg/m²",
-      "27,3 kg/m²",
-      "21,3 kg/m²"
-    ]
-  },
-  {
-    "unitId": "3-4",
-    "question": "84 kg ağırlığında ve 1,95 m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?",
-    "answer": "22,1 kg/m²",
-    "options": [
-      "22,1 kg/m²",
-      "24,1 kg/m²",
-      "26,1 kg/m²",
-      "20,1 kg/m²"
+      "52 kg",
+      "42 kg",
+      "62 kg",
+      "70 kg"
     ]
   }
 ]

@@ -17,7 +17,6 @@ export class ProjectLevelUpOrchestrator {
   evolver,
   jarvis,
   apex,
-  local3dEngine = null,
   contexts = [],
   loadItemsFn = null,
   getTelemetryFn = null,
@@ -41,7 +40,6 @@ export class ProjectLevelUpOrchestrator {
   this.evolver = evolver;
   this.jarvis = jarvis;
   this.apex = apex;
-  this.local3dEngine = local3dEngine;
   this.contexts = contexts;
   this.loadItemsFn = loadItemsFn;
   this.getTelemetryFn = getTelemetryFn;
@@ -140,7 +138,7 @@ export class ProjectLevelUpOrchestrator {
   const qwenPromoted = Number(codeLab?.prototypesPromotedToProject ?? 0);
   const qwenSkill = Number(codeLab?.qwenSkillLevel ?? 5);
   const avgBotIq = Number(matrix?.avgBotIq ?? 97.5);
-  const totalBots = Number(matrix?.totalBots ?? 11);
+  const totalBots = Number(matrix?.totalBots ?? 8);
   const councilModels = Number(council?.totalModels ?? 64);
   const absorbedRepos = Number(mega?.absorbedProjectsCount ?? 0);
   const minerInsights = Number(minerState?.insightsExtracted?.length ?? 0);
@@ -149,7 +147,6 @@ export class ProjectLevelUpOrchestrator {
   const uiUpgrades = Number(nexus?.uiEvolutionsApplied ?? 0);
   const totalUnits = Number(pool?.unitsCount ?? this.contexts?.length ?? 29);
   const lessonsCount = Number(pool?.totalLessons ?? 0);
-  const videosCount = Number(pool?.totalVideos ?? 0);
   const sftRows = Number(prep?.sftRows ?? nexus?.sftPairsTotal ?? 0);
   const dpoRows = Number(prep?.dpoRows ?? nexus?.dpoPairsTotal ?? 0);
   const codeRows = Number(prep?.codeRows ?? codeLab?.selfTrainingPairsGenerated ?? 0);
@@ -170,14 +167,14 @@ export class ProjectLevelUpOrchestrator {
    {
     id: 'moeAndCouncil',
     name: '3. 64-Katman MoE & 64-Model Konseyi',
-    score: clamp(62 + Math.min(20, Math.round((avgBotIq - 75) * 0.85)) + (councilModels >= 64 ? 10 : 5) + (totalBots >= 11 ? 8 : 4)),
+    score: clamp(62 + Math.min(20, Math.round((avgBotIq - 75) * 0.85)) + (councilModels >= 64 ? 10 : 5) + (totalBots >= 8 ? 8 : 4)),
     detail: `${totalBots}×64 MoE bot · Ort. IQ ${avgBotIq}/100 · ${councilModels} kodlama modeli (${council?.councilIqAvg ?? 97} IQ)`
    },
    {
     id: 'ossAndInternet',
     name: '4. 260k+ GitHub & İnternet Bilgi Emilimi',
-    score: clamp(58 + Math.min(24, Math.round(absorbedRepos / 250)) + Math.min(10, minerInsights) + (mega?.domainsCount >= 16 ? 8 : 4)),
-    detail: `${absorbedRepos.toLocaleString('tr-TR')} emilen repo · ${minerInsights} doğrulanmış OSS örüntü · ${mega?.domainsCount ?? 16} alan`
+    score: clamp(58 + Math.min(24, Math.round(absorbedRepos / 250)) + Math.min(10, minerInsights) + (mega?.domainsCount >= 18 ? 8 : 4)),
+    detail: `${absorbedRepos.toLocaleString('tr-TR')} emilen repo · ${minerInsights} doğrulanmış OSS örüntü · ${mega?.domainsCount ?? 18} alan`
    },
    {
     id: 'verifier100',
@@ -193,9 +190,9 @@ export class ProjectLevelUpOrchestrator {
    },
    {
     id: 'pedagogyMedia',
-    name: '7. Ders, Gerçek 3D Animasyon, TikTok & Çoklu Ses Stüdyosu',
-    score: clamp(76 + (totalUnits >= 29 ? 12 : 6) + Math.min(6, lessonsCount * 2) + Math.min(4, videosCount) + (this.local3dEngine ? 4 : 0)),
-    detail: `${totalUnits} ünite · ${lessonsCount} AI ders · ${videosCount} MP4 · ${this.local3dEngine ? '5 yerel 3D önayar + Eklemli 3D sahne + bpy' : '3D sahne'}`
+    name: '7. Ders Anlatımı & Çoklu Ses Stüdyosu',
+    score: clamp(76 + (totalUnits >= 29 ? 12 : 6) + Math.min(10, lessonsCount * 3)),
+    detail: `${totalUnits} ünite · ${lessonsCount} AI ders · Yerel 0-API seslendirme`
    },
    {
     id: 'pythonTraining',
@@ -221,7 +218,6 @@ export class ProjectLevelUpOrchestrator {
    projectLevel,
    codename,
    upgradeFactorFromPrevious: 100,
-   local3dAnimationEngineReady: Boolean(this.local3dEngine),
    pillars,
    bottleneckPillar,
    cyclesCompleted: this.state.cycles,
@@ -272,7 +268,7 @@ export class ProjectLevelUpOrchestrator {
    : null;
   if (evoRes) {
    const mSum = this.paramMatrix.getSummary(evoRes.state);
-   actionsTaken.push(`64-Katman MoE Evrimi (${mSum?.totalBots || 11} bot, ort. IQ ${mSum?.avgBotIq || 98})`);
+   actionsTaken.push(`64-Katman MoE Evrimi (${mSum?.totalBots || 8} bot, ort. IQ ${mSum?.avgBotIq || 98})`);
   }
 
   if (this.localAiTeam?.runFastTeamCycle && this.contexts?.length) {

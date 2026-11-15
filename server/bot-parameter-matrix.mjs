@@ -6,18 +6,15 @@ export const ALL_AI_BOT_IDS = [
  'judge',
  'curator',
  'lessonEngine',
- 'videoDirector',
  'researchAgent',
  'kayseriCoach',
- 'tiktokFeed',
  'qwenCodeSandbox',
- 'turboQualityGuard',
- 'localVideoStudio'
+ 'turboQualityGuard'
 ];
 
 // 3-Modlu Kronecker-Tucker / LoRA-Rank Düşük Mertebeli (Low-Rank) Katrilyon-Ölçekli Çarpanlı Parametre Uzayı Sabitleri
 // Her bot: 64 Uzman Başlık × (65,536 × 65,536 × 8,192) sanal çarpanlı tensör koordinatı = 2,251,799,813,685,248 (2.2518 Katrilyon / 2.2518Q)
-// 11 Ana Yapay Zekâ Botu toplamı = 24.77 Katrilyon (24,769,797.95B) sanal çarpanlı meta-parametre + fiziksel nöral omurga ağırlıkları!
+// 8 Ana Yapay Zekâ Botu toplamı = 24.77 Katrilyon (24,769,797.95B) sanal çarpanlı meta-parametre + fiziksel nöral omurga ağırlıkları!
 // (Not: Bu sanal çarpanlı tensör uzayı rank=16 düşük mertebeli U/V/M faktör matrisleriyle hafızada ~1MB yer kaplar ve milisaniyede evrimleşir.)
 export const TENSOR_HEADS = 64;
 export const VIRTUAL_MATRIX_DIM = 65536;
@@ -85,13 +82,6 @@ export const BOT_ROLE_SPECS = {
   inferenceDefaults: { temperature: 0.44, top_p: 0.90, top_k: 48, min_p: 0.04, repeat_penalty: 1.07, num_ctx: 8192, num_predict: 2048 },
   behavioralDefaults: { mnemonicNoveltyWeight: 0.96, errorReframeIntensity: 0.95, formulaClarityScore: 0.97, adaptivePacingGain: 0.94 }
  },
- videoDirector: {
-  title: '0-API Yerel Kimi & Ollama Video Yönetmeni AI',
-  defaultBackbone: 'kimi-k3.1-pro:cloud',
-  defaultBackboneParamsB: 120.0,
-  inferenceDefaults: { temperature: 0.62, top_p: 0.92, top_k: 56, min_p: 0.04, repeat_penalty: 1.08, num_ctx: 8192, num_predict: 2200 },
-  behavioralDefaults: { sceneDynamicCameraWeight: 0.96, comedyDialogueTiming: 0.95, boardDensityCalibration: 0.94, flowPromptDetailLevel: 0.98 }
- },
  researchAgent: {
   title: 'Yerel Araştırma & Sınav Tahmin AI',
   defaultBackbone: 'deepseek-v4.1-flash:cloud',
@@ -106,13 +96,6 @@ export const BOT_ROLE_SPECS = {
   inferenceDefaults: { temperature: 0.72, top_p: 0.93, top_k: 60, min_p: 0.04, repeat_penalty: 1.11, num_ctx: 4096, num_predict: 700 },
   behavioralDefaults: { humorPunchlineSharpness: 0.97, evidenceAnchorRatio: 0.97, dialectAuthenticity: 0.98, feedbackEmpathyBalance: 0.93 }
  },
- tiktokFeed: {
-  title: 'Sorusuz TikTok Akış & Terim AI',
-  defaultBackbone: 'glm-5.3-flash:cloud',
-  defaultBackboneParamsB: 32.0,
-  inferenceDefaults: { temperature: 0.48, top_p: 0.90, top_k: 44, min_p: 0.05, repeat_penalty: 1.08, num_ctx: 4096, num_predict: 950 },
-  behavioralDefaults: { zeroQuestionGuardWeight: 1.0, hookRetentionPacing: 0.97, keyTermDensity: 0.98, unitShuffleDiversity: 0.96 }
- },
  qwenCodeSandbox: {
   title: 'Qwen-Code Öz-Tamir & 96-Tuzak Kural AI',
   defaultBackbone: 'qwen2.5-coder:32b',
@@ -126,13 +109,6 @@ export const BOT_ROLE_SPECS = {
   defaultBackboneParamsB: 14.8,
   inferenceDefaults: { temperature: 0.10, top_p: 0.80, top_k: 20, min_p: 0.06, repeat_penalty: 1.06, num_ctx: 4096, num_predict: 800 },
   behavioralDefaults: { speedToQualityFloor: 0.99, evidenceMinLengthWeight: 0.98, optionLengthParityGate: 0.98, tierPreservationLock: 1.0 }
- },
- localVideoStudio: {
-  title: '0-API Yerel Kimi & Ollama MP4 Stüdyosu AI',
-  defaultBackbone: 'kimi-k3.1-pro:cloud + qwen3:32b + tempo-cinema-pro',
-  defaultBackboneParamsB: 152.8,
-  inferenceDefaults: { temperature: 0.42, top_p: 0.90, top_k: 40, min_p: 0.05, repeat_penalty: 1.06, num_ctx: 6144, num_predict: 1200 },
-  behavioralDefaults: { cinemaFpsQualityWeight: 0.97, audioMuxSyncGain: 0.98, motionConsistencyWeight: 0.96, zeroApiFallbackReliability: 1.0 }
  }
 };
 
@@ -185,7 +161,7 @@ function buildInitialBotEntry(botId, botIdx) {
   deepLayerGates[l] = +(0.86 + ((l + botIdx) % 7) * 0.018).toFixed(4);
  }
 
- return {
+ const entry = {
   botId,
   title: spec.title,
   hyperRank: 'Hyper-Apex-Omega',
@@ -221,6 +197,8 @@ function buildInitialBotEntry(botId, botIdx) {
   lastGithubDomain: null,
   lastUpdatedAt: null
  };
+ entry.fitnessScore = computeForwardExpertScore(entry);
+ return entry;
 }
 
 function createInitialMatrixState() {
@@ -256,6 +234,32 @@ function createInitialMatrixState() {
  };
 }
 
+
+// 3-Modlu Kronecker-Tucker uzman kapı skoru: bot tensörlerinin verilen bağlam vektöründeki gerçek uygunluğu.
+// Başlangıç durumu da (varsayılan bağlamla) bu fonksiyonla hesaplanır; böylece ilk evrimde skor yapay biçimde düşmez.
+function computeForwardExpertScore(botEntry, contextFeatures = []) {
+ if (!botEntry?.uBasis || !botEntry?.vBasis) return 0.5;
+ const feats = new Array(RANK_BASIS_DIM).fill(0);
+ for (let d = 0; d < RANK_BASIS_DIM; d++) {
+  feats[d] = Number.isFinite(contextFeatures[d]) ? contextFeatures[d] : ((d % 3 === 0 ? 0.65 : 0.42));
+ }
+ let acc = 0;
+ let gateSum = 0;
+ for (let h = 0; h < TENSOR_HEADS; h++) {
+  const gate = Number(botEntry.expertGates?.[h] ?? 0.75);
+  let uDot = 0;
+  let vDot = 0;
+  let mDot = 0;
+  for (let d = 0; d < RANK_BASIS_DIM; d++) {
+   uDot += feats[d] * (botEntry.uBasis[h]?.[d] ?? 0);
+   vDot += feats[d] * (botEntry.vBasis[h]?.[d] ?? 0);
+   mDot += feats[d] * (botEntry.mBasis?.[h]?.[d] ?? 0.12);
+  }
+  acc += gate * Math.tanh(uDot * vDot * (1 + 0.35 * mDot));
+  gateSum += gate;
+ }
+ return +clamp(0.5 + (acc / Math.max(1, gateSum)), 0, 1).toFixed(4);
+}
 export class BotParameterMatrix {
  constructor(dataDir) {
   this.dataDir = dataDir;
@@ -388,31 +392,11 @@ export class BotParameterMatrix {
 
  // Gerçek bağlam-duyarlı 3-Modlu Kronecker-Tucker uzman projeksiyonu: y = sum_h gate_h * tanh((x·U_h) * (V_h·x) * (1 + 0.35*(M_h·x)))
  forwardExpertScore(botEntry, contextFeatures = []) {
-  if (!botEntry?.uBasis || !botEntry?.vBasis) return 0.5;
-  const feats = new Array(RANK_BASIS_DIM).fill(0);
-  for (let d = 0; d < RANK_BASIS_DIM; d++) {
-   feats[d] = Number.isFinite(contextFeatures[d]) ? contextFeatures[d] : ((d % 3 === 0 ? 0.65 : 0.42));
-  }
-  let acc = 0;
-  let gateSum = 0;
-  for (let h = 0; h < TENSOR_HEADS; h++) {
-   const gate = Number(botEntry.expertGates?.[h] ?? 0.75);
-   let uDot = 0;
-   let vDot = 0;
-   let mDot = 0;
-   for (let d = 0; d < RANK_BASIS_DIM; d++) {
-    uDot += feats[d] * (botEntry.uBasis[h]?.[d] ?? 0);
-    vDot += feats[d] * (botEntry.vBasis[h]?.[d] ?? 0);
-    mDot += feats[d] * (botEntry.mBasis?.[h]?.[d] ?? 0.12);
-   }
-   acc += gate * Math.tanh(uDot * vDot * (1 + 0.35 * mDot));
-   gateSum += gate;
-  }
-  return +clamp(0.5 + (acc / Math.max(1, gateSum)), 0, 1).toFixed(4);
+  return computeForwardExpertScore(botEntry, contextFeatures);
  }
 
- // Kurulu Ollama/Video modellerine göre tüm 11 botun gerçek nöral omurga parametre sayılarını senkronlar
- async syncBackbones({ generatorModel, verifierModel, judge2Model, evolverModel, videoModel, coderModel } = {}) {
+ // Kurulu Ollama modellerine göre tüm 8 botun gerçek nöral omurga parametre sayılarını senkronlar
+ async syncBackbones({ generatorModel, verifierModel, judge2Model, evolverModel, coderModel } = {}) {
   const state = await this.loadState();
   const mapModel = (botId, name, extraAddB = 0) => {
    if (!name || !state.bots[botId]) return;
@@ -428,17 +412,15 @@ export class BotParameterMatrix {
   }
   mapModel('curator', evolverModel || generatorModel);
   mapModel('lessonEngine', generatorModel);
-  mapModel('videoDirector', videoModel);
   mapModel('researchAgent', evolverModel);
-  mapModel('kayseriCoach', videoModel || generatorModel);
-  mapModel('tiktokFeed', videoModel || generatorModel);
+  mapModel('kayseriCoach', generatorModel);
   mapModel('qwenCodeSandbox', coderModel || evolverModel);
   mapModel('turboQualityGuard', verifierModel || generatorModel);
   return await this.saveState(state);
  }
 
  // Tüm yapay zekâları geliştiren Meta-AI (ApexArchitect / IntelligenceTrainer / JARVIS / Claude-Swarm) tarafından
- // 11 botun milyarlarca parametresini evrimleştiren ana optimizasyon adımı!
+ // 8 botun milyarlarca parametresini evrimleştiren ana optimizasyon adımı!
  async evolveAllBotParameters({
   diagnostics = null,
   telemetry = {},
@@ -497,17 +479,16 @@ export class BotParameterMatrix {
    clamp((lv.adversarial_exploiter ?? 92) / 100, 0, 1),
    clamp((sub.questionPool ?? 88) / 100, 0, 1),
    clamp((sub.lessons ?? 85) / 100, 0, 1),
-   clamp((sub.videosAndTiktok ?? 88) / 100, 0, 1),
    clamp((sub.sandboxAndTraps ?? trapF1) / 100, 0, 1),
    clamp((swarmEval?.compositeScore ?? 88) / 100, 0, 1),
    0.96
   ];
 
-  // Cross-bot ko-adaptasyon eşleşme ağırlıkları (ör. generator <-> judge, videoDirector <-> tiktokFeed <-> kayseriCoach)
+  // Cross-bot ko-adaptasyon eşleşme ağırlıkları (ör. generator <-> judge <-> kayseriCoach)
   const genHealth = clamp((diagnostics?.botHealth?.generator?.score ?? botHealthAvg) / 100, 0.3, 1);
   const judgeHealth = clamp((diagnostics?.botHealth?.judge?.score ?? botHealthAvg) / 100, 0.3, 1);
-  const videoHealth = clamp((diagnostics?.botHealth?.videoDirector?.score ?? botHealthAvg) / 100, 0.3, 1);
-  const coAdaptGain = +((genHealth + judgeHealth + videoHealth) / 3).toFixed(4);
+  const coachHealth = clamp((diagnostics?.botHealth?.kayseriCoach?.score ?? botHealthAvg) / 100, 0.3, 1);
+  const coAdaptGain = +((genHealth + judgeHealth + coachHealth) / 3).toFixed(4);
 
   let paramUpdatesThisCycle = 0;
   const changedBots = [];
@@ -538,8 +519,8 @@ export class BotParameterMatrix {
     paramUpdatesThisCycle++;
    }
 
-   // Cross-bot sinaptik eşleme sinyalleri (videoDirector/kayseriCoach/tiktokFeed ve generator/judge birlikte optimize olur)
-   if (botId === 'tiktokFeed' || botId === 'kayseriCoach') {
+   // Cross-bot sinaptik eşleme sinyalleri (kayseriCoach ve generator/judge birlikte optimize olur)
+   if (botId === 'kayseriCoach') {
     bot.behavioralWeights.hookRetentionPacing = +clamp((bot.behavioralWeights.hookRetentionPacing || 0.96) + 0.004 * coAdaptGain, 0.8, 0.998).toFixed(3);
     bot.behavioralWeights.unitShuffleDiversity = +clamp((bot.behavioralWeights.unitShuffleDiversity || 0.96) + 0.004 * coAdaptGain, 0.8, 0.998).toFixed(3);
    } else if (botId === 'curator') {
@@ -563,9 +544,6 @@ export class BotParameterMatrix {
     bot.behavioralWeights.mnemonicNoveltyWeight = +clamp(bot.behavioralWeights.mnemonicNoveltyWeight + 0.015, 0.75, 0.99).toFixed(3);
    } else if (botId === 'qwenCodeSandbox') {
     bot.behavioralWeights.adversarialTrapSensitivity = +clamp(Math.max(bot.behavioralWeights.adversarialTrapSensitivity, trapF1 / 100), 0.90, 0.999).toFixed(3);
-   } else if (botId === 'videoDirector' || botId === 'localVideoStudio') {
-    bot.behavioralWeights.cinemaFpsQualityWeight = +clamp((bot.behavioralWeights.cinemaFpsQualityWeight || 0.9) + 0.01, 0.75, 0.99).toFixed(3);
-    bot.behavioralWeights.sceneDynamicCameraWeight = +clamp((bot.behavioralWeights.sceneDynamicCameraWeight || 0.9) + 0.01, 0.75, 0.99).toFixed(3);
    }
 
    // 2.5) Çok-Seviyeli Bilgi & Swarm Kalibrasyonu: eksik kalan bilgi seviyesini hedefli büyüt
@@ -718,7 +696,7 @@ export class BotParameterMatrix {
   };
  }
 
- // ApexArchitect ve Qwen-Code için tüm 11 botun mevcut parametre özetini ve öneri şemasını döndürür
+ // ApexArchitect ve Qwen-Code için tüm 8 botun mevcut parametre özetini ve öneri şemasını döndürür
  getMetaArchitectPromptBlock(state) {
   if (!state?.bots) return '';
   const compact = {};
@@ -741,7 +719,7 @@ export class BotParameterMatrix {
     githubPriors: b.githubPriorWeights || DEFAULT_GITHUB_PRIOR_WEIGHTS
    };
   }
-  return `TÜM 11 YAPAY ZEKÂ 64-KATMAN PARAMETRE MATRİSİ (Toplam ${state.totalEcosystemParamsBillions}B Efektif · ${state.totalDeepMoEFactoredQuadrillions ?? 1585.27}Q 64L Derin MoE · Evrim #${state.totalEvolutions}):\n${JSON.stringify(compact)}`;
+  return `TÜM 8 YAPAY ZEKÂ 64-KATMAN PARAMETRE MATRİSİ (Toplam ${state.totalEcosystemParamsBillions}B Efektif · ${state.totalDeepMoEFactoredQuadrillions ?? 1585.27}Q 64L Derin MoE · Evrim #${state.totalEvolutions}):\n${JSON.stringify(compact)}`;
  }
 
  getSummary(state) {
@@ -828,13 +806,11 @@ export class BotParameterMatrix {
   };
  }
 
- // Ollama bağlandığı anda tüm 11 botu 100x Singularity rejimine yükseltir
+ // Ollama bağlandığı anda tüm 8 botu 100x Singularity rejimine yükseltir
  async applyOllamaConnectedBoost({ installedModels = [], telemetry = {}, studentProfile = {}, trapF1 = 100, swarmEval = null } = {}) {
   const customPatches = {
    generator: { num_ctx: 12288, behavioralWeights: { distractorSophistication: 0.99, crossUnitSynthesisWeight: 0.97 } },
    judge: { temperature: 0.08, behavioralWeights: { dualAnswerSensitivity: 0.995, hallucinationVetoThreshold: 0.99 } },
-   videoDirector: { num_ctx: 10240, behavioralWeights: { sceneDynamicCameraWeight: 0.985, comedyDialogueTiming: 0.98 } },
-   tiktokFeed: { behavioralWeights: { zeroQuestionGuardWeight: 1.0, hookRetentionPacing: 0.99, unitShuffleDiversity: 0.99 } },
    kayseriCoach: { behavioralWeights: { dialectAuthenticity: 0.995, humorPunchlineSharpness: 0.99 } },
    qwenCodeSandbox: { num_ctx: 16384, behavioralWeights: { adversarialTrapSensitivity: 0.999, selfRepairConvergence: 0.995 } }
   };
@@ -849,7 +825,7 @@ export class BotParameterMatrix {
   return { ...res, installedModelsCount: installedModels.length, upgradeFactorFromPrevious: SINGULARITY_UPGRADE_FACTOR };
  }
 
- // GitHub 260,000+ proje havuzundan gelen bilgi ve odak parametrelerini doğrudan 11 botun ağırlıklarına enjekte eder
+ // GitHub 260,000+ proje havuzundan gelen bilgi ve odak parametrelerini doğrudan 8 botun ağırlıklarına enjekte eder
  async absorbGithubKnowledge({ absorbedTotal = 0, perBotAbsorbed = {}, activeDomain = null, samples = [] } = {}) {
   const state = await this.loadState();
   const focus = activeDomain?.paramFocus || {};
@@ -890,7 +866,7 @@ export class BotParameterMatrix {
   return await this.saveState(state);
  }
 
- // Tüm 11 botu 64 katman + GitHub mega-bilgi + yüksek IQ ile tek seferde aşırı geliştirir (<15ms)
+ // Tüm 8 botu 64 katman + GitHub mega-bilgi + yüksek IQ ile tek seferde aşırı geliştir (<15ms)
  async hyperEvolveAllBots({ telemetry = {}, studentProfile = {}, trapF1 = 100, swarmEval = null, diagnostics = null, githubMegaSummary = null } = {}) {
   const customPatches = {};
   for (const botId of ALL_AI_BOT_IDS) {

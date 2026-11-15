@@ -7,6 +7,9 @@ function tokenSet(text) {
  return new Set(norm(text).split(' ').filter(w => w.length >= 3));
 }
 
+// Yakın tekrar eşiği: bu oranın üzerindeki benzerlik "tıpatıp benzeri soru" sayılır.
+const DUP_LIMIT = 0.80;
+
 function jaccardSim(aSet, bSet) {
  if (!aSet.size || !bSet.size) return 0;
  let inter = 0;
@@ -22,9 +25,9 @@ const DEFAULT_REPORT = {
  approvedCount: 0,
  rejectedCount: 0,
  avgCompositeScore: 0,
- pruneThreshold: 40000,
- threshold: 40000,
- targetAfterPrune: 37000,
+ pruneThreshold: 20_000,
+ threshold: 20_000,
+ targetAfterPrune: 18_500,
  totalPrunedLifetime: 0,
  totalPrunedEver: 0,
  lastRunRemoved: 0,
@@ -44,8 +47,8 @@ export class PoolCuratorBot {
   this.dataDir = dataDir;
   this.brainDir = resolve(dataDir, 'ai-brain');
   this.reportFile = resolve(this.brainDir, 'curator-report.json');
-  this.pruneThreshold = Number.isFinite(opts.pruneThreshold) ? opts.pruneThreshold : 40000;
-  this.targetAfterPrune = Number.isFinite(opts.targetAfterPrune) ? opts.targetAfterPrune : 37000;
+  this.pruneThreshold = Number.isFinite(opts.pruneThreshold) ? opts.pruneThreshold : 20_000;
+  this.targetAfterPrune = Number.isFinite(opts.targetAfterPrune) ? opts.targetAfterPrune : 18_500;
   this.minKeepPerUnit = Number.isFinite(opts.minKeepPerUnit) ? opts.minKeepPerUnit : 5;
   this.minKeepPerTier = Number.isFinite(opts.minKeepPerTier) ? opts.minKeepPerTier : 15;
  }
@@ -61,7 +64,8 @@ export class PoolCuratorBot {
   try {
    const parsed = JSON.parse(await readFile(this.reportFile, 'utf8'));
    const merged = { ...DEFAULT_REPORT, ...(parsed || {}) };
-   if ((Number(merged.pruneThreshold) || 0) < this.pruneThreshold) {
+   // Upgrade persisted reports from older larger-capacity settings.
+   if (Number(merged.pruneThreshold) !== this.pruneThreshold || Number(merged.targetAfterPrune) !== this.targetAfterPrune) {
     merged.pruneThreshold = this.pruneThreshold;
     merged.threshold = this.pruneThreshold;
     merged.targetAfterPrune = this.targetAfterPrune;
@@ -109,7 +113,7 @@ export class PoolCuratorBot {
   }
 
   // 3) Soru tipi ve açı zenginliği (0..18)
-  const typeBonus = { vaka: 10, istisna: 10, karsilastirma: 9, neden_sonuc: 9, uygulama: 8, kavram: 6 };
+  const typeBonus = { vaka: 10, istisna: 10, en_iyi_secim: 10, karsilastirma: 9, neden_sonuc: 9, uygulama: 8, kavram: 6 };
   score += typeBonus[q.questionType] || 5;
   const angleBonus = { surpriz_baglam: 8, karsilastirmali_tuzak: 8, ters_eleme_istisna: 7, saha_vakasi: 7, dogrudan_tanim: 5 };
   score += angleBonus[q.questionAngle] || 3;
@@ -146,13 +150,13 @@ export class PoolCuratorBot {
   return Math.max(0, Math.min(100, Math.round(score)));
  }
 
- // Havuzu baştan sona tarar; 40.000'i geçince kalitesizleri ve kopyaları siler, ünite & kolay/orta/zor tabanını korur
+ // Havuzu tarar; 20.000'e ulaşınca en zayıf tekrarları ayıklayıp 18.500 civarına indirir.
  async scanAndPrune({ items, researchMemory = null, adaptiveQuality = null, forcePrune = false, threshold = this.pruneThreshold, targetKeep = this.targetAfterPrune }) {
   const prevReport = await this.loadReport();
   const approved = items.filter(q => q.status === 'approved');
   const rejected = items.filter(q => q.status === 'rejected');
 
-  // Ünite bazlı benzerlik & skor taraması (büyük 40k havuzda da <1sn kalmak için son pencere + boyut filtresi + parmak izi)
+  // Ünite bazlı benzerlik ve kalite taraması; parmak izi ile karşılaştırma maliyeti sınırlanır.
   const byUnit = new Map();
   for (const q of approved) {
    if (!byUnit.has(q.unitId)) byUnit.set(q.unitId, []);
@@ -166,38 +170,58 @@ export class PoolCuratorBot {
    const prelim = unitList.map(q => ({ q, raw: this.scoreQuestion(q, researchMemory, 0) }))
     .sort((a, b) => b.raw - a.raw);
 
-   // Hızlı tam/yüksek örtüşme tespiti için normalize edilmiş n-gram parmak izi + Jaccard penceresi
+   // Benzerlik: soru kökü + doğru cevap Jaccard'ı VE seçenek takımı örtüşmesi.
+   // Böylece yalnızca kökü benzeyen değil, aynı şıklarla yeniden yazılmış "tıpatıp
+   // benzeri" sorular da yakın tekrar sayılır. Aynı doğru cevabı paylaşanlarda eşik
+   // biraz daha esnektir (aynı kavramın tekrarı da tekrardır).
    const keptFingerprints = new Map();
    const keptSampleSets = [];
    for (const { q, raw } of prelim) {
     const tokens = tokenSet(`${q.question} ${q.answer}`);
+    const optSet = new Set((q.options || []).map(o => norm(o)));
+    const answerNorm = norm(q.answer);
     const sig = [...tokens].sort().slice(0, 6).join('|');
     let maxSim = 0;
 
+    const compareTo = other => {
+     const jac = jaccardSim(tokens, other.tokens);
+     let inter = 0;
+     if (optSet.size && other.optSet.size) for (const o of optSet) if (other.optSet.has(o)) inter++;
+     const optRatio = optSet.size ? inter / Math.max(4, optSet.size) : 0;
+     let sim = jac;
+     // Aynı doğru cevabı paylaşan iki soru: kökü bir miktar benziyorsa aynı kavramın
+     // tekrarıdır (yalnızca kalıp sözleri ortak olduğu için eşik düşük tutulur).
+     if (answerNorm && answerNorm === other.answerNorm && jac >= 0.45) sim = Math.max(sim, DUP_LIMIT);
+     // Şık takımı neredeyse tamamen aynıysa soru fiilen aynıdır.
+     if (optRatio >= 0.9) sim = Math.max(sim, DUP_LIMIT);
+     return sim;
+    };
+
     if (sig && keptFingerprints.has(sig)) {
-     maxSim = Math.max(maxSim, jaccardSim(tokens, keptFingerprints.get(sig)));
+     maxSim = Math.max(maxSim, compareTo(keptFingerprints.get(sig)));
     }
-    if (maxSim < 0.80 && tokens.size > 0) {
-     // Son 48 tutulmuş soru içinde tarama + uzunluk alt sınırı (|A|/|B| < 0.75 ise Jaccard >= 0.80 olamaz)
-     const startIdx = Math.max(0, keptSampleSets.length - 48);
+    if (maxSim < DUP_LIMIT && tokens.size > 0) {
+     // Son 64 tutulmuş soru içinde tarama (pencere maliyeti sınırlı tutulur)
+     const startIdx = Math.max(0, keptSampleSets.length - 64);
      for (let k = startIdx; k < keptSampleSets.length; k++) {
       const other = keptSampleSets[k];
-      if (other.size * 4 < tokens.size * 3 || tokens.size * 4 < other.size * 3) continue;
-      const s = jaccardSim(tokens, other);
+      if (other.tokens.size * 4 < tokens.size * 3 || tokens.size * 4 < other.tokens.size * 3) continue;
+      const s = compareTo(other);
       if (s > maxSim) {
        maxSim = s;
-       if (maxSim >= 0.80) break;
+       if (maxSim >= DUP_LIMIT) break;
       }
      }
     }
 
     const penalty = maxSim >= 0.78 ? 35 : maxSim >= 0.65 ? 15 : 0;
-    const isDup = maxSim >= 0.80 && unitList.length > 6;
+    const isDup = maxSim >= DUP_LIMIT && unitList.length > 6;
     if (isDup) {
      nearDuplicateIds.add(q.id);
     } else {
-     if (sig && !keptFingerprints.has(sig)) keptFingerprints.set(sig, tokens);
-     keptSampleSets.push(tokens);
+     const entry = { tokens, optSet, answerNorm };
+     if (sig && !keptFingerprints.has(sig)) keptFingerprints.set(sig, entry);
+     keptSampleSets.push(entry);
     }
     const composite = Math.max(0, Math.min(100, Math.round(raw - penalty)));
     q.curatorScore = composite;
@@ -242,7 +266,7 @@ export class PoolCuratorBot {
    if (s.nearDup && canDrop(s.q)) markDrop(s.q);
   }
 
-  // 2) 40.000 eşiği aşıldıysa (veya forcePrune istendiyse) en düşük kaliteli soruları hedefe kadar sil
+  // 2) 20.000 eşiğine ulaşıldıysa (veya forcePrune istendiyse) kaliteyi koruyarak hedefe kadar sil
   const aboveThreshold = approved.length >= threshold;
   if ((aboveThreshold || forcePrune) && (approved.length - toDelete.size) > targetKeep) {
    const candidates = scored
@@ -265,7 +289,7 @@ export class PoolCuratorBot {
      id: it.id,
      unitId: it.unitId,
      score: match?.composite ?? 0,
-     reason: match?.nearDup ? 'Yakın tekrar soru' : '40k+ havuz kalite çıtası altında kaldı',
+     reason: match?.nearDup ? 'Yakın tekrar soru' : '20k havuz sınırında düşük kalite',
      question: String(it.question || '').slice(0, 120)
     });
    } else {

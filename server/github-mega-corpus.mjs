@@ -91,30 +91,12 @@ export const GITHUB_OSS_DOMAINS = [
   paramFocus: { dialectAuthenticity: 0.995, formulaClarityScore: 0.99 }
  },
  {
-  id: 'neural-video-generation',
-  label: 'Yerel Sinirsel Video Sentezi & Sahne Koreografisi',
-  query: 'local ai video generation wan2 comfyui ffmpeg license:apache-2.0',
-  targetBots: ['videoDirector', 'localVideoStudio', 'tiktokFeed'],
-  flagshipRepos: ['Wan-AI/Wan2.2', 'Lightricks/LTX-Video', 'zai-org/CogVideoX', 'comfyanonymous/ComfyUI', 'FuouM/Short-Video-Maker', 'harry0703/MoneyPrinterTurbo'],
-  techniques: ['0-API yerel GPU & FFmpeg MP4 render hattı', 'Dinamik zoompan & hareketli sahne kurgusu', 'Otomatik ses + altyazı mux senkronu', 'Düşük bellekli turbo MP4 kuyruğu', 'Çoklu stil tema motoru'],
-  paramFocus: { cinemaFpsQualityWeight: 0.99, sceneDynamicCameraWeight: 0.985 }
- },
- {
-  id: 'tiktok-shortform-retention',
-  label: 'Dikey Kısa Video Akışı, Terim Vurgusu & Kanca Ritmi',
-  query: 'short form vertical video pipeline ffmpeg captions license:mit',
-  targetBots: ['tiktokFeed', 'videoDirector', 'kayseriCoach'],
-  flagshipRepos: ['remotion-dev/remotion', 'FFmpeg/FFmpeg', 'resvg/resvg-js', 'fluent-ffmpeg/node-fluent-ffmpeg', 'SubtitleEdit/subtitleedit', 'm1guelpf/auto-subtitle'],
-  techniques: ['Sorusuz doğrudan sınav cevabı kancası', '3 saniyelik görsel terim patlaması', 'Ünite karıştırma & eski video yerinde yenileme', 'SVG → Resvg → MP4 ultra hızlı kare üretimi', 'Yüksek kontrastlı mobil dikey kadraj'],
-  paramFocus: { zeroQuestionGuardWeight: 1.0, hookRetentionPacing: 0.99 }
- },
- {
   id: 'neural-tts-audio',
   label: 'Sinirsel Türkçe Seslendirme (TTS/ASR) & Akustik Senkron',
   query: 'piper tts whisper speech synthesis local license:mit',
-  targetBots: ['localVideoStudio', 'videoDirector', 'lessonEngine'],
+  targetBots: ['lessonEngine'],
   flagshipRepos: ['rhasspy/piper', 'SYSTRAN/faster-whisper', 'coqui-ai/TTS', 'thewh1teagle/kokoro-onnx', 'ggerganov/whisper.cpp', 'suno-ai/bark'],
-  techniques: ['Yerel ONNX sinirsel Türkçe ses sentezi', 'Konuşma hızı & vurgu duraksama kalibrasyonu', 'AAC/MP3 tek-geçişli video birleştirme', 'Çoklu karakter ses kadrosu yönlendirme', 'Sıfır bulut anahtarlı tarayıcı ses köprüsü'],
+  techniques: ['Yerel ONNX sinirsel Türkçe ses sentezi', 'Konuşma hızı & vurgu duraksama kalibrasyonu', 'AAC/MP3 tek-geçişli ses kodlama', 'Çoklu karakter ses kadrosu yönlendirme', 'Sıfır bulut anahtarlı tarayıcı ses köprüsü'],
   paramFocus: { audioMuxSyncGain: 0.995, zeroApiFallbackReliability: 1.0 }
  },
  {
@@ -166,7 +148,7 @@ export const GITHUB_OSS_DOMAINS = [
   id: 'comedy-coaching-persona',
   label: 'Kişilik Modelleme, Mizah & Duygusal Öğrenci Koçluğu',
   query: 'conversational coaching persona dialogue style license:mit',
-  targetBots: ['kayseriCoach', 'lessonEngine', 'tiktokFeed'],
+  targetBots: ['kayseriCoach', 'lessonEngine'],
   flagshipRepos: ['stanford-oval/storm', 'karpathy/nanoGPT', 'oobabooga/text-generation-webui', 'SillyTavern/SillyTavern', 'lm-sys/FastChat', 'abetlen/llama-cpp-python'],
   techniques: ['Doğal Kayserili koç üslubu + kanıt çengeli', 'Yanlış cevapta motive edici esprili düzeltme', 'Süre & seri bazlı dinamik koç tepkisi', 'Akrostiş + hikâyeli hafıza çengel üretimi', 'Tekrar düşürme (repeat_penalty) kalibrasyonu'],
   paramFocus: { humorPunchlineSharpness: 0.99, dialectAuthenticity: 0.995 }
@@ -310,13 +292,10 @@ export class GithubMegaCorpus {
     judge: 22_000,
     curator: 20_000,
     lessonEngine: 18_000,
-    videoDirector: 16_000,
     researchAgent: 21_000,
     kayseriCoach: 14_000,
-    tiktokFeed: 15_000,
     qwenCodeSandbox: 25_000,
     turboQualityGuard: 23_000,
-    localVideoStudio: 17_000,
     nexusTitanFusion: 28_000,
     coderCouncil: 27_000,
     localAiTeam: 19_000

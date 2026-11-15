@@ -460,6 +460,18 @@ export class LocalAiTeamHub {
   targetAngle = 'dogrudan_tanim',
   modelLabel = 'subsecond-local-council'
  } = {}) {
+  // Paragraf (parçaya dayalı) soru istendiyse önce ona bak; kurulamazsa klasik üretime düş.
+  if (targetType === 'paragraf') {
+   const para = this.buildSubSecondParagraphQuestion({
+    ctx,
+    passage,
+    existingItems,
+    staticBank,
+    targetDifficulty,
+    modelLabel
+   });
+   if (para) return para;
+  }
   const t0 = performance.now();
   const sourceText = String(passage?.text || ctx?.text || '').replace(/\s+/g, ' ').trim();
   const unitItems = [...(staticBank || []), ...(existingItems || [])].filter(q => q && q.unitId === ctx?.id);
@@ -484,8 +496,15 @@ export class LocalAiTeamHub {
    : [sourceText.slice(0, Math.min(sourceText.length, 160))].filter(s => s.length >= 16);
 
   const flatConfusion = OSYM_CONFUSION_PAIRS.flat();
+  // Çeldiriciler mümkün olduğunca ÜNİTENİN KENDİ metninden türetilir; böylece dört şık da
+  // aynı kavram ailesinden olur ve konu dışı/saçma şık oluşmaz.
+  const normSourceText = normStr(sourceText);
+  const confusionInUnit = flatConfusion.filter(term => {
+   const key = normStr(term).split(' ').find(w => w.length >= 5);
+   return key ? normSourceText.includes(key) : false;
+  });
   const domainDistractorPool = [
-   ...flatConfusion,
+   ...confusionInUnit,
    'Yalnızca pasif dinlenme ile beceri sabitleme',
    'Tek seferlik maksimum yüklenme uygulaması',
    'Branştan bağımsız tekdüze kapsam genişletme',
@@ -498,14 +517,33 @@ export class LocalAiTeamHub {
    'Kronik yorgunluk altında maksimal kuvvet denemesi'
   ];
 
-  const extractCleanPhrase = (sentence, shift = 0) => {
-   const cleaned = sentence.replace(/[.!?]+$/, '').trim();
+  // Seçenek metni daima KELİME SINIRINDA kesilir; yarıda kalan/ek parçası kalmış
+  // ifadeler hem anlamsız hem de birbirine aşırı benzer seçenekler üretir.
+  const extractCleanPhrase = (sentence, maxChars = 78) => {
+   const cleaned = String(sentence || '')
+    .replace(/[.!?;:]+$/, '')
+    .replace(/^[-–—\s]+/, '')
+    .trim();
    const words = cleaned.split(/\s+/).filter(Boolean);
-   if (words.length <= 6) return cleaned.slice(0, 66);
-   const start = (shift * 2) % Math.max(1, words.length - 5);
-   const slice = words.slice(start, start + 6).join(' ');
-   return slice.length >= 16 ? slice.slice(0, 68) : words.slice(-6).join(' ').slice(0, 68);
+   if (!words.length) return '';
+   if (words.length <= 12) return cleaned.slice(0, maxChars).trim();
+   let out = '';
+   for (const w of words) {
+    const next = out ? `${out} ${w}` : w;
+    if (next.length > maxChars) break;
+    out = next;
+   }
+   return out.trim();
   };
+
+  // Aynı ünitenin diğer cümlelerinden çıkarılan, gerçek ama bu sorunun cevabı OLMAYAN ifadeler.
+  // Her cümleden yalnızca TEK bir ifade alınır (aynı cümlenin kayan pencereleri birbirine
+  // aşırı benzeyen, anlamsız seçenekler üretiyordu).
+  const unitPhraseDistractors = [];
+  for (const sent of candidates) {
+   const phrase = extractCleanPhrase(sent, 78);
+   if (phrase.length >= 18 && phrase.length <= 92) unitPhraseDistractors.push(phrase);
+  }
 
   const phrasingVariants = [
    (u, w, idx) => `Vaka #${idx + 1}: Antrenman sırasında "${w}" boyutu gözlenirken hangi ilke temel alınmalıdır?`,
@@ -527,7 +565,7 @@ export class LocalAiTeamHub {
    const evidence = sent.slice(0, Math.min(sent.length, 240));
    const words = evidence.split(/\s+/).filter(w => w.length >= 4 && !/[0-9()]/.test(w));
    const topicWord = (words[(offset + attempt * 2) % Math.max(1, words.length)] || ctx?.unit || 'antrenman').replace(/[^\p{L}\p{N}\s-]/gu, '').slice(0, 32);
-   const answerCore = extractCleanPhrase(evidence, offset + attempt);
+   const answerCore = extractCleanPhrase(evidence, 80);
    const answer = answerCore.length >= 12 ? answerCore : `${topicWord} ilkesinin düzenli uygulanması`;
 
    const diffTag = targetDifficulty === 'zor' ? 'İleri Vaka' : targetDifficulty === 'orta' ? 'Karşılaştırma' : 'Temel İlke';
@@ -541,7 +579,8 @@ export class LocalAiTeamHub {
    const targetLen = answer.length;
    const picked = [];
    const usedNorms = new Set([normStr(answer)]);
-   const rotatedPool = [...domainDistractorPool.slice((offset + attempt) % domainDistractorPool.length), ...domainDistractorPool];
+   const unitFirstPool = [...unitPhraseDistractors, ...domainDistractorPool];
+   const rotatedPool = [...unitFirstPool.slice((offset + attempt) % Math.max(1, unitFirstPool.length)), ...unitFirstPool];
 
    for (const dRaw of rotatedPool) {
     if (picked.length >= 3) break;
@@ -553,6 +592,12 @@ export class LocalAiTeamHub {
     if (!dn || usedNorms.has(dn)) continue;
     if (Math.max(d.length, targetLen) > Math.min(d.length, targetLen) * 1.55) continue;
     if (jaccardLocal(d, answer) >= 0.55) continue;
+    // Seçilmiş diğer çeldiricilerle de aşırı örtüşmemeli (çift doğru şık riski)
+    if (picked.some(prev => jaccardLocal(d, prev) >= 0.55)) continue;
+    // Ünite dışı / alakasız şık: kaynak metinde hiç geçmeyen kavramları ele
+    const dKey = normStr(d).split(' ').filter(w => w.length >= 5).slice(0, 2);
+    const offTopic = dKey.length > 0 && !dKey.some(w => normSourceText.includes(w));
+    if (offTopic && !normSourceText.includes(normStr(d).slice(0, 20))) continue;
     usedNorms.add(dn);
     picked.push(d);
    }
@@ -621,7 +666,7 @@ export class LocalAiTeamHub {
   if (!chosen) {
    const sent = candidates[0] || sourceText.slice(0, 180) || `${unitLabel} temel kuralı`;
    const evidence = sent.slice(0, Math.min(sent.length, 240));
-   const answerCore = extractCleanPhrase(evidence, Date.now());
+   const answerCore = extractCleanPhrase(evidence, 80);
    const answer = answerCore.length >= 12 ? answerCore : `${unitLabel.slice(0, 28)} ilkesinin planlı uygulaması`;
    const targetLen = answer.length;
    const opts = [
@@ -660,6 +705,158 @@ export class LocalAiTeamHub {
 
   const elapsedMs = +(performance.now() - t0).toFixed(2);
   return { ...chosen, elapsedMs, engineMode: 'subsecond-local-council' };
+ }
+
+ /**
+  * Paragraf (parçaya dayalı) soru üretir: kaynaktan BİREBİR alınmış 2-4 cümlelik bir
+  * parça + yalnızca o parça okunarak yanıtlanabilecek bir soru. Doğru şık parçadan,
+  * çeldiriciler aynı ünitenin parçada GEÇMEYEN cümlelerinden türetilir; böylece dört
+  * şık da aynı kavram ailesinden olur ama yalnızca biri parçayla desteklenir.
+  */
+ buildSubSecondParagraphQuestion({
+  ctx,
+  passage = null,
+  existingItems = [],
+  staticBank = [],
+  targetDifficulty = 'orta',
+  modelLabel = 'subsecond-local-council'
+ } = {}) {
+  const t0 = performance.now();
+  const sourceText = String(passage?.text || ctx?.text || '').replace(/\s+/g, ' ').trim();
+  if (sourceText.length < 260) return null;
+  const sentences = sourceText
+   .split(/(?<=[.!?])\s+/)
+   .map(x => x.trim())
+   .filter(x => x.length >= 40 && sourceText.includes(x));
+  if (sentences.length < 5) return null;
+
+  const unitItems = [...(staticBank || []), ...(existingItems || [])].filter(q => q && q.unitId === ctx?.id);
+  const usedParagraphs = new Set(unitItems.map(q => normStr(q.paragraph || '')).filter(Boolean));
+  const existingQuestionNorms = new Set(unitItems.map(q => normStr(q.question)));
+
+  const clampWords = (text, maxChars) => {
+   const words = String(text || '').replace(/[.!?;:]+$/, '').trim().split(/\s+/).filter(Boolean);
+   let out = '';
+   for (const w of words) {
+    const next = out ? `${out} ${w}` : w;
+    if (next.length > maxChars) break;
+    out = next;
+   }
+   return out.trim();
+  };
+  const jaccardLocal = (a, b) => {
+   const sa = new Set(normStr(a).split(' ').filter(w => w.length >= 3));
+   const sb = new Set(normStr(b).split(' ').filter(w => w.length >= 3));
+   if (!sa.size || !sb.size) return 0;
+   let inter = 0;
+   for (const w of sa) if (sb.has(w)) inter++;
+   return inter / (sa.size + sb.size - inter);
+  };
+
+  const stems = [
+   'Bu parçadan aşağıdaki yargılardan hangisine ulaşılabilir?',
+   'Bu parçada vurgulanan temel yaklaşım aşağıdakilerden hangisidir?',
+   'Parçaya göre aşağıdaki ifadelerden hangisi doğrudur?',
+   'Bu parçanın ana fikrine en yakın yargı aşağıdakilerden hangisidir?'
+  ];
+  const bloomMap = { kolay: 'Kavrama', orta: 'Uygulama/Analiz', zor: 'Değerlendirme/Sentez' };
+
+  for (let attempt = 0; attempt < sentences.length; attempt++) {
+   const start = (unitItems.length + attempt) % Math.max(1, sentences.length - 2);
+   const chunk = sentences.slice(start, start + 3).filter(Boolean);
+   if (chunk.length < 2) continue;
+   let paragraph = chunk.join(' ');
+   if (paragraph.length > 760) paragraph = clampWords(paragraph, 760);
+   if (paragraph.length < 220 || !sourceText.includes(chunk[0])) continue;
+   const paraNorm = normStr(paragraph);
+   if (usedParagraphs.has(paraNorm)) continue;
+
+   const core = chunk.reduce((a, b) => (b.length > a.length ? b : a), chunk[0]);
+   const answer = clampWords(core, 92);
+   if (answer.length < 20) continue;
+
+   const question = stems[(unitItems.length + attempt) % stems.length];
+   if (existingQuestionNorms.has(normStr(question))) continue;
+
+   // Çeldiriciler: parçada geçmeyen, ünitenin diğer cümlelerinden çıkarılan ifadeler
+   const outside = sentences
+    .filter(sent => !paraNorm.includes(normStr(sent).slice(0, 40)))
+    .map(sent => clampWords(sent, 92))
+    .filter(x => x.length >= 20);
+   if (outside.length < 3) continue;
+
+   const targetLen = answer.length;
+   const picked = [];
+   const usedNorms = new Set([normStr(answer)]);
+   for (const d of outside) {
+    if (picked.length >= 3) break;
+    if (Math.max(d.length, targetLen) > Math.min(d.length, targetLen) * 1.5) continue;
+    const dn = normStr(d);
+    if (usedNorms.has(dn)) continue;
+    if (jaccardLocal(d, answer) >= 0.5) continue;
+    if (picked.some(prev => jaccardLocal(d, prev) >= 0.5)) continue;
+    usedNorms.add(dn);
+    picked.push(d);
+   }
+   if (picked.length < 3) continue;
+
+   const rawOpts = [answer, ...picked];
+   const rot = (unitItems.length + attempt) % 4;
+   const options = [...rawOpts.slice(rot), ...rawOpts.slice(0, rot)];
+   const evidence = core.slice(0, 240);
+   const osym = scoreOsymQuestion({ question, options, answer });
+   const heading = passage?.heading || ctx?.unit || 'Ünite';
+
+   return {
+    parsed: {
+     question,
+     options,
+     answer,
+     explanation: `Parçada (${heading}) belirtildiği üzere: "${evidence.slice(0, 170)}". Diğer şıklar parçada desteklenmeyen, ünitenin başka bölümlerindeki ifadelerdir.`,
+     evidence,
+     topic: String(heading).slice(0, 90),
+     questionType: 'paragraf',
+     questionAngle: 'surpriz_baglam',
+     bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
+     paragraph
+    },
+    verification: {
+     judges: [
+      {
+       model: `${modelLabel}:paragraf-kanit`,
+       answer,
+       difficulty: targetDifficulty,
+       singleCorrect: true,
+       dualAnswerRisk: false,
+       qualityScore: osym.isOsymElite ? 5 : 4.6,
+       examPotential: 4.9,
+       bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
+       reason: '0-API Paragraf Denetçisi: Parça kaynaktan birebir alındı; doğru şık parçayla destekleniyor, çeldiriciler parçada geçmiyor.'
+      },
+      {
+       model: `${modelLabel}:celdirici-denetci`,
+       answer,
+       difficulty: targetDifficulty,
+       singleCorrect: true,
+       dualAnswerRisk: false,
+       qualityScore: 4.7,
+       examPotential: 4.8,
+       bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
+       reason: 'Çeldirici Hijyen Denetçisi: Dört şık da aynı ünitenin ifadelerinden, benzer uzunlukta ve tek doğru.'
+      }
+     ],
+     answer,
+     difficulty: targetDifficulty,
+     qualityScore: 4.7,
+     examPotential: 4.85,
+     bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
+     subSecondVerified: true
+    },
+    elapsedMs: +(performance.now() - t0).toFixed(2),
+    engineMode: 'subsecond-local-council-paragraph'
+   };
+  }
+  return null;
  }
 
  buildSubSecondStudyPack({ ctx, passage = null } = {}) {

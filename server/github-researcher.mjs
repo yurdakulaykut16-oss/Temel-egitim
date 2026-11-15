@@ -45,28 +45,10 @@ const OSS_TRACKS = [
   focus: 'Bilişsel düzey ayrımı: kolay/orta/zor soru derinliği'
  },
  {
-  id: 'flow_motion_video',
-  query: 'ffmpeg programmatic video motion animation license:mit',
-  targetBot: 'videoDirector',
-  focus: '0-API Google Flow tarzı 3D/FFmpeg hareketli sahne ve kamera koreografisi'
- },
- {
-  id: 'oss_neural_video_engines',
-  query: 'Wan2.2 LTX-Video ComfyUI short-video-maker local ai video generator',
-  targetBot: 'localVideoStudio',
-  focus: 'ComfyUI + Wan2.2 / LTX-2 / Short-Video-Maker / MoneyPrinterTurbo 0-API yerel AI video üretimi'
- },
- {
   id: 'turkish_nlp_edu',
   query: 'turkish nlp educational flashcards',
   targetBot: 'lessonEngine',
   focus: 'Türkçe pedagojik metin analizi, terim çıkarımı ve kavram haritalama'
- },
- {
-  id: 'tiktok_continuous_pipeline',
-  query: 'automated vertical short video pipeline ffmpeg license:mit',
-  targetBot: 'tiktokFeed',
-  focus: 'Arka planda kesintisiz TikTok video yenileme, eski sürüm değiştirme ve MP4 dönme havuzu'
  },
  {
   id: 'ast_security_sandbox',
@@ -260,9 +242,6 @@ const DEFAULT_OSS_STATE = {
   }
   if (/dpo|preference|contrastive|negative/i.test(lower)) {
    bulletHints.push('DPO karşıt eğitim: Reddedilen tuzaklı taslakları kaliteli onaylı sorularla doğrudan karşıt çift olarak eğit.');
-  }
-  if (/ffmpeg|zoompan|motion|animation|scene|camera/i.test(lower)) {
-   bulletHints.push('Google Flow hareketli sahne tekniği: Statik kare yerine zoom/pan kamera hareketi + zamanlı vurgu alt yazısı kullan.');
   }
   if (!bulletHints.length) {
    bulletHints.push(`${track.focus}: "${cleanDesc.slice(0, 140) || repo.full_name}" açık kaynak yaklaşımını yerel kalite motoruna uygula.`);
