@@ -142,23 +142,26 @@ test('Proje açılışı (sıfır tıklama): 100-yöntem yarışı, GitHub proto
  const base = `http://127.0.0.1:${port}`;
 
  try {
-  // Hiçbir düğmeye basmadan sadece /status ve /local-team polling ile boot işlemlerinin kendi kendine tamamlandığını doğrula
-  let st = null;
-  for (let i = 0; i < 120; i++) {
-   const r = await fetch(`${base}/api/ollama/status`);
-   st = await r.json();
-   if ((st.localAiTeam?.cyclesCompleted || 0) >= 1 && (st.qwenCodeLab?.tournamentsRun || 0) >= 1 && (st.qwenCodeLab?.prototypesPromotedToProject || 0) >= 1) {
-    break;
-   }
-   await new Promise(r => setTimeout(r, 100));
-  }
+  // Kullanıcının açık talimatı: proje açıldığı andan itibaren yalnızca İKİ şey
+  // sürekli çalışır — (1) kaliteli soru üretimi (Motor 1), (2) onaylı soruların
+  // sürekli kalite iyileştirmesi (Motor 2). İkincil ajanlar (0-API yerel takım,
+  // 100-yöntem yarışı, GitHub prototip laboratuvarı) boot anında KENDİLİĞİNDEN BAŞLAMAZ.
+  await new Promise(r => setTimeout(r, 1500));
+  let st = await (await fetch(`${base}/api/ollama/status`)).json();
+  assert.equal(st.autoRunning, true, 'Motor 1 (sürekli soru üretimi) boot anında çalışmalı');
+  assert.equal(st.qualityLoop?.running, true, 'Motor 2 (sürekli kalite iyileştirme) boot anında çalışmalı');
+  assert.equal(st.localAiTeam?.cyclesCompleted || 0, 0, 'İkincil 0-API takım boot anında kendiliğinden çalışmamalı');
+  assert.equal(st.qwenCodeLab?.tournamentsRun || 0, 0, '100-yöntem yarışı boot anında kendiliğinden başlamamalı');
+  assert.equal(st.qwenCodeLab?.prototypesPromotedToProject || 0, 0, 'GitHub prototip laboratuvarı boot anında kendiliğinden başlamamalı');
 
-  assert.ok(st?.localAiTeam, `status yanıtı eksik/hatalı: ${JSON.stringify(st)}`);
-  assert.ok(st.localAiTeam.cyclesCompleted >= 1, '0-API yerel takım boot anında otomatik başlamalıydı');
-  assert.ok(st.localAiTeam.lastCycleDurationMs < 200, 'Yerel takım döngüsü milisaniyelerde bitmeliydi');
-  assert.ok(st.qwenCodeLab.tournamentsRun >= 1, '100-yöntem yarışı düğmeye basılmadan otomatik başlamalıydı');
-  assert.equal(st.qwenCodeLab.totalMethodsBenchmarked >= 100, true);
-  assert.ok(st.qwenCodeLab.prototypesPromotedToProject >= 1, 'GitHub prototip testi düğmeye basılmadan otomatik başlamalıydı');
+  // Ancak talep edildiğinde 0-API yerel takım döngüsü hâlâ milisaniyeler içinde çalışır (sürekli değil, istek üzerine).
+  const teamCycleRes = await fetch(`${base}/api/ollama/local-team/cycle`, { method: 'POST', headers: { Origin: base } });
+  assert.equal(teamCycleRes.status, 200);
+  const teamCycle = await teamCycleRes.json();
+  assert.equal(teamCycle.ok, true);
+  assert.ok(teamCycle.durationMs < 200, `0-API yerel takım döngüsü milisaniyelerde bitmeliydi; ${teamCycle.durationMs}ms`);
+  st = await (await fetch(`${base}/api/ollama/status`)).json();
+  assert.ok(st.localAiTeam?.cyclesCompleted >= 1, 'Talep edilen 0-API takım döngüsü tamamlanmalıydı');
 
   // Arka planda 8 yerel uzman modelin tamamı 0-API ile oluşturulmuş veya hazır olmalı
   const assignRes = await fetch(`${base}/api/ollama/auto-assign-roles`, {
@@ -184,12 +187,13 @@ test('Proje açılışı (sıfır tıklama): 100-yöntem yarışı, GitHub proto
   assert.equal(teamJson.ok, true);
   assert.equal(teamJson.summary.activeTeamMembersCount, 5);
 
-  // Manuel düğmelerin kaldırıldığını ve UI'nin sıfır tıklama otomatik duruma geçtiğini doğrula
+  // UI yalnızca iki motoru sürekli çalışır olarak göstermeli (eski manuel düğmeler ve çok-ajan panelleri kaldırıldı)
   const { readFile } = await import('node:fs/promises');
   const uiCode = await readFile(new URL('../src/OllamaStudio.tsx', import.meta.url), 'utf8');
   assert.equal(uiCode.includes('🏆 Qwen Code: 100 Yöntem Dene'), false, 'Manuel 100-yöntem düğmesi kaldırılmış olmalı');
   assert.equal(uiCode.includes('🧪 Web + GitHub Tarzı Prototip Yap'), false, 'Manuel GitHub prototip düğmesi kaldırılmış olmalı');
-  assert.equal(uiCode.includes('localAiTeam'), true, 'UI 0-API yerel takım hızını ve ÖSYM puanını göstermeli');
+  assert.equal(uiCode.includes('Sürekli Soru Üretimi'), true, 'UI Motor 1 (sürekli soru üretimi) panelini göstermeli');
+  assert.equal(uiCode.includes('Sürekli Kalite İyileştirme'), true, 'UI Motor 2 (sürekli kalite iyileştirme) panelini göstermeli');
 
   // Tüm takım (localAiTeam + 100-yöntem turnuvası + MultiAiSwarmEvaluator) tek çağrıda <1sn içinde paralel çalışmalı!
   const sprintRes = await fetch(`${base}/api/ollama/team-sprint`, {

@@ -207,7 +207,8 @@ test('API Uç Noktaları (/api/ollama/nexus-model/*) ve UI-dahil tam proje geli�
   assert.equal(devRes.withinOneSecond, true);
 
   const studioUi = await readFile(new URL('../src/OllamaStudio.tsx', import.meta.url), 'utf8');
-  assert.ok(studioUi.includes('nexusModel'), 'OllamaStudio UI Nexus-Titan model panelini içermeli');
+  assert.ok(studioUi.includes('Sürekli Soru Üretimi'), 'OllamaStudio UI Motor 1 (sürekli soru üretimi) panelini içermeli');
+  assert.ok(studioUi.includes('Sürekli Kalite İyileştirme'), 'OllamaStudio UI Motor 2 (sürekli kalite iyileştirme) panelini içermeli');
   const mainUi = await readFile(new URL('../src/main.tsx', import.meta.url), 'utf8');
   assert.ok(mainUi.includes('nexus-live-theme.css'), 'main.tsx canlı evrim temasını içe aktarmalı');
   assert.ok(mainUi.includes('nexusPill'), 'main.tsx üst çubukta canlı Nexus-Titan durumunu göstermeli');

@@ -36,7 +36,9 @@ import { createSummaryGrounding, SUMMARY_GROUNDING_DEFAULT_MIN } from './summary
 import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
 
 const execFileAsync = promisify(execFile);
-const modelInferenceQueue = new SerialTaskQueue();
+const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
+const DEFAULT_AUTO_CONCURRENCY = Number.isFinite(envConcurrency) && envConcurrency >= 1 ? Math.min(8, Math.round(envConcurrency)) : 4;
+const modelInferenceQueue = new SerialTaskQueue(DEFAULT_AUTO_CONCURRENCY);
 
 const contexts = JSON.parse(await readFile(new URL('./contexts.json', import.meta.url), 'utf8'));
 const questionBank = JSON.parse(await readFile(new URL('./question-bank.json', import.meta.url), 'utf8'));
@@ -95,7 +97,6 @@ const summaryGrounding = createSummaryGrounding({
 
 const dataDir = resolve(process.env.TEMPO_DATA_DIR || '.tempo-data');
 const dataFile = resolve(dataDir, 'questions.json');
-const studyFile = resolve(dataDir, 'study-materials.json');
 const settingsFile = resolve(dataDir, 'settings.json');
 const ledgerFile = resolve(dataDir, 'ollama-created.json');
 const tracesFile = resolve(dataDir, 'rejected-traces.jsonl');
@@ -103,7 +104,6 @@ const storageLimit = 100_000_000_000;
 const QUESTION_POOL_CAPACITY = 20_000;
 const QUESTION_POOL_REFILL_TARGET = 18_500;
 const MAX_QUESTIONS = 20_000;
-const MAX_STUDY_ITEMS = 50000;
 const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
 
 const verifier100 = new HundredWayVerifier(dataDir, process.cwd());
@@ -204,7 +204,7 @@ async function triggerAllAgentsCascade(scoutState = null) {
   const parallel = await Promise.allSettled([
    triggerLocalTeamFastCycle(cachedConnectedModels, { withLiveTeam: false }).then(() => 'localAiTeam'),
    triggerContinuousIntelligenceTick(3).then(() => 'intelligenceTrainer'),
-   triggerHyperBotEvolveCycle().then(() => 'botParameterMatrix+coderCouncil'),
+   runHyperBotEvolveCycleInternal().then(() => 'botParameterMatrix+coderCouncil'),
    triggerNexusFusionCycle(cachedConnectedModels, { withLiveLlm: false }).then(() => 'nexusTitanFusionModel'),
    agentOrchestrator.runMission({
     framework: 'fusion',
@@ -393,11 +393,9 @@ let qwenProtoBusy = false;
 let localTeamBusy = false;
 let coderCouncilBusy = false;
 let nexusFusionBusy = false;
-let hyperBotEvolveBusy = false;
 let researchBusy = false;
 let curatorBusy = false;
 let lessonBusy = false;
-let coachRunning = false;
 let ollamaUpgradeBusy = false;
 let lastInteractiveApiAt = Date.now();
 let lastOllamaConnectedSig = '';
@@ -426,7 +424,6 @@ let lastPoolCapCheckAt = 0;
 let lastLessonEnhanceAt = 0;
 let lastTrainerTickAt = 0;
 let lastApexTimeAt = 0;
-let lastCoachTrainPrepCount = 0;
 let lastApexCycleAtAttempt = -20;
 // Tam otonom arka plan exec zaman damgaları & kilitler (kullanıcı hiçbir düğmeye basmadan çalışır)
 let precisionAuditBusy = false;
@@ -436,8 +433,6 @@ let levelUpBusy = false;
 let nexusDevelopBusy = false;
 let nexusBuildBusy = false;
 let nexusAutoApplyBusy = false;
-let coderPullBootAttempted = false;
-let sftPrepareBootAttempted = false;
 let lastPrecisionAuditAt = 0;
 let lastHundredAiSolveAt = 0;
 let lastHundredAiEvolveAt = 0;
@@ -448,9 +443,9 @@ let lastNexusAutoApplyAt = 0;
 
 const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:8b';
 const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:4b';
-const defaultConcurrency = 1;
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
-const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 180000;
+const QUESTION_HARD_TIMEOUT_MS = 25_000; // Bir soru üretimi için mutlak üst sınır (kullanıcı gereksinimi)
+const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.min(QUESTION_HARD_TIMEOUT_MS, Math.round(envDefaultTimeout)) : QUESTION_HARD_TIMEOUT_MS;
 // Hedef üretim temposu: her 5 saniyede bir yeni soru. Model çağrıları tek kuyruktan
 // sırayla geçtiği için bu bir "en az bekleme" süresidir; üretim daha uzun sürerse
 // sıradaki soru hemen peşine gelir (asla üst üste binmez).
@@ -580,13 +575,19 @@ async function autoRunningEnabled() {
  return v.autoRunning !== false;
 }
 async function autoConcurrencyLimit() {
- // Uygulama genelinde Ollama'ya aynı anda yalnızca tek istek gönderilir.
- return defaultConcurrency;
+ // Paralel yuva sayısı: ayar (kalıcı) yoksa ortam değişkeni, o da yoksa 4.
+ // 1'e sabitlenmiş eski davranış TEMPO_AUTO_CONCURRENCY=1 ya da ayar ile geri alınır.
+ const v = await readSettings();
+ const n = Number(v.autoConcurrency);
+ const limit = Number.isFinite(n) && n >= 1 ? Math.min(8, Math.round(n)) : DEFAULT_AUTO_CONCURRENCY;
+ if (modelInferenceQueue.maxConcurrent !== limit) modelInferenceQueue.setMaxConcurrent(limit);
+ return limit;
 }
 async function autoTimeoutMs() {
  const v = await readSettings();
  const n = Number.isFinite(v.autoTimeoutMs) ? Math.round(v.autoTimeoutMs) : defaultAutoTimeoutMs;
- return Math.max(1000, Math.min(300000, n));
+ // 25 saniye mutlak üst sınır: bu süreyi aşan soru havuza giremez, yuva hemen boşalır.
+ return Math.max(1000, Math.min(QUESTION_HARD_TIMEOUT_MS, n));
 }
 async function getPipelineConfig() {
  // Hafif ama kaliteyi koruyan varsayılan: tek soru, kitap pasajı, self-correction
@@ -601,13 +602,12 @@ async function getPipelineConfig() {
  const passageMode = v.passageMode === 'summary-only' ? 'summary-only' : 'full-book';
  const smartDifficulty = true;
  const batchVerify = false;
- const generateStudyMaterials = false;
  const autoEvolve = false;
  const subSecondAllBots = v.subSecondAllBots === true;
  const subSecondBudgetMs = Number.isFinite(v.subSecondBudgetMs) ? Math.max(250, Math.min(980, Math.round(v.subSecondBudgetMs))) : SUBSECOND_BOT_BUDGET_MS;
  return {
   batchPerCall, pipelineMode, fastThink, selfCorrection,
-  passageMode, smartDifficulty, batchVerify, generateStudyMaterials, autoEvolve, preset, turboQualityLock,
+  passageMode, smartDifficulty, batchVerify, autoEvolve, preset, turboQualityLock,
   subSecondAllBots, subSecondBudgetMs
  };
 }
@@ -695,7 +695,6 @@ const telemetry = {
  startedAt: Date.now(),
  attemptsTotal: 0,
  approvedTotal: 0,
- studyItemsApproved: 0,
  rejectedPreflight: 0,
  rejectedJudges: 0,
  dualAnswerBlocked: 0,
@@ -708,7 +707,6 @@ const telemetry = {
  evalNs: 0,
  loadNs: 0,
  recentApprovedTimestamps: [],
- recentStudyTimestamps: [],
  rejectionReasons: {},
  groundingRejected: 0
 };
@@ -729,12 +727,9 @@ function recordEvalMetrics(apiResponse) {
 function getTelemetrySnapshot() {
  const now = Date.now();
  telemetry.recentApprovedTimestamps = telemetry.recentApprovedTimestamps.filter(t => now - t <= 600_000);
- telemetry.recentStudyTimestamps = telemetry.recentStudyTimestamps.filter(t => now - t <= 600_000);
  const recentWindowMin = Math.max(0.25, Math.min(10, (now - telemetry.startedAt) / 60_000));
  const questionsPerMinute = +(telemetry.recentApprovedTimestamps.length / recentWindowMin).toFixed(2);
- const studyPerMinute = +(telemetry.recentStudyTimestamps.length / recentWindowMin).toFixed(2);
- const totalItemsPerMin = questionsPerMinute + studyPerMinute;
- const secondsPerItem = totalItemsPerMin > 0 ? +(60 / totalItemsPerMin).toFixed(2) : 0;
+ const secondsPerItem = questionsPerMinute > 0 ? +(60 / questionsPerMinute).toFixed(2) : 0;
  const avgGenMs = telemetry.genCalls ? Math.round(telemetry.totalGenMs / telemetry.genCalls) : 0;
  const avgVerifyMs = telemetry.verifyCalls ? Math.round(telemetry.totalVerifyMs / telemetry.verifyCalls) : 0;
  const tokensPerSecond = telemetry.evalNs > 0 ? +((telemetry.evalTokens / (telemetry.evalNs / 1e9))).toFixed(1) : 0;
@@ -743,14 +738,12 @@ function getTelemetrySnapshot() {
  return {
   attemptsTotal: telemetry.attemptsTotal,
   approvedTotal: telemetry.approvedTotal,
-  studyItemsApproved: telemetry.studyItemsApproved,
   rejectedPreflight: telemetry.rejectedPreflight,
   rejectedJudges: telemetry.rejectedJudges,
   dualAnswerBlocked: telemetry.dualAnswerBlocked,
   refinedSucceeded: telemetry.refinedSucceeded,
   approvalRate,
   questionsPerMinute,
-  studyPerMinute,
   secondsPerItem,
   avgGenMs,
   avgVerifyMs,
@@ -786,42 +779,6 @@ async function load() {
    _qCache = [];
    _qSig = null;
    return [];
-  }
-  throw e;
- }
-}
-
-let _studyCache = null;
-let _studySig = null;
-async function loadStudy() {
- try {
-  const st = await stat(studyFile);
-  const sig = `${st.mtimeMs}:${st.size}`;
-  if (_studyCache && _studySig === sig) {
-   return {
-    flashcards: _studyCache.flashcards.slice(),
-    matchings: _studyCache.matchings.slice(),
-    drills: _studyCache.drills.slice()
-   };
-  }
-  const data = JSON.parse(await readFile(studyFile, 'utf8'));
-  const normObj = {
-   flashcards: Array.isArray(data?.flashcards) ? data.flashcards : [],
-   matchings: Array.isArray(data?.matchings) ? data.matchings : [],
-   drills: Array.isArray(data?.drills) ? data.drills : []
-  };
-  _studyCache = normObj;
-  _studySig = sig;
-  return {
-   flashcards: normObj.flashcards.slice(),
-   matchings: normObj.matchings.slice(),
-   drills: normObj.drills.slice()
-  };
- } catch (e) {
-  if (e.code === 'ENOENT') {
-   _studyCache = { flashcards: [], matchings: [], drills: [] };
-   _studySig = null;
-   return { flashcards: [], matchings: [], drills: [] };
   }
   throw e;
  }
@@ -881,10 +838,8 @@ async function saveJsonAtomic(filePath, dataObj) {
   const st = await stat(filePath);
   const sig = `${st.mtimeMs}:${st.size}`;
   if (filePath === dataFile) { _qCache = Array.isArray(dataObj) ? dataObj : []; _qSig = sig; }
-  if (filePath === studyFile) { _studyCache = dataObj; _studySig = sig; }
  } catch {
   if (filePath === dataFile) { _qCache = null; _qSig = null; }
-  if (filePath === studyFile) { _studyCache = null; _studySig = null; }
  }
  if (_storageCache) {
   _storageCache = { ..._storageCache, generated: _storageCache.generated + Math.max(0, Buffer.byteLength(text, 'utf8') / 10) };
@@ -892,7 +847,6 @@ async function saveJsonAtomic(filePath, dataObj) {
 }
 
 const save = items => saveJsonAtomic(dataFile, items);
-const saveStudy = study => saveJsonAtomic(studyFile, study);
 
 let saveQueue = Promise.resolve();
 function withSaveLock(fn) {
@@ -1633,128 +1587,6 @@ KONU ANLATIMI: ${sourceText}`;
  return parsed;
 }
 
-// --- KARTLAR, EŞLEŞTİRMELER VE TEKRAR EGZERSİZLERİ ÜRETİMİ (Study Pack) ---
-function validateFlashcard(fc, ctx, passage, existingCards) {
- if (!fc || typeof fc !== 'object') return null;
- const { front, back, mnemonic, evidence, difficulty } = fc;
- if (![front, back, evidence].every(x => typeof x === 'string' && x.trim().length >= 5)) return null;
- if (front.length > 350 || back.length > 650) return null;
- if (!evidenceExists(evidence, ctx, passage)) return null;
- if (existingCards.some(x => x.unitId === ctx.id && (norm(x.front) === norm(front) || similarity(x.front, front) >= 0.85))) return null;
- const diff = DIFFICULTIES.includes(difficulty) ? difficulty : 'orta';
- return {
-  id: randomUUID(), unitId: ctx.id, book: ctx.book, unit: ctx.unit,
-  passageId: passage?.id || `${ctx.id}#00`, passageHeading: passage?.heading || '', pages: passage?.pages || [],
-  front: front.trim(), back: back.trim(),
-  mnemonic: typeof mnemonic === 'string' ? mnemonic.trim().slice(0, 220) : '',
-  evidence: evidence.trim(), difficulty: diff, status: 'approved', createdAt: new Date().toISOString()
- };
-}
-
-function validateMatching(m, ctx, passage, existingMatchings) {
- if (!m || typeof m !== 'object' || !Array.isArray(m.pairs) || m.pairs.length < 3 || m.pairs.length > 6) return null;
- if (typeof m.title !== 'string' || m.title.trim().length < 4 || typeof m.evidence !== 'string' || !evidenceExists(m.evidence, ctx, passage)) return null;
- const cleanPairs = [];
- const lefts = new Set(), rights = new Set();
- for (const p of m.pairs) {
-  if (!p || typeof p.left !== 'string' || typeof p.right !== 'string') return null;
-  const l = p.left.trim(), r = p.right.trim();
-  if (l.length < 2 || r.length < 3 || l.length > 120 || r.length > 220) return null;
-  if (lefts.has(norm(l)) || rights.has(norm(r))) return null;
-  // Eşleştirmede de iki sağ veya iki sol seçenek birbirine karışmamalı
-  for (const prev of cleanPairs) {
-   if (similarity(prev.left, l) >= 0.8 || similarity(prev.right, r) >= 0.8) return null;
-  }
-  lefts.add(norm(l));
-  rights.add(norm(r));
-  cleanPairs.push({ left: l, right: r });
- }
- if (existingMatchings.some(x => x.unitId === ctx.id && norm(x.title) === norm(m.title))) return null;
- const diff = DIFFICULTIES.includes(m.difficulty) ? m.difficulty : 'orta';
- return {
-  id: randomUUID(), unitId: ctx.id, book: ctx.book, unit: ctx.unit,
-  passageId: passage?.id || `${ctx.id}#00`, passageHeading: passage?.heading || '', pages: passage?.pages || [],
-  title: m.title.trim(), pairs: cleanPairs,
-  explanation: typeof m.explanation === 'string' ? m.explanation.trim().slice(0, 400) : '',
-  evidence: m.evidence.trim(), difficulty: diff, status: 'approved', createdAt: new Date().toISOString()
- };
-}
-
-function validateDrill(d, ctx, passage, existingDrills) {
- if (!d || typeof d !== 'object') return null;
- const type = ['fill_blank', 'true_false', 'recall'].includes(d.type) ? d.type : 'fill_blank';
- if (![d.prompt, d.answer, d.evidence].every(x => typeof x === 'string' && x.trim().length >= 2)) return null;
- if (d.prompt.trim().length < 10 || !evidenceExists(d.evidence, ctx, passage)) return null;
- if (existingDrills.some(x => x.unitId === ctx.id && (norm(x.prompt) === norm(d.prompt) || similarity(x.prompt, d.prompt) >= 0.85))) return null;
- const diff = DIFFICULTIES.includes(d.difficulty) ? d.difficulty : 'kolay';
- return {
-  id: randomUUID(), unitId: ctx.id, book: ctx.book, unit: ctx.unit,
-  passageId: passage?.id || `${ctx.id}#00`, passageHeading: passage?.heading || '', pages: passage?.pages || [],
-  type, prompt: d.prompt.trim(), answer: d.answer.trim(),
-  hint: typeof d.hint === 'string' ? d.hint.trim().slice(0, 150) : '',
-  explanation: typeof d.explanation === 'string' ? d.explanation.trim().slice(0, 400) : '',
-  evidence: d.evidence.trim(), difficulty: diff, status: 'approved', createdAt: new Date().toISOString()
- };
-}
-
-async function produceStudyPack(ctx, model, passage, cfg, signal, policy = null) {
- const sourceText = passage ? passage.text : ctx.text;
- const studyNote = policy?.studyAddendum ? `\nEK KURAL: ${policy.studyAddendum}` : '';
- const prompt = `Sen Türkçe antrenörlük temel eğitim materyali üreticisisin. Aşağıdaki konu anlatımından:
-1) 4 adet ÇEVİRMELİ BİLGİ KARTI ("flashcards": [{front, back, mnemonic, difficulty:"kolay"|"orta"|"zor", evidence}])
-2) 2 adet KAVRAM EŞLEŞTİRME SETİ ("matchings": [{title, pairs:[{left, right} x4 çift], explanation, difficulty, evidence}]) — her çift birbirinden kesin olarak ayrışsın, karışıklık olmasın!
-3) 3 adet TEKRAR EGZERSİZİ ("drills": [{type:"fill_blank"|"true_false"|"recall", prompt, answer, hint, explanation, difficulty, evidence}]) — fill_blank türünde boşluğu "___" ile göster ve answer tek net kavram olsun; true_false türünde answer sadece "Doğru" veya "Yanlış" olsun.
-Her öğenin "evidence" alanı aşağıdaki KONU ANLATIMI'ndan birebir en az 15 karakterlik alıntı olsun.${studyNote}
-JSON döndür: {"flashcards":[...], "matchings":[...], "drills":[...]}
-Kitap: ${ctx.book} · Ünite: ${ctx.unit} (${passage?.heading || 'Özet'})
-KONU ANLATIMI: ${sourceText}`;
-
- const numCtx = Math.min(8192, Math.max(2560, Math.ceil((prompt.length + 1400) / 3)));
- let parsed = null;
- if (cfg.subSecondAllBots !== false) {
-  try {
-   const r = await runModel(model, prompt, 0.72, signal || AbortSignal.timeout(760), 950, { fastThink: cfg.fastThink, numCtx });
-   parsed = r.parsed;
-   telemetry.genCalls++;
-   telemetry.totalGenMs += r.elapsed;
-  } catch (e) {
-   if (!isTransportOrTimeoutError(e)) throw e;
-   parsed = localAiTeam.buildSubSecondStudyPack({ ctx, passage });
-  }
- } else {
-  const { parsed: p, elapsed } = await runModel(model, prompt, 0.72, signal, 2200, { fastThink: cfg.fastThink, numCtx });
-  parsed = p;
-  telemetry.genCalls++;
-  telemetry.totalGenMs += elapsed;
- }
-
- return withSaveLock(async () => {
-  const study = await loadStudy();
-  const totalCurrent = study.flashcards.length + study.matchings.length + study.drills.length;
-  if (totalCurrent >= MAX_STUDY_ITEMS) return { added: 0 };
-
-  let added = 0;
-  for (const fc of (Array.isArray(parsed?.flashcards) ? parsed.flashcards : [])) {
-   const v = validateFlashcard(fc, ctx, passage, study.flashcards);
-   if (v) { v.model = model; study.flashcards.push(v); added++; }
-  }
-  for (const m of (Array.isArray(parsed?.matchings) ? parsed.matchings : [])) {
-   const v = validateMatching(m, ctx, passage, study.matchings);
-   if (v) { v.model = model; study.matchings.push(v); added++; }
-  }
-  for (const d of (Array.isArray(parsed?.drills) ? parsed.drills : [])) {
-   const v = validateDrill(d, ctx, passage, study.drills);
-   if (v) { v.model = model; study.drills.push(v); added++; }
-  }
-  if (added > 0) {
-   await saveStudy(study);
-   telemetry.studyItemsApproved += added;
-   for (let i = 0; i < added; i++) telemetry.recentStudyTimestamps.push(Date.now());
-  }
-  return { added, study };
- });
-}
-
 // --- TEKLİ DOĞRUDAN ÜRETİM (Manuel /api/ollama/generate ve direct mod, <1sn garantili) ---
 async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal, onPhase, opts = {}) {
  const tStart = performance.now();
@@ -2143,11 +1975,7 @@ async function runBatchedCycle(model, verifierModel, judge2Model, limit, timeout
    masterController.signal.addEventListener('abort', onAbort, { once: true });
    const t = setTimeout(() => slotCtrl.abort(), timeoutMs);
    try {
-    const studyTask = (cfg.generateStudyMaterials && idx === 0 && !slotCtrl.signal.aborted)
-     ? produceStudyPack(ctx, model, selectPassageForUnit(ctx, items, cfg.passageMode), cfg, slotCtrl.signal, policy).catch(() => null)
-     : null;
     const { drafts } = await produceDraftBatch(ctx, model, items, cfg, slotCtrl.signal, slotEntry, policy, jarvisMemory, researchMemory, adaptiveQuality, studentProfile, apexState, trainerState);
-    if (studyTask) await studyTask;
     return drafts;
    } catch (e) {
     autoLastError = e.name === 'AbortError' ? 'Üretim zaman aşımına uğradı veya durduruldu.' : e.message;
@@ -2395,7 +2223,7 @@ async function waitForPipelineIdle(maxMs = 60_000) {
  return true;
 }
 
-async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = 180000, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
+async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = QUESTION_HARD_TIMEOUT_MS, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
  if (busy || autoControllers.size > 0) throw Error('Soru üretim hattı zaten çalışıyor; istekler sırayla tamamlanacak.');
  const cfg = await getPipelineConfig();
  busy = true; phase = 'loading'; lastError = '';
@@ -2956,19 +2784,16 @@ async function triggerCoderOvertrainSprint(installedModels = [], epochsPerModel 
  }
 }
 
-async function triggerHyperBotEvolveCycle() {
- if (hyperBotEvolveBusy) return null;
- hyperBotEvolveBusy = true;
+async function runHyperBotEvolveCycleInternal() {
  try {
-  const [items, study, policy, lessonsSummary, studentProfile] = await Promise.all([
-   load(), loadStudy(), evolver.loadPolicy(),
+  const [items, policy, lessonsSummary, studentProfile] = await Promise.all([
+   load(), evolver.loadPolicy(),
    lessonEngine.listSummary(contexts.length),
    evolver.loadStudentProfile()
   ]);
   const swarmRes = await multiAiEval.evaluateAndEvolve({
    paramMatrix: null,
    items,
-   study,
    contexts,
    passagesByUnit,
    lessonsSummary,
@@ -2988,8 +2813,8 @@ async function triggerHyperBotEvolveCycle() {
   if (evoRes?.state) cachedParamState = evoRes.state;
   lastHyperBotEvolveAt = Date.now();
   return { swarmRes, evoRes };
- } finally {
-  hyperBotEvolveBusy = false;
+ } catch (err) {
+  return null;
  }
 }
 
@@ -3147,49 +2972,6 @@ async function autoApplyNexusProposals() {
  }
 }
 
-// Çok Görevli SFT + DPO veri seti hazırlığı (eski düğme kaldırıldı) — hazır olduğunda kendiliğinden çalışır
-async function autoPrepareTrainingData(force = false) {
- const items = await load().catch(() => []);
- const approvedNow = items.filter(x => x.status === 'approved').length;
- if (approvedNow < 50) return null;
- if (!force && approvedNow - lastCoachTrainPrepCount < 25) return null;
- lastCoachTrainPrepCount = approvedNow;
- const py = process.env.PYTHON || 'python3';
- try {
-  await execFileAsync(py, ['training/prepare.py', '--input', dataFile, '--study', studyFile, '--output', resolve(dataDir, 'training'), '--multitask', '--dpo', '--traces', tracesFile], { timeout: 120000 });
-  sftPrepareBootAttempted = true;
-  return { ok: true, approvedCount: approvedNow };
- } catch {
-  return null;
- }
-}
-
-// Güçlü açık kaynak kodlama modellerini proje açılışında Ollama'ya kendiliğinden kurar (eski düğme kaldırıldı)
-async function autoPullCoderStackAtBoot() {
- if (coderPullBootAttempted) return null;
- coderPullBootAttempted = true;
- if (process.env.TEMPO_NO_AUTO_PULL === '1' || process.env.TEMPO_OFFLINE_ONLY === '1') return null;
- try {
-  const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(2500) });
-  if (!r.ok) return null;
-  const tags = ((await r.json()).models || []).map(x => x.name);
-  if (!tags.length || tags.some(m => /^fake:/i.test(m))) return null;
-  const requested = CODER_STACK_RECOMMENDATIONS.slice(0, 6);
-  const has = (tag) => tags.includes(tag);
-  const missing = requested.filter(m => !has(m));
-  if (!missing.length) return { ok: true, alreadyInstalled: true };
-  const pullRes = await hardwareOpt.pullMissingProfileModels({
-   ollamaBaseUrl: base,
-   installedModels: tags,
-   modelsOverride: missing
-  });
-  await ensureRolesAutoAssigned(tags, true).catch(() => {});
-  return pullRes;
- } catch {
-  return null;
- }
-}
-
 async function triggerLocalTeamFastCycle(installedModels = [], { withLiveTeam = false } = {}) {
  if (localTeamBusy) return null;
  localTeamBusy = true;
@@ -3328,10 +3110,16 @@ async function autoScheduler() {
        if (!a.invalid && !a.duplicates) {
         const ctx = contexts[autoCursor++ % contexts.length];
         const waveStart = Date.now();
-        await launchAutoUnit(ctx, model, verifierModel, judge2Model, await autoTimeoutMs(), cfg);
-        // Her 5 saniyede bir yeni soru: üretim erken biterse kalan süre kadar dinlen.
-        const restMs = QUESTION_INTERVAL_MS - (Date.now() - waveStart);
-        if (restMs > 0) await sleep(restMs);
+        const timeoutMs = await autoTimeoutMs();
+        if (limit <= 1) {
+         await launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg);
+         // Her 5 saniyede bir yeni soru: üretim erken biterse kalan süre kadar dinlen.
+         const restMs = QUESTION_INTERVAL_MS - (Date.now() - waveStart);
+         if (restMs > 0) await sleep(restMs);
+        } else {
+         // Paralel turbo: yuva boşaldıkça hemen doldur; model çağrıları kuyrukta sınırlı sayıda çalışır.
+         launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg);
+        }
        }
       }
      }
@@ -3340,7 +3128,7 @@ async function autoScheduler() {
   } catch (e) {
    autoLastError = e.message || String(e);
   }
-  await sleep(1500);
+  await sleep((await autoConcurrencyLimit()) > 1 ? 250 : 1500);
  }
 }
 
@@ -3362,14 +3150,13 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    await ensureRolesAutoAssigned(models, true).catch(() => {});
    await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: models, profile: cachedHardwareProfile }).catch(() => {});
   }
-  const [model, evolverModel, verifierModel, judge2Model, jCfg, items, study, studentProfile, policy, lessonsSummary] = await Promise.all([
+  const [model, evolverModel, verifierModel, judge2Model, jCfg, items, studentProfile, policy, lessonsSummary] = await Promise.all([
    selectedModel(),
    selectedEvolverModel(await selectedModel()),
    selectedVerifierModel(await selectedModel()),
    selectedJudgeModel('judge2Model', defaultJudge2Model),
    jarvis.loadConfig(),
    load(),
-   loadStudy(),
    evolver.loadStudentProfile(),
    evolver.loadPolicy(),
    lessonEngine.listSummary(contexts.length),
@@ -3402,7 +3189,6 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
    multiAiEval.evaluateAndEvolve({
     paramMatrix,
     items,
-    study,
     contexts,
     passagesByUnit,
     lessonsSummary,
@@ -3543,227 +3329,252 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
  }
 }
 
-// Açılışta yalnızca model gerektirmeyen (0-API) yerel görevler bir kez, sırayla çalışır.
-// Model çağıran arka plan ajanları varsayılan olarak kapalıdır; isteyen
-// TEMPO_ENABLE_BACKGROUND_AGENTS=1 ile açabilir. Böylece açılış yükü düşük kalır.
-async function runZeroApiBootBurst() {
- try {
-  await triggerLocalTeamFastCycle().catch(() => {});
-  await triggerQwenTournament({ useLiveLlm: false }).catch(() => {});
-  await triggerQwenGithubPrototypeLab({ forceWebMine: false }).catch(() => {});
- } catch {}
+// ===== SÜREKLİ KALİTE İYİLEŞTİRME DÖNGÜSÜ (Loop 2) — proje açıldığı andan itibaren hiç durmaz =====
+// Loop 1 (autoScheduler) soru ÜRETİR; bu döngü onaylı havuzdaki soruları 0-100 arası puanlayıp en
+// zayıf olanları (üretim hattı BOŞTAYKEN, yani üretim önceliklidir) modele yeniden yazdırır, iki
+// bağımsız hakemden geçirir ve skoru en az QUALITY_MIN_GAIN kadar yükselmeyen yenisini ASLA kayda almaz.
+const QUALITY_TARGET_SCORE = 74;
+const QUALITY_MIN_GAIN = 4;
+const QUALITY_LOOP_SLEEP_MS = 15_000;
+const QUALITY_MODEL_COOLDOWN_MS = 45_000;
+const QUALITY_ATTEMPT_COOLDOWN_MS = 12 * 60_000;
+const QUALITY_RECENT_LIMIT = 8;
+let qualityLoopBusy = false;
+let qualityImproveBusy = false;
+let qualityLoopPasses = 0;
+const qualityAttempts = new Map();
+const qualityTelemetry = {
+ lastPassAt: null,
+ lastModelAttemptAt: 0,
+ averageQuality: 0,
+ weakCount: 0,
+ scannedTotal: 0,
+ attemptedTotal: 0,
+ improvedTotal: 0,
+ rejectedRewriteTotal: 0,
+ prunedTotal: 0,
+ lastImprovedAt: null,
+ recentImprovements: []
+};
+
+function qualityImprovementEligible(q) {
+ if (!q || q.status !== 'approved' || typeof q.id !== 'string') return false;
+ const last = qualityAttempts.get(q.id);
+ return !last || Date.now() - last > QUALITY_ATTEMPT_COOLDOWN_MS;
 }
 
-// PROJE BAŞLADIĞI ANDAN İTİBAREN HİÇ DURMADAN MİLİSANİYELER İÇİNDE ÇALIŞAN 0-API TAKIM, 100-YÖNTEM YARIŞI, GITHUB PROTOTİP LAB & ÖSYM SORU KOMİSYONU DÖNGÜSÜ
-async function backgroundCoachLoop() {
- if (coachRunning) return;
- coachRunning = true;
+function qualityAttemptsRemember(id) {
+ if (qualityAttempts.size >= 5000) {
+  const oldest = qualityAttempts.keys().next();
+  for (let i = 0; i < 1500 && !oldest.done; i++) {
+   qualityAttempts.delete(oldest.value);
+   oldest.next();
+  }
+ }
+ qualityAttempts.set(id, Date.now());
+}
+
+function getQualityLoopSnapshot() {
+ return {
+  running: !autoLoopStopping,
+  passes: qualityLoopPasses,
+  target: QUALITY_TARGET_SCORE,
+  status: qualityImproveBusy ? 'rewriting' : (qualityLoopBusy ? 'scoring' : 'waiting'),
+  averageQuality: qualityTelemetry.averageQuality,
+  weakCount: qualityTelemetry.weakCount,
+  scannedTotal: qualityTelemetry.scannedTotal,
+  attemptedTotal: qualityTelemetry.attemptedTotal,
+  improvedTotal: qualityTelemetry.improvedTotal,
+  rejectedRewriteTotal: qualityTelemetry.rejectedRewriteTotal,
+  prunedTotal: qualityTelemetry.prunedTotal,
+  lastPassAt: qualityTelemetry.lastPassAt,
+  lastImprovedAt: qualityTelemetry.lastImprovedAt,
+  recentImprovements: qualityTelemetry.recentImprovements.slice(0, QUALITY_RECENT_LIMIT)
+ };
+}
+
+async function rewriteQuestionForQuality({ model, question, ctx, passage }) {
+ const sourceText = (passage?.text || ctx.text || '').slice(0, 3200);
+ const current = {
+  question: question.question,
+  options: question.options,
+  answer: question.answer,
+  explanation: question.explanation,
+  difficulty: question.difficulty,
+  questionType: question.questionType,
+  questionAngle: question.questionAngle
+ };
+ const prompt = `Sen ÖSYM/AÖF soru editörüsün. Aşağıda kitabın aynı ünitesinden çıkmış, tek doğru cevaplı çoktan seçmeli bir soru ve onun dayandığı KONU KAYNAĞI verilmiştir. Görevin: BU SORUYU AYNI KAVRAMI ve AYNI DOĞRU CEVABI koruyarak ölçülebilir biçimde DAHA KALİTELİ yeniden yazmak.
+
+KURAL 1 (AYNI DOĞRU CEVAP): Doğru cevabın kavramı birebir korunur; "answer" alanı, yeni ürettiğin 4 seçeneğin İÇİNDE aynen yer alır.
+KURAL 2 (ÇELDİRİCİLER): Dört şık da aynı kavram ailesinden, gerçek aday yanılgılarına dayanır ve birbirine yakın uzunlukta (en uzun ≤ 1.6x en kısa) ve aynı edâdadır; "yukarıdakilerin hepsi", "hiçbiri", "yalnız I ve II" gibi maddeler YASAKTIR.
+KURAL 3 (KÖK): Soru kökü tek bir soru sorar; ≤ 220 karakterdir; olumsuzluk eki varsa kök bunu "değildir/söylenemez/yanlıştır" gibi açıkça belirtir.
+KURAL 4 (KANIT): "evidence" alanı, aşağıdaki KONU KAYNAĞI'ndan BİREBİR en az 15 karakterlik alıntıdır; kaynakta olmayan hiçbir bilgi kanıtlanmış sayılamaz.
+KURAL 5 (AÇIKLAMA): "explanation" en fazla 4 cümlede neden doğru cevabın doğru, çeldiricilerin neden yanlış olduğunu açıklar.
+KURAL 6: "difficulty" kolay|orta|zor, "questionType" kavram|vaka|karsilastirma|neden_sonuc|istisna|uygulama|en_iyi_secim, "questionAngle" dogrudan_tanim|ters_eleme_istisna|saha_vakasi|karsilastirmali_tuzak|surpriz_baglam değerlerinden biri olmalı.
+Yalnızca JSON döndür: {"topic":"...","question":"...","options":["a","b","c","d"],"answer":"...","explanation":"...","evidence":"...","difficulty":"orta","questionType":"kavram","questionAngle":"dogrudan_tanim","bloomLevel":"hatırlama|kavrama|uygulama|analiz|sentez|değerlendirme"}
+
+Kitap: ${ctx.book} · Ünite: ${ctx.unit} (${passage?.heading || 'Ünite özeti'})
+KONU KAYNAĞI: ${sourceText}
+
+MEVCUT SORU (iyileştirilecek):
+${JSON.stringify(current, null, 1)}`;
+ const numCtx = Math.min(8192, Math.max(2560, Math.ceil((prompt.length + 1200) / 3)));
+ const { parsed } = await runModel(model, prompt, 0.55, AbortSignal.timeout(150_000), 1100, { fastThink: true, numCtx });
+ return parsed && typeof parsed === 'object' ? parsed : null;
+}
+
+async function qualityImprovementPass() {
+ if (qualityLoopBusy) return;
+ qualityLoopBusy = true;
+ qualityLoopPasses += 1;
  try {
-  const [hwState, hwInfo] = await Promise.all([hardwareOpt.loadState(), hardwareOpt.detectLocalHardware()]);
-  cachedHardwareProfile = hardwareOpt.resolveActiveProfile(hwState, hwInfo);
+  const items = await load().catch(() => []);
+  const approved = items.filter(q => q?.status === 'approved');
+  if (!approved.length) {
+   qualityTelemetry.lastPassAt = new Date().toISOString();
+   qualityTelemetry.averageQuality = 0;
+   qualityTelemetry.weakCount = 0;
+   return;
+  }
 
-  // Milisaniye 0 (Proje açılır açılmaz kullanıcı hiçbir düğmeye basmadan paralel başlar!):
-  // 0-API Yerel Çoklu-AI Takımı önce (<25ms) koşar; ardından 44+ Modelli Konsey, 100-Yöntem Yarışı, GitHub Prototip Lab, 100x Bilgi Damıtma & OSS Tarama paralel başlar!
-  await triggerLocalTeamFastCycle().catch(() => {});
-  await Promise.allSettled([
-   runTvgfbfScoutAndTriggerAll({ enableLiveProbe: process.env.TEMPO_OFFLINE_ONLY !== '1' && process.env.TEMPO_ALLOW_REMOTE_FETCH === '1', force: true }),
-   triggerCoderOvertrainSprint([], 2),
-   triggerQwenTournament({ useLiveLlm: false }),
-   triggerQwenGithubPrototypeLab({ forceWebMine: false }),
-   triggerContinuousIntelligenceTick(contexts.length),
-   triggerGithubOssMine(false),
-   triggerGithubMegaAbsorb({ batchSize: 1500, liveGithub: false }),
-   triggerNexusFusionCycle([], { withLiveLlm: false }),
-   triggerHyperBotEvolveCycle(),
-   runPrecisionAuditAuto(),
-   runHundredAiSolveAuto(),
-   runHundredAiEvolveAuto(),
-   runProjectLevelUpAuto(),
-   runNexusDevelopAuto([]),
-   autoApplyNexusProposals(),
-   autoPrepareTrainingData(true),
-   autoPullCoderStackAtBoot()
-  ]);
-  await sleep(200);
-  while (!autoLoopStopping) {
+  // 1) 0-API ölçüm — her geçişte tüm onaylı havuzu puanla (kalite her an görünür).
+  const scored = approved.map(q => ({ q, score: poolCurator.scoreQuestion(q, null, 0) }));
+  const avg = scored.reduce((s, x) => s + x.score, 0) / scored.length;
+  qualityTelemetry.averageQuality = +avg.toFixed(1);
+  qualityTelemetry.weakCount = scored.filter(x => x.score < QUALITY_TARGET_SCORE).length;
+  qualityTelemetry.scannedTotal += scored.length;
+  qualityTelemetry.lastPassAt = new Date().toISOString();
+
+  // 2) Her 4 geçişte bir havuz bakımı: 20k sınırı/yakın tekrar/düşükkali filtre (0-API).
+  if (qualityLoopPasses % 4 === 0) {
    try {
-    if (autoLoopStopping) break;
-    let models = [];
-    try {
-     const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(1500) });
-     if (r.ok) models = ((await r.json()).models || []).map(x => x.name);
-    } catch {}
-
-    // Gerçek Ollama bağlıysa (test/sahte değilse) RTX 3080 Ti optimal modellerini otomatik indir, VRAM'e kilitle ve TAM 100x YÜKSELTME KASKADINI başlat!
-    const isMockOllama = models.some(m => /^fake:/i.test(m));
-    const currentSig = models.slice().sort().join('|');
-    if (models.length && !isMockOllama && !hardwarePullBootAttempted && process.env.TEMPO_NO_AUTO_PULL !== '1' && process.env.TEMPO_OFFLINE_ONLY !== '1') {
-     hardwarePullBootAttempted = true;
-     const hwSummaryNow = await hardwareOpt.getSummary({ ollamaBaseUrl: base, installedModels: models });
-     if (hwSummaryNow.state.autoPullOptimalModels !== false && hwSummaryNow.missingRecommendedModels.length) {
-      hardwareOpt.pullMissingProfileModels({ ollamaBaseUrl: base, installedModels: models, state: hwSummaryNow.state })
-       .then(async () => {
-        const rTags = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(1500) }).catch(() => null);
-        const latest = rTags?.ok ? ((await rTags.json()).models || []).map(x => x.name) : models;
-        await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: latest, profile: cachedHardwareProfile });
-        await triggerOllamaConnectedFullUpgrade(latest, { force: true }).catch(() => {});
-       })
-       .catch(() => {});
-     } else if (hwSummaryNow.activeProfile?.subSecondMode) {
-      hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: models, profile: cachedHardwareProfile }).catch(() => {});
-     }
-    }
-
-    // Ollama ilk kez bağlandığında veya yeni modeller eklendiğinde tüm botları ve projeyi otomatik 100x upgrade et!
-    if (models.length && !isMockOllama && !ollamaUpgradeBusy && (currentSig !== lastOllamaConnectedSig || ollamaUpgradeState.upgradedCount === 0)) {
-     await triggerOllamaConnectedFullUpgrade(models).catch(() => {});
-    }
-
-    // 0) 0-API Paralel Yerel Takım + 100x Sürekli Zekâ + Qwen 100-Yöntem + GitHub Prototip + OSS (Eşzamanlı, <1sn orkestrasyon!)
-    const parallelBgTasks = [];
-    if (!localTeamBusy && Date.now() - lastLocalTeamAt >= 3_500) {
-     parallelBgTasks.push(triggerLocalTeamFastCycle(models, { withLiveTeam: Boolean(models.length && !isMockOllama && cachedHardwareProfile?.subSecondMode) }));
-    }
-    if (!coderCouncilBusy && Date.now() - lastCoderSprintAt >= 12_000) {
-     parallelBgTasks.push(triggerCoderOvertrainSprint(models, 1));
-    }
-    if (!trainerBusy && Date.now() - lastTrainerTickAt >= 12_000) {
-     parallelBgTasks.push(triggerContinuousIntelligenceTick(4));
-    }
-    if (!githubBusy && Date.now() - lastGithubMineAt >= 40_000) {
-     parallelBgTasks.push(triggerGithubOssMine(false));
-    }
-    if (!githubMegaBusy && Date.now() - lastGithubMegaAt >= 6_000) {
-     parallelBgTasks.push(triggerGithubMegaAbsorb({
-      batchSize: 1000,
-      liveGithub: Boolean(models.length && !isMockOllama && process.env.TEMPO_OFFLINE_ONLY !== '1' && process.env.TEMPO_ALLOW_REMOTE_FETCH === '1')
-     }));
-    }
-    if (!qwenTournamentBusy && Date.now() - lastQwenTournamentAt >= 18_000) {
-     parallelBgTasks.push(triggerQwenTournament({ useLiveLlm: false }));
-    }
-    if (!qwenProtoBusy && Date.now() - lastQwenProtoAt >= 24_000) {
-     parallelBgTasks.push(triggerQwenGithubPrototypeLab({ forceWebMine: false }));
-    }
-    if (!nexusFusionBusy && Date.now() - lastNexusFusionAt >= 8_000) {
-     parallelBgTasks.push(triggerNexusFusionCycle(models, { withLiveLlm: Boolean(models.length && !isMockOllama && cachedHardwareProfile?.subSecondMode) }));
-    }
-    if (!hyperBotEvolveBusy && Date.now() - lastHyperBotEvolveAt >= 14_000) {
-     parallelBgTasks.push(triggerHyperBotEvolveCycle());
-    }
-    if (!tvgfbfSwarm.running && Date.now() - lastTvgfbfScoutAt >= 20_000) {
-     parallelBgTasks.push(runTvgfbfScoutAndTriggerAll({
-      enableLiveProbe: process.env.TEMPO_OFFLINE_ONLY !== '1' && process.env.TEMPO_ALLOW_REMOTE_FETCH === '1'
-     }));
-    }
-    if (!precisionAuditBusy && Date.now() - lastPrecisionAuditAt >= 30_000) {
-     parallelBgTasks.push(runPrecisionAuditAuto());
-    }
-    if (!hundredAiBusy && Date.now() - lastHundredAiSolveAt >= 45_000) {
-     parallelBgTasks.push(runHundredAiSolveAuto());
-    }
-    if (!hundredAiEvolveBusy && Date.now() - lastHundredAiEvolveAt >= 90_000) {
-     parallelBgTasks.push(runHundredAiEvolveAuto());
-    }
-    if (!levelUpBusy && Date.now() - lastLevelUpAt >= 75_000) {
-     parallelBgTasks.push(runProjectLevelUpAuto());
-    }
-    if (!nexusDevelopBusy && Date.now() - lastNexusDevelopAt >= 240_000) {
-     parallelBgTasks.push(runNexusDevelopAuto(models));
-    }
-    if (!nexusBuildBusy && models.length && Date.now() - lastNexusBuildAt >= 300_000) {
-     parallelBgTasks.push(runNexusOllamaBuildAuto(models));
-    }
-    if (!nexusAutoApplyBusy && Date.now() - lastNexusAutoApplyAt >= 120_000) {
-     parallelBgTasks.push(autoApplyNexusProposals());
-    }
-    if (!coderPullBootAttempted && models.length) {
-     autoPullCoderStackAtBoot().catch(() => {});
-    }
-    if (parallelBgTasks.length) {
-     await Promise.allSettled(parallelBgTasks);
-    }
-
-    if (models.length && !autoLoopStopping) {
-     await ensureRolesAutoAssigned(models, true).catch(() => {});
-     if (autoLoopStopping) break;
-     const cfg = await getPipelineConfig();
-     const model = await selectedModel();
-     const evolverModel = await selectedEvolverModel(model);
-     const [jCfg, jMem] = await Promise.all([jarvis.loadConfig(), jarvis.loadMemory()]);
-
-     if (models.includes(evolverModel) && !isMockOllama) {
-      // 1) Sürekli İnternet Araştırması & Sınavda Çıkabilecek Soruları Bulma Akıl Yürütmesi
-      if (jCfg.autoResearch !== false && !researchBusy && Date.now() - lastWebResearchAt >= 18_000) {
-       await triggerWebResearch(null, evolverModel).catch(() => {});
-      }
-
-      // 2) Auto-Rollback Güvenlik Kontrolü
-      if (evolutionCheckWindow.baselineRate !== null && telemetry.attemptsTotal - evolutionCheckWindow.attemptsSinceEvolve >= 25) {
-       const snap = getTelemetrySnapshot();
-       if (snap.approvalRate + 20 < evolutionCheckWindow.baselineRate) {
-        await evolver.rollback().catch(() => {});
-       }
-       evolutionCheckWindow.baselineRate = null;
-      }
-
-      // 3) JARVIS Koçluğu (Üretici & Hakemleri Hatalardan Eğitir — hem deneme sayısına hem zamana bağlı hiç durmaz)
-      if (jCfg.autoReflect && !jarvisReflecting && (telemetry.attemptsTotal - (jMem.lastReflectedAttemptCount || 0) >= jCfg.reflectEveryN || jMem.generation === 0)) {
-       await triggerJarvisReflect(evolverModel).catch(() => {});
-      }
-
-      // 4) Qwen Code Sürekli İnovasyon (kolay/orta/zor koruyup geliştirme + taslak üretimi)
-      if (jCfg.autoInnovate && !jarvisReflecting && (models.includes(jCfg.coderModel) || models.includes(evolverModel)) && (telemetry.attemptsTotal - (jMem.lastInnovatedAttemptCount || 0) >= jCfg.innovateEveryN || jMem.innovationCount === 0)) {
-       await triggerJarvisInnovate(evolverModel, models).catch(() => {});
-      }
-
-      // 4.5) 100x Ultra-Singularity ApexArchitect Çapraz-Bot Evrimi (Hem deneme hem zaman tetikleyicisiyle tüm 8 alt-sistemi sürekli yükseltir!)
-      const apexStateNow = await apex.loadState();
-      if (!apexEvolving && (apexStateNow.evolutionCycles === 0 || telemetry.attemptsTotal - lastApexCycleAtAttempt >= 14 || Date.now() - lastApexTimeAt >= 45_000)) {
-       await triggerApexEvolve(evolverModel, models).catch(() => {});
-      }
-
-      // 5) Evolver AI Periyodik Güvenli Evrim
-      if (cfg.autoEvolve && !evolvingNow && telemetry.attemptsTotal - lastEvolveAtAttempt >= 35) {
-       lastEvolveAtAttempt = telemetry.attemptsTotal;
-       await runEvolutionStep(evolverModel).catch(() => {});
-      }
-
-      // 6) Otonom Havuz Kalite Bakımı & 40.000+ Tarayıcı Bot (Kalitesiz/tekrar soruları ayıklar, yerini daha kalitelisiyle yeniler)
-      const itemsForCurator = await load();
-      const approvedForCurator = itemsForCurator.filter(x => x.status === 'approved').length;
-      if (approvedForCurator >= QUESTION_POOL_CAPACITY || Date.now() - lastCuratorScanAt >= 28_000) {
-       await runAutonomousPoolCuration().catch(() => {});
-      }
-
-      // 7) Ünite Konu Anlatımı Geliştirme & Çok Hata Yapılan Ünitede Kodlama/Anlatım Yenileme Botu
-      if (!lessonBusy && Date.now() - lastLessonEnhanceAt >= 24_000) {
-       await triggerLessonEnhance(null, evolverModel).catch(() => {});
-      }
-
-      // 9) Sürekli SFT + DPO Veri Seti Hazırlığı (eski düğme kaldırıldı; hazır olunca kendiliğinden hazırlar) + Donanım Hazırsa Ağırlık Eğitimi
-      const items = await load();
-      const approvedNow = items.filter(x => x.status === 'approved').length;
-      if (approvedNow >= 50) {
-       await autoPrepareTrainingData(false).catch(() => {});
-      }
-      if (jCfg.autoTrainWeights && !jarvis.trainingState.running && approvedNow - (jMem.lastTrainedApprovedCount || 0) >= jCfg.trainEveryNQuestions) {
-       const env = await jarvis.inspectTrainingEnvironment();
-       if (env.weightsTrainingReady) {
-        triggerJarvisTrain(model).catch(() => {});
-       }
-      }
-     }
-    }
-    // 10) Continue/Aider RAG + AutoGen/LangGraph/CrewAI + Axolotl/LLaMA-Factory QLoRA+DPO arka plan döngüsü
-    if (!autoLoopStopping && !isMockOllama && Date.now() - telemetry.startedAt >= 4_000 && Date.now() - lastInteractiveApiAt >= 3_500) {
-     await runUnifiedBackgroundAiStack().catch(() => {});
-    }
+    const rep = await runPoolCuratorScan({ forcePrune: approved.length >= QUESTION_POOL_CAPACITY });
+    const removed = Number(rep?.removedCount || rep?.lastRunRemoved || 0) + Number(rep?.councilRejected || 0);
+    if (removed > 0) qualityTelemetry.prunedTotal += removed;
    } catch {}
-   await sleep(900);
+   return;
+  }
+
+  // 3) Model tabanlı yeniden yazma — yalnız üretim hattı BOŞTAYKEN (üretim her zaman öncelikli).
+  const generationIdle = !busy && autoControllers.size === 0;
+  const cooledDown = Date.now() - qualityTelemetry.lastModelAttemptAt >= QUALITY_MODEL_COOLDOWN_MS;
+  if (!generationIdle || !cooledDown || qualityImproveBusy) return;
+
+  let models = [];
+  try {
+   const r = await fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(2500) });
+   if (r.ok) models = ((await r.json()).models || []).map(x => x.name);
+  } catch {}
+  if (!models.length) return;
+
+  const model = await selectedModel();
+  const verifierModel = await selectedVerifierModel(model);
+  const judge2Model = await selectedJudgeModel('judge2Model', defaultJudge2Model);
+  if (!models.includes(model) || !models.includes(verifierModel) || !models.includes(judge2Model)) return;
+
+  const candidates = scored
+   .filter(x => qualityImprovementEligible(x.q))
+   .sort((a, b) => a.score - b.score);
+  if (!candidates.length) return;
+  const weak = candidates.filter(x => x.score < QUALITY_TARGET_SCORE);
+  // Havuz tamamen hedef skordaysa bile en zayıf soru 3 geçişten birinde cilalanır (sürekli iyileştirme).
+  if (!weak.length && qualityLoopPasses % 3 !== 0) return;
+  const target = weak[0] || candidates[0];
+  const { q, score: oldScore } = target;
+
+  qualityImproveBusy = true;
+  qualityAttemptsRemember(q.id);
+  qualityTelemetry.attemptedTotal += 1;
+  qualityTelemetry.lastModelAttemptAt = Date.now();
+  try {
+   const ctx = contexts.find(c => c.id === q.unitId);
+   if (!ctx) return;
+   const passages = passagesByUnit.get(ctx.id) || [];
+   const passage = passages.find(p => p.id === q.passageId) || selectPassageForUnit(ctx, items, 'full-book');
+   const upgraded = await rewriteQuestionForQuality({ model, question: q, ctx, passage });
+   if (!upgraded) { qualityTelemetry.rejectedRewriteTotal += 1; return; }
+
+   const policy = await evolver.loadPolicy();
+   const freshPool = items.filter(x => x.id !== q.id);
+   const record = validate(upgraded, ctx, freshPool, model, passage, policy, q.difficulty || null);
+   record.id = q.id; // soru kimliğini koru — aynı sorunun yükseltilmiş sürümüdür
+   record.createdAt = q.createdAt || record.createdAt;
+   record.improvementCount = (Number(q.improvementCount) || 0) + 1;
+   record.improvedAt = new Date().toISOString();
+   record.improvedFromScore = oldScore;
+   if (q.questionAngle && !record.questionAngle) record.questionAngle = q.questionAngle;
+   if (q.questionType && !record.questionType) record.questionType = q.questionType;
+   if (q.bloomLevel && !record.bloomLevel) record.bloomLevel = q.bloomLevel;
+
+   // Üretim hattıyla aynı çıta: iki bağımsız hakem cevapla birebir anlaşmalı.
+   const verifyItem = { ctx, draft: record, passage, parsed: record };
+   await verifySingleWithJudge(verifyItem, verifierModel, true, AbortSignal.timeout(150_000), policy, false);
+   await verifySingleWithJudge(verifyItem, judge2Model, true, AbortSignal.timeout(150_000), policy, true);
+   const judges = [verifyItem.j1, verifyItem.j2].filter(Boolean);
+   const agreedAnswers = new Set(judges.map(j => j.answer));
+   if (judges.length !== 2 || agreedAnswers.size !== 1 || [...agreedAnswers][0] !== record.answer) {
+    qualityTelemetry.rejectedRewriteTotal += 1;
+    await appendTrace({ type: 'quality_rewrite_rejected', unitId: ctx.id, question: record.question, reason: 'judge_disagree' }).catch(() => {});
+    return;
+   }
+   const agreedDifficulties = new Set(judges.map(j => j.difficulty));
+   const agreedDifficulty = agreedDifficulties.size === 1 && ['kolay', 'orta', 'zor'].includes([...agreedDifficulties][0]) ? [...agreedDifficulties][0] : (record.difficulty || q.difficulty || 'orta');
+   const avgQuality = +(judges.reduce((s, j) => s + (Number(j.qualityScore) || 4), 0) / judges.length).toFixed(2);
+   const avgExamPot = +(judges.reduce((s, j) => s + (Number(j.examPotential) || Number(j.qualityScore) || 4), 0) / judges.length).toFixed(2);
+   const bloomLevel = judges.find(j => j.bloomLevel)?.bloomLevel;
+   record.verification = { judges, answer: record.answer, difficulty: agreedDifficulty, qualityScore: avgQuality, examPotential: avgExamPot, ...(bloomLevel ? { bloomLevel } : {}) };
+   record.difficulty = agreedDifficulty;
+   record.qualityScore = avgQuality;
+   record.examPotential = avgExamPot;
+   if (bloomLevel) record.bloomLevel = bloomLevel;
+   record.curatedBy = 'quality-improver';
+   record.curationReason = `Sürekli iyileştirme botu (v${record.improvementCount}): hakemler ${avgQuality}/5, eski havuz skoru ${oldScore}`;
+
+   const newScore = poolCurator.scoreQuestion(record, null, 0);
+   record.curatorScore = newScore;
+   if (newScore < oldScore + QUALITY_MIN_GAIN) {
+    qualityTelemetry.rejectedRewriteTotal += 1;
+    await appendTrace({ type: 'quality_rewrite_rejected', unitId: ctx.id, question: record.question, reason: `no_gain_${oldScore}_to_${newScore}` }).catch(() => {});
+    return;
+   }
+
+   await withSaveLock(async () => {
+    const latest = await load();
+    const idx = latest.findIndex(x => x && x.id === q.id && x.status === 'approved');
+    if (idx === -1) return;
+    latest[idx] = record;
+    await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
+   });
+   qualityTelemetry.improvedTotal += 1;
+   qualityTelemetry.lastImprovedAt = new Date().toISOString();
+   qualityTelemetry.recentImprovements = [
+    { id: record.id, unitId: record.unitId, book: record.book, unit: record.unit, topic: record.topic, question: String(record.question || '').slice(0, 140), before: oldScore, after: newScore, at: qualityTelemetry.lastImprovedAt },
+    ...qualityTelemetry.recentImprovements
+   ].slice(0, QUALITY_RECENT_LIMIT);
+   await appendTrace({ type: 'quality_upgraded', unitId: ctx.id, passageId: passage?.id, from: oldScore, to: newScore, improvementCount: record.improvementCount, question: String(record.question || '').slice(0, 200) }).catch(() => {});
+  } catch (e) {
+   qualityTelemetry.rejectedRewriteTotal += 1;
+   autoLastError = `Kalite iyileştirme denemesi reddedildi: ${e?.message || e}`;
+   await appendTrace({ type: 'quality_rewrite_rejected', unitId: q?.unitId, question: String(q?.question || '').slice(0, 200), reason: e?.message || String(e) }).catch(() => {});
+  } finally {
+   qualityImproveBusy = false;
   }
  } finally {
-  coachRunning = false;
+  qualityLoopBusy = false;
+ }
+}
+
+// KESİNTİSİZ İYİLEŞTİRME DÖNGÜSÜ: proje açıldığı andan itibaren uyur-uyanır, hiç çıkmaz.
+async function qualityImprovementLoop() {
+ while (!autoLoopStopping) {
+  try {
+   if (autoLoopStopping) break;
+   await qualityImprovementPass();
+  } catch (e) {
+   autoLastError = e?.message || String(e);
+  }
+  await sleep(QUALITY_LOOP_SLEEP_MS);
  }
 }
 
@@ -3850,11 +3661,10 @@ export function ollamaPlugin() {
    if (!autoLoopStarted && process.env.TEMPO_DISABLE_AUTOLOOP !== '1') {
     autoLoopStarted = true;
     if (process.env.TEMPO_UNLOAD_STALE_PINS === '1') unloadStalePinnedModelsAtBoot().catch(() => {});
+    // Sadece iki şey her zaman çalışır: (1) kaliteli soru üretimi (autoScheduler),
+    // (2) onaylı soruların sürekli daha kaliteli hale getirilmesi (qualityImprovementLoop).
     autoScheduler();
-    // The research/training coach performs many optional background jobs.
-    // Keep it off unless the user explicitly opts in via environment variable.
-    if (process.env.TEMPO_ENABLE_BACKGROUND_AGENTS === '1') backgroundCoachLoop();
-    else runZeroApiBootBurst();
+    qualityImprovementLoop();
    }
    server.middlewares.use('/api/ollama', async (req, res, next) => {
     try {
@@ -4192,8 +4002,8 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'GET' && path === '/status') {
-      const [items, study, storage, autoRunning, autoConcurrency, autoTimeout, pipelineConfig, policy, history, studentProfile, jConfig, jMemory, jEnv, rMem, curatorReport, lessonsSummary, apexState, trainerState, githubOss, githubMegaState, voiceStudioSummary, rawParamState, swarmState, qwenLabState, localTeamState, hardwareSummary, coderState, verifier100State] = await Promise.all([
-       load(), loadStudy(), storageUsage(), autoRunningEnabled(), autoConcurrencyLimit(), autoTimeoutMs(), getPipelineConfig(),
+      const [items, storage, autoRunning, autoConcurrency, autoTimeout, pipelineConfig, policy, history, studentProfile, jConfig, jMemory, jEnv, rMem, curatorReport, lessonsSummary, apexState, trainerState, githubOss, githubMegaState, voiceStudioSummary, rawParamState, swarmState, qwenLabState, localTeamState, hardwareSummary, coderState, verifier100State] = await Promise.all([
+       load(), storageUsage(), autoRunningEnabled(), autoConcurrencyLimit(), autoTimeoutMs(), getPipelineConfig(),
        evolver.loadPolicy(), evolver.loadHistory(), evolver.loadStudentProfile(),
        jarvis.loadConfig(), jarvis.loadMemory(), jarvis.inspectTrainingEnvironment(), researchAgent.loadMemory(),
        poolCurator.loadReport(), lessonEngine.listSummary(contexts.length), apex.loadState(),
@@ -4278,12 +4088,7 @@ export function ollamaPlugin() {
        questionCapacity: QUESTION_POOL_CAPACITY,
        maxQuestionsStored: MAX_QUESTIONS,
        autonomousMode: true,
-       studyCounts: {
-        flashcards: study.flashcards.filter(x => x.status !== 'rejected').length,
-        matchings: study.matchings.filter(x => x.status !== 'rejected').length,
-        drills: study.drills.filter(x => x.status !== 'rejected').length,
-        total: study.flashcards.filter(x => x.status !== 'rejected').length + study.matchings.filter(x => x.status !== 'rejected').length + study.drills.filter(x => x.status !== 'rejected').length
-       },
+       qualityLoop: getQualityLoopSnapshot(),
        difficultyCounts,
        angleCounts,
        curator: curatorReport,
@@ -4305,7 +4110,7 @@ export function ollamaPlugin() {
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
        questionIntervalMs: QUESTION_INTERVAL_MS,
-       modelInferenceConcurrency: 1,
+       modelInferenceConcurrency: modelInferenceQueue.snapshot().maxConcurrent,
        modelInferenceQueue: modelInferenceQueue.snapshot(),
        autoActive: autoPhases.length,
        autoPhases, autoLastError,
@@ -4470,9 +4275,8 @@ export function ollamaPlugin() {
 
      if (req.method === 'POST' && (path === '/parameters/evolve' || path === '/swarm-evaluate')) {
       const input = await body(req);
-      const [items, study, studentProfile, curatorReport, lessonsSummary, policy, rMem, jMemory, jCfg] = await Promise.all([
+      const [items, studentProfile, curatorReport, lessonsSummary, policy, rMem, jMemory, jCfg] = await Promise.all([
        load(),
-       loadStudy(),
        evolver.loadStudentProfile(),
        poolCurator.loadReport(),
        lessonEngine.listSummary(contexts.length),
@@ -4496,7 +4300,6 @@ export function ollamaPlugin() {
       const swarmRes = await multiAiEval.evaluateAndEvolve({
        paramMatrix,
        items,
-       study,
        contexts,
        passagesByUnit,
        lessonsSummary,
@@ -4560,12 +4363,12 @@ export function ollamaPlugin() {
 
      if (req.method === 'POST' && path === '/team-sprint') {
       const tSprint = performance.now();
-      const [tagsList, items, study, policy] = await Promise.all([
+      const [tagsList, items, policy] = await Promise.all([
        fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(250) })
         .then(r => (r.ok ? r.json() : null))
         .then(j => (Array.isArray(j?.models) ? j.models.map(x => x.name) : []))
         .catch(() => []),
-       load(), loadStudy(), evolver.loadPolicy()
+       load(), evolver.loadPolicy()
       ]);
       const [teamRes, tournamentRes, coderRes, swarmRes] = await Promise.all([
        localAiTeam.runFastTeamCycle({ items, contexts, evolver, policy, installedModels: tagsList, apex, jarvis, teamBudgetMs: cachedHardwareProfile?.teamBudgetMs || 850 }),
@@ -4576,7 +4379,7 @@ export function ollamaPlugin() {
         evolver.loadStudentProfile()
        ]).then(([lessonsSummary, studentProfile]) =>
         multiAiEval.evaluateAndEvolve({
-         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+         paramMatrix, items, contexts, passagesByUnit, lessonsSummary,
          evolver, policy, studentProfile,
          source: 'sub-second-team-sprint'
         })
@@ -4685,12 +4488,12 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/coder-council/team-develop') {
       const input = await body(req);
       const tDev = performance.now();
-      const [tagsList, items, study, policy, lessonsSummary, studentProfile] = await Promise.all([
+      const [tagsList, items, policy, lessonsSummary, studentProfile] = await Promise.all([
        fetch(`${base}/api/tags`, { signal: AbortSignal.timeout(700) })
         .then(r => (r.ok ? r.json() : null))
         .then(j => (Array.isArray(j?.models) ? j.models.map(x => x.name) : []))
         .catch(() => []),
-       load(), loadStudy(), evolver.loadPolicy(),
+       load(), evolver.loadPolicy(),
        lessonEngine.listSummary(contexts.length),
        evolver.loadStudentProfile()
       ]);
@@ -4708,7 +4511,7 @@ export function ollamaPlugin() {
        localAiTeam.runFastTeamCycle({ items, contexts, evolver, policy, installedModels: tagsList, apex, jarvis, teamBudgetMs: cachedHardwareProfile?.teamBudgetMs || 900 }),
        qwenCodeLab.runHundredMethodTournament({ evolver, paramMatrix: null, jarvis, items, applyToProject: true }),
        multiAiEval.evaluateAndEvolve({
-        paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+        paramMatrix, items, contexts, passagesByUnit, lessonsSummary,
         evolver, policy, studentProfile,
         source: '40-model-non-ui-team-develop'
        })
@@ -4933,7 +4736,6 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'GET' && path === '/questions') return respond(res, 200, { items: await load() });
-     if (req.method === 'GET' && path === '/study-materials') return respond(res, 200, await loadStudy());
      if (req.method === 'GET' && path === '/audit') return respond(res, 200, audit(await load()));
      if (req.method === 'GET' && path === '/curator') {
       return respond(res, 200, {
@@ -4941,6 +4743,9 @@ export function ollamaPlugin() {
        maxQuestionsStored: MAX_QUESTIONS,
        report: await poolCurator.loadReport()
       });
+     }
+     if (req.method === 'GET' && path === '/quality-loop') {
+      return respond(res, 200, { ok: true, ...getQualityLoopSnapshot() });
      }
      if (req.method === 'GET' && path === '/lessons') {
       const unitId = urlObj.searchParams.get('unitId');
@@ -5323,18 +5128,19 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/concurrency') {
       const input = await body(req);
       const n = Number(input.value);
-      if (n !== 1) {
-       return respond(res, 400, { error: 'Model çakışmasını önlemek için uygulama eşzamanlılığı 1 ile sabittir.' });
+      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1 || n > 8) {
+       return respond(res, 400, { error: 'Eşzamanlı üretim yuvası 1 ile 8 arasında bir tam sayı olmalı.' });
       }
-      await writeSettings({ autoConcurrency: 1 });
-      return respond(res, 200, { autoConcurrency: 1, modelInferenceConcurrency: 1 });
+      await writeSettings({ autoConcurrency: n });
+      const slots = modelInferenceQueue.setMaxConcurrent(n);
+      return respond(res, 200, { autoConcurrency: n, modelInferenceConcurrency: slots });
      }
 
      if (req.method === 'POST' && path === '/timeout') {
       const input = await body(req);
       const n = Number(input.value);
-      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1000 || n > 300000) {
-       return respond(res, 400, { error: '1000 ile 300000 (ms) arasında bir tam sayı gerekir.' });
+      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1000 || n > QUESTION_HARD_TIMEOUT_MS) {
+       return respond(res, 400, { error: '1000 ile 25000 (ms) arasında bir tam sayı gerekir; bir soru en fazla 25 saniyede hazırlanır.' });
       }
       await writeSettings({ autoTimeoutMs: n });
       return respond(res, 200, { autoTimeoutMs: n });
@@ -5345,7 +5151,7 @@ export function ollamaPlugin() {
       const patch = {
        preset: 'balanced', batchPerCall: 1, fastThink: true, pipelineMode: 'direct',
        batchVerify: false, selfCorrection: true, smartDifficulty: true,
-       generateStudyMaterials: false, autoEvolve: false, turboQualityLock: false
+       autoEvolve: false, turboQualityLock: false
       };
       if (input?.passageMode === 'summary-only') patch.passageMode = 'summary-only';
       else patch.passageMode = 'full-book';
@@ -5502,38 +5308,6 @@ export function ollamaPlugin() {
       }
      }
 
-     if (req.method === 'POST' && path === '/generate-study') {
-      const input = await body(req);
-      const unitId = typeof input.unitId === 'string' ? input.unitId : '0-0';
-      const ctx = contexts.find(c => c.id === unitId) || contexts[0];
-      const cfg = await getPipelineConfig();
-      const policy = await evolver.loadPolicy();
-      const passage = selectPassageForUnit(ctx, await load(), cfg.passageMode);
-      try {
-       const resPack = await produceStudyPack(ctx, model, passage, cfg, AbortSignal.timeout(await autoTimeoutMs()), policy);
-       return respond(res, 200, { ok: true, added: resPack.added });
-      } catch (e) {
-       return respond(res, 502, { error: e.message || 'Çalışma paketi üretilemedi.' });
-      }
-     }
-
-     if (req.method === 'POST' && path === '/review-study') {
-      const { kind, id, status } = await body(req);
-      if (!['flashcards', 'matchings', 'drills'].includes(kind) || !['approved', 'rejected'].includes(status)) {
-       return respond(res, 400, { error: 'Geçersiz istek.' });
-      }
-      const item = await withSaveLock(async () => {
-       const study = await loadStudy();
-       const found = study[kind].find(x => x.id === id);
-       if (!found) return null;
-       found.status = status;
-       await saveStudy(study);
-       return found;
-      });
-      if (!item) return respond(res, 404, { error: 'Öğe bulunamadı.' });
-      return respond(res, 200, { item });
-     }
-
      if (req.method === 'POST' && path === '/jarvis/config') {
       const input = await body(req);
       const saved = await jarvis.saveConfig(input);
@@ -5646,7 +5420,7 @@ export function ollamaPlugin() {
 
      if (req.method === 'POST' && path === '/prepare-training') {
       const py = process.env.PYTHON || 'python3';
-      const args = ['training/prepare.py', '--input', dataFile, '--study', studyFile, '--output', resolve(dataDir, 'training'), '--multitask', '--dpo', '--traces', tracesFile];
+      const args = ['training/prepare.py', '--input', dataFile, '--output', resolve(dataDir, 'training'), '--multitask', '--dpo', '--traces', tracesFile];
       try {
        const { stdout } = await execFileAsync(py, args, { timeout: 30000 });
        return respond(res, 200, { ok: true, manifest: JSON.parse(stdout) });
@@ -5705,8 +5479,8 @@ export function ollamaPlugin() {
       const tAll = performance.now();
       const unitIds = Array.isArray(input?.units) && input.units.length ? input.units : ['0-0'];
       const ctx = contexts.find(c => unitIds.includes(c.id)) || contexts[cursor++ % contexts.length];
-      const [items, study, policy, lessonsSummary, studentProfile, jCfg] = await Promise.all([
-       load(), loadStudy(), evolver.loadPolicy(),
+      const [items, policy, lessonsSummary, studentProfile, jCfg] = await Promise.all([
+       load(), evolver.loadPolicy(),
        lessonEngine.listSummary(contexts.length),
        evolver.loadStudentProfile(), jarvis.loadConfig()
       ]);
@@ -5755,7 +5529,7 @@ export function ollamaPlugin() {
        ),
        timedBot('multiAiSwarmEvaluator', () =>
         multiAiEval.evaluateAndEvolve({
-         paramMatrix, items, study, contexts, passagesByUnit, lessonsSummary,
+         paramMatrix, items, contexts, passagesByUnit, lessonsSummary,
          evolver, policy, studentProfile,
          source: 'subsecond-all-bots-run'
         })

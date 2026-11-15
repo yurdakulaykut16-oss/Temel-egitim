@@ -35,14 +35,6 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   let result;
   if(data.prompt.includes('Baş Stratejisti')){
    result={reason:'0-1 ünitesine öncelik ver ve uzun şıkları dengeli tut',focusUnits:['0-1'],generatorAddendum:'Tüm şıklar aynı terim sınıfından olsun ama tek doğru kalsın',judgeAddendum:'İki şık birden doğruysa dualAnswerRisk=true ver',customRuleCode:'function evaluateCandidate(candidate, unit){ if (candidate.question.length < 15) return {ok:false, reason:"Soru kökü çok kısa"}; return {ok:true}; }'};
-  }else if(data.prompt.includes('"flashcards":')){
-   const textMatch=data.prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
-   const studyEv=(textMatch?textMatch[1]:'').trim().split(/\s+/).slice(0,8).join(' ')||evidence;
-   result={
-    flashcards:[{front:'Düzenli fiziksel egzersiz hangi iki temel özellikle tanımlanır?',back:'Planlı ve tekrarlı olmasıyla tanımlanır.',mnemonic:'P-T: Planlı ve Tekrarlı',evidence:studyEv,difficulty:'kolay'}],
-    matchings:[{title:'Egzersiz Özellikleri',pairs:[{left:'Planlılık',right:'Program dahilinde yapma'},{left:'Tekrarlılık',right:'Düzenli aralıklarla uygulama'},{left:'Hareket',right:'Kas kasılmasıyla enerji harcama'}],explanation:'Temel egzersiz ögeleri',evidence:studyEv,difficulty:'kolay'}],
-    drills:[{type:'fill_blank',prompt:'Egzersiz fiziksel uygunluğu korumaya yönelik ___ ve tekrarlı etkinliktir.',answer:'planlı',hint:'Programlı anlamına gelir',explanation:'Egzersiz planlıdır.',evidence:studyEv,difficulty:'kolay'}]
-   };
   }else if(data.prompt.includes('soru denetçisisin')){
    if(isUnit01)result={answer:'Kondisyonel ve teknik hazırlık',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:wrongDifficulty?'zor':'kolay',evidence,reason:'Anlatım kondisyonel ve teknik hazırlığı birlikte sayar.'};
    else if(isUnit02){
@@ -63,6 +55,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
  const fakePort=await listen(fake);const dir=await mkdtemp(join(tmpdir(),'tempo-test-'));
  process.env.OLLAMA_BASE_URL=`http://127.0.0.1:${fakePort}`;process.env.OLLAMA_MODEL='fake:1';process.env.OLLAMA_VERIFIER_MODEL='fake:1';process.env.TEMPO_DATA_DIR=dir;
  process.env.TEMPO_DISABLE_AUTOLOOP='1';
+ process.env.TEMPO_AUTO_CONCURRENCY='1';
  const {ollamaPlugin}=await import('../server/ollama.mjs');let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
  const app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});const port=await listen(app);const base=`http://127.0.0.1:${port}`;
@@ -77,7 +70,6 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(status.settings.selfCorrection,true);
   assert.equal(status.settings.batchPerCall,1);
   assert.equal(status.settings.batchVerify,false);
-  assert.equal(status.settings.generateStudyMaterials,false);
   assert.equal(status.settings.autoEvolve,false);
   assert.equal(status.modelInferenceConcurrency,1);
   assert.equal(status.questionCapacity,20000);
@@ -205,15 +197,6 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(evolverSel.status,200);
   assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).evolverModel,'fake:2');
 
-  // Çalışma materyalleri (Kart + Eşleştirme + Tekrar) üretimi ve listesi
-  const studyGen=await fetch(`${base}/api/ollama/generate-study`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({unitId:'0-0'})});
-  assert.equal(studyGen.status,200);
-  assert.equal((await studyGen.json()).added,3);
-  const studyMat=await (await fetch(`${base}/api/ollama/study-materials`)).json();
-  assert.equal(studyMat.flashcards.length,1);
-  assert.equal(studyMat.matchings.length,1);
-  assert.equal(studyMat.drills.length,1);
-
   // Öğrenci profil sinyali + izole AI öz-evrim + geri alma
   const stRes=await fetch(`${base}/api/ollama/student-state`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({readUnits:['0-0','0-1'],weakUnits:['0-1']})});
   assert.equal(stRes.status,200);
@@ -228,13 +211,18 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(rbJson.policy.source,'rollback');
   assert.equal(rbJson.policy.customRuleCode,'');
 
-  // Timeout ayarı: varsayılan 180000ms, 1000-300000 aralığında ayarlanabilir
-  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,180000);
+  // Timeout ayarı: varsayılan 25000ms (mutlak tavan 25 sn), 1000-25000 aralığında ayarlanabilir
+  const statusWithTimeout=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(statusWithTimeout.autoTimeoutMs,25000);
   let timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:8000})});
   assert.equal(timeoutRes.status,200);assert.equal((await timeoutRes.json()).autoTimeoutMs,8000);
   assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).autoTimeoutMs,8000);
   timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:500})});
   assert.equal(timeoutRes.status,400);
+  timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:30000})});
+  assert.equal(timeoutRes.status,400,'25 saniyenin üzeri reddedilmeli');
+  timeoutRes=await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:25000})});
+  assert.equal(timeoutRes.status,200,'25000 tam sınırda kabul edilmeli');
+  assert.equal((await fetch(`${base}/api/ollama/timeout`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:180000})})).status,400,'eski 180s değeri artık reddedilmeli');
 
  }finally{await close(app);await close(fake);await rm(dir,{recursive:true,force:true})}
 });

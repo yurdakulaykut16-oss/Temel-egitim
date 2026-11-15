@@ -67,15 +67,8 @@ test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 5 subsystems, runs C
     evidence: 'kısa' // <15 chars weak evidence!
    }
   ];
-  const badStudy = {
-   flashcards: [{ id: 'f1' }],
-   matchings: [],
-   drills: [{ id: 'd1', type: 'fill_blank', prompt: 'Boşluğu olmayan hatalı alıştırma' }]
-  };
-
   const inspection = swarm.inspectEcosystemAcrossLevels({
    items: badItems,
-   study: badStudy,
    contexts: [{ id: '0-0', unit: 'Dayanıklılık', text: 'Aerobik kapasite VO2max ile ölçülür.' }],
    passagesByUnit: new Map([['0-0', [{ id: '0-0#00', text: 'Aerobik kapasite VO2max ile ölçülür.' }]]]),
    lessonsSummary: { enhancedCount: 2 },
@@ -120,7 +113,6 @@ test('MultiAiSwarmEvaluator probes all 5 knowledge levels + 5 subsystems, runs C
   const fullRes = await swarm.evaluateAndEvolve({
    paramMatrix: matrix,
    items: badItems,
-   study: badStudy,
    contexts: [{ id: '0-0', unit: 'Dayanıklılık', text: 'Aerobik kapasite VO2max ile ölçülür.' }],
    passagesByUnit: new Map([['0-0', [{ id: '0-0#00', text: 'Aerobik kapasite VO2max ile ölçülür.' }]]]),
    lessonsSummary: { enhancedCount: 2 },

@@ -92,7 +92,7 @@ def build(rows, contexts, reviewer, seed=42, passage_by_id=None, unit_full_norm=
     val = [r for r in records if r['unit_id'] in eval_units]
     return train, val, rejected
 
-def build_multitask_extras(rows, contexts, passage_by_id, eval_units, traces=None, reviewer='AI öğretmen', study_data=None):
+def build_multitask_extras(rows, contexts, passage_by_id, eval_units, traces=None, reviewer='AI öğretmen'):
     """Soru çözme/denetleme (judge), hata iyileştirme (refine) ve alan bilgisi (knowledge) görevlerini ekler."""
     by_id = {x['id']: x for x in contexts}
     extra_train, extra_val = [], []
@@ -156,57 +156,6 @@ def build_multitask_extras(rows, contexts, passage_by_id, eval_units, traces=Non
                     {'role': 'assistant', 'content': answer},
                 ],
             })
-
-    # Kartlar, eşleştirmeler ve tekrar egzersizlerinden materyal üretimi SFT örnekleri (sızıntı sıfır)
-    if isinstance(study_data, dict):
-        for fc in study_data.get('flashcards', []):
-            if fc.get('status') == 'rejected':
-                continue
-            uid = fc.get('unitId')
-            ctx = by_id.get(uid)
-            if not ctx:
-                continue
-            ctx_text = _resolve_context_text(fc, ctx, passage_by_id)
-            rec = {
-                'unit_id': uid,
-                'question_id': f"fc-{fc.get('id', '')}",
-                'task': 'flashcard',
-                'reviewer': reviewer,
-                'messages': [
-                    {'role': 'system', 'content': SYSTEM},
-                    {'role': 'user', 'content': f"Kitap: {ctx['book']}\nÜnite: {ctx['unit']}\nGörev: Bu metinden bir bilgi kartı (front/back/mnemonic/evidence) üret.\nKONU ANLATIMI:\n{ctx_text}"},
-                    {'role': 'assistant', 'content': json.dumps({
-                        'front': fc.get('front', ''), 'back': fc.get('back', ''),
-                        'mnemonic': fc.get('mnemonic', ''), 'evidence': fc.get('evidence', ''),
-                        'difficulty': fc.get('difficulty', 'orta')
-                    }, ensure_ascii=False)}
-                ]
-            }
-            (extra_val if uid in eval_units else extra_train).append(rec)
-
-        for m in study_data.get('matchings', []):
-            if m.get('status') == 'rejected':
-                continue
-            uid = m.get('unitId')
-            ctx = by_id.get(uid)
-            if not ctx:
-                continue
-            ctx_text = _resolve_context_text(m, ctx, passage_by_id)
-            rec = {
-                'unit_id': uid,
-                'question_id': f"match-{m.get('id', '')}",
-                'task': 'matching',
-                'reviewer': reviewer,
-                'messages': [
-                    {'role': 'system', 'content': SYSTEM},
-                    {'role': 'user', 'content': f"Kitap: {ctx['book']}\nÜnite: {ctx['unit']}\nGörev: Bu metinden 1-e-1 eşleşmeli bir kavram eşleştirme seti (title/pairs/evidence) üret.\nKONU ANLATIMI:\n{ctx_text}"},
-                    {'role': 'assistant', 'content': json.dumps({
-                        'title': m.get('title', ''), 'pairs': m.get('pairs', []),
-                        'evidence': m.get('evidence', ''), 'difficulty': m.get('difficulty', 'orta')
-                    }, ensure_ascii=False)}
-                ]
-            }
-            (extra_val if uid in eval_units else extra_train).append(rec)
 
     # Omega-4700x+ (20x Eğitim) Tuzak Kalkanı & Sokratik Çok-Açılı Damıtma (yalnızca train ünitelerinden, eval sızıntısı sıfır!)
     trap_seen = set()
@@ -409,7 +358,6 @@ def collect_verified_100_rows(github_oss_path=None, verifier_path=None, eval_uni
 def main():
     ap = argparse.ArgumentParser(description='Onaylı soruları çok görevli SFT ve DPO eğitim/doğrulama verisine ayırır.')
     ap.add_argument('--input', default=str(ROOT/'.tempo-data/questions.json'))
-    ap.add_argument('--study', default=str(ROOT/'.tempo-data/study-materials.json'))
     ap.add_argument('--contexts', default=str(ROOT/'server/contexts.json'))
     ap.add_argument('--passages', default=str(ROOT/'server/book-passages.json'))
     ap.add_argument('--traces', default=str(ROOT/'.tempo-data/rejected-traces.jsonl'))
@@ -437,12 +385,8 @@ def main():
                     except ValueError: pass
         eval_units = {r['unit_id'] for r in val}
         dpo_train, dpo_val = [], []
-        study_data = None
-        if args.study and Path(args.study).is_file():
-            try: study_data = json.loads(Path(args.study).read_text(encoding='utf-8'))
-            except ValueError: study_data = None
         if args.multitask or args.dpo:
-            ex_tr, ex_val, dpo_train, dpo_val = build_multitask_extras(rows, contexts, passage_by_id, eval_units, traces, args.reviewer, study_data)
+            ex_tr, ex_val, dpo_train, dpo_val = build_multitask_extras(rows, contexts, passage_by_id, eval_units, traces, args.reviewer)
             if args.multitask:
                 train = train + ex_tr
                 val = val + ex_val

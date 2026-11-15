@@ -44,7 +44,7 @@ export const KNOWLEDGE_LEVEL_PERSONAS = [
 
 export const TESTED_SUBSYSTEMS = [
  'questionPool',
- 'studyMaterials',
+ 'qualityGate',
  'lessons',
  'sandboxAndTraps',
  'parameterMatrix'
@@ -132,7 +132,6 @@ export class MultiAiSwarmEvaluator {
  // Parça 1: Deterministik Çok-Sistemli + 5 Bilgi Seviyeli Adli Denetim (0-API, Anlık)
  inspectEcosystemAcrossLevels({
   items = [],
-  study = { flashcards: [], matchings: [], drills: [] },
   contexts = [],
   passagesByUnit = new Map(),
   lessonsSummary = null,
@@ -203,13 +202,13 @@ export class MultiAiSwarmEvaluator {
    30, 100
   ));
 
-  // --- Alt Sistem 2: Çalışma Materyalleri ---
-  const fcCount = study?.flashcards?.length || 0;
-  const matchCount = study?.matchings?.length || 0;
-  const drillCount = study?.drills?.length || 0;
-  const badDrills = (study?.drills || []).slice(-30).filter(d => d.type === 'fill_blank' && !String(d.prompt || '').includes('___')).length;
-  const studyMaterialsScore = Math.round(clamp(
-   82 + Math.min(18, (fcCount + matchCount + drillCount) > 0 ? 18 : 6) - badDrills * 8,
+  // --- Alt Sistem 2: Sürekli Kalite İyileştirme Motoru Sağlığı ---
+  // Motor 2'nin hâlihazırda yükselttiği sorular havuzda yetenekli sorulardır:
+  // improvementCount>0 olan her soru, 0-API taraması + çift hakemden geçmiş demektir.
+  const enhancedQuestions = approved.filter(q => Number(q?.improvementCount) > 0).length;
+  const enhancedRatio = approved.length ? enhancedQuestions / approved.length : 0;
+  const qualityGateScore = Math.round(clamp(
+   62 + Math.min(30, enhancedRatio * 60) + (approved.length >= 20 ? 8 : approved.length * 0.4),
    45, 100
   ));
 
@@ -276,7 +275,7 @@ export class MultiAiSwarmEvaluator {
   const dualBlocked = Number(telemetry?.dualAnswerBlocked ?? 0);
 
   const levelScores = {
-   beginner_novice: Math.round(clamp((lessonsScore * 0.45) + (studyMaterialsScore * 0.25) + (tierBalanceScore * 0.30) - slangOrBannedCount * 5, 35, 100)),
+   beginner_novice: Math.round(clamp((lessonsScore * 0.45) + (qualityGateScore * 0.25) + (tierBalanceScore * 0.30) - slangOrBannedCount * 5, 35, 100)),
    intermediate_trainee: Math.round(clamp((questionPoolScore * 0.45) + (tierBalanceScore * 0.35) + (approvalRate * 0.20), 35, 100)),
    expert_coach: Math.round(clamp((questionPoolScore * 0.40) + (sandboxAndTrapsScore * 0.35) + clamp(100 - weakEvidenceCount * 8, 40, 100) * 0.25, 35, 100)),
    speed_skimmer: Math.round(clamp(clamp(100 - lengthLeakCount * 10, 35, 100) * 0.55 + (questionPoolScore * 0.45), 35, 100)),
@@ -285,7 +284,7 @@ export class MultiAiSwarmEvaluator {
 
   const subsystemScores = {
    questionPool: questionPoolScore,
-   studyMaterials: studyMaterialsScore,
+   qualityGate: qualityGateScore,
    lessons: lessonsScore,
    sandboxAndTraps: sandboxAndTrapsScore,
    parameterMatrix: parameterMatrixScore
@@ -507,7 +506,6 @@ export class MultiAiSwarmEvaluator {
  async evaluateAndEvolve({
   paramMatrix,
   items = [],
-  study = { flashcards: [], matchings: [], drills: [] },
   contexts = [],
   passagesByUnit = new Map(),
   lessonsSummary = null,
@@ -527,7 +525,7 @@ export class MultiAiSwarmEvaluator {
 
   // 1) Pre-Eval: Tüm sistemleri ve 5 bilgi seviyesini tara
   const preInspection = this.inspectEcosystemAcrossLevels({
-   items, study, contexts, passagesByUnit, lessonsSummary,
+   items, contexts, passagesByUnit, lessonsSummary,
    evolver, policy, paramState: paramBefore, telemetry
   });
 
@@ -573,7 +571,7 @@ export class MultiAiSwarmEvaluator {
 
   // 5) Post-Eval Gate: Parametre evrimi sonrası sistemi yeniden test et
   const postInspection = this.inspectEcosystemAcrossLevels({
-   items, study, contexts, passagesByUnit, lessonsSummary,
+   items, contexts, passagesByUnit, lessonsSummary,
    evolver, policy, paramState: evoResult.state, telemetry
   });
 

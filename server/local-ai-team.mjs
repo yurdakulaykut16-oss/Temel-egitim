@@ -858,47 +858,4 @@ export class LocalAiTeamHub {
   }
   return null;
  }
-
- buildSubSecondStudyPack({ ctx, passage = null } = {}) {
-  const text = String(passage?.text || ctx?.text || '').replace(/\s+/g, ' ').trim();
-  const sents = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length >= 20 && text.includes(s));
-  const ev = (sents[0] || text.slice(0, 140)).slice(0, 180);
-  const words = ev.split(/\s+/).filter(w => w.length >= 5);
-  const kw = (words[0] || ctx?.unit || 'Egzersiz').replace(/[^\p{L}\p{N}-]/gu, '');
-  return {
-   flashcards: [
-    {
-     front: `${ctx?.unit || 'Ünite'} içinde "${kw}" kavramının temel işlevi nedir?`,
-     back: ev,
-     mnemonic: `KOD-${kw.slice(0, 3).toUpperCase()}: Bilimsel ve planlı uygulama`,
-     difficulty: 'kolay',
-     evidence: ev
-    }
-   ],
-   matchings: [
-    {
-     title: `${ctx?.unit || 'Ünite'} Hızlı Kavram Eşleştirme`,
-     pairs: [
-      { left: kw || 'Temel Kavram', right: ev.slice(0, 72) },
-      { left: 'Ölçüt', right: (sents[1] || ev).slice(0, 72) },
-      { left: 'Uygulama', right: 'Düzenli ve bireyselleştirilmiş saha planı' }
-     ],
-     explanation: ev,
-     difficulty: 'orta',
-     evidence: ev
-    }
-   ],
-   drills: [
-    {
-     type: 'recall',
-     prompt: `${ctx?.unit || 'Ünite'} kapsamında temel bilimsel kuralı özetleyin (${kw}).`,
-     answer: kw || 'Planlı yüklenme',
-     hint: `Kitap pasajı: ${ev.slice(0, 48)}...`,
-     explanation: ev,
-     difficulty: 'kolay',
-     evidence: ev
-    }
-   ]
-  };
- }
 }

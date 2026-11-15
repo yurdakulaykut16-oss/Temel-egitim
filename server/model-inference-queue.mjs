@@ -8,44 +8,96 @@ function abortError(signal) {
  return error;
 }
 
+function clampSlots(value, fallback = 1) {
+ const n = Number(value);
+ if (!Number.isFinite(n)) return fallback;
+ return Math.max(1, Math.min(8, Math.floor(n)));
+}
+
 /**
- * Serializes model inference requests so only one model can use the inference
- * backend at a time. Failed or cancelled work never leaves the queue blocked.
+ * Ollama'ya giden model çağrılarının çalıştırılma yuvalarını yönetir.
+ * maxConcurrent=1 (varsayılan) seri çalışır; 1-8 arası yuva ile paralel
+ * üretim yapılır. Her yuvadaki istek yine de Ollama tarafında sıraya girebilir;
+ * uygulama hangi modelin ne zaman başladığını her durumda bilir.
  */
 export class SerialTaskQueue {
- #tail = Promise.resolve();
+ #maxConcurrent;
+ #running = 0;
+ #waiters = [];
+ #active = new Set();
  #pending = 0;
- #active = null;
 
- run(label, task, { signal } = {}) {
-  if (typeof task !== 'function') throw new TypeError('A queue task must be a function.');
-  this.#pending += 1;
+ constructor(maxConcurrent = 1) {
+  this.#maxConcurrent = clampSlots(maxConcurrent, 1);
+ }
+
+ setMaxConcurrent(value) {
+  this.#maxConcurrent = clampSlots(value, this.#maxConcurrent);
+  this.#drain();
+  return this.#maxConcurrent;
+ }
+
+ get maxConcurrent() {
+  return this.#maxConcurrent;
+ }
+
+ #drain() {
+  while (this.#running < this.#maxConcurrent && this.#waiters.length > 0) {
+   const waiter = this.#waiters.shift();
+   this.#begin(waiter);
+  }
+ }
+
+ #begin(waiter) {
+  this.#running += 1;
+  this.#pending = Math.max(0, this.#pending - 1);
+  const { label, task, signal, resolve, reject } = waiter;
 
   const execute = async () => {
-   this.#pending = Math.max(0, this.#pending - 1);
-   if (signal?.aborted) throw abortError(signal);
-
+   if (signal?.aborted) {
+    this.#finish();
+    reject(abortError(signal));
+    return;
+   }
    const active = {
     label: String(label || 'inference').slice(0, 160),
     startedAt: Date.now()
    };
-   this.#active = active;
+   this.#active.add(active);
    try {
-    return await task();
+    resolve(await task());
+   } catch (err) {
+    reject(err);
    } finally {
-    if (this.#active === active) this.#active = null;
+    this.#active.delete(active);
+    this.#finish();
    }
   };
+  void execute();
+ }
 
-  const result = this.#tail.then(execute, execute);
-  this.#tail = result.then(() => undefined, () => undefined);
-  return result;
+ #finish() {
+  this.#running = Math.max(0, this.#running - 1);
+  this.#drain();
+ }
+
+ run(label, task, { signal } = {}) {
+  if (typeof task !== 'function') throw new TypeError('A queue task must be a function.');
+  this.#pending += 1;
+  return new Promise((resolve, reject) => {
+   this.#waiters.push({ label, task, signal, resolve, reject });
+   // Hemen bir yuva varsa bekletme, anında başlat.
+   if (this.#running < this.#maxConcurrent) this.#drain();
+  });
  }
 
  snapshot() {
+  const activeList = [...this.#active].map(a => ({ ...a }));
+  activeList.sort((a, b) => a.startedAt - b.startedAt);
   return {
-   maxConcurrent: 1,
-   active: this.#active ? { ...this.#active } : null,
+   maxConcurrent: this.#maxConcurrent,
+   active: activeList[0] || null,
+   activeCount: this.#running,
    queued: this.#pending
   };
  }

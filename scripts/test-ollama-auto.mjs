@@ -52,7 +52,6 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
    if(req.url==='/api/create'){inFlight--;return res.end(JSON.stringify({status:'success'}));}
    const prompt=data.prompt||'';
    const isBatchVerify=prompt.includes('"verdicts":');
-   const isStudy=prompt.includes('"flashcards":');
    const isVerify=prompt.includes('soru denetçisisin')&&!isBatchVerify;
    let result;
    const optsMatch=prompt.match(/SEÇENEKLER: (\[[\s\S]*?\])/);
@@ -77,16 +76,6 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
     const text=textMatch?textMatch[1]:'';
     const evidence=text.trim().split(/\s+/).slice(0,8).join(' ')||'yeterince uzun bir kanit metni';
     result={answer:opts0,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Anlatımda bu bilgi doğrudan geçer.'};
-   }else if(isStudy){
-    const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
-    const text=textMatch?textMatch[1]:'';
-    const evidence=text.trim().split(/\s+/).slice(0,8).join(' ')||'yeterince uzun bir kanit metni';
-    const tag=Math.random().toString(36).slice(2,8);
-    result={
-     flashcards:[{front:`Otomatik kart #${calls}-${tag} temel tanımı nedir?`,back:'Pasajda geçen ana kavramın özet açıklamasıdır.',mnemonic:'Kısa ipucu',evidence,difficulty:'kolay'}],
-     matchings:[{title:`Eşleştirme #${calls}-${tag}`,pairs:[{left:'Kavram A',right:'Açıklama A'},{left:'Kavram B',right:'Açıklama B'},{left:'Kavram C',right:'Açıklama C'}],explanation:'Eşleştirme açıklaması',evidence,difficulty:'orta'}],
-     drills:[{type:'fill_blank',prompt:`Otomatik boşluk #${calls}-${tag} ___ tamamlanır.`,answer:'planlı',hint:'İpucu',explanation:'Tekrar açıklaması',evidence,difficulty:'kolay'}]
-    };
    }else{
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
     const text=textMatch?textMatch[1]:'';
@@ -116,6 +105,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   process.env.OLLAMA_BASE_URL=`http://127.0.0.1:${fakePort}`;process.env.OLLAMA_MODEL='fake:1';process.env.OLLAMA_VERIFIER_MODEL='fake:1';process.env.TEMPO_DATA_DIR=dir;
   process.env.OLLAMA_JUDGE2_MODEL='fake:1';
   delete process.env.TEMPO_DISABLE_AUTOLOOP;
+  process.env.TEMPO_AUTO_CONCURRENCY='1';
  const mod=await import('../server/ollama.mjs');const ollamaPlugin=mod.ollamaPlugin;stopOllamaLoops=mod.stopOllamaLoops;let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
   app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});
@@ -124,7 +114,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   let status=await (await fetch(`${base}/api/ollama/status`)).json();
   assert.equal(status.autoRunning,true);
   assert.equal(status.autoConcurrency,1);
-  assert.equal(status.autoTimeoutMs,180000);
+  assert.equal(status.autoTimeoutMs,25000);
   assert.equal(status.settings.preset,'balanced');
   assert.equal(status.settings.turboQualityLock,false);
   assert.equal(status.settings.selfCorrection,true);
@@ -150,7 +140,6 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   assert.ok(calls>=approved*3,`her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}, soru: ${approved}`);
   assert.ok(status.coverage.coveredPassages>=2,'birden fazla kitap pasajı taranmış olmalı');
   assert.ok(status.telemetry.questionsPerMinute>0,'soru/dk hız metriği ölçülmüş olmalı');
-  assert.equal(status.studyCounts?.total||0,0,'çalışma materyali üretimi varsayılan olarak kapalı olmalı');
 
   const questions=await (await fetch(`${base}/api/ollama/questions`)).json();
   const units=new Set(questions.items.map(x=>x.unitId));
