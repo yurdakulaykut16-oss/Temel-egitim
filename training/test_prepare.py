@@ -24,16 +24,10 @@ class PreparationTest(unittest.TestCase):
         eval_units = {r['unit_id'] for r in valid}
         passages = {'0-0#01': {'id': '0-0#01', 'heading': 'Başlık', 'keywords': ['K1'], 'sourceType': 'book', 'text': 'Kitaptan uzun bir pasaj metni.'}}
         traces = [{'unitId': '0-0', 'draft': {**row(99, '0-0'), 'question': 'Kötü soru?'}}]
-        study_data = {
-            'flashcards': [{'id': 'fc1', 'unitId': '0-0', 'front': 'Kart ön', 'back': 'Kart arka', 'evidence': 'Bu metin', 'difficulty': 'kolay', 'status': 'approved'}],
-            'matchings': [{'id': 'm1', 'unitId': '0-0', 'title': 'Eşleşme', 'pairs': [{'left': 'A', 'right': '1'}], 'evidence': 'Bu metin', 'difficulty': 'orta', 'status': 'approved'}]
-        }
-        ex_tr, ex_val, dpo_tr, dpo_val = build_multitask_extras(rows, contexts, passages, eval_units, traces, study_data=study_data)
+        ex_tr, ex_val, dpo_tr, dpo_val = build_multitask_extras(rows, contexts, passages, eval_units, traces)
         self.assertTrue(any(r['task'] == 'judge' for r in ex_tr))
         self.assertTrue(any(r['task'] == 'socratic_reasoning' for r in ex_tr))
         self.assertTrue(any(r['task'] == 'trap_shield' for r in ex_tr))
-        self.assertTrue(any(r['task'] == 'flashcard' for r in ex_tr + ex_val))
-        self.assertTrue(any(r['task'] == 'matching' for r in ex_tr + ex_val))
         self.assertTrue(len(dpo_tr) + len(dpo_val) >= 1)
         # eval ünitelerindeki knowledge kayıtları asla eğitim kümesine sızmamalı
         for r in ex_tr:

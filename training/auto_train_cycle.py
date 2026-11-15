@@ -106,7 +106,6 @@ def main():
         run_step([
             sys.executable, scripts_dir / 'prepare.py',
             '--input', data_root / 'questions.json',
-            '--study', data_root / 'study-materials.json',
             '--traces', data_root / 'traces.jsonl',
             '--output', t_dir,
             '--multitask', '--dpo',

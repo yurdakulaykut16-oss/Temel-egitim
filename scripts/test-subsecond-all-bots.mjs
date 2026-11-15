@@ -92,7 +92,6 @@ test('Tüm botlar + soru üretimi (<1 sn) uçtan uca doğrulama: çevrimdışı 
 
   // 4) Bireysel tüm bot uç noktaları tek tek < 1 saniye içinde döner
   const endpoints = [
-   ['/generate-study', { unitId: '0-0' }],
    ['/evolve', {}],
    ['/jarvis/reflect', {}],
    ['/jarvis/innovate', {}],

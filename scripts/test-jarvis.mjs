@@ -173,10 +173,9 @@ test('JARVIS + Qwen Code: deneyim hafızası, kesintisiz üretim, Qwen Coder & C
     },
     difficultyEngineCode: 'function evaluateDifficultyFit(c, target){ if (target === "zor" && c.question.length < 18) return {ok:false, reason:"Zor soru kısa"}; return {ok:true}; }',
     customRuleCode: 'function evaluateCandidate(c){ if (c.question.length < 12) return {ok:false, reason:"Çok kısa"}; return {ok:true}; }',
-    studyAddendum: 'Eşleştirmelerde zıt kavramları aynı listeye koyma.',
     codeProposal: {
      title: 'Hızlı Vaka İpucu Kuralı',
-     area: 'study',
+     area: 'ai',
      summary: 'Zor sorular için arka uç çözüm kalitesi kuralı eklenebilir.',
      targetFile: 'server/pool-curator.mjs',
      code: '// Örnek arka uç önerisi\nexport const hintQualityWeight = 1.25;'
@@ -229,7 +228,7 @@ console.log(JSON.stringify({
     orta: 'ORTA CLI: İki kavramı ilişkilendir.',
     zor: 'ZOR CLI: Antrenörlük vakası kur.'
   },
-  codeProposal: { title: 'CLI Önerisi', area: 'ai', summary: 'Harici Qwen CLI testi', targetFile: 'src/StudyArcade.tsx', code: 'export const x = 1;' }
+  codeProposal: { title: 'CLI Önerisi', area: 'ai', summary: 'Harici Qwen CLI testi', targetFile: 'src/OllamaStudio.tsx', code: 'export const x = 1;' }
 }));
 `);
  await chmod(mockQwenCli, 0o755);

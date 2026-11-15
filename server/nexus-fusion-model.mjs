@@ -859,7 +859,6 @@ export class NexusTitanFusionModel {
    { rel: 'index.html', layer: 'ui' },
    { rel: 'src/main.tsx', layer: 'ui' },
    { rel: 'src/OllamaStudio.tsx', layer: 'ui' },
-   { rel: 'src/StudyArcade.tsx', layer: 'ui' },
    { rel: 'src/VoiceStudio.tsx', layer: 'ui' },
    { rel: 'src/style.css', layer: 'ui' },
    { rel: 'src/nexus-live-theme.css', layer: 'ui' },
