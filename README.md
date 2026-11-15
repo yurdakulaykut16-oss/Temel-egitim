@@ -216,6 +216,9 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_VERBOSE` / `TEMPO_QUIET` | `0` | Terminal günlüğünü ayrıntılandırır / kapatır |
 | `TEMPO_MANAGE_OLLAMA` | `1` | `0` yapılınca açılışta Ollama ayarlarına ve sürecine dokunulmaz |
 | `TEMPO_AUTO_PULL` | `1` | `0` yapılınca eksik model kendiliğinden indirilmez |
+| `TEMPO_PLAN` | `1` | Sıralı üretim planı (aşağıda §4.1.1). `0` yapılınca eski dengeli dolaşıma dönülür |
+| `TEMPO_PLAN_QUOTA` | `50` | Her konu için her zorlukta üretilecek soru sayısı |
+| `TEMPO_PLAN_STUCK_LIMIT` | `25` | Bir adımda üst üste bu kadar deneme soru çıkarmazsa adım atlanır |
 
 **Sorun giderme**
 
@@ -226,6 +229,21 @@ Ortam değişkenleriyle ince ayar:
 | `model_timeout` sık tekrarlanıyor | Model ekran kartına sığmayıp işlemciye taşıyor olabilir: `ollama ps` çıktısında `100% GPU` yazmalı. Yazmıyorsa daha küçük kadro seç (`Hızlı` profil) ya da süre tavanını yükselt |
 | "model sürekli yeniden yükleniyor" | Uygulamayı kapatıp yeniden aç (açılış betiği Ollama ayarını düzeltir). Sürüyorsa ekran kartı belleği iki modele yetmiyordur: **Hızlı** profile geç |
 | Onay oranı çok düşük | Terminalde `TEMPO_VERBOSE=1` ile ret gerekçelerine bak; stüdyodaki **Reddedilenler** sekmesi hakem gerekçelerini gösterir |
+
+### 4.1.1 Üretim planı: sorular hangi sırayla gelir?
+
+Otomatik üretim konuları rastgele dolaşmaz; sabit bir plan izler:
+
+1. **1. tur — kolay:** 1. kitabın 1. konusuna 50 kolay soru, sonra 2. konusuna 50, … son kitabın son konusuna kadar (29 konu).
+2. **2. tur — orta:** aynı sırayla her konuya 50 orta soru.
+3. **3. tur — zor:** aynı sırayla her konuya 50 zor soru.
+
+- Bir konunun kotası dolmadan sıradaki konuya geçilmez; bu yüzden plan sürerken aynı anda tek soru hazırlanır.
+- **Sorular yalnızca o konunun özetinden kurulur.** Kitap pasajı kullanılmaz; kanıt cümlesi konu özetinde geçmeyen soru reddedilir. Tekrarı azaltmak için her soruda özetin en az soru sorulmuş cümlesi odak olarak verilir.
+- Hakemler bir soruyu hedeften farklı zorlukta bulursa (ör. kolay turunda "orta") ve o konunun o zorluktaki kotası dolmamışsa soru o zorlukla kaydedilir ve ileriki tura sayılır; kota doluysa reddedilir.
+- **Konu özetleri kısadır (11–26 cümle).** Bir konudan aynı zorlukta 50 farklı soru çıkmayabilir. Bir adımda üst üste 25 deneme soru çıkarmazsa adım **atlanır**, sıradaki konuya geçilir ve stüdyoda "Atlanan adımlar" olarak gösterilir; diğer adımlar bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
+- Daha önce üretilmiş onaylı sorular kotalara sayılır.
+- Stüdyodaki **Üretim planı** kutusu o anki turu, konuyu ve ilerlemeyi gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
 
 ### 4.2 Soru ve çeldirici kalitesi
 

@@ -37,6 +37,10 @@ import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
 import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './ollama-client.mjs';
 import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
 import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
+import {
+ planConfigFromEnv, planSnapshot, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
+ sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep
+} from './production-plan.mjs';
 
 const execFileAsync = promisify(execFile);
 const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
@@ -105,6 +109,7 @@ const dataFile = resolve(dataDir, 'questions.json');
 const settingsFile = resolve(dataDir, 'settings.json');
 const ledgerFile = resolve(dataDir, 'ollama-created.json');
 const tracesFile = resolve(dataDir, 'rejected-traces.jsonl');
+const planFile = resolve(dataDir, 'production-plan.json');
 const storageLimit = 100_000_000_000;
 const QUESTION_POOL_CAPACITY = 20_000;
 const QUESTION_POOL_REFILL_TARGET = 18_500;
@@ -814,7 +819,112 @@ async function getPipelineConfig() {
  };
 }
 
+// --- ÜRETİM PLANI (bkz. server/production-plan.mjs) ---------------------------------
+// 1. tur: her konuya sırayla 50 kolay · 2. tur: 50 orta · 3. tur: 50 zor. Sorular yalnızca
+// konu özetinden kurulur. TEMPO_PLAN=0 planı kapatır (eski dengeli dolaşım).
+const PLAN = planConfigFromEnv(process.env);
+let planState = { parked: {}, streakKey: '', streak: 0 };
+let planStateLoaded = false;
+let planLastSnapshot = null;
+let planLastLoggedKey = '';
+const planFocusRotation = new Map(); // unitId -> deneme sayacı (odak cümlesini döndürmek için)
+
+async function loadPlanState() {
+ if (planStateLoaded) return planState;
+ planStateLoaded = true;
+ try {
+  planState = sanitizePlanState(JSON.parse(await readFile(planFile, 'utf8')), contexts);
+ } catch {
+  planState = sanitizePlanState(null, contexts);
+ }
+ return planState;
+}
+
+async function savePlanState() {
+ try {
+  await mkdir(dataDir, { recursive: true });
+  const tmp = `${planFile}.${process.pid}.${Date.now()}.tmp`;
+  await writeFile(tmp, JSON.stringify(planState, null, 2), 'utf8');
+  await rename(tmp, planFile);
+ } catch { /* plan durumu yazılamazsa üretim durmaz; yalnızca atlananlar yeniden denenir */ }
+}
+
+/** Planın sıradaki adımı (plan kapalıysa ya da tamamlandıysa null). */
+async function currentPlanStep(items) {
+ if (!PLAN.enabled) return null;
+ await loadPlanState();
+ let snap = planSnapshot({ contexts, items, quota: PLAN.quota, parked: planState.parked });
+ if (snap.allParked) {
+  // Geriye yalnızca atlanan adımlar kaldı: hepsi yeniden denenir.
+  tempoLog(`Plan: sıradaki adımların hepsi tamamlandı; atlanan ${snap.parkedSteps.length} adım yeniden deneniyor.`);
+  planState = { parked: {}, streakKey: '', streak: 0 };
+  await savePlanState();
+  snap = planSnapshot({ contexts, items, quota: PLAN.quota, parked: planState.parked });
+ }
+ planLastSnapshot = snap;
+ const step = snap.current;
+ if (step && step.key !== planLastLoggedKey) {
+  planLastLoggedKey = step.key;
+  tempoLog(`Plan: ${describeStep(step)} · ${step.done}/${step.quota} (toplam ${snap.totalDone}/${snap.totalTarget})`);
+ } else if (!step && snap.complete && planLastLoggedKey !== 'complete') {
+  planLastLoggedKey = 'complete';
+  tempoLog(`Plan tamamlandı: ${snap.totalDone}/${snap.totalTarget} soru. Üretim dengeli dolaşımla sürüyor.`);
+ }
+ return step;
+}
+
+/** Bir plan adımının sonucunu işler; üst üste sonuçsuz kalan adımı atlar. */
+async function recordPlanOutcome(step, outcome, done = 0) {
+ if (!PLAN.enabled || !step) return;
+ await loadPlanState();
+ const before = JSON.stringify(planState);
+ const res = notePlanOutcome(planState, step, outcome, { stuckLimit: PLAN.stuckLimit, done });
+ planState = res.state;
+ if (res.parkedNow) {
+  const msg = `${describeStep(step)}: üst üste ${PLAN.stuckLimit} deneme soru çıkarmadı (${done}/${step.quota}). Konu özeti bu zorlukta yeni soru için yetersiz kalmış olabilir; adım atlandı, sıradakine geçiliyor.`;
+  tempoLog(`Plan: ${msg}`);
+  pushAutoEvent({ unit: step.unitId, ok: false, kind: 'plan_skipped', message: msg });
+ }
+ if (JSON.stringify(planState) !== before) await savePlanState();
+}
+
+/** /status için plan özeti (arayüz bunu gösterir). */
+async function publicPlan(items) {
+ if (!PLAN.enabled) return { enabled: false };
+ await loadPlanState();
+ const snap = planSnapshot({ contexts, items, quota: PLAN.quota, parked: planState.parked });
+ const slim = step => step && ({ key: step.key, pass: step.pass, difficulty: step.difficulty, unitId: step.unitId, book: step.book, unit: step.unit, bookNo: step.bookNo, unitNo: step.unitNo, done: step.done, quota: step.quota });
+ const passes = DIFFICULTIES.map((difficulty, i) => {
+  const steps = snap.steps.filter(x => x.difficulty === difficulty);
+  const done = steps.reduce((sum, x) => sum + Math.min(PLAN.quota, snap.counts.get(x.key) || 0), 0);
+  return { pass: i + 1, difficulty, done, target: steps.length * PLAN.quota, unitsDone: steps.filter(x => (snap.counts.get(x.key) || 0) >= PLAN.quota).length, units: steps.length };
+ });
+ return {
+  enabled: true,
+  quota: PLAN.quota,
+  stuckLimit: PLAN.stuckLimit,
+  summaryOnly: true,
+  complete: snap.complete,
+  totalDone: snap.totalDone,
+  totalTarget: snap.totalTarget,
+  current: slim(snap.current),
+  currentLabel: describeStep(snap.current),
+  streak: snap.current && planState.streakKey === snap.current.key ? planState.streak : 0,
+  passes,
+  parked: snap.parkedSteps.map(slim)
+ };
+}
+
+/**
+ * Sıradaki sorunun hedef zorluğu.
+ * Plan açıkken konu içi sıra sabittir: önce kolay kotası, sonra orta, sonra zor.
+ * Plan kapalıyken (ya da konunun bütün kotaları dolduysa) ünite içinde en az sorusu olan zorluk seçilir.
+ */
 function nextDifficulty(ctx, items, offset = 0) {
+ if (PLAN.enabled && offset === 0) {
+  const planned = planDifficultyForUnit(ctx.id, items, PLAN.quota);
+  if (planned) return planned;
+ }
  const unitAiItems = [...questionBank, ...items].filter(x => x.unitId === ctx.id && DIFFICULTIES.includes(x.difficulty));
  if (offset === 0 && unitAiItems.length === 0) return DIFFICULTIES[0];
  const counts = { kolay: 0, orta: 0, zor: 0 };
@@ -1750,6 +1860,14 @@ function packOptionalBlocks(blocks, maxChars) {
  return out.join('');
 }
 
+/** Özetin en az soru sorulmuş cümlesi; her denemede eşit kullanılanlar arasında döner. */
+function nextFocusSentence(ctx, items) {
+ const rotation = planFocusRotation.get(ctx.id) || 0;
+ planFocusRotation.set(ctx.id, rotation + 1);
+ const unitItems = items.filter(x => x.unitId === ctx.id && x.status === 'approved');
+ return pickFocusSentence(ctx.text, unitItems, rotation);
+}
+
 function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTypes, policy = null, jarvisMemory = null, researchMemory = null, adaptiveQuality = null, targetAngles = null, studentProfile = null, apexState = null, trainerState = null, promptOpts = {}) {
  const existingQuestions = [...questionBank, ...items].filter(x => x.unitId === ctx.id);
  // Tekrar listesi: önce AYNI pasajdan yazılmış sorular (asıl tekrar riski), sonra ünitenin son soruları.
@@ -1795,8 +1913,15 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
   const typeHint = QUESTION_TYPE_HINTS[qType] || '';
   const angleHint = QUESTION_ANGLE_HINTS[qAngle] || '';
   const isParagraph = qType === PARAGRAPH_QUESTION_TYPE;
-  const coverageHint = buildConceptCoverageSnippet(ctx, items, passage);
-  const bookSeedHint = buildBookSeedSnippet(ctx, items);
+  // Yalnızca-özet modunda kitap içeriği taşıyan bloklar (kitap sorusu örneği, kitap pasajı anahtar
+  // kelimeleri, kitaptan çapraz bağlam) eklenmez: model özet dışı bilgiye kaymasın.
+  const summaryOnly = promptOpts?.summaryOnly === true;
+  const coverageHint = summaryOnly ? '' : buildConceptCoverageSnippet(ctx, items, passage);
+  const bookSeedHint = summaryOnly ? '' : buildBookSeedSnippet(ctx, items);
+  const focus = summaryOnly ? promptOpts?.focus : null;
+  const focusHint = focus?.sentence
+   ? `\nODAK CÜMLE (soruyu bu cümledeki bilgiden kur, \"evidence\" alanına bu cümleyi kopyala): \"${focus.sentence}\"${diff === 'kolay' ? '' : ' Zorluk için metindeki başka bir bilgiyle ilişkilendirebilirsin.'}`
+   : '';
 
   // 1) ZORUNLU BAŞLIK: görev + hedefler + kurallar + çıktı biçimi (her çağrıda aynı iskelet).
   const head = `Sen antrenörlük temel eğitim sınavı için ÖSYM tarzında soru yazan uzman bir ölçme-değerlendirme yazarısın. En altta verilen KONU ANLATIMI metnine dayanarak, KESİNLİKLE TEK doğru cevabı olan, dört seçenekli, özgün BİR sınav sorusu yaz.
@@ -1834,6 +1959,7 @@ ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
   const budget = Number.isFinite(promptOpts?.budgetChars) ? promptOpts.budgetChars : generatorPromptBudget(promptOpts?.model || '', isParagraph ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT);
   const freeChars = Math.max(0, Math.min(3200, budget - head.length - tail.length));
   const optional = packOptionalBlocks([
+   focusHint,
    axiomHint,
    osymUnitTraps,
    avoidQuestions ? `\nBU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.` : '',
@@ -1848,7 +1974,7 @@ ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
    recentOptionSets ? `\nYAKIN ZAMANDA KULLANILAN ÇELDİRİCİLERİ TEKRAR KULLANMA: ${recentOptionSets}.` : '',
    exemplars,
    tvgfbfStyleHint,
-   ragCrossHint,
+   summaryOnly ? '' : ragCrossHint,
    trainerHint,
    layeredWorkflowHint,
    apexHint
@@ -1953,6 +2079,9 @@ function parseJudgeVerdict(rawCheck, jm, draft, ctx, passage) {
 
 function difficultyAccepted(agreedDifficulty, targetDifficulty, ctx, items, smartDifficulty) {
  if (agreedDifficulty === targetDifficulty) return true;
+ // Plan açıkken: hakemlerin verdiği zorluğun bu konudaki kotası dolmadıysa soru o zorlukla
+ // kaydedilir (iyi soru çöpe gitmez, ileriki tura sayılır); kota doluysa reddedilir.
+ if (PLAN.enabled && planDifficultyForUnit(ctx.id, items, PLAN.quota)) return planAcceptsDifficulty(ctx.id, agreedDifficulty, targetDifficulty, items, PLAN.quota);
  if (!smartDifficulty) return false;
  const counts = { kolay: 0, orta: 0, zor: 0 };
  for (const it of items) if (it.unitId === ctx.id && DIFFICULTIES.includes(it.difficulty)) counts[it.difficulty]++;
@@ -2044,9 +2173,11 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  const resultAudit = audit(items);
  if (resultAudit.invalid || resultAudit.duplicates) throw Error('Havuz denetiminde biçim veya birebir tekrar hatası var; üretim durduruldu.');
 
- const passage = passageMode === 'full-book' ? selectPassageForUnit(ctx, items, passageMode) : null;
+ // Plan açıkken sorular YALNIZCA konu özetinden kurulur (kitap pasajı kullanılmaz).
+ const summaryOnly = opts.summaryOnly ?? (PLAN.enabled || passageMode === 'summary-only');
+ const passage = !summaryOnly && passageMode === 'full-book' ? selectPassageForUnit(ctx, items, passageMode) : null;
  notePassageAttempt(passage);
- const targetDifficulty = nextDifficulty(ctx, items);
+ const targetDifficulty = DIFFICULTIES.includes(opts.targetDifficulty) ? opts.targetDifficulty : nextDifficulty(ctx, items);
  const targetType = nextQuestionType(ctx, items);
  const targetAngle = nextQuestionAngle(ctx, items);
  const repairSource = `${passage?.text || ''}\n${ctx?.text || ''}`;
@@ -2081,7 +2212,9 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  const numPredictGen = subSecondEnabled ? 320 : (isParagraphTarget ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT);
  const prompt = buildGeneratorPrompt(ctx, items, passage, [targetDifficulty], [targetType], policy, jarvisMemory, researchMemory, adaptiveQuality, [targetAngle], studentProfile, apexState, trainerState, {
   model,
-  budgetChars: generatorPromptBudget(model, numPredictGen)
+  budgetChars: generatorPromptBudget(model, numPredictGen),
+  summaryOnly,
+  focus: summaryOnly ? nextFocusSentence(ctx, items) : null
  });
  const temp = Math.max(0.4, Math.min(0.95, 0.7 + (policy?.temperatureOffset || 0)));
 
@@ -2138,6 +2271,18 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   }
  }
 
+ // --- YALNIZCA ÖZET KAPISI: kanıt cümlesi konu özetinde geçmiyorsa soru alınmaz ---
+ // (Genel kaynak kapısı kitabın tam metnini de kabul eder; plan modunda özet dışı bilgi sorulmaz.)
+ if (summaryOnly) {
+  const inSummary = evidenceWithinSummary(draft.evidence, ctx.text);
+  if (!inSummary.ok) {
+   telemetry.rejectedPreflight++;
+   recordRejection('summary_only', inSummary.reason);
+   await appendTrace({ type: 'rejected_preflight', unitId: ctx.id, draft: parsed, reason: inSummary.reason });
+   throw Error(inSummary.reason);
+  }
+ }
+
  // --- İKİ BAĞIMSIZ HAKEM ---
  // Kadro VRAM'e birlikte sığıyorsa iki hakem aynı anda çalışır (hız). Sığmıyorsa sırayla
  // çalışır ve 1. hakem reddederse 2. hakem modeli hiç yüklenmez (boşuna model takası yok).
@@ -2191,7 +2336,7 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
     reason: 'Milisaniye altı ikincil doğrulama: kaynak alıntısı ve şık hijyeni doğrulandı.'
    }));
    onPhase?.('saving');
-   return finalize(parsed, ctx, model, { judges: jFallback, answer: draft.answer, difficulty: targetDifficulty, qualityScore: 4.75, examPotential: 4.8, subSecondVerified: true }, passage, policy, adaptiveQuality, targetAngle);
+   return finalize(parsed, ctx, model, { judges: jFallback, answer: draft.answer, difficulty: targetDifficulty, targetDifficulty, qualityScore: 4.75, examPotential: 4.8, subSecondVerified: true }, passage, policy, adaptiveQuality, targetAngle);
   }
   // Altyapı hatası (zaman aşımı, bağlantı, model yok) içerik reddi değildir.
   if (isInfraError(judgeErr)) throw judgeErr;
@@ -2245,6 +2390,7 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   judges,
   answer: draft.answer,
   difficulty: agreedDifficulty,
+  targetDifficulty,
   qualityScore: avgQuality,
   examPotential: avgExamPot,
   ...(resolvedDifficulty.agreement !== 'unanimous' ? { difficultyAgreement: resolvedDifficulty.agreement } : {}),
@@ -2773,13 +2919,18 @@ function handleUnitFailure(ctx, e, { manual = false } = {}) {
  return info;
 }
 
-function handleUnitSuccess(ctx, record, startedAt) {
+function handleUnitSuccess(ctx, record, startedAt, plan = null) {
  autoState.consecutiveInfraErrors = 0;
  autoState.backoffUntil = 0;
  telemetry.lastApprovedAt = Date.now();
  const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
  noteUnitOutcome(ctx, { ok: true, kind: 'approved', difficulty: record?.difficulty, seconds: Number(secs), message: String(record?.question || '').slice(0, 160) });
- tempoLog(`✓ ${ctx.id} onaylandı (${record?.difficulty || '?'}, ${secs} sn) — ${String(record?.question || '').slice(0, 90)}`);
+ const target = record?.verification?.targetDifficulty;
+ // Hakemler hedeften farklı etiket verdiyse görünür olsun: "hep kolay" şikâyetinde sorunun
+ // hedef sırasında mı yoksa modelin/hakemin etiketinde mi olduğu buradan anlaşılır.
+ const targetNote = target && target !== record?.difficulty ? `, hedef ${target}` : '';
+ const planNote = plan?.step ? ` [${plan.step.bookNo}. kitap ${plan.step.unitNo}. konu · ${plan.step.difficulty} ${plan.done}/${plan.step.quota}]` : '';
+ tempoLog(`✓ ${ctx.id}${planNote} onaylandı (${record?.difficulty || '?'}${targetNote}, ${secs} sn) — ${String(record?.question || '').slice(0, 90)}`);
 }
 
 async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = UNIT_SAFETY_TIMEOUT_MS, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
@@ -2818,6 +2969,7 @@ async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeo
 
 function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg, extra = {}) {
  const startedAt = Date.now();
+ const planStep = extra.planStep || null;
  const entry = { unit: ctx.id, phase: 'loading', startedAt, model };
  const ctrl = new AbortController();
  autoControllers.set(ctrl, entry);
@@ -2829,12 +2981,21 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
   smartDifficulty: cfg.smartDifficulty,
   selfCorrection: cfg.selfCorrection,
   fastThink: cfg.fastThink,
+  ...(planStep ? { targetDifficulty: planStep.difficulty } : {}),
   ...(typeof extra.parallelJudges === 'boolean' ? { parallelJudges: extra.parallelJudges } : {})
  })
-  .then(record => { handleUnitSuccess(ctx, record, startedAt); })
-  .catch(e => {
+  .then(async record => {
+   const onTarget = planStep && record?.difficulty === planStep.difficulty;
+   const done = planStep ? planStep.done + (onTarget ? 1 : 0) : 0;
+   handleUnitSuccess(ctx, record, startedAt, planStep ? { step: planStep, done } : null);
+   // Hedef kovaya giren soru ilerlemedir; başka zorlukla kaydedilen soru sayacı değiştirmez.
+   await recordPlanOutcome(planStep, onTarget ? 'approved' : 'other', done);
+  })
+  .catch(async e => {
    const info = handleUnitFailure(ctx, e);
    if (!info.silent) autoLastError = info.message;
+   // Altyapı hataları (Ollama kapalı, zaman aşımı) ve durdurma, adımı "sonuçsuz" saymaz.
+   if (!info.silent && !info.infra) await recordPlanOutcome(planStep, 'rejected', planStep?.done || 0);
   })
   .finally(() => { clearTimeout(timeout); autoControllers.delete(ctrl); });
  return run;
@@ -3737,7 +3898,9 @@ async function autoScheduler() {
       autoState.thrashLogged = true;
       for (const w of reloadWarnings()) tempoLog(`Uyarı: ${w}`);
      }
-     const limit = lineup.coResident && !thrashing ? limitSetting : 1;
+     // Plan sürerken tek soru üretilir: adım (konu + zorluk) kotası dolmadan sıradakine geçilmez.
+     const planActive = PLAN.enabled && !(planLastSnapshot?.complete);
+     const limit = planActive ? 1 : (lineup.coResident && !thrashing ? limitSetting : 1);
      autoState.effectiveConcurrency = limit;
 
      if (cfg.pipelineMode === 'batched') {
@@ -3767,10 +3930,12 @@ async function autoScheduler() {
        nextSleep = 5000;
       } else {
        setAutoBlock('', '');
-       const ctx = contexts[autoCursor++ % contexts.length];
+       const planStep = await currentPlanStep(items);
+       const ctx = (planStep && contexts.find(c => c.id === planStep.unitId)) || contexts[autoCursor++ % contexts.length];
        autoState.lastLaunchAt = Date.now();
        const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
-        parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model
+        parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model,
+        planStep
        });
        // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
        if (limit <= 1) await run;
@@ -4150,13 +4315,18 @@ async function qualityImprovementPass() {
    const ctx = contexts.find(c => c.id === q.unitId);
    if (!ctx) return;
    const passages = passagesByUnit.get(ctx.id) || [];
-   const passage = passages.find(p => p.id === q.passageId) || selectPassageForUnit(ctx, items, 'full-book');
+   // Plan açıkken iyileştirme de yalnızca konu özetine dayanır (kitap pasajı kullanılmaz).
+   const passage = PLAN.enabled ? null : (passages.find(p => p.id === q.passageId) || selectPassageForUnit(ctx, items, 'full-book'));
    const upgraded = await rewriteQuestionForQuality({ model, question: q, ctx, passage });
    if (!upgraded) { qualityTelemetry.rejectedRewriteTotal += 1; return; }
 
    const policy = await evolver.loadPolicy();
    const freshPool = items.filter(x => x.id !== q.id);
    const record = validate(upgraded, ctx, freshPool, model, passage, policy, q.difficulty || null);
+   if (PLAN.enabled) {
+    const inSummary = evidenceWithinSummary(record.evidence, ctx.text);
+    if (!inSummary.ok) throw Error(inSummary.reason);
+   }
    record.id = q.id; // soru kimliğini koru — aynı sorunun yükseltilmiş sürümüdür
    record.createdAt = q.createdAt || record.createdAt;
    record.improvementCount = (Number(q.improvementCount) || 0) + 1;
@@ -4179,6 +4349,12 @@ async function qualityImprovementPass() {
    }
    const agreedDifficulties = new Set(judges.map(j => j.difficulty));
    const agreedDifficulty = agreedDifficulties.size === 1 && ['kolay', 'orta', 'zor'].includes([...agreedDifficulties][0]) ? [...agreedDifficulties][0] : (record.difficulty || q.difficulty || 'orta');
+   // Plan açıkken yeniden yazım sorunun zorluğunu değiştiremez (konu/zorluk kotaları kaymasın).
+   if (PLAN.enabled && DIFFICULTIES.includes(q.difficulty) && agreedDifficulty !== q.difficulty) {
+    qualityTelemetry.rejectedRewriteTotal += 1;
+    await appendTrace({ type: 'quality_rewrite_rejected', unitId: ctx.id, question: record.question, reason: `difficulty_changed_${q.difficulty}_to_${agreedDifficulty}` }).catch(() => {});
+    return;
+   }
    const avgQuality = +(judges.reduce((s, j) => s + (Number(j.qualityScore) || 4), 0) / judges.length).toFixed(2);
    const avgExamPot = +(judges.reduce((s, j) => s + (Number(j.examPotential) || Number(j.qualityScore) || 4), 0) / judges.length).toFixed(2);
    const bloomLevel = judges.find(j => j.bloomLevel)?.bloomLevel;
@@ -4765,7 +4941,7 @@ export function ollamaPlugin() {
        subSecondAllBots: pipelineConfig.subSecondAllBots,
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
-       autoConcurrencyEffective: lineup.coResident === false || reloadWarnings().length > 0 ? 1 : autoConcurrency,
+       autoConcurrencyEffective: (PLAN.enabled && !planLastSnapshot?.complete) || lineup.coResident === false || reloadWarnings().length > 0 ? 1 : autoConcurrency,
        modelCallTimeoutRange: { min: MODEL_CALL_TIMEOUT_MIN_MS, max: MODEL_CALL_TIMEOUT_MAX_MS, default: MODEL_CALL_TIMEOUT_DEFAULT_MS },
        firstTokenTimeoutMs: FIRST_TOKEN_TIMEOUT_MS,
        questionIntervalMs: QUESTION_INTERVAL_MS,
@@ -4778,6 +4954,7 @@ export function ollamaPlugin() {
        autoBlock: autoState.blockCode ? { code: autoState.blockCode, reason: autoState.blockReason } : null,
        autoEvents: autoState.recentEvents,
        lineup: publicLineup(lineup),
+       plan: await publicPlan(await load()),
        ollamaRuntime: ollama.snapshot(),
        totalUnits: contexts.length,
        settings: pipelineConfig,

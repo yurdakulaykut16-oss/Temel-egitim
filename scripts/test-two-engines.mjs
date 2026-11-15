@@ -29,7 +29,8 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
    explanation: 'Kısa açıklama.',
    evidence: 'kısa',
    status: 'approved', model: 'seed', createdAt: new Date(Date.now() - 86400_000).toISOString(),
-   difficulty: 'kolay', questionType: 'kavram', questionAngle: 'dogrudan_tanim', qualityScore: 1
+   // Hakemlerin vereceği zorlukla aynı: üretim planı açıkken yeniden yazım zorluğu değiştiremez.
+   difficulty: 'orta', questionType: 'kavram', questionAngle: 'dogrudan_tanim', qualityScore: 1
   };
 
   fake = http.createServer(async (req, res) => {

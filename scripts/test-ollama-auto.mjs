@@ -106,6 +106,8 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   process.env.OLLAMA_JUDGE2_MODEL='fake:1';
   delete process.env.TEMPO_DISABLE_AUTOLOOP;
   process.env.TEMPO_AUTO_CONCURRENCY='1';
+ // Bu dosya plansız (dengeli dolaşım + kitap pasajı) modu sınar; üretim planı scripts/test-plan-*.mjs içinde sınanır.
+ process.env.TEMPO_PLAN='0';
  const mod=await import('../server/ollama.mjs');const ollamaPlugin=mod.ollamaPlugin;stopOllamaLoops=mod.stopOllamaLoops;let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
   app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});

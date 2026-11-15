@@ -49,6 +49,12 @@ type CuratorReport = {
  totalPrunedLifetime?: number; lastRunRemoved?: number; nearDuplicatesFound?: number;
  refillPriorityUnits?: string[]; tierBreakdown?: {kolay: number; orta: number; zor: number};
 };
+type PlanStep = {key: string; pass: number; difficulty: string; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; quota: number};
+type ProductionPlan = {
+ enabled: boolean; quota?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
+ current?: PlanStep | null; streak?: number; parked?: PlanStep[];
+ passes?: {pass: number; difficulty: string; done: number; target: number; unitsDone: number; units: number}[];
+};
 type Status = {
  connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean;
  model: string; verifierModel: string; judge2Model: string; models: string[];
@@ -67,6 +73,7 @@ type Status = {
  autoBlock?: {code: string; reason: string} | null;
  autoEvents?: AutoEvent[];
  lineup?: Lineup;
+ plan?: ProductionPlan;
  ollamaRuntime?: {numCtx?: number; keepAlive?: string | number};
  settings?: {passageMode?: 'full-book' | 'summary-only'};
  telemetry?: Telemetry; coverage?: Coverage; qualityLoop?: QualityLoop;
@@ -256,6 +263,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  const completedWithQuestions = new Set(items.filter(q => q.status === 'approved' && read.includes(q.unitId)).map(q => q.unitId)).size;
  const tel = status?.telemetry;
  const lineup = status?.lineup;
+ const plan = status?.plan?.enabled ? status.plan : null;
  const timeoutRange = status?.modelCallTimeoutRange || {min: 5000, max: 900000, default: 120000};
  const cov = status?.coverage;
  const qg = status?.qualityLoop;
@@ -368,7 +376,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
 
     <div className="preset-bar">
      <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
-     <span className="preset-btn active" title="Tek soru üretimi; kitap kaynağı ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
+     <span className="preset-btn active" title="Tek soru üretimi; kaynak ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
      <span className={`jarvis-badge ${lineup?.coResident === false ? 'warn' : 'ok'}`} style={{marginLeft: 8}}>
       {lineup?.coResident === false ? '⚠ Modeller VRAM\'e birlikte sığmıyor: tek hat, sırayla' : `🔒 Aynı anda en çok ${status?.modelInferenceConcurrency ?? 1} model çağrısı`}
      </span>
@@ -379,6 +387,41 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       <b>Üretim şu an ilerlemiyor:</b> {status.autoBlock.reason}
       {lineup?.recommended?.pullCommand && (status.autoBlock.code === 'no_models' || status.autoBlock.code === 'model_missing') && (
        <code>{lineup.recommended.pullCommand}</code>
+      )}
+     </div>
+    )}
+
+    {plan && (
+     <div className="lineup-box plan-box" aria-label="Üretim planı">
+      <div className="lineup-head">
+       <b>Üretim planı</b>
+       <span className={`jarvis-badge ${plan.complete ? 'ok' : 'neutral'}`}>
+        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · ${plan.current.difficulty}` : 'Atlanan adımlar yeniden denenecek'}
+       </span>
+       <span>Toplam <b>{plan.totalDone ?? 0}</b> / {plan.totalTarget ?? 0} soru</span>
+      </div>
+      {plan.current && (
+       <>
+        <p className="lineup-line">
+         Şu an: <b>{plan.current.bookNo}. kitap {plan.current.unitNo}. konu — {plan.current.unit}</b> ({plan.current.book}) · {plan.current.difficulty} <b>{plan.current.done} / {plan.current.quota}</b>
+         {(plan.streak ?? 0) >= 5 ? ` · üst üste ${plan.streak} deneme sonuçsuz (${plan.stuckLimit} olunca bu adım atlanır)` : ''}
+        </p>
+        <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={plan.current.quota} aria-valuenow={plan.current.done}>
+         <span style={{width: `${Math.min(100, Math.round((plan.current.done / Math.max(1, plan.current.quota)) * 100))}%`}}/>
+        </div>
+       </>
+      )}
+      <p className="lineup-line">
+       {(plan.passes || []).map(p => `${p.pass}. tur ${p.difficulty}: ${p.done}/${p.target} (${p.unitsDone}/${p.units} konu)`).join(' · ')}
+      </p>
+      <p className="lineup-line">
+       Sıra: 1. kitabın 1. konusundan başlayarak her konuya {plan.quota} kolay soru; bütün konular bitince her konuya {plan.quota} orta, sonra {plan.quota} zor. Sorular yalnızca konu özetinden kurulur.
+      </p>
+      {(plan.parked || []).length > 0 && (
+       <p className="lineup-warn">
+        ⚠ Atlanan adımlar: {(plan.parked || []).slice(0, 6).map(p => `${p.bookNo}. kitap ${p.unitNo}. konu ${p.difficulty} (${p.done}/${p.quota})`).join(', ')}{(plan.parked || []).length > 6 ? ` ve ${(plan.parked || []).length - 6} adım daha` : ''}.
+        Bu adımlarda üst üste {plan.stuckLimit} deneme soru çıkarmadı (konu özeti o zorlukta yeni soru için yetersiz kalmış olabilir). Diğer adımlar bitince yeniden denenir.
+       </p>
       )}
      </div>
     )}
@@ -437,7 +480,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     <div className="config-grid">
      <div className="config-item">
       <label htmlFor="passage-choice">Kaynak genişliği</label>
-      <select id="passage-choice" value={status?.settings?.passageMode || 'full-book'} onChange={e => updateConfig({passageMode: e.target.value})}>
+      <select id="passage-choice" value={plan ? 'summary-only' : (status?.settings?.passageMode || 'full-book')} disabled={Boolean(plan)} title={plan ? 'Üretim planı açıkken sorular yalnızca konu özetinden kurulur.' : undefined} onChange={e => updateConfig({passageMode: e.target.value})}>
        <option value="full-book">5 Kitabın Tamamı (1.021 pasaj)</option>
        <option value="summary-only">Yalnız Kısa Özetler (29 pasaj)</option>
       </select>
@@ -445,7 +488,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · ilgili kitap pasajı · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · kolay/orta/zor dengesi.</b> Her soruda dört şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
+     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda dört şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">

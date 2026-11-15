@@ -56,6 +56,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
  process.env.OLLAMA_BASE_URL=`http://127.0.0.1:${fakePort}`;process.env.OLLAMA_MODEL='fake:1';process.env.OLLAMA_VERIFIER_MODEL='fake:1';process.env.TEMPO_DATA_DIR=dir;
  process.env.TEMPO_DISABLE_AUTOLOOP='1';
  process.env.TEMPO_AUTO_CONCURRENCY='1';
+ // Bu dosya plansız (dengeli dolaşım + kitap pasajı) modu sınar; üretim planı scripts/test-plan-*.mjs içinde sınanır.
+ process.env.TEMPO_PLAN='0';
  const {ollamaPlugin}=await import('../server/ollama.mjs');let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
  const app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});const port=await listen(app);const base=`http://127.0.0.1:${port}`;

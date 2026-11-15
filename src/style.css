@@ -354,6 +354,8 @@
 .lineup-warn{font-size:12px;color:#936115;background:#fff8e8;border-radius:7px;padding:7px 10px;margin:8px 0 0;line-height:1.6}
 .lineup-alert{background:#fff1ec;border:1px solid #efc9bd;color:#8a4a36;border-radius:10px;padding:12px 14px;margin:12px 0;font-size:12.5px;line-height:1.7}
 .lineup-alert code{display:block;margin-top:8px;background:#fff;padding:7px 9px}
+.plan-bar{height:8px;border-radius:5px;background:#e9efe5;overflow:hidden;margin:8px 0 2px}
+.plan-bar span{display:block;height:100%;background:#5f9a55;border-radius:5px;transition:width .4s}
 .event-log{border:1px solid #e9eee7;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:12px;color:#55675a}
 .event-log>b{display:block;margin-bottom:6px;font-size:11px;letter-spacing:.4px;color:#728374}
 .event-row{display:grid;grid-template-columns:64px 16px 1fr;gap:8px;padding:4px 0;border-top:1px solid #f1f4ef;line-height:1.5}
