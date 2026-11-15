@@ -1546,7 +1546,7 @@ export class CoderCouncilHub {
   });
  }
 
- // Tüm 40 modelin + 11 botun tam parametre raporunu döndürür
+ // Tüm 40 modelin + 8 botun tam parametre raporunu döndürür
  getFullParameterMatrixReport(state, botMatrixSummary = null) {
   const models = Object.values(state?.models || {});
   const councilFactoredQ = state?.totalFactoredParamsQuadrillions ?? +(models.length * (CODER_FACTORED_PARAMS_EACH / 1e15)).toFixed(3);
