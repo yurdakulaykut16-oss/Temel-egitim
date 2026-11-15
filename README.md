@@ -329,6 +329,8 @@ Listede `package.json` görünmeli. Görünmüyorsa yanlış klasördesin; doğr
 
 **En kolay yol (Windows):** proje klasöründeki **`baslat.bat`** dosyasına çift tıkla. Sırayla güncellemeyi alır (`git pull`), paketleri kurar, Ollama ayarlarını düzeltip Ollama'yı hazırlar, eksik önerilen modeli indirir ve uygulamayı açar. Komut yazman gerekmez.
 
+Projeyi GitHub'dan **ZIP olarak indirdiysen** de aynı dosya çalışır: `baslat.bat` ilk açılışta klasörü kendiliğinden GitHub deposuna bağlar ve sonraki açılışlarda güncellemeyi alır (Git kurulu olmalı: <https://git-scm.com/download/win>). Bu sırada proje dosyaları son sürümle değiştirilir; ürettiğin sorular ve ayarlar (`.tempo-data`), `node_modules` ve `.runtime` korunur. ZIP klasöründe elle `git pull` yazarsan `fatal: not a git repository` hatası alırsın; bunun yerine `baslat.bat` kullan. Otomatik güncellemeyi kapatmak için `TEMPO_AUTO_UPDATE=0`.
+
 Elle başlatmak istersen aynı proje PowerShell penceresinde sırayla:
 
 ```powershell
