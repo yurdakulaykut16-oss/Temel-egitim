@@ -16,6 +16,8 @@
  * Kapatmak için: TEMPO_MANAGE_OLLAMA=0   ·   Model indirmeyi kapatmak için: TEMPO_AUTO_PULL=0
  */
 import { existsSync } from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
 import { join, resolve } from 'node:path';
 import { spawn, execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +29,32 @@ export const RECOMMENDED_MODELS = ['qwen3:8b', 'gemma3:4b'];
 export const SERVE_DEFAULTS = { OLLAMA_FLASH_ATTENTION: '1', OLLAMA_KV_CACHE_TYPE: 'q8_0' };
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/**
+ * Küçük bir HTTP GET. Bilerek `fetch` KULLANILMAZ: Windows'ta Node, `fetch` kullanıldıktan
+ * sonra süreç kapanırken "Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)" hatasıyla
+ * çökebiliyor; bu betik çökünce `npm run dev` de hiç açılmıyordu. Bağlantı her istekte
+ * kapatılır (agent: false), geride açık soket kalmaz.
+ */
+export function httpGet(url, { timeoutMs = 1500 } = {}) {
+ return new Promise((resolvePromise, reject) => {
+  let target;
+  try { target = new URL(url); } catch (e) { reject(e); return; }
+  const lib = target.protocol === 'https:' ? https : http;
+  const req = lib.request(target, { method: 'GET', agent: false, timeout: timeoutMs, headers: { Connection: 'close' } }, res => {
+   const chunks = [];
+   res.on('data', c => chunks.push(c));
+   res.on('error', reject);
+   res.on('end', () => {
+    const text = Buffer.concat(chunks).toString('utf8');
+    resolvePromise({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, json: async () => JSON.parse(text) });
+   });
+  });
+  req.on('timeout', () => req.destroy(new Error('timeout')));
+  req.on('error', reject);
+  req.end();
+ });
+}
 const isBlank = v => v === undefined || v === null || String(v).trim() === '';
 
 /**
@@ -103,7 +131,7 @@ export async function ensureOllama({
  argv = [],
  run = defaultRun,
  spawnDetached = defaultSpawnDetached,
- fetchFn = globalThis.fetch,
+ fetchFn = httpGet,
  exists = existsSync,
  log = msg => console.log(`[tempo] ${msg}`),
  sleepFn = sleep,
@@ -120,7 +148,7 @@ export async function ensureOllama({
 
  const isUp = async () => {
   try {
-   const r = await fetchFn(`${base}/api/version`, { signal: AbortSignal.timeout(1500) });
+   const r = await fetchFn(`${base}/api/version`, { timeoutMs: 1500 });
    return Boolean(r && r.ok);
   } catch { return false; }
  };
@@ -141,7 +169,10 @@ export async function ensureOllama({
   };
   for (const [name, value] of Object.entries(evaluateOllamaEnv(persisted))) {
    const r = await run('setx', [name, value]);
-   if (r.code === 0) {
+   // Yazılan değer gerçekten okunabiliyor mu? (Okunamıyorsa her açılışta yeniden başlatma
+   // döngüsüne girmemek için "değişti" sayılmaz.)
+   const stuck = r.code === 0 && (await readWindowsVar(run, name)) === value;
+   if (stuck) {
     report.changed[name] = value;
     note(`Ollama ayarı düzeltildi: ${name}=${value}${isBlank(persisted[name]) ? '' : ` (önceki: ${persisted[name]})`}`);
    } else {
@@ -209,7 +240,7 @@ export async function ensureOllama({
  if (up && env.TEMPO_AUTO_PULL !== '0') {
   let installed = null;
   try {
-   const r = await fetchFn(`${base}/api/tags`, { signal: AbortSignal.timeout(4000) });
+   const r = await fetchFn(`${base}/api/tags`, { timeoutMs: 4000 });
    if (r.ok) installed = ((await r.json()).models || []).map(m => ({ name: m.name, size: m.size, details: m.details }));
   } catch {}
   if (installed) {
@@ -243,5 +274,9 @@ if (invokedDirectly) {
  } catch (e) {
   console.log(`[tempo] Ollama hazırlığı atlandı: ${e?.message || e}`);
  }
- process.exit(0);
+ // process.exit() ÇAĞRILMAZ: süreç, açık tutamaçlar kapanınca kendiliğinden 0 ile biter
+ // (Windows'ta zorla çıkış libuv doğrulama hatasına yol açabiliyor). Beklenmedik bir tutamaç
+ // süreci açık tutarsa geliştirme sunucusu beklemesin diye emniyet zamanlayıcısı vardır.
+ process.exitCode = 0;
+ setTimeout(() => process.exit(0), 5_000).unref();
 }

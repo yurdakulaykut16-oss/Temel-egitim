@@ -118,3 +118,73 @@ test('uzak Ollama adresi ya da TEMPO_MANAGE_OLLAMA=0: hiçbir şeye dokunulmaz',
  assert.equal(r2.managed, false);
  assert.equal(disabled.state.commands.length, 0);
 });
+
+test('setx yazdığı değer geri okunamıyorsa Ollama yeniden başlatılmaz (her açılışta döngü olmaz)', async () => {
+ const { state, deps } = fakeMachine({ registry: { OLLAMA_NUM_PARALLEL: '4' } });
+ const run = deps.run;
+ // setx "başarılı" dönüyor ama kayıt defteri değişmiyor.
+ deps.run = async (command, args = []) => (command === 'setx' ? { code: 0, stdout: 'SUCCESS' } : run(command, args));
+ const report = await ensureOllama(deps);
+ assert.deepEqual(report.changed, {});
+ assert.equal(report.restarted, false);
+ assert.equal(state.spawned.length, 0);
+ assert.ok(report.notes.some(n => /yazılamadı/.test(n)));
+});
+
+test('httpGet: fetch kullanmadan çalışır; kapalı port ve zaman aşımı hata verir', async () => {
+ const {httpGet} = await import('./ensure-ollama.mjs');
+ const http = await import('node:http');
+ const server = http.createServer((req, res) => {
+  if (req.url === '/yavas') return; // hiç yanıt verme
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ version: '0.12.0' }));
+ });
+ await new Promise(r => server.listen(0, '127.0.0.1', r));
+ const base = `http://127.0.0.1:${server.address().port}`;
+ try {
+  const ok = await httpGet(`${base}/api/version`);
+  assert.equal(ok.ok, true);
+  assert.deepEqual(await ok.json(), { version: '0.12.0' });
+  await assert.rejects(httpGet(`${base}/yavas`, { timeoutMs: 200 }), /timeout/);
+ } finally {
+  server.closeAllConnections?.();
+  await new Promise(r => server.close(r));
+ }
+ await assert.rejects(httpGet('http://127.0.0.1:9/api/version', { timeoutMs: 500 }));
+});
+
+test('betik doğrudan çalıştırıldığında zorla çıkış yapmadan, hemen ve 0 koduyla biter', async () => {
+ const http = await import('node:http');
+ const {spawn} = await import('node:child_process');
+ const {readFileSync} = await import('node:fs');
+ const {fileURLToPath} = await import('node:url');
+ const script = fileURLToPath(new URL('./ensure-ollama.mjs', import.meta.url));
+
+ // Windows'ta çökmeye yol açan iki kalıp betikte bulunmamalı.
+ const source = readFileSync(script, 'utf8');
+ assert.ok(!/globalThis\.fetch|[^.\w]fetch\(/.test(source), 'betik fetch kullanmamalı');
+ const tail = source.slice(source.indexOf('if (invokedDirectly)'));
+ assert.ok(/process\.exitCode = 0/.test(tail) && /\.unref\(\)/.test(tail), 'çıkış doğal olmalı; process.exit yalnızca unref edilmiş emniyet zamanlayıcısında');
+
+ const server = http.createServer((req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  if (req.url === '/api/tags') return res.end(JSON.stringify({ models: [{ name: 'qwen3:8b', size: 5 * 1024 ** 3, details: {} }, { name: 'gemma3:4b', size: 3 * 1024 ** 3, details: {} }] }));
+  res.end(JSON.stringify({ version: '0.12.0' }));
+ });
+ await new Promise(r => server.listen(0, '127.0.0.1', r));
+ try {
+  const started = Date.now();
+  const child = spawn(process.execPath, [script], { env: { ...process.env, OLLAMA_BASE_URL: `http://127.0.0.1:${server.address().port}` }, stdio: ['ignore', 'pipe', 'pipe'] });
+  let out = '';
+  child.stdout.on('data', c => { out += c; });
+  child.stderr.on('data', c => { out += c; });
+  const code = await new Promise(r => child.on('close', r));
+  const elapsed = Date.now() - started;
+  assert.equal(code, 0, out);
+  assert.ok(elapsed < 4000, `betik emniyet zamanlayıcısını beklemeden bitmeli; süre: ${elapsed}ms`);
+  assert.ok(!/Assertion failed/.test(out), out);
+ } finally {
+  server.closeAllConnections?.();
+  await new Promise(r => server.close(r));
+ }
+});

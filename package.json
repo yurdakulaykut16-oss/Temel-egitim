@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/ensure-ollama.mjs && vite --host 0.0.0.0",
+    "dev": "(node scripts/ensure-ollama.mjs || node -e 0) && vite --host 0.0.0.0",
     "dev:voicestudio": "node scripts/dev-with-voicestudio.mjs",
     "build": "tsc --noEmit && vite build",
     "audit": "esbuild scripts/audit.ts --bundle --platform=node --outfile=node_modules/.tempo-audit.cjs --log-level=error && node node_modules/.tempo-audit.cjs",
