@@ -11,6 +11,13 @@ const NARRATIVE_STYLES = [
  'Biyomekanik & Fizyoloji Sayısal Sınır Haritası'
 ];
 
+// Konu özeti (ctx.text) kitaptan seçilmiş cümlelerle uzatıldı; ders anlatımı ise elle yazılmış
+// kısa özetle kurulur (ctx.baseChars: o bölümün uzunluğu).
+function handWrittenSummary(ctx) {
+ const text = String(ctx?.text || '');
+ return Number.isInteger(ctx?.baseChars) && ctx.baseChars > 0 ? text.slice(0, ctx.baseChars) : text;
+}
+
 export class LessonEngine {
  constructor(dataDir) {
   this.dataDir = dataDir;
@@ -218,7 +225,7 @@ export class LessonEngine {
   const deepSections = [
    {
     title: `${ctx.unit}: Çekirdek Mantık ve Sınav Çerçevesi`,
-    body: `${ctx.text || ''} Bu konuyu yalnızca yüzeysel ezberlemek yerine neden-sonuç ilişkisiyle kavramak gerekir. Sınavda hedefimiz geçmek değil 100/100 full doğru yapmaktır; bu nedenle önce temel kuralı, ardından sınır koşullarını ve istisnalarını ayırarak ilerleyeceğiz.`,
+    body: `${handWrittenSummary(ctx)} Bu konuyu yalnızca yüzeysel ezberlemek yerine neden-sonuç ilişkisiyle kavramak gerekir. Sınavda hedefimiz geçmek değil 100/100 full doğru yapmaktır; bu nedenle önce temel kuralı, ardından sınır koşullarını ve istisnalarını ayırarak ilerleyeceğiz.`,
     recallAnchor: `Şimdi kendine yüksek sesle tekrar et: "${ctx.unit} konusunda temel ayrım ölçütü nedir?"`
    },
    ...passages.slice(0, 2).map((p, idx) => ({
@@ -313,7 +320,7 @@ export class LessonEngine {
   // "Ya Çıkarsa?" %100 Kapsam: Tüm pasaj özetlerini ve başlıklarını eksiksiz modele ver
   const allPassageDigest = passages.map((p, i) => `P${i + 1} (${p.heading || 'Bölüm'}, s.${(p.pages || []).join(',')}): ${String(p.text || '').replace(/\s+/g, ' ').trim().slice(0, 340)}`).join('\n');
   const passageChunks = [
-   `ANA ÖZET: ${ctx.text || ''}`,
+   `ANA ÖZET: ${handWrittenSummary(ctx)}`,
    allPassageDigest
   ].join('\n\n').slice(0, 6200);
 

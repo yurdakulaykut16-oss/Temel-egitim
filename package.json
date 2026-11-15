@@ -9,6 +9,7 @@
     "audit": "esbuild scripts/audit.ts --bundle --platform=node --outfile=node_modules/.tempo-audit.cjs --log-level=error && node node_modules/.tempo-audit.cjs",
     "contexts": "esbuild scripts/build-context.ts --bundle --platform=node --outfile=node_modules/.tempo-context.cjs --log-level=error && node node_modules/.tempo-context.cjs",
     "books": "python3 scripts/extract-books.py",
+    "summary": "python3 scripts/build-book-summary.py && npm run contexts",
     "books:questions": "python3 scripts/extract-book-questions.py",
     "parallels": "node scripts/build-book-parallels.mjs",
     "all:questions": "npm run contexts && npm run books:questions && npm run parallels && npm run contexts"

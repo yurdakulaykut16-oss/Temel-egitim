@@ -211,7 +211,8 @@ const tokens = s => normTr(s).split(' ').filter(t => t.length >= 3);
 /** Konu özetini cümlelere böler (çok kısa parçalar atılır). */
 export function splitSummarySentences(summary) {
  return String(summary || '')
-  .split(/(?<=[.!?])\s+/)
+  // Küçük harfle devam eden yerde cümle bitmez ("vb. gibi", "19. yüzyılda").
+  .split(/(?<=[.!?])\s+(?![a-zçğıöşüâîû])/)
   .map(s => s.trim())
   .filter(s => s.length >= 25);
 }
@@ -236,6 +237,52 @@ export function evidenceWithinSummary(evidence, summary) {
   if (hit / evTokens.length >= 0.85) return { ok: true, tier: 'tokens' };
  }
  return { ok: false, reason: 'Kanıt cümlesi konu özetinde bulunamadı; soru yalnızca konu özetindeki bilgiden kurulabilir.' };
+}
+
+/**
+ * İsteme konacak özet penceresi. Özet kitaptan genişletildiği için (konu başına ~100 cümle) modelin
+ * bağlam penceresine tamamı sığmaz; soru yazarına ve hakemlere ilgili cümlenin (odak ya da kanıt
+ * cümlesi) ÇEVRESİ verilir. Cümleler özetteki sırasıyla ve bölünmeden alınır.
+ * Özet zaten `maxChars`'tan kısaysa olduğu gibi döner.
+ * @param anchor  pencerenin ortalanacağı cümle (odak cümlesi ya da kanıt); boşsa özetin başı
+ * @returns { text, windowed, start, end, center }  (start/end/center: cümle sırası)
+ */
+export function summaryWindow(summary, anchor = '', maxChars = 2400) {
+ const full = String(summary || '');
+ if (full.length <= maxChars) return { text: full, windowed: false, start: 0, end: -1, center: -1 };
+ const sentences = splitSummarySentences(full);
+ if (!sentences.length) return { text: full.slice(0, maxChars), windowed: true, start: 0, end: -1, center: -1 };
+ let center = 0;
+ let matched = false;
+ const anchorNorm = normTr(anchor);
+ const anchorTokens = tokens(anchor);
+ if (anchorNorm.length >= 15) {
+  // 1) birebir geçen cümle  2) kelimelerinin çoğu aynı olan cümle
+  const exact = sentences.findIndex(s => { const n = normTr(s); return n.includes(anchorNorm) || anchorNorm.includes(n); });
+  if (exact >= 0) { center = exact; matched = true; }
+  else if (anchorTokens.length >= 3) {
+   let best = -1, bestRatio = 0;
+   for (let i = 0; i < sentences.length; i++) {
+    const set = new Set(tokens(sentences[i]));
+    let hit = 0;
+    for (const t of anchorTokens) if (set.has(t)) hit++;
+    const ratio = hit / anchorTokens.length;
+    if (ratio > bestRatio) { bestRatio = ratio; best = i; }
+   }
+   if (best >= 0 && bestRatio >= 0.5) { center = best; matched = true; }
+  }
+ }
+ let lo = center, hi = center;
+ let used = sentences[center].length;
+ for (;;) {
+  const canLo = lo > 0 && used + sentences[lo - 1].length + 1 <= maxChars;
+  const canHi = hi < sentences.length - 1 && used + sentences[hi + 1].length + 1 <= maxChars;
+  if (!canLo && !canHi) break;
+  // İki yana dengeli genişle (önce sonraki cümle: kitap sırasında açıklama çoğu kez ardından gelir).
+  if (canHi && (!canLo || hi - center <= center - lo)) { hi++; used += sentences[hi].length + 1; }
+  else { lo--; used += sentences[lo].length + 1; }
+ }
+ return { text: sentences.slice(lo, hi + 1).join(' '), windowed: true, start: lo, end: hi, center: matched ? center : -1 };
 }
 
 /**
@@ -267,6 +314,17 @@ export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
  if (candidates.length < 2 && sentences.length >= 2) {
   const rest = usage.map((u, i) => ({ u, i })).filter(x => x.i !== candidates[0]).sort((a, b) => a.u - b.u || a.i - b.i);
   candidates = [candidates[0], rest[0].i];
+ }
+ // Uzun özetlerde eşit kullanılan cümleler baştan sona sırayla değil, özete YAYILARAK seçilir;
+ // yoksa 1. tur (kolay) hep özetin başından, 2. tur (orta) hep sonundan soru çıkarırdı.
+ if (sentences.length > 30 && candidates.length > 2) {
+  const n = sentences.length;
+  let stride = Math.max(1, Math.round(n * 0.618));
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  while (gcd(stride, n) !== 1) stride++;
+  const rank = new Map();
+  for (let k = 0; k < n; k++) rank.set((k * stride) % n, k);
+  candidates.sort((a, b) => rank.get(a) - rank.get(b));
  }
  const index = candidates[((rotation % candidates.length) + candidates.length) % candidates.length];
  return { index, sentence: sentences[index], usage: usage[index], total: sentences.length };

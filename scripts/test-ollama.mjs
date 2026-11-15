@@ -28,7 +28,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   }
   calls.push(data);
   const isUnit01=data.prompt.includes('Antrenmanı oluşturan ögeler');
-  const isUnit02=data.prompt.includes('Bireyselleştirme, süreklilik');
+  // Yazar istemi özetin yalnızca odak cümlesinin çevresini içerir; konu, ünite adından da tanınır.
+  const isUnit02=data.prompt.includes('Bireyselleştirme, süreklilik')||data.prompt.includes('Ünite: Antrenman ilkeleri ve yüklenme');
   let evidence='Egzersiz planlı ve tekrarlıdır';
   if(isUnit01)evidence='Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri';
   if(isUnit02)evidence='Bireyselleştirme, süreklilik, çeşitlilik ve branşa özgülük temel ilkelerdir';

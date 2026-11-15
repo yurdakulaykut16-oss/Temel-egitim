@@ -5,8 +5,7 @@ import {readFileSync} from 'node:fs';
 import {
  buildPlanSteps, planSnapshot, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, splitSummarySentences, planBatch, pickPlanWork,
- planConfigFromEnv, describeStep, stepKey
-} from '../server/production-plan.mjs';
+ planConfigFromEnv, describeStep, stepKey, summaryWindow} from '../server/production-plan.mjs';
 
 const contexts = JSON.parse(readFileSync(new URL('../server/contexts.json', import.meta.url), 'utf8'));
 const q = (unitId, difficulty, extra = {}) => ({ unitId, difficulty, status: 'approved', ...extra });
@@ -176,7 +175,8 @@ test('yalnızca özet: kanıt cümlesi konu özetinde geçmeli', () => {
 });
 
 test('odak cümlesi: en az soru sorulmuş özet cümlesi seçilir, denemeler arasında döner', () => {
- const summary = contexts[0].text;
+ // Kısa özet (elle yazılmış bölüm): cümleler baştan sona sırayla gezilir.
+ const summary = contexts[0].text.slice(0, contexts[0].baseChars);
  const sentences = splitSummarySentences(summary);
  const first = pickFocusSentence(summary, [], 0);
  assert.equal(first.index, 0); assert.equal(first.total, sentences.length);
@@ -194,6 +194,70 @@ test('odak cümlesi: en az soru sorulmuş özet cümlesi seçilir, denemeler ara
  assert.equal(pickFocusSentence(summary, allButThird, 0).index, 3);
  assert.notEqual(pickFocusSentence(summary, allButThird, 1).index, 3);
  assert.equal(pickFocusSentence('', [], 0), null);
+});
+
+test('odak cümlesi: uzun (kitapla büyütülmüş) özette seçimler özetin tamamına yayılır', () => {
+ for (const ctx of contexts) {
+  const sentences = splitSummarySentences(ctx.text);
+  if (sentences.length <= 30) continue;
+  const n = sentences.length;
+  const order = Array.from({ length: n }, (_, r) => pickFocusSentence(ctx.text, [], r).index);
+  assert.equal(new Set(order).size, n, `${ctx.id}: bir turda her cümle bir kez odak olmalı`);
+  // 1. tur (kolay, 50 soru) özetin yalnızca başından değil her bölgesinden cümle almalı.
+  const firstTen = order.slice(0, 10);
+  const thirds = new Set(firstTen.map(i => Math.floor(i * 3 / n)));
+  assert.equal(thirds.size, 3, `${ctx.id}: ilk 10 odak özetin baş/orta/son bölümlerine yayılmalı (${firstTen.join(',')})`);
+ }
+});
+
+test('kitapla büyütülmüş özet: her konuda 50 kolay + 50 orta + 50 zor soruya yetecek cümle var', () => {
+ assert.equal(contexts.length, 29);
+ let total = 0;
+ for (const ctx of contexts) {
+  const sentences = splitSummarySentences(ctx.text);
+  total += sentences.length;
+  assert.ok(Number.isInteger(ctx.baseChars) && ctx.baseChars > 500 && ctx.baseChars < ctx.text.length, `${ctx.id}: baseChars elle yazılmış özeti göstermeli`);
+  // 150 soru için cümle başına en çok 3 soru (kolay / orta / zor) düşmeli → en az 50 cümle.
+  assert.ok(sentences.length >= 50, `${ctx.id}: ${sentences.length} cümle 150 soruya yetmez`);
+  assert.ok(ctx.text.length >= 3 * ctx.baseChars, `${ctx.id}: özet kitapla en az üç katına çıkmalı`);
+  // Her cümle kanıt kapısından geçebilmeli (model cümleyi birebir kopyaladığında).
+  for (const sentence of sentences) assert.equal(evidenceWithinSummary(sentence, ctx.text).ok, true, `${ctx.id}: ${sentence}`);
+  // Kitaptan alınan bölümde soru kökü, liste artığı, şekil/tablo göndermesi kalmamalı.
+  const book = splitSummarySentences(ctx.text.slice(ctx.baseChars));
+  for (const sentence of book) {
+   assert.ok(sentence.length <= 330, `${ctx.id}: çok uzun cümle: ${sentence.slice(0, 80)}…`);
+   assert.ok(!/[?•]|(?:^|\s)(?:Şekil|Tablo|Resim|Grafik)\s+\d/.test(sentence), `${ctx.id}: özet dışı kalıp: ${sentence}`);
+  }
+ }
+ assert.ok(total >= 2500, `toplam ${total} cümle`);
+});
+
+test('özet penceresi: isteme özetin tamamı değil ilgili cümlenin çevresi konur', () => {
+ for (const ctx of contexts) {
+  const sentences = splitSummarySentences(ctx.text);
+  for (const [i, sentence] of sentences.entries()) {
+   const win = summaryWindow(ctx.text, sentence, 2400);
+   assert.equal(win.windowed, true);
+   assert.ok(win.text.length <= 2400, `${ctx.id}#${i}: pencere ${win.text.length} karakter`);
+   assert.ok(win.text.includes(sentence), `${ctx.id}#${i}: odak cümle pencerede olmalı`);
+   assert.ok(win.start <= i && i <= win.end);
+   // Pencere özetten kesintisiz bir bölümdür (cümleler bölünmez, sırası değişmez).
+   assert.equal(win.text, sentences.slice(win.start, win.end + 1).join(' '));
+   assert.equal(evidenceWithinSummary(sentence, win.text).ok, true);
+  }
+ }
+ const ctx = contexts[0];
+ const sentences = splitSummarySentences(ctx.text);
+ // Model kanıtı küçük farklarla kopyalasa da pencere doğru cümleye ortalanır.
+ const loose = sentences[40].toLocaleUpperCase('tr-TR').replace(/[.,;:]/g, ' ');
+ const near = summaryWindow(ctx.text, loose, 2400);
+ assert.ok(near.start <= 40 && 40 <= near.end, 'yaklaşık eşleşen kanıtın cümlesi pencerede olmalı');
+ // Odak yoksa özetin başı; kısa özet olduğu gibi döner.
+ assert.equal(summaryWindow(ctx.text, '', 2400).start, 0);
+ const short = ctx.text.slice(0, 900);
+ assert.deepEqual(summaryWindow(short, sentences[1], 2400), { text: short, windowed: false, start: 0, end: -1, center: -1 });
+ // Bütçe büyüdükçe pencere de büyür.
+ assert.ok(summaryWindow(ctx.text, sentences[40], 4000).text.length > summaryWindow(ctx.text, sentences[40], 2400).text.length);
 });
 
 test('ayarlar: varsayılan 50 soru; TEMPO_PLAN=0 kapatır; geçersiz değerler güvenli aralığa çekilir', () => {

@@ -24,7 +24,7 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
  try {
   const contexts = JSON.parse(await readFile(new URL('../server/contexts.json', import.meta.url), 'utf8'));
   const WANT = contexts.length + 3; // 1. tur (29 konu) + 2. turun ilk 3 konusu
-  sim = createFakeOllama({ loadMs: 20, genMs: 15, judgeMs: 10 });
+  sim = createFakeOllama({ loadMs: 20, genMs: 15, judgeMs: 10, keepPrompts: true });
   const fakePort = await sim.listen();
   dir = await mkdtemp(join(tmpdir(), 'tempo-plan-'));
   process.env.OLLAMA_BASE_URL = `http://127.0.0.1:${fakePort}`;
@@ -75,6 +75,32 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   const genRequests = sim.stats.requests.filter(r => r.role === 'generator');
   assert.ok(genRequests.length >= WANT && genRequests.every(r => r.focus), 'üretici istemi her soruda özetten bir odak cümlesi vermeli');
   assert.ok(genRequests.every(r => !r.bookSeed), 'yalnızca-özet modunda kitap sorusu örneği isteme eklenmemeli');
+
+  // Özet kitaptan büyütüldü (konu başına ~100 cümle): isteme tamamı değil, odak / kanıt cümlesinin
+  // çevresindeki bölüm konur; istem modelin bağlam penceresine sığar ve kırpılmaz.
+  assert.equal(sim.stats.truncations, 0, 'hiçbir istem bağlam penceresini aşmamalı');
+  const sourceOf = prompt => (prompt.match(/KONU ANLATIMI: ([\s\S]*?)(?:\nPARÇA:|\nSORU:|$)/) || [])[1] || '';
+  let windows = 0;
+  for (const r of sim.stats.requests) {
+   const source = sourceOf(r.prompt || '');
+   if (!source) continue;
+   windows++;
+   assert.ok(source.length <= 2400, `${r.role}: özet bölümü ${source.length} karakter (en çok 2400 olmalı)`);
+   assert.ok(source.length >= 1200, `${r.role}: özet bölümü çok kısa (${source.length})`);
+   assert.ok(contexts.some(c => c.text.includes(source.slice(0, 200))), `${r.role}: bölüm bir konu özetinin kesintisiz parçası olmalı`);
+   if (r.role === 'generator') {
+    const focus = ((r.prompt.match(/ODAK CÜMLE \([^)]*\): "([\s\S]*?)"(?:\n| Zorluk için)/) || [])[1] || '').trim();
+    assert.ok(focus.length > 20, 'odak cümlesi istemde olmalı');
+    assert.ok(source.includes(focus), `odak cümlesi isteme konan özet bölümünde yer almalı: ${focus.slice(0, 80)}`);
+   }
+  }
+  assert.ok(windows >= WANT * 2, `özet bölümü içeren istem sayısı: ${windows}`);
+  // Odak cümleleri yalnızca elle yazılmış kısa özetten değil kitaptan eklenen bölümden de gelir.
+  const fromBook = items.slice(0, WANT).filter(q => {
+   const ctx = contexts.find(c => c.id === q.unitId);
+   return !evidenceWithinSummary(q.evidence, ctx.text.slice(0, ctx.baseChars)).ok;
+  });
+  assert.ok(fromBook.length >= 5, `kitaptan eklenen cümlelere dayanan soru sayısı: ${fromBook.length}`);
 
   // /status plan özeti.
   assert.equal(midStatus.plan.enabled, true);

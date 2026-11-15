@@ -38,7 +38,7 @@ import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './o
 import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
 import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
 import {
- planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
+ planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep
 } from './production-plan.mjs';
 
@@ -1879,6 +1879,13 @@ function packOptionalBlocks(blocks, maxChars) {
  return out.join('');
 }
 
+// Konu özeti kitaptan genişletildi (konu başına ~100 cümle); istemlere özetin TAMAMI değil,
+// ilgili cümlenin (odak / kanıt) çevresindeki pencere konur. Kanıt kapısı ise özetin tamamına bakar.
+const SUMMARY_WINDOW_CHARS = Math.max(1200, Math.min(6000, Number(process.env.TEMPO_SUMMARY_WINDOW_CHARS) || 2400));
+function summarySource(ctx, anchor = '') {
+ return summaryWindow(ctx?.text || '', anchor, SUMMARY_WINDOW_CHARS).text;
+}
+
 /** Özetin en az soru sorulmuş cümlesi; her denemede eşit kullanılanlar arasında döner. */
 function nextFocusSentence(ctx, items) {
  const rotation = planFocusRotation.get(ctx.id) || 0;
@@ -1920,7 +1927,7 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
  const perf = lessonEngine.formatStudentPerformance(ctx.id, studentProfile);
  const perfHint = perf.answered > 0 ? `\nÖĞRENCİ PERFORMANS SİNYALİ: ${perf.summaryText} (Zorlandığı yerleri kalıcı öğretecek net sorular kur.)` : '';
  const policyRule = policy?.generatorAddendum ? `\nEK POLİTKA DİREKTİFİ: ${policy.generatorAddendum}` : '';
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, promptOpts?.focus?.sentence || '');
  const pageInfo = passage?.pages?.length ? ` (Kitap s. ${passage.pages.join(', ')})` : '';
  const sectionInfo = passage?.heading ? ` | Alt Bölüm: ${passage.heading}${pageInfo}` : '';
  const angles = Array.isArray(targetAngles) && targetAngles.length ? targetAngles : targetDifficulties.map((_, i) => QUESTION_ANGLES[i % QUESTION_ANGLES.length]);
@@ -2021,7 +2028,7 @@ KONU ANLATIMI: ${sourceText}`;
 }
 
 function buildVerifierPrompt(ctx, draft, passage = null, policy = null, apexState = null) {
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, draft?.evidence || draft?.question || '');
  const policyRule = policy?.judgeAddendum ? `\nEK KURAL: ${policy.judgeAddendum}` : '';
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
  const paragraphBlock = typeof draft.paragraph === 'string' && draft.paragraph.trim() ? `\nPARÇA: ${draft.paragraph.trim()}` : '';
@@ -2048,7 +2055,7 @@ SEÇENEKLER: ${JSON.stringify(draft.options)}`;
 }
 
 function buildBatchVerifierPrompt(ctx, itemsList, passage = null, policy = null, apexState = null) {
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, itemsList?.[0]?.draft?.evidence || '');
  const policyRule = policy?.judgeAddendum ? `\nEK DENETİM KURALI: ${policy.judgeAddendum}` : '';
  const apexJudge = apex.getBotDirectiveBlock(apexState, 'judge');
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
@@ -2127,7 +2134,7 @@ function resolveJudgedDifficulty(judges, targetDifficulty) {
 }
 
 async function trySelfCorrect(parsedDraft, critiqueReason, ctx, model, targetDifficulty, passage, signal, fastThink) {
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, parsedDraft?.evidence || parsedDraft?.question || '');
  const diag = parsedDraft ? precisionEngine.evaluateDraftFull(parsedDraft, ctx, passage) : null;
  const surgicalHints = diag && (diag.errors?.length || diag.warnings?.length)
   ? `\nPSİKOMETRİ VE DOĞRULUK CERRAHİSİ (${diag.precisionScore}/100):\n- Hatalar: ${(diag.errors || []).join(' | ') || 'Yok'}\n- Uyarılar: ${(diag.warnings || []).join(' | ') || 'Yok'}`
@@ -4251,7 +4258,7 @@ function getQualityLoopSnapshot() {
 }
 
 async function rewriteQuestionForQuality({ model, question, ctx, passage }) {
- const sourceText = (passage?.text || ctx.text || '').slice(0, 3200);
+ const sourceText = (passage?.text || summarySource(ctx, question?.evidence || question?.question || '')).slice(0, 3200);
  const current = {
   question: question.question,
   options: question.options,

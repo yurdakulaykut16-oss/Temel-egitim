@@ -28,12 +28,16 @@ test('plan: iki konu aynı anda; biri dolunca boşalan hat eksik kalana yardım 
   const stepIndex = new Map(contexts.map((c, i) => [c.id, i])); // 1. tur: adım sırası = konu sırası
   const [A, B, C, D] = contexts;
   // 2. konu geride kalsın diye hakem o konunun İLK 4 sorusunu reddeder.
-  const lagMarker = B.text.slice(0, 60);
+  // Hakem istemi özetin yalnızca bir penceresini içerir; pencerenin 2. konudan gelip gelmediğine bakılır.
+  const fromLagTopic = prompt => {
+   const m = prompt.match(/KONU ANLATIMI: ([\s\S]*?)(?:\nPARÇA:|\nSORU:)/);
+   return Boolean(m && m[1].length > 40 && B.text.includes(m[1].slice(0, 80)));
+  };
   const rejectedStems = new Set();
   sim = createFakeOllama({
    loadMs: 30, genMs: 120, judgeMs: 60,
    judgeHook(verdict, { prompt }) {
-    if (!prompt.includes(lagMarker)) return verdict;
+    if (!fromLagTopic(prompt)) return verdict;
     const stem = (prompt.match(/\nSORU: ([\s\S]*?)\nSEÇENEKLER:/) || [])[1] || '';
     if (!rejectedStems.has(stem) && rejectedStems.size < 4) rejectedStems.add(stem);
     return rejectedStems.has(stem) ? { ...verdict, supported: false, qualityOk: false } : verdict;

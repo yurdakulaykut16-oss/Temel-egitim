@@ -219,6 +219,7 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_PLAN` | `1` | Sıralı üretim planı (aşağıda §4.1.1). `0` yapılınca eski dengeli dolaşıma dönülür |
 | `TEMPO_PLAN_QUOTA` | `50` | Her konu için her zorlukta üretilecek soru sayısı |
 | `TEMPO_PLAN_STUCK_LIMIT` | `25` | Bir adımda üst üste bu kadar deneme soru çıkarmazsa adım atlanır |
+| `TEMPO_SUMMARY_WINDOW_CHARS` | `2400` | İsteme konan özet bölümünün uzunluğu (1200–6000). Özetin tamamı değil, odak/kanıt cümlesinin çevresi verilir |
 
 **Sorun giderme**
 
@@ -240,9 +241,12 @@ Otomatik üretim konuları rastgele dolaşmaz; sabit bir plan izler:
 
 - **İki konu aynı anda, yarım bırakmadan:** Konular "Aynı anda hazırlanan soru" ayarı kadar (varsayılan 2) gruplar hâlinde işlenir: 1. ve 2. konu birlikte başlar. Biri 50'ye ulaşınca boşalan hat 3. konuya geçmez, **eksik kalan konuya yardım eder**; ikisi de 50 olunca 3. ve 4. konu başlar. Ayarı 1 yaparsan konular teker teker dolar. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
 - **Kota kesindir:** hiçbir konu bir zorlukta 50'yi aşmaz; iki hat aynı konuda çalışırken bile fazladan soru kaydedilmez.
-- **Sorular yalnızca o konunun özetinden kurulur.** Kitap pasajı kullanılmaz; kanıt cümlesi konu özetinde geçmeyen soru reddedilir. Tekrarı azaltmak için her soruda özetin en az soru sorulmuş cümlesi odak olarak verilir.
+- **Sorular yalnızca o konunun özetinden kurulur.** Kitap pasajı kullanılmaz; kanıt cümlesi konu özetinde geçmeyen soru reddedilir. Tekrarı azaltmak için her soruda özetin en az soru sorulmuş cümlesi odak olarak verilir; odak cümleleri özetin başına yığılmaz, tamamına yayılarak seçilir.
+- **Özetler kitaptan büyütülmüştür.** Elle yazılmış kısa özete (11–26 cümle) kitap PDF'lerinin o konuya ait sayfalarından **birebir alınmış** tanım, sınıflama ve ilke cümleleri eklenir; konu başına hedef 100 cümledir (toplam ~2.800 cümle). Gövde metni az olan üç konu hedefin altındadır: *Ölçme ve değerlendirme* 56, *Dopingle mücadele* 79, *Beceri öğrenimi* 84 cümle. Eklenen cümleler `src/bookSummary.json` dosyasındadır; uygulamayı çalıştırmak için ek kurulum gerekmez.
+- **Modele özetin tamamı değil ilgili bölümü gösterilir.** Büyütülmüş özet (konu başına 5–15 bin karakter) modelin bağlam penceresine sığmaz; soru yazarına odak cümlenin, hakemlere kanıt cümlesinin çevresindeki ~2.400 karakterlik kesintisiz bölüm verilir (`TEMPO_SUMMARY_WINDOW_CHARS`). Kanıt denetimi ise özetin tamamına bakar.
 - Hakemler bir soruyu hedeften farklı zorlukta bulursa (ör. kolay turunda "orta") ve o konunun o zorluktaki kotası dolmamışsa soru o zorlukla kaydedilir ve ileriki tura sayılır; kota doluysa reddedilir.
-- **Konu özetleri kısadır (11–26 cümle).** Bir konudan aynı zorlukta 50 farklı soru çıkmayabilir. Bir adımda üst üste 25 deneme soru çıkarmazsa adım **atlanır**, sıradaki konuya geçilir ve stüdyoda "Atlanan adımlar" olarak gösterilir; diğer adımlar bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
+- **Bir konudan aynı zorlukta 50 farklı soru yine de çıkmayabilir** (özellikle cümlesi az olan konularda). Bir adımda üst üste 25 deneme soru çıkarmazsa adım **atlanır**, sıradaki konuya geçilir ve stüdyoda "Atlanan adımlar" olarak gösterilir; diğer adımlar bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
+- **Özeti yeniden üretmek** (kitap PDF'i ya da seçim kuralları değiştiyse): `pip install pymupdf` ardından `npm run summary`. Betik (`scripts/build-book-summary.py`) yalnızca gövde yazı tipindeki paragrafları okur; tablo, şekil yazısı, kaynakça, etkinlik yönergesi, soru cümlesi ve başka cümleye gönderme yapan ("bu, bunlar…") cümleleri almaz.
 - Daha önce üretilmiş onaylı sorular kotalara sayılır.
 - Stüdyodaki **Üretim planı** kutusu o anki turu, konuyu ve ilerlemeyi gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
 

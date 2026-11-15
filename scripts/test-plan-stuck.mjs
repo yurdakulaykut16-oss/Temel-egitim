@@ -23,14 +23,18 @@ test('plan: sonuç vermeyen adım atlanır, üretim sıradaki konuyla sürer', a
  try {
   const contexts = JSON.parse(await readFile(new URL('../server/contexts.json', import.meta.url), 'utf8'));
   const first = contexts[0], second = contexts[1], third = contexts[2];
-  const marker = text => text.slice(0, 60);
+  // Hakem istemi özetin yalnızca bir penceresini içerir; pencerenin hangi konudan geldiğine bakılır.
+  const fromTopic = (prompt, ctx) => {
+   const m = prompt.match(/KONU ANLATIMI: ([\s\S]*?)(?:\nPARÇA:|\nSORU:)/);
+   return Boolean(m && m[1].length > 40 && ctx.text.includes(m[1].slice(0, 80)));
+  };
   sim = createFakeOllama({
    loadMs: 20, genMs: 15, judgeMs: 10,
    judgeHook(verdict, { prompt }) {
     // 1. konu: hakemler hiçbir soruyu desteklemiyor (özet yeni soru için "tükenmiş" gibi).
-    if (prompt.includes(marker(first.text))) return { ...verdict, supported: false, qualityOk: false };
+    if (fromTopic(prompt, first)) return { ...verdict, supported: false, qualityOk: false };
     // 3. konu: hakemler soruyu hep "orta" buluyor (hedef kolay).
-    if (prompt.includes(marker(third.text))) return { ...verdict, difficulty: 'orta' };
+    if (fromTopic(prompt, third)) return { ...verdict, difficulty: 'orta' };
     return verdict;
    }
   });
