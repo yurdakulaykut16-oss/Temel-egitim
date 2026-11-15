@@ -1,14 +1,16 @@
 // ÜRETİM PLANI
 // ---------------------------------------------------------------------------
-// Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Her konuya üç kez uğranır ve her
-// uğrayışta o konuya 50 soru yazılır; zorluklar KARIŞIKTIR (kolay → orta → zor → kolay → …):
+// Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Kitabın bölümlerine sırayla, TUR TUR
+// uğranır ve her uğrayışta o bölüme 50 soru yazılır; zorluklar KARIŞIKTIR (kolay → orta → zor → …):
 //
-//   1. tur: 1. kitabın 1. konusu 17 kolay + 17 orta + 16 zor → 2. konu → … → son kitabın son konusu
-//   2. tur: aynı sıra, her konuya 16 kolay + 17 orta + 17 zor
-//   3. tur: aynı sıra, her konuya 17 kolay + 16 orta + 17 zor
+//   1. tur: her bölüme 17 kolay + 17 orta + 16 zor (dengeli)
+//   2. tur: 10 kolay + 20 orta + 20 zor      3. tur: 6 kolay + 22 orta + 22 zor
+//   4. tur: 4 kolay + 23 orta + 23 zor       5. tur: 2 kolay + 24 orta + 24 zor
+//   6. tur ve sonrası: 25 orta + 25 zor (kolay soru yazılmaz)
 //
-// Üç tur sonunda her konuda 50 kolay + 50 orta + 50 zor soru olur. Böylece ilk turdan itibaren
-// her konunun kolay, orta ve zor sorusu vardır ("önce bütün konuların kolayı" beklenmez).
+// Yani ilk turdan itibaren her bölümün kolay, orta ve zor sorusu vardır; 1. turdan sonra kolay payı
+// gittikçe azalır, soruların yarısı orta yarısı zor olur. Tur sayısı TEMPO_PLAN_PASSES ile ayarlanır
+// (varsayılan 12 → bölüm başına 600 soru).
 //
 // Plan "hücre"lerden oluşur: (tur, konu, zorluk). Hücrenin `quota` alanı o konu + zorlukta o turun
 // SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 33); `from` turun başındaki
@@ -26,6 +28,9 @@
 
 export const PLAN_DIFFICULTIES = ['kolay', 'orta', 'zor'];
 export const DEFAULT_PLAN_QUOTA = 50;
+export const DEFAULT_PLAN_PASSES = 12;
+// 1. turdan sonra kolay soruların tur içindeki payı (2., 3., 4., 5. tur); 6. turdan itibaren 0.
+export const EASY_FRACTIONS = { 2: 0.20, 3: 0.12, 4: 0.08, 5: 0.04 };
 export const DEFAULT_PLAN_STUCK_LIMIT = 25;
 
 export const stepKey = (unitId, difficulty) => `${unitId}|${difficulty}`;
@@ -40,22 +45,42 @@ export function planConfigFromEnv(env = process.env) {
  return {
   enabled: env.TEMPO_PLAN !== '0',
   quota: clampInt(env.TEMPO_PLAN_QUOTA, DEFAULT_PLAN_QUOTA, 1, 1000),
+  passes: clampInt(env.TEMPO_PLAN_PASSES, DEFAULT_PLAN_PASSES, 1, 200),
   stuckLimit: clampInt(env.TEMPO_PLAN_STUCK_LIMIT, DEFAULT_PLAN_STUCK_LIMIT, 2, 1000)
  };
 }
 
 /**
- * `pass`. turda (1-3) bir konunun `difficultyIndex` zorluğuna (0 kolay, 1 orta, 2 zor) düşen soru payı.
- * Üç turun toplamı her zorlukta tam `quota` eder; her turun toplamı da `quota`dır (50 → 17+17+16).
+ * `pass`. turda bir bölümün `difficultyIndex` zorluğuna (0 kolay, 1 orta, 2 zor) düşen soru payı.
+ * Her turun toplamı `quota`dır. 1. tur dengelidir (50 → 17+17+16); sonraki turlarda kolay payı
+ * azalır (EASY_FRACTIONS), kalan sorular yarı yarıya orta ve zor olur (tek kalan soru çift turlarda
+ * ortaya, tek turlarda zora yazılır).
  */
 export function passShare(quota, pass, difficultyIndex) {
- const base = Math.floor(quota / 3);
- const rest = quota % 3;
- return base + ((((difficultyIndex - (pass - 1)) % 3) + 3) % 3 < rest ? 1 : 0);
+ if (pass <= 1) {
+  const base = Math.floor(quota / 3);
+  return base + (difficultyIndex < quota % 3 ? 1 : 0);
+ }
+ const easy = Math.min(quota, Math.round(quota * (EASY_FRACTIONS[pass] || 0)));
+ const rest = quota - easy;
+ const orta = Math.floor(rest / 2) + (rest % 2 && pass % 2 === 0 ? 1 : 0);
+ return [easy, orta, rest - orta][difficultyIndex];
 }
 
-/** Sıralı hücre listesi: tur → konu (contexts sırası: kitap → konu) → zorluk. Payı 0 olan hücre yoktur. */
-export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA) {
+/** Bütün turların sonunda bir bölümün `difficultyIndex` zorluğunda olması gereken toplam soru sayısı. */
+export function bucketQuota(quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES, difficultyIndex = 0) {
+ let total = 0;
+ for (let pass = 1; pass <= passes; pass++) total += passShare(quota, pass, difficultyIndex);
+ return total;
+}
+
+const stepCache = new WeakMap();
+
+/** Sıralı hücre listesi: tur → bölüm (contexts sırası: kitap → bölüm) → zorluk. Payı 0 olan hücre yoktur. */
+export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES) {
+ const cacheKey = `${quota}|${passes}`;
+ const cached = stepCache.get(contexts);
+ if (cached?.key === cacheKey) return cached.steps;
  const bookOrder = [];
  for (const c of contexts) if (!bookOrder.includes(c.book)) bookOrder.push(c.book);
  const unitNoInBook = new Map();
@@ -66,13 +91,13 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA) {
   unitNoInBook.set(c.id, n);
  }
  const steps = [];
- for (let pass = 1; pass <= PLAN_DIFFICULTIES.length; pass++) {
+ const sofar = PLAN_DIFFICULTIES.map(() => 0);
+ for (let pass = 1; pass <= passes; pass++) {
+  const shares = PLAN_DIFFICULTIES.map((_, di) => passShare(quota, pass, di));
   contexts.forEach((c, unitIndex) => {
    PLAN_DIFFICULTIES.forEach((difficulty, di) => {
-    const share = passShare(quota, pass, di);
+    const share = shares[di];
     if (share <= 0) return;
-    let from = 0;
-    for (let p = 1; p < pass; p++) from += passShare(quota, p, di);
     steps.push({
      index: steps.length,
      key: stepKey(c.id, difficulty),
@@ -80,9 +105,9 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA) {
      visit: (pass - 1) * contexts.length + unitIndex,
      unitId: c.id,
      difficulty,
-     from,
+     from: sofar[di],
      share,
-     quota: from + share,
+     quota: sofar[di] + share,
      book: c.book,
      unit: c.unit,
      bookNo: bookOrder.indexOf(c.book) + 1,
@@ -90,7 +115,9 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA) {
     });
    });
   });
+  shares.forEach((share, di) => { sofar[di] += share; });
  }
+ if (contexts && typeof contexts === 'object') stepCache.set(contexts, { key: cacheKey, steps });
  return steps;
 }
 
@@ -115,11 +142,12 @@ export function countApproved(items) {
  *        onaylı soru sayısıdır (hücrenin `quota` değerini aşmaz).
  *   allParked: geriye yalnızca atlananlar kaldıysa true (çağıran taraf park listesini temizleyip yeniden dener).
  */
-export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, parked = {} }) {
- const steps = buildPlanSteps(contexts, quota);
+export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES, parked = {} }) {
+ const steps = buildPlanSteps(contexts, quota, passes);
  const counts = countApproved(items);
+ const caps = PLAN_DIFFICULTIES.map((_, di) => bucketQuota(quota, passes, di));
  let totalDone = 0;
- for (const c of contexts) for (const d of PLAN_DIFFICULTIES) totalDone += Math.min(quota, counts.get(stepKey(c.id, d)) || 0);
+ for (const c of contexts) PLAN_DIFFICULTIES.forEach((d, di) => { totalDone += Math.min(caps[di], counts.get(stepKey(c.id, d)) || 0); });
  const parkedSteps = [];
  const parkedSeen = new Set();
  const queue = [];
@@ -137,7 +165,7 @@ export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, park
   queue.push({ ...step, done });
  }
  const current = queue[0] || null;
- const totalTarget = contexts.length * PLAN_DIFFICULTIES.length * quota;
+ const totalTarget = contexts.length * quota * passes;
  const complete = totalDone >= totalTarget;
  return {
   current,
@@ -198,25 +226,34 @@ export function pickPlanWork(all, size = 1, inflight = {}) {
 }
 
 /**
- * Bir konu için sıradaki zorluk: kotası dolmamış kovalardan en az sorusu olan (eşitlikte kolay → orta → zor).
- * Hepsi doluysa null.
+ * Bir bölüm için sıradaki zorluk: toplam kotası dolmamış kovalardan doluluk oranı en düşük olan
+ * (eşitlikte kolay → orta → zor). Hepsi doluysa null.
  */
-export function planDifficultyForUnit(unitId, items, quota = DEFAULT_PLAN_QUOTA) {
+export function planDifficultyForUnit(unitId, items, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES) {
  const counts = countApproved(items);
  let best = null;
- for (const d of PLAN_DIFFICULTIES) {
+ PLAN_DIFFICULTIES.forEach((d, di) => {
+  const cap = bucketQuota(quota, passes, di);
   const n = counts.get(stepKey(unitId, d)) || 0;
-  if (n >= quota) continue;
-  if (!best || n < best.n) best = { d, n };
- }
+  if (cap <= 0 || n >= cap) return;
+  const ratio = n / cap;
+  if (!best || ratio < best.ratio) best = { d, ratio };
+ });
  return best ? best.d : null;
 }
 
+/** Bir bölümün `difficulty` kovasında yer var mı? (Bütün turların toplam kotasına göre.) */
+export function planBucketHasRoom(unitId, difficulty, items, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES) {
+ const di = PLAN_DIFFICULTIES.indexOf(difficulty);
+ if (di < 0) return false;
+ return (countApproved(items).get(stepKey(unitId, difficulty)) || 0) < bucketQuota(quota, passes, di);
+}
+
 /** Hakemlerin verdiği zorluk plana göre kaydedilebilir mi? (Hedefle aynıysa ya da o kova henüz dolmadıysa evet.) */
-export function planAcceptsDifficulty(unitId, agreedDifficulty, targetDifficulty, items, quota = DEFAULT_PLAN_QUOTA) {
+export function planAcceptsDifficulty(unitId, agreedDifficulty, targetDifficulty, items, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES) {
  if (!PLAN_DIFFICULTIES.includes(agreedDifficulty)) return false;
  if (agreedDifficulty === targetDifficulty) return true;
- return (countApproved(items).get(stepKey(unitId, agreedDifficulty)) || 0) < quota;
+ return planBucketHasRoom(unitId, agreedDifficulty, items, quota, passes);
 }
 
 /**
@@ -245,7 +282,7 @@ export function notePlanOutcome(state, step, outcome, { stuckLimit = DEFAULT_PLA
 
 /** Bozuk/eksik dosyadan okunan durumu güvenli biçime getirir; planda olmayan adımları atar. */
 export function sanitizePlanState(raw, contexts) {
- const valid = new Set(buildPlanSteps(contexts, 1).map(s => s.key));
+ const valid = new Set((contexts || []).flatMap(c => PLAN_DIFFICULTIES.map(d => stepKey(c.id, d))));
  const parked = {};
  if (raw && typeof raw.parked === 'object' && raw.parked) {
   for (const [key, value] of Object.entries(raw.parked)) if (valid.has(key)) parked[key] = value && typeof value === 'object' ? value : {};
@@ -312,7 +349,11 @@ export function summaryWindow(summary, anchor = '', maxChars = 2400) {
  const anchorTokens = tokens(anchor);
  if (anchorNorm.length >= 15) {
   // 1) birebir geçen cümle  2) kelimelerinin çoğu aynı olan cümle
-  const exact = sentences.findIndex(s => { const n = normTr(s); return n.includes(anchorNorm) || anchorNorm.includes(n); });
+  // Önce cümlenin kendisi; yoksa onu içeren (ya da onun içerdiği) cümle. (Kısa bir cümle, daha önce
+  // geçen uzun bir cümlenin parçası olabilir; pencere yine de aranan cümlenin çevresine kurulmalı.)
+  const norms = sentences.map(normTr);
+  let exact = norms.indexOf(anchorNorm);
+  if (exact < 0) exact = norms.findIndex(n => n.includes(anchorNorm) || anchorNorm.includes(n));
   if (exact >= 0) { center = exact; matched = true; }
   else if (anchorTokens.length >= 3) {
    let best = -1, bestRatio = 0;
@@ -339,30 +380,82 @@ export function summaryWindow(summary, anchor = '', maxChars = 2400) {
  return { text: sentences.slice(lo, hi + 1).join(' '), windowed: true, start: lo, end: hi, center: matched ? center : -1 };
 }
 
-/**
- * Bir özet cümlesinin (odak ya da kanıt) kitaptaki sayfası. Özetin kitaptan alınan bölümleri
- * `ctx.pageMarks` ([metin konumu, sayfa]) ile işaretlidir. Cümle elle yazılmış bölümdeyse ya da
- * özette bulunamazsa null döner.
- */
-export function summaryPageOf(ctx, sentence) {
- const marks = Array.isArray(ctx?.pageMarks) ? ctx.pageMarks : [];
+/** Bir özet cümlesinin (odak ya da kanıt) `ctx.text` içindeki konumu; bulunamazsa -1. */
+export function summaryPositionOf(ctx, sentence) {
  const text = String(ctx?.text || '');
  const wanted = String(sentence || '').trim();
- if (!marks.length || wanted.length < 15) return null;
+ if (wanted.length < 15) return -1;
  let pos = text.indexOf(wanted);
  if (pos < 0) {
   // Model kanıtı küçük farklarla kopyalamış olabilir: en çok örtüşen özet cümlesine bakılır.
   const win = summaryWindow(text, wanted, 1);
-  if (win.center < 0) return null;
+  if (win.center < 0) return -1;
   pos = text.indexOf(splitSummarySentences(text)[win.center]);
-  if (pos < 0) return null;
  }
- let page = null;
- for (const [offset, p] of marks) {
+ return pos;
+}
+
+const markAt = (marks, pos) => {
+ let value = null;
+ for (const [offset, v] of Array.isArray(marks) ? marks : []) {
   if (offset > pos) break;
-  page = p;
+  value = v;
  }
+ return value;
+};
+const inWebPart = (ctx, pos) => Number.isInteger(ctx?.webStart) && pos >= ctx.webStart;
+
+/**
+ * Bir özet cümlesinin (odak ya da kanıt) kitaptaki sayfası. Özetin kitaptan alınan bölümleri
+ * `ctx.pageMarks` ([metin konumu, sayfa]) ile işaretlidir. Cümle elle yazılmış bölümdeyse, internetten
+ * derlenen ek anlatımdaysa ya da özette bulunamazsa null döner.
+ */
+export function summaryPageOf(ctx, sentence) {
+ if (!Array.isArray(ctx?.pageMarks) || !ctx.pageMarks.length) return null;
+ const pos = summaryPositionOf(ctx, sentence);
+ if (pos < 0 || inWebPart(ctx, pos)) return null;
+ const page = markAt(ctx.pageMarks, pos);
  return Number.isInteger(page) ? page : null;
+}
+
+/**
+ * Cümlenin kitabın "İçindekiler"ine göre konu başlığı: { index, title, level, parent } — parent, alt
+ * konunun ana konu başlığıdır (yoksa ''). Kitaptan alınmayan cümlelerde null.
+ */
+export function summarySectionOf(ctx, sentence) {
+ if (!Array.isArray(ctx?.sectionMarks) || !ctx.sectionMarks.length || !Array.isArray(ctx?.sections)) return null;
+ const pos = summaryPositionOf(ctx, sentence);
+ if (pos < 0 || inWebPart(ctx, pos)) return null;
+ const index = markAt(ctx.sectionMarks, pos);
+ const section = Number.isInteger(index) ? ctx.sections[index] : null;
+ if (!section) return null;
+ // Ana konu: düzey 2'ye kadar yukarı çıkılır.
+ let top = section;
+ for (let guard = 0; guard < 4 && top && top.level > 2 && Number.isInteger(top.parent); guard++) top = ctx.sections[top.parent];
+ return { index, title: section.title, level: section.level, parent: top && top !== section ? top.title : '' };
+}
+
+/** Cümle internetten derlenen ek anlatımdaysa kaynağı: { topic, title, url }; değilse null. */
+export function summaryWebSourceOf(ctx, sentence) {
+ if (!Number.isInteger(ctx?.webStart) || !Array.isArray(ctx?.webMarks)) return null;
+ const pos = summaryPositionOf(ctx, sentence);
+ if (pos < 0 || !inWebPart(ctx, pos)) return null;
+ const index = markAt(ctx.webMarks, pos);
+ const source = Number.isInteger(index) ? ctx.webSources?.[index] : null;
+ return source ? { topic: source.topic || '', title: source.title || '', url: source.url || '' } : null;
+}
+
+/**
+ * `options` içinden, `used` listesinde en az geçen seçeneği döndürür; eşitlikte `rotation` ile döner.
+ * (Aynı cümleden yazılan sorularda soru tipi ve açısı tekrar etmesin diye kullanılır.)
+ */
+export function leastUsedOption(options, used = [], rotation = 0) {
+ if (!Array.isArray(options) || !options.length) return null;
+ const counts = new Map(options.map(o => [o, 0]));
+ for (const u of used) if (counts.has(u)) counts.set(u, counts.get(u) + 1);
+ const min = Math.min(...counts.values());
+ const pool = options.filter(o => counts.get(o) === min);
+ return pool[((rotation % pool.length) + pool.length) % pool.length];
 }
 
 /**
@@ -375,6 +468,7 @@ export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
  if (!sentences.length) return null;
  const sentenceTokens = sentences.map(s => new Set(tokens(s)));
  const usage = sentences.map(() => 0);
+ const askedBy = new Map();
  for (const it of unitItems) {
   const evTokens = tokens(it?.evidence || '');
   if (evTokens.length < 3) continue;
@@ -385,7 +479,11 @@ export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
    const ratio = hit / evTokens.length;
    if (ratio > bestRatio) { bestRatio = ratio; best = i; }
   }
-  if (best >= 0 && bestRatio >= 0.6) usage[best]++;
+  if (best >= 0 && bestRatio >= 0.6) {
+   usage[best]++;
+   if (!askedBy.has(best)) askedBy.set(best, []);
+   askedBy.get(best).push(it);
+  }
  }
  const min = Math.min(...usage);
  let candidates = usage.map((u, i) => ({ u, i })).filter(x => x.u === min).map(x => x.i);
@@ -407,11 +505,12 @@ export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
   candidates.sort((a, b) => rank.get(a) - rank.get(b));
  }
  const index = candidates[((rotation % candidates.length) + candidates.length) % candidates.length];
- return { index, sentence: sentences[index], usage: usage[index], total: sentences.length };
+ // asked: bu cümleden daha önce yazılmış sorular (aynı bilgi bu kez FARKLI bir soru biçimiyle sorulsun diye).
+ return { index, sentence: sentences[index], usage: usage[index], total: sentences.length, asked: askedBy.get(index) || [] };
 }
 
 /** Arayüz ve terminal için tek satırlık adım açıklaması. */
 export function describeStep(step) {
  if (!step) return '';
- return `${step.pass}. tur · ${step.bookNo}. kitap ${step.unitNo}. konu — ${step.unit} · ${step.difficulty}`;
+ return `${step.pass}. tur · ${step.bookNo}. kitap ${step.unitNo}. bölüm — ${step.unit} · ${step.difficulty}`;
 }

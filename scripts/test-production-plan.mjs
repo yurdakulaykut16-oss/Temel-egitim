@@ -5,35 +5,49 @@ import {readFileSync} from 'node:fs';
 import {
  buildPlanSteps, planSnapshot, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, splitSummarySentences, planBatch, pickPlanWork,
- planConfigFromEnv, describeStep, stepKey, summaryWindow, passShare, summaryPageOf} from '../server/production-plan.mjs';
+ planConfigFromEnv, describeStep, stepKey, summaryWindow, passShare, summaryPageOf, bucketQuota, planBucketHasRoom, summarySectionOf, summaryWebSourceOf,
+ leastUsedOption, DEFAULT_PLAN_PASSES} from '../server/production-plan.mjs';
 
 const contexts = JSON.parse(readFileSync(new URL('../server/contexts.json', import.meta.url), 'utf8'));
 const q = (unitId, difficulty, extra = {}) => ({ unitId, difficulty, status: 'approved', ...extra });
 const many = (n, unitId, difficulty) => Array.from({ length: n }, () => q(unitId, difficulty));
+const DIFFS = ['kolay', 'orta', 'zor'];
+// Bütün turların sonunda bir bölümün her zorluğunda olması gereken soru sayısı (kota 50, 12 tur: 39 / 281 / 280).
+const CAP = d => bucketQuota(50, DEFAULT_PLAN_PASSES, DIFFS.indexOf(d));
+const everything = () => contexts.flatMap(c => DIFFS.flatMap(d => many(CAP(d), c.id, d)));
 
-test('plan sırası: her konuya uğrayışta 50 soru, zorluklar karışık; üç turda 50 kolay + 50 orta + 50 zor', () => {
- // Tur payları: her tur 50 eder, her zorluk üç turda 50 eder.
+test('plan sırası: her bölüme uğrayışta 50 soru, zorluklar karışık; 1. turdan sonra kolay azalır, yarısı orta yarısı zor', () => {
+ // Her turun toplamı kotadır.
  for (const quota of [50, 1, 2, 3, 10, 7]) {
-  for (let pass = 1; pass <= 3; pass++) assert.equal([0, 1, 2].reduce((n, d) => n + passShare(quota, pass, d), 0), quota, `kota ${quota}, ${pass}. tur`);
-  for (let d = 0; d < 3; d++) assert.equal([1, 2, 3].reduce((n, pass) => n + passShare(quota, pass, d), 0), quota, `kota ${quota}, zorluk ${d}`);
+  for (let pass = 1; pass <= 14; pass++) assert.equal([0, 1, 2].reduce((n, d) => n + passShare(quota, pass, d), 0), quota, `kota ${quota}, ${pass}. tur`);
  }
- assert.deepEqual([0, 1, 2].map(d => passShare(50, 1, d)), [17, 17, 16]);
- assert.deepEqual([0, 1, 2].map(d => passShare(50, 2, d)), [16, 17, 17]);
- assert.deepEqual([0, 1, 2].map(d => passShare(50, 3, d)), [17, 16, 17]);
+ // 1. tur dengeli; sonra kolay gittikçe azalır ve 6. turdan itibaren hiç yazılmaz; kalan yarı yarıya orta + zor.
+ assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 12].map(pass => [0, 1, 2].map(d => passShare(50, pass, d))),
+  [[17, 17, 16], [10, 20, 20], [6, 22, 22], [4, 23, 23], [2, 24, 24], [0, 25, 25], [0, 25, 25], [0, 25, 25]]);
+ for (let pass = 2; pass <= 12; pass++) {
+  assert.ok(passShare(50, pass, 0) < passShare(50, pass - 1, 0) || passShare(50, pass, 0) === 0, `${pass}. turda kolay azalmalı`);
+  assert.ok(Math.abs(passShare(50, pass, 1) - passShare(50, pass, 2)) <= 1, `${pass}. turda orta ve zor yarı yarıya`);
+ }
+ assert.deepEqual(DIFFS.map(CAP), [39, 281, 280]);
+ assert.equal(planConfigFromEnv({}).passes, 12);
+ assert.equal(planConfigFromEnv({ TEMPO_PLAN_PASSES: '3' }).passes, 3);
 
  const steps = buildPlanSteps(contexts, 50);
- assert.equal(steps.length, contexts.length * 9);
- // 1. tur: konu sırası kitap sırasıdır ve HER konunun kolay, orta ve zor hücresi vardır.
+ // 1.-5. turlarda üç zorluk, 6.-12. turlarda iki zorluk (orta + zor).
+ assert.equal(steps.length, contexts.length * (5 * 3 + 7 * 2));
+ assert.equal(steps.reduce((n, s) => n + s.share, 0), contexts.length * 600, 'bölüm başına 600 soru');
+ // 1. tur: bölüm sırası kitap sırasıdır ve HER bölümün kolay, orta ve zor hücresi vardır.
  const pass1 = steps.filter(s => s.pass === 1);
- assert.deepEqual(pass1.map(s => `${s.unitId}:${s.difficulty}`), contexts.flatMap(c => ['kolay', 'orta', 'zor'].map(d => `${c.id}:${d}`)));
+ assert.deepEqual(pass1.map(s => `${s.unitId}:${s.difficulty}`), contexts.flatMap(c => DIFFS.map(d => `${c.id}:${d}`)));
  assert.deepEqual(pass1.slice(0, 3).map(s => [s.from, s.share, s.quota]), [[0, 17, 17], [0, 17, 17], [0, 16, 16]]);
- // 3. turun sonunda her konu + zorluk 50'dir.
- assert.ok(steps.filter(s => s.pass === 3).every(s => s.quota === 50));
- assert.deepEqual(steps.filter(s => s.unitId === contexts[0].id && s.difficulty === 'kolay').map(s => [s.pass, s.from, s.quota]), [[1, 0, 17], [2, 17, 33], [3, 33, 50]]);
+ assert.deepEqual(steps.filter(s => s.unitId === contexts[0].id && s.difficulty === 'kolay').map(s => [s.pass, s.from, s.quota]), [[1, 0, 17], [2, 17, 27], [3, 27, 33], [4, 33, 37], [5, 37, 39]]);
+ assert.ok(steps.filter(s => s.pass === 12).every(s => s.quota === CAP(s.difficulty)), 'son turun sonunda her kova toplam kotasındadır');
  assert.equal(steps[0].bookNo, 1); assert.equal(steps[0].unitNo, 1);
  const firstOfBook2 = steps.find(s => s.book !== steps[0].book);
  assert.equal(firstOfBook2.bookNo, 2); assert.equal(firstOfBook2.unitNo, 1);
- assert.match(describeStep(steps[0]), /^1\. tur · 1\. kitap 1\. konu — .* · kolay$/);
+ assert.match(describeStep(steps[0]), /^1\. tur · 1\. kitap 1\. bölüm — .* · kolay$/);
+ // Tur sayısı ayarlanabilir.
+ assert.equal(Math.max(...buildPlanSteps(contexts, 50, 3).map(s => s.pass)), 3);
  // Kota 1 (testlerde): tur başına tek zorluk düşer → 1. tur kolay, 2. tur orta, 3. tur zor.
  assert.deepEqual([1, 2, 3].map(pass => [...new Set(buildPlanSteps(contexts, 1).filter(s => s.pass === pass).map(s => s.difficulty))]), [['kolay'], ['orta'], ['zor']]);
 });
@@ -42,7 +56,7 @@ test('konu içi sıra: kolay → orta → zor → kolay …; konu 50 soruya ula�
  const [a, b] = contexts;
  let snap = planSnapshot({ contexts, items: [], quota: 50 });
  assert.equal(snap.current.key, stepKey(a.id, 'kolay'));
- assert.equal(snap.totalTarget, contexts.length * 150);
+ assert.equal(snap.totalTarget, contexts.length * 600);
 
  // Tek hat: sorular sırayla onaylandıkça zorluk döner; ilk 50 sorunun tamamı 1. konudandır.
  const items = [];
@@ -61,7 +75,7 @@ test('konu içi sıra: kolay → orta → zor → kolay …; konu 50 soruya ula�
 
  // Onaylanmamış ya da zorluğu olmayan kayıtlar sayılmaz; fazlası kotayı aşmaz.
  snap = planSnapshot({ contexts, items: [...many(60, a.id, 'kolay'), { unitId: b.id, difficulty: 'kolay', status: 'rejected' }, { unitId: b.id, status: 'approved' }], quota: 50 });
- assert.equal(snap.totalDone, 50);
+ assert.equal(snap.totalDone, CAP('kolay'), 'kolay kovası toplam kotasını (39) aşamaz');
  assert.equal(snap.current.key, stepKey(a.id, 'orta'), 'kolayı dolan konunun ortası ve zoru sürer');
 
  // Hakemler bir zorluğu fazla verdiyse (kolay 30) o turda kalan zorluklara çalışılır.
@@ -74,11 +88,11 @@ test('konu içi sıra: kolay → orta → zor → kolay …; konu 50 soruya ula�
  assert.equal(snap.current.pass, 2);
  assert.equal(snap.current.unitId, a.id);
  assert.equal(snap.totalDone, contexts.length * 50);
- snap = planSnapshot({ contexts, items: [...pass1, ...many(16, a.id, 'kolay')], quota: 50 });
- assert.deepEqual([snap.current.key, snap.current.done, snap.current.quota], [stepKey(a.id, 'orta'), 17, 34]);
+ // 2. turda bölüme 10 kolay + 20 orta + 20 zor düşer (kolay azaldı).
+ snap = planSnapshot({ contexts, items: [...pass1, ...many(10, a.id, 'kolay')], quota: 50 });
+ assert.deepEqual([snap.current.key, snap.current.done, snap.current.quota], [stepKey(a.id, 'orta'), 17, 37]);
 
- const all = contexts.flatMap(c => ['kolay', 'orta', 'zor'].flatMap(d => many(50, c.id, d)));
- snap = planSnapshot({ contexts, items: all, quota: 50 });
+ snap = planSnapshot({ contexts, items: everything(), quota: 50 });
  assert.equal(snap.complete, true);
  assert.equal(snap.current, null);
 });
@@ -91,7 +105,7 @@ test('atlanan (konu, zorluk) geçilir, konunun diğer zorlukları sürer; geriye
  snap = planSnapshot({ contexts, items: [...many(5, a.id, 'kolay'), ...many(17, a.id, 'orta'), ...many(16, a.id, 'zor')], quota: 50, parked: { [stepKey(a.id, 'kolay')]: {} } });
  assert.equal(snap.current.unitId, b.id, 'kalan zorluklar dolunca sıradaki konuya geçilir');
 
- const allButOne = contexts.flatMap(c => ['kolay', 'orta', 'zor'].flatMap(d => (c.id === a.id && d === 'kolay' ? many(31, c.id, d) : many(50, c.id, d))));
+ const allButOne = contexts.flatMap(c => DIFFS.flatMap(d => (c.id === a.id && d === 'kolay' ? many(31, c.id, d) : many(CAP(d), c.id, d))));
  snap = planSnapshot({ contexts, items: allButOne, quota: 50, parked: { [stepKey(a.id, 'kolay')]: {} } });
  assert.equal(snap.current, null);
  assert.equal(snap.complete, false);
@@ -147,7 +161,7 @@ test('ikili grup: iki konu aynı anda; biri dolunca boşalan hat eksik kalan kon
  assert.deepEqual(planBatch(snap.all, 2).map(s => `${s.pass}:${s.unitId}`).filter((x, i, arr) => arr.indexOf(x) === i), [`1:${last.id}`, `2:${a.id}`]);
 
  // Plan bitti: grup boş.
- snap = snapOf(contexts.flatMap(x => ['kolay', 'orta', 'zor'].flatMap(z => many(50, x.id, z))));
+ snap = snapOf(everything());
  assert.deepEqual(planBatch(snap.all, 2), []);
  assert.equal(pickPlanWork(snap.all, 2, {}), null);
 });
@@ -182,14 +196,20 @@ test('takılma sayacı: adım başına üst üste retler sayılır; sınırda ad
 
 test('konu içi zorluk ve kabul kuralı: kova doluysa o zorluk kabul edilmez', () => {
  const a = contexts[0].id;
+ // Kova kotaları bütün turların toplamıdır (kolay 39, orta 281, zor 280); sıradaki zorluk doluluk oranı en düşük olandır.
  assert.equal(planDifficultyForUnit(a, [], 50), 'kolay');
- assert.equal(planDifficultyForUnit(a, many(50, a, 'kolay'), 50), 'orta');
- assert.equal(planDifficultyForUnit(a, [...many(50, a, 'kolay'), ...many(50, a, 'orta')], 50), 'zor');
- assert.equal(planDifficultyForUnit(a, ['kolay', 'orta', 'zor'].flatMap(d => many(50, a, d)), 50), null);
+ assert.equal(planDifficultyForUnit(a, many(39, a, 'kolay'), 50), 'orta');
+ assert.equal(planDifficultyForUnit(a, [...many(39, a, 'kolay'), ...many(281, a, 'orta')], 50), 'zor');
+ assert.equal(planDifficultyForUnit(a, [...many(20, a, 'kolay'), ...many(20, a, 'orta')], 50), 'zor');
+ assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(CAP(d), a, d)), 50), null);
+ assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(50, a, d)), 50, 3), 'orta', 'üç turluk planda kovalar 33 / 59 / 58');
+ assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(60, a, d)), 50, 3), null);
+ assert.equal(planBucketHasRoom(a, 'kolay', many(38, a, 'kolay'), 50), true);
+ assert.equal(planBucketHasRoom(a, 'kolay', many(39, a, 'kolay'), 50), false);
 
  assert.equal(planAcceptsDifficulty(a, 'kolay', 'kolay', many(50, a, 'kolay'), 50), true, 'hedefle aynı zorluk kabul edilir');
  assert.equal(planAcceptsDifficulty(a, 'orta', 'kolay', many(49, a, 'orta'), 50), true, 'kotası dolmamış başka zorluk kendi kovasına yazılır');
- assert.equal(planAcceptsDifficulty(a, 'kolay', 'orta', many(50, a, 'kolay'), 50), false, 'kolay kotası doluyken "kolay" çıkan soru alınmaz');
+ assert.equal(planAcceptsDifficulty(a, 'kolay', 'orta', many(39, a, 'kolay'), 50), false, 'kolay kotası doluyken "kolay" çıkan soru alınmaz');
  assert.equal(planAcceptsDifficulty(a, 'bilinmiyor', 'kolay', [], 50), false);
 });
 
@@ -296,10 +316,10 @@ test('özet penceresi: isteme özetin tamamı değil ilgili cümlenin çevresi k
 });
 
 test('ayarlar: varsayılan 50 soru; TEMPO_PLAN=0 kapatır; geçersiz değerler güvenli aralığa çekilir', () => {
- assert.deepEqual(planConfigFromEnv({}), { enabled: true, quota: 50, stuckLimit: 25 });
+ assert.deepEqual(planConfigFromEnv({}), { enabled: true, quota: 50, passes: 12, stuckLimit: 25 });
  assert.equal(planConfigFromEnv({ TEMPO_PLAN: '0' }).enabled, false);
- assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN_QUOTA: '20', TEMPO_PLAN_STUCK_LIMIT: '40' }), { enabled: true, quota: 20, stuckLimit: 40 });
- assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN_QUOTA: 'abc', TEMPO_PLAN_STUCK_LIMIT: '0' }), { enabled: true, quota: 50, stuckLimit: 2 });
+ assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN_QUOTA: '20', TEMPO_PLAN_STUCK_LIMIT: '40', TEMPO_PLAN_PASSES: '5' }), { enabled: true, quota: 20, passes: 5, stuckLimit: 40 });
+ assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN_QUOTA: 'abc', TEMPO_PLAN_STUCK_LIMIT: '0', TEMPO_PLAN_PASSES: '0' }), { enabled: true, quota: 50, passes: 1, stuckLimit: 2 });
 });
 
 test('kitap sayfası: özetin kitaptan alınan her cümlesinin sayfası bilinir; sorular kitabın sayfalarına yayılır', () => {
@@ -337,4 +357,83 @@ test('kitap sayfası: özetin kitaptan alınan her cümlesinin sayfası bilinir;
  }));
  assert.equal(summaryPageOf({ text: 'Kısa bir özet cümlesi burada duruyor.' }, 'Kısa bir özet cümlesi burada duruyor.'), null);
  assert.ok(coveredPages >= rangePages * 0.85, `kitap sayfası kapsamı: ${coveredPages}/${rangePages}`);
+});
+
+test('içindekiler: her bölümün adı ve konu başlıkları kitabın içindekiler sayfalarından gelir; cümlenin konu başlığı bilinir', () => {
+ const toc = JSON.parse(readFileSync(new URL('../src/bookToc.json', import.meta.url), 'utf8'));
+ assert.equal(Object.keys(toc).length, contexts.length);
+ // Kitabın içindekiler sayfasındaki bölüm adları ve konular (elle doğrulanmış örnekler).
+ assert.equal(toc['0-0'].title, 'Genel Antrenman Bilimi: Antrenmanla İlgili Temel Kuram ve Kavramlar');
+ assert.deepEqual(toc['0-0'].sections.filter(s => s.level === 2).map(s => s.title), ['Giriş', 'Antrenmanla İlgili Temel Kavramlar', 'Sporcu Gelişim Modelleri', 'Antrenmana Akut ve Kronik Uyum']);
+ assert.deepEqual(toc['0-0'].sections.filter(s => s.level === 3 && s.parent === 1).map(s => s.title), ['Spor', 'Fiziksel aktivite', 'Performans', 'Egzersiz', 'Antrenman', 'Antrenör']);
+ assert.equal(toc['4-3'].title, 'Sporda Fair Play I');
+ assert.ok(toc['4-3'].sections.some(s => s.title === 'TMOK Fair Play Konseyi' && s.level === 3 && s.page === 128));
+ assert.ok(toc['1-4'].sections.some(s => s.title === 'Doping Kontrol İşleminin 11 Basamağı'), 'iki satıra bölünmüş başlık birleştirilir');
+ for (const ctx of contexts) {
+  const entry = toc[ctx.id];
+  assert.equal(ctx.chapter, entry.title);
+  assert.equal(ctx.chapterNo, entry.no);
+  assert.ok(entry.sections.filter(s => s.toc && s.level === 2).length >= 3, `${ctx.id}: ana konular`);
+  // İçindekilerdeki her konu başlığı kitabın gövdesinde bulunmuştur (sayfası bilinir).
+  assert.deepEqual(entry.sections.filter(s => s.toc && !Number.isInteger(s.page)).map(s => s.title), [], `${ctx.id}: gövdede bulunamayan başlık`);
+  // Alt konunun ana konusu bir düzey-2 başlığıdır.
+  for (const s of entry.sections.filter(x => x.level === 3)) assert.equal(entry.sections[s.parent]?.level, 2, `${ctx.id}: ${s.title}`);
+  // Kitaptan alınan her cümlenin konu başlığı bilinir ve başlığın sayfası cümlenin sayfasından sonra değildir.
+  assert.ok(ctx.sectionMarks.length >= ctx.pageMarks.length);
+  const unknown = ctx.sectionMarks.filter(m => m[1] < 0).length;
+  assert.ok(unknown <= 2, `${ctx.id}: konusuz ${unknown} grup`);
+  const [offset, index] = ctx.sectionMarks[Math.floor(ctx.sectionMarks.length / 2)];
+  const sentence = splitSummarySentences(ctx.text.slice(offset))[0];
+  const section = summarySectionOf(ctx, sentence);
+  assert.equal(section.title, ctx.sections[index].title);
+  assert.ok(ctx.sections[index].page <= summaryPageOf(ctx, sentence), `${ctx.id}: "${section.title}" başlığı s.${ctx.sections[index].page}, cümle s.${summaryPageOf(ctx, sentence)}`);
+  // Elle yazılmış bölümdeki cümlenin konu başlığı yoktur.
+  assert.equal(summarySectionOf(ctx, splitSummarySentences(ctx.text)[0]), null);
+ }
+ const first = contexts[0];
+ const spor = first.sectionMarks.find(m => first.sections[m[1]]?.title === 'Spor');
+ assert.deepEqual(summarySectionOf(first, splitSummarySentences(first.text.slice(spor[0]))[0]), { index: spor[1], title: 'Spor', level: 3, parent: 'Antrenmanla İlgili Temel Kavramlar' });
+});
+
+test('internet kaynağı: ek anlatım cümlelerinin kaynağı bilinir, kitap sayfası verilmez', () => {
+ const text = 'Elle yazılmış birinci özet cümlesi burada duruyor. Kitaptan alınmış ikinci cümle tam olarak şudur. İnternetten derlenmiş üçüncü cümle de budur.';
+ const ctx = {
+  text, pageMarks: [[text.indexOf('Kitaptan'), 12]], sections: [{ title: 'Örnek Konu', level: 2, page: 12, parent: null }], sectionMarks: [[text.indexOf('Kitaptan'), 0]],
+  webStart: text.indexOf('İnternetten'), webMarks: [[text.indexOf('İnternetten'), 0]], webSources: [{ topic: 'Ek konu', title: 'Örnek kaynak', url: 'https://example.org/kaynak' }]
+ };
+ assert.equal(summaryPageOf(ctx, 'Kitaptan alınmış ikinci cümle tam olarak şudur.'), 12);
+ assert.equal(summaryWebSourceOf(ctx, 'Kitaptan alınmış ikinci cümle tam olarak şudur.'), null);
+ assert.equal(summaryPageOf(ctx, 'İnternetten derlenmiş üçüncü cümle de budur.'), null, 'internet cümlesi son kitap sayfasına yazılmaz');
+ assert.equal(summarySectionOf(ctx, 'İnternetten derlenmiş üçüncü cümle de budur.'), null);
+ assert.deepEqual(summaryWebSourceOf(ctx, 'İnternetten derlenmiş üçüncü cümle de budur.'), { topic: 'Ek konu', title: 'Örnek kaynak', url: 'https://example.org/kaynak' });
+ // Gerçek veride: internet bölümü kitap cümlelerinden sonra gelir ve her bölümün kaynağı vardır.
+ const web = JSON.parse(readFileSync(new URL('../src/webSummary.json', import.meta.url), 'utf8'));
+ for (const c of contexts) {
+  if (!Number.isInteger(c.webStart)) { assert.equal((web[c.id] || []).length, 0); continue; }
+  assert.ok(c.webStart > c.pageMarks.at(-1)[0]);
+  assert.equal(c.webMarks.length, c.webSources.length);
+  for (const [offset, i] of c.webMarks) {
+   assert.match(c.webSources[i].url, /^https?:\/\//);
+   const sentence = splitSummarySentences(c.text.slice(offset))[0];
+   assert.equal(summaryWebSourceOf(c, sentence)?.url, c.webSources[i].url);
+   assert.equal(summaryPageOf(c, sentence), null);
+  }
+ }
+});
+
+test('soru biçimi: aynı cümleden yazılan sorularda daha önce kullanılmamış tip seçilir', () => {
+ const types = ['kavram', 'vaka', 'karsilastirma', 'istisna'];
+ assert.equal(leastUsedOption(types, [], 0), 'kavram');
+ assert.equal(leastUsedOption(types, ['kavram'], 0), 'vaka');
+ assert.equal(leastUsedOption(types, ['kavram', 'vaka', 'istisna'], 0), 'karsilastirma');
+ assert.equal(leastUsedOption(types, ['kavram', 'vaka', 'karsilastirma', 'istisna', 'kavram'], 1), 'karsilastirma', 'hepsi kullanıldıysa en az kullanılanlar arasında döner');
+ assert.equal(leastUsedOption([], ['kavram']), null);
+ // pickFocusSentence o cümleden daha önce yazılmış soruları da döndürür.
+ const summary = 'Dayanıklılık, yorgunluğa karşı koyabilme yeteneğidir. Kuvvet, bir dirence karşı koyabilme yeteneğidir. Sürat, hareketi en kısa sürede yapabilme yeteneğidir.';
+ const asked = [{ evidence: 'Dayanıklılık, yorgunluğa karşı koyabilme yeteneğidir.', questionType: 'kavram' }, { evidence: 'Kuvvet, bir dirence karşı koyabilme yeteneğidir.', questionType: 'vaka' }, { evidence: 'Sürat, hareketi en kısa sürede yapabilme yeteneğidir.', questionType: 'istisna' }];
+ const focus = pickFocusSentence(summary, asked, 0);
+ assert.equal(focus.usage, 1);
+ assert.equal(focus.asked.length, 1);
+ assert.equal(focus.asked[0].evidence, focus.sentence);
+ assert.deepEqual(pickFocusSentence(summary, [], 0).asked, []);
 });

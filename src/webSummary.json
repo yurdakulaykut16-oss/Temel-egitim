@@ -1,0 +1,741 @@
+{
+ "0-0": [
+  {
+   "topic": "Antrenmanın temel kavramları",
+   "sourceTitle": "Antrenman Nedir? Temel Kavramlar (ATP BESYO)",
+   "source": "https://www.atpbesyo.com/faydali-bilgi/2026-beden-egitimi-besyo-oabt/antrenman-nedir-temel-kavramlar-ve-besyooabt-baglaminda-incelenmesi/1082",
+   "sentences": [
+    "Antrenman yükü, sporcunun antrenmanda karşılaştığı fiziksel ve psikolojik zorlanmanın toplamıdır.",
+    "Dinlenme, yüklenmeden sonra organizmanın toparlandığı süreçtir ve performans artışı bu süreçte gerçekleşir.",
+    "Süperkompanzasyon, yeterli dinlenmenin ardından performans kapasitesinin yüklenme öncesindeki düzeyin üzerine çıkmasıdır.",
+    "Adaptasyon, organizmanın düzenli antrenman uyaranlarına karşı geliştirdiği kalıcı uyum tepkisidir.",
+    "Antrenman hacmi yapılan işin toplam miktarını, antrenman şiddeti ise yapılan işin zorluk derecesini ifade eder.",
+    "Antrenman sıklığı, belirli bir zaman diliminde yapılan antrenman sayısıdır.",
+    "Antrenman süreci yorgunluk, toparlanma ve süperkompanzasyon evrelerinin birbirini izlemesiyle ilerler.",
+    "Yüklenme ile dinlenme arasındaki denge kurulamadığında performans artışı yerine yorgunluk birikimi ortaya çıkar.",
+    "Antrenmanı yalnızca fiziksel aktivite olarak görmek ve dinlenme sürelerini önemsememek sık yapılan hatalardandır.",
+    "Antrenman hacmi ile antrenman şiddetinin birbirine karıştırılması yaygın bir kavram yanılgısıdır."
+   ]
+  }
+ ],
+ "0-1": [
+  {
+   "topic": "Zihinsel antrenman ve imgeleme",
+   "sourceTitle": "Zihinsel Antrenman ve Spor (ResearchGate)",
+   "source": "https://www.researchgate.net/publication/327816863_ZIHINSEL_ANTRENMAN_ve_SPOR",
+   "sentences": [
+    "İmgeleme, bir hareketin fiziksel olarak uygulanmadan zihinde yoğun biçimde canlandırılmasıdır.",
+    "İmgeleme yalnızca görsel bir deneyim değildir; işitsel, dokunsal ve kinestetik duyumları da içerir.",
+    "Kinestetik duyum, vücudun pozisyonunun ve hareketinin kas, tendon ve eklemlerden gelen bilgilerle algılanmasıdır.",
+    "Zihinsel antrenman fiziksel antrenmanın yerini tutmaz; fiziksel antrenmanla birlikte uygulandığında öğrenmeyi ve performansı destekler.",
+    "İmgeleme; konsantrasyonu geliştirmek, strateji alıştırması yapmak ve hataları zihinde düzeltmek amacıyla kullanılabilir.",
+    "İmgeleme antrenmandan önce ve sonra, yarışma öncesinde, devre aralarında ve sakatlık döneminde uygulanabilir.",
+    "İmgelemeye yeni başlayan sporcular için dikkat dağıtıcı uyaranların az olduğu sakin bir ortam önerilir.",
+    "İmgeleme çalışması, sporcunun çevresel ve içsel etkenlerden etkilenmeden performansını ortaya koymasına yardımcı olmayı amaçlar."
+   ]
+  }
+ ],
+ "0-2": [
+  {
+   "topic": "Aşırı yüklenme, özel olma ve geri dönüşüm ilkeleri",
+   "sourceTitle": "Antrenmanın İlkeleri",
+   "source": "https://yuzmekursum.wordpress.com/2016/01/04/antrenmanin-ilkeleri/",
+   "sentences": [
+    "Aşırı yüklenme ilkesine göre gelişim için organizmanın alışık olduğundan daha yüksek bir yükle karşılaşması gerekir.",
+    "Geri dönüşüm ilkesi, antrenmana ara verildiğinde kazanılan uyumların zamanla kaybedildiğini ifade eder.",
+    "Özel olma ilkesine göre antrenmanın etkisi; çalıştırılan enerji sistemine, kas grubuna ve hareket biçimine özgüdür.",
+    "Yüklenme şiddeti antrenmanın kalitesini belirleyen ölçüttür; şiddet yükseldikçe uyum daha hızlı gelişir.",
+    "Sporcunun yüklenebilirliği, istek düzeyine ve motivasyonuna bağlıdır; güne ve zamana göre değişebilir."
+   ]
+  },
+  {
+   "topic": "Antrenman ilkeleri",
+   "sourceTitle": "Antrenman nedir, ilkeleri nelerdir? (TFF Futbol Gelişim Bülteni)",
+   "source": "https://www.tff.org/default.aspx?pageID=228&ftxtID=14948",
+   "sentences": [
+    "Artan yüklenme ilkesine göre yüklenmeler düşük düzeyden başlamalı ve kademeli olarak artırılmalıdır.",
+    "Performans ne kadar hızlı yükseltilirse düşüşü de o kadar hızlı olur; bu nedenle yüklenme artışı aşamalı planlanır.",
+    "Bireysellik ilkesine göre her sporcunun aynı yüklenmeye verdiği yanıt farklıdır; yüklenmeler bireysel özelliklere göre ayarlanır.",
+    "Çeşitlilik ilkesi, aynı kondisyonel özelliğin farklı antrenman türleriyle geliştirilerek monotonluğun önlenmesini öngörür.",
+    "Periyotlama ilkesinde yıl boyunca kademeli performans gelişimi hedeflenir; müsabaka ve geçiş dönemleri planlamada dikkate alınır.",
+    "Kondisyon düzeyleri farklı olan sporcular gruplara ayrılarak her gruba farklı yüklenme uygulanabilir.",
+    "Yüklenme, belirli bir plan çerçevesinde vücutta çeşitli değişikliklere yol açan etkinliklerdir.",
+    "Kuvvet antrenmanında yüklenmenin şiddeti, kaldırılabilen en yüksek ağırlığın yüzdesiyle ifade edilir.",
+    "Dayanıklılık antrenmanında yüklenmenin şiddeti koşu hızı, kalp atım hızı ya da maksimum oksijen tüketiminin yüzdesiyle belirlenir.",
+    "Yüklenmenin kapsamı kuvvet antrenmanında kaldırılan toplam ağırlıkla, dayanıklılık antrenmanında kat edilen toplam mesafe ya da toplam süreyle ifade edilir.",
+    "İki yüklenme arasında organizmanın toparlanması için bırakılan süreye dinlenme denir.",
+    "Tam dinlenmede bir sonraki yüklenmeye, nabız dakikada yaklaşık 90 atıma düştükten sonra geçilir.",
+    "Verimsel dinlenmede bir sonraki yüklenmeye, nabız dakikada yaklaşık 120 atıma düştükten sonra geçilir.",
+    "Tam dinlenme; sürat, reaksiyon, patlayıcı kuvvet, maksimal kuvvet ve koordinasyon çalışmalarında kullanılır.",
+    "Verimsel dinlenme, yani tam olmayan dinlenme, dayanıklılık çalışmalarında kullanılır.",
+    "Antrenman sıklığı belirlenirken sporcunun durumu ve iki müsabaka arasındaki süre dikkate alınır.",
+    "Antrenmandan beklenen sonuçlardan biri, sporcunun olabildiğince geç yorulması ve yorgunluktan kısa sürede kurtulmasıdır."
+   ]
+  }
+ ],
+ "0-3": [
+  {
+   "topic": "Kuvvet ve dayanıklılık türleri",
+   "sourceTitle": "Çocuk ve Gençler için Voleybol Antrenman Birimi ve Planlaması (TVF)",
+   "source": "https://tvf.org.tr/storage/old/2021/06/C%CC%A7ocuk-ve-Genc%CC%A7ler-ic%CC%A7in-Voleybol-Antrenman-Birimi-ve-Planlamasi-1.pdf",
+   "sentences": [
+    "Aerobik dayanıklılık, enerjinin oksijen kullanılarak karşılandığı düşük ve orta şiddetli uzun süreli çalışmalarda yorgunluğa direnme yeteneğidir.",
+    "Anaerobik dayanıklılık, enerjinin oksijensiz yoldan sağlandığı yüksek şiddetli kısa süreli çalışmalarda yorgunluğa direnme yeteneğidir.",
+    "Maksimal kuvvet, sinir-kas sisteminin istemli bir kasılmayla üretebildiği en büyük kuvvettir.",
+    "Çabuk kuvvet, sinir-kas sisteminin bir direnci yüksek kasılma hızıyla yenebilme yeteneğidir.",
+    "Kuvvette devamlılık, tekrarlanan ya da uzun süren kuvvet uygulamalarında kasın yorgunluğa karşı koyabilme yeteneğidir.",
+    "Özel kuvvet, belirli bir spor dalının hareket yapısına uygun biçimde üretilen kuvvettir.",
+    "Newton'un ikinci hareket yasasına göre kuvvet, kütle ile ivmenin çarpımına eşittir.",
+    "Enerji sistemlerine göre dayanıklılık, aerobik dayanıklılık ve anaerobik dayanıklılık olarak ikiye ayrılır."
+   ]
+  }
+ ],
+ "0-4": [
+  {
+   "topic": "Statik ve dinamik denge",
+   "sourceTitle": "Dengenin Önemi ve Antrenmanlarda Planlanması (Sporsal Bilgiler)",
+   "source": "https://www.sporsalbilgiler.com/dengenin-onemi-ve-antrenmanlarda-planlanmasi.html",
+   "sentences": [
+    "Statik denge, vücudun sabit bir pozisyonda dengesini koruyabilmesidir; tek ayak üzerinde hareketsiz durmak buna örnektir.",
+    "Dinamik denge, vücut hareket hâlindeyken postüral kontrolün sürdürülebilmesidir; koşarken yön değiştirmek buna örnektir.",
+    "Denge çalışmalarında önce statik dengede yeterlilik sağlanmalı, dinamik denge alıştırmalarına bundan sonra geçilmelidir.",
+    "Denge en iyi, sporcunun yarışma sırasında becerisini sergilediği yüzeye ve koşullara benzer ortamda geliştirilir."
+   ]
+  },
+  {
+   "topic": "Çevikliğin tanımı ve bileşenleri",
+   "sourceTitle": "Ulusal Spor Bilimleri Dergisi 2(2), 97-112 (DergiPark)",
+   "source": "https://dergipark.org.tr/tr/download/article-file/600580",
+   "sentences": [
+    "Çeviklik, bir uyarana tepki olarak tüm vücudun hızla hareket ettirilmesi ve yön değiştirilmesi yeteneğidir.",
+    "Bir hareketin çeviklik sayılabilmesi için bir uyarana yanıt içermesi, yani algılama ve karar verme sürecini kapsaması gerekir.",
+    "Önceden planlanmış yön değiştirme koşuları karar verme içermediği için çeviklikten çok yön değiştirme hızını yansıtır.",
+    "Çeviklik, algılama ve karar verme bileşeni ile yön değiştirme hızı bileşeninden oluşur.",
+    "Sprint hızı, kuvvet ve denge çevikliği etkiler; ancak hiçbiri çeviklik performansını tek başına açıklamaz."
+   ]
+  }
+ ],
+ "0-5": [
+  {
+   "topic": "Periyotlamanın amacı",
+   "sourceTitle": "Antrenman Periyotlaması: Yüklenme, Toparlanma ve Form Yönetimi (Spor 2030)",
+   "source": "https://spor2030.com/antrenor-akademisi/blog/antrenman-periyotlamasi-temel-ilkeler",
+   "sentences": [
+    "Periyotlama, antrenmanın hacim, şiddet ve sıklık gibi değişkenlerinin zaman içinde sistematik olarak planlanması ve değiştirilmesidir.",
+    "Periyotlamanın iki temel amacı adaptasyonu en üst düzeye çıkarmak ve aşırı yüklenme ile sakatlık riskini azaltmaktır.",
+    "Periyotlama aşamalı yüklenme, planlı toparlanma ve çeşitlendirme ilkelerine dayanır.",
+    "Periyotlamada amaç, sporcunun formunun hedef yarışmada en yüksek düzeye ulaşmasını sağlamaktır.",
+    "Antrenman yükünün düzenli izlenmesi, planın sporcunun gerçek durumuna göre ayarlanmasına olanak verir.",
+    "Yarışma öncesinde antrenman yükünün planlı biçimde azaltılması, biriken yorgunluğun giderilmesini ve formun yükselmesini amaçlar.",
+    "Makro döngü bütün bir sezonu ya da yıllık planı kapsar ve genel hedefe göre biçimlenir.",
+    "Mezo döngü birkaç haftalık bloklardan oluşur ve her blok dayanıklılık, kuvvet ya da sürat gibi belirli bir özelliğe ağırlık verir.",
+    "Mikro döngü genellikle bir haftalık döngüdür ve günlük yüklenme ile toparlanma dengesini düzenler.",
+    "Doğrusal periyotlama yüksek hacim ve düşük şiddetle başlar; zaman içinde şiddet artırılırken hacim azaltılır.",
+    "Dalgalı periyotlamada hacim ve şiddet hafta içinde ya da günler arasında değiştirilir.",
+    "Blok periyotlamada kısa ve yoğun bloklarda az sayıda özelliğe odaklanılır.",
+    "Hiçbir periyotlama modeli tek başına en iyisi değildir; seçim spor dalına, yarışma takvimine ve sporcuya göre yapılır.",
+    "Hafifletme haftası, birkaç yoğun haftanın ardından yükün belirgin biçimde azaltıldığı ve biriken yorgunluğun giderildiği haftadır.",
+    "Hafifletme haftasında antrenman tümüyle bırakılmaz; hacim, şiddet ya da ikisi birden azaltılır.",
+    "Çeşitlendirme ilkesine göre uyaranın değiştirilmesi gelişimin durağanlaşmasını önler ve motivasyonu korur.",
+    "Haftalık yükün çok hızlı artırılması yumuşak doku sakatlıklarına zemin hazırlar.",
+    "Algılanan zorluk derecesi ile uyku, toparlanma ve kas ağrısı anketleri antrenman yükünü izlemenin pratik araçlarıdır.",
+    "Genç sporcuların periyotlama planlarında gelişim ve uzun vadeli sağlık önceliklidir."
+   ]
+  }
+ ],
+ "0-6": [
+  {
+   "topic": "Eurofit testleri ve beden kitle indeksi",
+   "sourceTitle": "Çocuklarda Fiziksel Uygunluk (ResearchGate)",
+   "source": "https://www.researchgate.net/publication/335022826_Kitap_ful_Cocuklarda_Fiziksel_Uygunluk",
+   "sentences": [
+    "Beden kitle indeksi, vücut ağırlığının kilogram cinsinden değerinin boy uzunluğunun metre cinsinden karesine bölünmesiyle hesaplanır.",
+    "Eurofit test bataryası, okul çağındaki çocuk ve gençlerin fiziksel uygunluğunu değerlendirmek için Avrupa'da geliştirilmiş bir test dizisidir.",
+    "Eurofit bataryasında denge, Flamingo denge testiyle değerlendirilir.",
+    "Eurofit bataryasında esneklik otur-eriş testiyle, sürat ise 10x5 metre mekik koşusuyla ölçülür.",
+    "Eurofit bataryasında kardiyovasküler dayanıklılık, mekik koşusu testiyle değerlendirilir.",
+    "Deri kıvrım kalınlığı ölçümleri, vücut yağ oranını kestirmek için kullanılan antropometrik bir yöntemdir.",
+    "Pençe kuvveti testi kassal kuvveti, belirli sürede yapılan mekik testi ise karın kaslarının kuvvet ve dayanıklılığını değerlendirir.",
+    "Antropometrik ölçümlerde boy uzunluğu santimetre, vücut ağırlığı kilogram cinsinden kaydedilir."
+   ]
+  }
+ ],
+ "0-7": [
+  {
+   "topic": "Yetenek tespiti ve bağıl yaş etkisi",
+   "sourceTitle": "Türkiye Sportif Yetenek Modeli (Gençlik ve Spor Bakanlığı Yayınları)",
+   "source": "https://yayinlar.gsb.gov.tr/Public/Files/spor-yetenek.pdf",
+   "sentences": [
+    "Erken belirleme, genç yaşta potansiyel taşıyan çocukların tanınıp uygun bir spor programına yönlendirilmesidir.",
+    "Bağıl yaş etkisi, aynı yaş grubunda yılın ilk aylarında doğan çocukların gelişim avantajı nedeniyle seçilme olasılığının yükselmesidir.",
+    "Yetenek değerlendirmelerinde çocuğun takvim yaşı kadar biyolojik olgunluk düzeyi de dikkate alınmalıdır.",
+    "Yetenek taramasında ölçüm sonuçları yaşa, cinsiyete ve bağıl yaş etkisine göre hazırlanmış normlarla değerlendirilir.",
+    "Erken belirleme sürecinde çocuğun fiziksel, teknik, zihinsel ve sosyal özellikleri birlikte değerlendirilir."
+   ]
+  },
+  {
+   "topic": "Yetenek geliştirme sürecinin aşamaları",
+   "sourceTitle": "Sporda Yetenek Geliştirme Sürecinin Yönetimi (DergiPark)",
+   "source": "https://dergipark.org.tr/tr/download/article-file/370612",
+   "sentences": [
+    "Yetenek geliştirme sürecinin aşamaları yeteneğin tanımlanması, doğrulanması, geliştirilmesi ve transferidir.",
+    "Yetenek geliştirme süreci; çocuğun gelişim evresi, sosyal destek, antrenör niteliği ile tesis ve malzemeye erişim gibi etkenlerden etkilenir.",
+    "Güncel yaklaşımlar, az sayıda çocuğa erken yatırım yapmak yerine geniş kitlelere temel hareket eğitimi verilip yeteneklerin bu tabandan seçilmesini önerir.",
+    "Bir spor dalının teknik, taktik, kondisyonel ve psikolojik gereklilikleri arttıkça çocuğun gelecekteki performansını önceden kestirmek zorlaşır."
+   ]
+  }
+ ],
+ "1-0": [
+  {
+   "topic": "Kas kasılma tipleri",
+   "sourceTitle": "İskelet Kaslarının Yapısı ve Biyomekaniği (DergiPark)",
+   "source": "https://dergipark.org.tr/en/download/article-file/25221",
+   "sentences": [
+    "İzometrik kasılmada kas gerim üretir ancak boyu değişmez ve eklemde hareket oluşmaz.",
+    "Konsantrik kasılmada kas kısalarak kuvvet üretir; basamak çıkarken diz ekstansörlerinin çalışması buna örnektir.",
+    "Eksantrik kasılmada kas gerim üretirken uzar ve hareketi frenler; basamak inerken ya da ağırlığı yavaşça indirirken görülür.",
+    "Eksantrik kasılmanın temel işlevlerinden biri eklem hareketini yavaşlatmaktır.",
+    "Kasa dışarıdan uygulanan kuvvete direnç ya da yük denir.",
+    "Bir kasın eklemde oluşturduğu döndürme etkisine moment ya da tork denir.",
+    "İzotonik kasılma kas boyunun değiştiği kasılmadır; konsantrik ve eksantrik olmak üzere iki biçimde görülür."
+   ]
+  },
+  {
+   "topic": "Hareket düzlemleri ve motor ünite",
+   "sourceTitle": "İnsan Anatomisi ve Kinesiyoloji (ATP BESYO)",
+   "source": "https://www.atpbesyo.com/etiket/anatomisi?q=Anatomisi",
+   "sentences": [
+    "Sagittal düzlemde öne ve arkaya doğru hareketler, yani fleksiyon ve ekstansiyon gerçekleşir.",
+    "Frontal düzlemde yana doğru hareketler, yani abduksiyon ve adduksiyon gerçekleşir.",
+    "Transvers düzlemde dönme hareketleri, yani rotasyon gerçekleşir.",
+    "Motor ünite, bir motor sinir hücresi ile onun uyardığı kas liflerinden oluşur ve kas kasılmasının işlevsel birimidir."
+   ]
+  }
+ ],
+ "1-1": [
+  {
+   "topic": "Enerji sistemlerinin özellikleri",
+   "sourceTitle": "Spor İstanbul Yüzme Eğitmeni Rehberi",
+   "source": "https://spor.istanbul/wp-content/uploads/2023/05/YuzmeEgitmeniRehberi.pdf",
+   "sentences": [
+    "Fosfojen sistem, oksijen gerektirmeyen ve laktik asit oluşturmayan, çok kısa süreli ve çok şiddetli eforların enerji kaynağıdır.",
+    "Fosfojen sistem, şiddeti ne olursa olsun bütün egzersizlerin başlangıcında etkindir; ancak kapasitesi sınırlıdır.",
+    "Anaerobik glikolizde enerji karbonhidratlardan oksijensiz olarak elde edilir ve yan ürün olarak laktik asit oluşur.",
+    "Oksidatif sistem, birkaç dakikadan uzun süren düşük ve orta şiddetli egzersizlerin temel enerji kaynağıdır.",
+    "Aerobik sistemde karbonhidrat ve yağlar oksijen kullanılarak parçalanır; son ürünler karbondioksit ve sudur.",
+    "Aerobik sistem enerjiyi yavaş ama büyük miktarda, anaerobik sistemler ise hızlı ama sınırlı miktarda üretir.",
+    "Egzersiz süresi uzadıkça enerji üretimi giderek aerobik sisteme kayar ve üretilebilen en yüksek güç azalır.",
+    "Spor dallarının çoğunda enerji, aerobik ve anaerobik sistemlerin birlikte çalışmasıyla sağlanır."
+   ]
+  }
+ ],
+ "1-2": [
+  {
+   "topic": "Sporcu beslenmesinin temelleri",
+   "sourceTitle": "Sporcu Beslenmesi: Performans İçin Kanıta Dayalı Temel Rehber (Spor 2030)",
+   "source": "https://spor2030.com/antrenor-akademisi/blog/sporcu-beslenmesi-temel-rehber",
+   "sentences": [
+    "Sporcu beslenmesinin üç temel dayanağı yeterli enerji alımı, doğru makro besin dağılımı ve doğru zamanlamadır.",
+    "Protein, antrenmanla hasar gören kas proteinlerinin onarımı ve yeni doku yapımı için gereklidir.",
+    "Günlük protein miktarı kadar, proteinin gün içindeki öğünlere dengeli dağıtılması da kas protein sentezi açısından önemlidir.",
+    "Antrenman sonrası beslenmenin hedefleri glikojen depolarını yenilemek, onarımı başlatmak ve kaybedilen sıvıyı yerine koymaktır.",
+    "Kalori açığındayken kas kütlesini korumak isteyen sporcularda protein gereksinimi önerilen aralığın üst sınırına yaklaşır."
+   ]
+  },
+  {
+   "topic": "Müsabaka öncesi beslenme",
+   "sourceTitle": "Sporcular İçin Müsabaka Öncesi Beslenme (Nutrever)",
+   "source": "https://www.nutrever.com.tr/tr/musabaka-oncesi-beslenme",
+   "sentences": [
+    "Uzun süreli dayanıklılık egzersizlerinde kas glikojen depoları belirgin biçimde azalır.",
+    "Yoğun antrenman yapan sporcuların glikojen depolarının boşalmasını önlemek için yeterli karbonhidrat tüketmesi gerekir.",
+    "Proteinden çok zengin beslenen sporcularda karbonhidrat alımı yetersiz kalabilir ve antrenman verimi düşebilir.",
+    "Proteinden zengin besinlerin çoğu yağ bakımından da zengin olduğu için aşırı protein tüketimi yağ alımını da artırır.",
+    "Müsabakadan önceki günlerde öğünlerin karbonhidrat oranı artırılarak glikojen depolarının dolu olması hedeflenir."
+   ]
+  }
+ ],
+ "1-3": [
+  {
+   "topic": "PRICE protokolü ve yaralanma dereceleri",
+   "sourceTitle": "Spor Yaralanmalarından Korunma ve Tedavi Yöntemleri (Ekol Tıp Merkezi)",
+   "source": "https://www.ekoltipmerkezi.com/spor-yaralanmalarinda-ilk-yardim-ve-tedavi-onerileri",
+   "sentences": [
+    "PRICE protokolü koruma, dinlenme, buz uygulaması, kompresyon ve elevasyon basamaklarından oluşur.",
+    "Kas gerilmesinde ilk adım, zarar gören kasa ek yük bindirecek aktivitelerden kaçınmaktır.",
+    "Buz uygulaması, kompresyon ve elevasyonun ortak amacı şişliği azaltmak ve iyileşmeyi desteklemektir.",
+    "Şiddetli burkulmalarda ya da iyileşmenin ilerlemediği durumlarda sporcu hekime yönlendirilmelidir."
+   ]
+  },
+  {
+   "topic": "Sık görülen spor yaralanmaları",
+   "sourceTitle": "Spor Hekimliği Ders Notları (Van Yüzüncü Yıl Üniversitesi Tıp Fakültesi)",
+   "source": "https://www.yyu.edu.tr/images/files/Spor_Hekimligi__Donem_3_ders_notlari.pdf",
+   "sentences": [
+    "Sporda en sık yaralanan anatomik bölge ayak ve ayak bileğidir.",
+    "Bütün spor dalları birlikte değerlendirildiğinde en sık karşılaşılan yaralanma burkulmadır.",
+    "Hayati tehlikenin bulunmadığı spor yaralanmalarında ilk müdahalede yaralı bölge korumaya alınır ve aktivite durdurulur.",
+    "Stres kırıkları, tekrarlayan yüklenmeler sonucunda kemikte oluşan aşırı kullanım yaralanmalarıdır."
+   ]
+  }
+ ],
+ "1-4": [
+  {
+   "topic": "Tedavi amaçlı kullanım istisnası",
+   "sourceTitle": "Dopingle Mücadele Eğitimi (TFF Dopingle Mücadele Kurulu)",
+   "source": "http://www.tff.org/Resources/TFF/Documents/dopingle-mucadele-egitimi.pdf",
+   "sentences": [
+    "Tedavi Amaçlı Kullanım İstisnası, tedavisi için yasaklı bir madde ya da yöntem kullanmak zorunda olan sporcuya verilen izindir.",
+    "Sağlık sorunu olan sporcunun tedavi görmesi doğal hakkıdır; ancak tedavide kullanılan bazı ilaçlar Yasaklılar Listesi'ndeki maddeleri içerebilir.",
+    "Tedavi Amaçlı Kullanım İstisnası, sağlık sorununun yasaklı olmayan başka bir ilaç ya da yöntemle tedavi edilemediği durumlar için öngörülmüştür.",
+    "Tedavi Amaçlı Kullanım İstisnası bulunan sporcu, kullandığı maddeyi doping kontrolü sırasında beyan etmelidir.",
+    "Uluslararası düzeydeki sporcular, Tedavi Amaçlı Kullanım İstisnası başvurusunda ilgili uluslararası federasyonun kurallarına uymak zorundadır."
+   ]
+  },
+  {
+   "topic": "Yasaklılar Listesi uygulamaları",
+   "sourceTitle": "Yasaklılar Listesi – Sıkça Sorulan Sorular (Türkiye Dopingle Mücadele Komisyonu)",
+   "source": "https://www.tdmk.org.tr/yasaklilar-listesi/",
+   "sentences": [
+    "Bazı maddeler yalnızca belirli spor dallarında yasaklıdır; beta blokerler bu maddelere örnektir.",
+    "Bazı maddeler yalnızca müsabaka içi dönemde yasaklıdır; bu nedenle ilacın uygulanma zamanı da önem taşır.",
+    "Bir maddenin yasaklı sayılıp sayılmaması, vücuda veriliş yoluna ve dozuna göre değişebilir.",
+    "Yasaklı madde içeren bir tedavi uygulanacak sporcu, işlemin kapsamını değerlendirmeli ve gerekiyorsa Tedavi Amaçlı Kullanım İstisnası başvurusu yapmalıdır."
+   ]
+  },
+  {
+   "topic": "Ulusal ve uluslararası geçerlilik",
+   "sourceTitle": "Dopingle Mücadele Yönergesi (Spor Hizmetleri Genel Müdürlüğü)",
+   "source": "https://shgm.gsb.gov.tr/Public/images/SGM/Federasyon/74386DopingleMucadeleYonergesi.pdf",
+   "sentences": [
+    "Sporcuların tedavisinde yasaklı olmayan bir madde ya da yöntemin kullanılması esastır.",
+    "Tedavi Amaçlı Kullanım İstisnası başvurusu, yasaklı maddeyi kullanma zorunluluğu ortaya çıktıktan sonra en kısa sürede yapılmalıdır.",
+    "Ulusal düzeyde verilen bir Tedavi Amaçlı Kullanım İstisnası, uluslararası müsabakalarda kendiliğinden geçerli sayılmaz."
+   ]
+  }
+ ],
+ "2-0": [
+  {
+   "topic": "Yönetim süreci yaklaşımı",
+   "sourceTitle": "Yönetim Yaklaşımları (TÜBİTAK Ansiklopedi)",
+   "source": "https://ansiklopedi.tubitak.gov.tr/ansiklopedi/yonetim_yaklasimlari",
+   "sentences": [
+    "Yönetim, örgütün amaçlarına ulaşmak için kaynakların kullanımına ilişkin planlama, örgütleme, yöneltme ve denetleme faaliyetleridir.",
+    "Yönetim en kısa biçimiyle başkaları aracılığıyla iş görmek olarak tanımlanır.",
+    "Yönetim süreci yaklaşımı, Henri Fayol'un bir maden işletmesinin yöneticisiyken edindiği deneyimlere dayanır.",
+    "Fayol'a göre bir işletmede teknik, ticaret, finansman, muhasebe, güvenlik ve yönetim olmak üzere altı temel işlev bulunur.",
+    "Fayol'a göre yöneticinin beş fonksiyonu planlama, örgütleme, yöneltme, eşgüdümleme ve denetlemedir.",
+    "Fayol, yönetimin etkin işlemesi için işbölümü, emir birliği ve yön birliği gibi ilkeleri içeren 14 yönetim ilkesi belirlemiştir.",
+    "Yönetim süreci yaklaşımı, yöneticilerin hangi işlevleri hangi ilkelere uyarak yürütmesi gerektiği sorusuna odaklanır."
+   ]
+  },
+  {
+   "topic": "Yönetim fonksiyonlarının içeriği",
+   "sourceTitle": "Yönetim Fonksiyonları (Lider Atlası)",
+   "source": "https://lideratlasi.com/yonetim/yonetim-fonksiyonlari/",
+   "sentences": [
+    "Örgütleme fonksiyonu, plana göre kimin hangi işi yapacağının ve yetki ile sorumlulukların belirlenmesidir.",
+    "Yöneltme fonksiyonu, planı gerçekleştirmek üzere kurulan örgütün harekete geçirilmesidir.",
+    "Yöneltme aşamasında yöneticinin liderlik özellikleri öne çıkar ve üyelerin motivasyonunun yüksek tutulmasına çalışılır.",
+    "Koordinasyon fonksiyonu, örgütün birimleri ve üyeleri arasında uyumun sağlanmasıdır.",
+    "Denetim fonksiyonu, planlanan durum ile gerçekleşen durum arasındaki farkın boyutunun ve nedenlerinin belirlenmesidir.",
+    "Bir planın başarılı olup olmadığı denetim fonksiyonu sonucunda ortaya çıkar."
+   ]
+  }
+ ],
+ "2-1": [
+  {
+   "topic": "İşletmenin tanımı ve işlevleri",
+   "sourceTitle": "İşletme (TÜBİTAK Ansiklopedi)",
+   "source": "https://ansiklopedi.tubitak.gov.tr/ansiklopedi/isletme",
+   "sentences": [
+    "İşletmelerin temel ve ortak amacı mal ve hizmet üreterek fayda yaratmaktır.",
+    "Kâr elde etmek, sosyal sorumluluk, sürdürülebilirlik ve büyüme işletmelerin diğer amaçları arasındadır.",
+    "Mallar elle tutulabilen maddi ürünlerdir; hizmetler ise eğitim ve taşımacılık gibi elle tutulamayan ürünlerdir.",
+    "İşletmede birbirine yakın ve benzer işlerin oluşturduğu gruplara işletme işlevleri denir.",
+    "İşletme işlevleri yönetim, tedarik, üretim, pazarlama, finans, insan kaynakları, muhasebe, araştırma-geliştirme ve halkla ilişkiler olarak sıralanabilir.",
+    "Küçük işletmelerde aynı kişi birden fazla işleve ait işleri yürütür.",
+    "İşletme büyüdükçe işlevler farklılaşır ve farklı işlevler ayrı birimler tarafından yürütülür.",
+    "İşletmenin amaçları ortaklara, çalışanlara, müşterilere, topluma, çevreye ve devlete karşı sorumluluklarıyla uyumlu olmalıdır."
+   ]
+  },
+  {
+   "topic": "İşletme işlevlerinin tanımları",
+   "sourceTitle": "İşletme ve Muhasebe – Ünite 1 (AçıköğretimX)",
+   "source": "https://acikogretimx.com/konu-anlatimlari/genel-muhasebe-kitab/muhasebe-unite-1/",
+   "sentences": [
+    "Pazarlama işlevi; mal, hizmet ve düşüncelerin geliştirilmesi, fiyatlandırılması, tüketiciye ulaştırılması ve tutundurulması faaliyetlerini kapsar.",
+    "İnsan kaynakları işlevi, işletmenin gereksinim duyduğu işgücünün sağlanmasını ve uygun koşullarda çalıştırılmasını kapsar.",
+    "Üretim işlevi; işgücü, hammadde, bilgi ve araç gereç kullanılarak bir mal ya da hizmetin ortaya konulmasıdır.",
+    "Finansman işlevi, işletmenin gereksinim duyduğu sermayenin uygun koşullarda sağlanması ve etkin biçimde kullanılmasıdır.",
+    "Özel işletmelerde ekonomik amaçlar, kamu işletmelerinde ise sosyal amaçlar ön plandadır."
+   ]
+  }
+ ],
+ "2-2": [
+  {
+   "topic": "Liderlik tarzlarının karşılaştırılması",
+   "sourceTitle": "Otokratik ve Demokratik Liderlik Arasındaki Fark (Mindset)",
+   "source": "https://mindset.com.tr/karsilastirma/demokratik-liderlik-vs-otokratik-liderlik",
+   "sentences": [
+    "Otokratik liderlikte lider kararları ekibe danışmadan tek başına verir ve uygulamayı yakından denetler.",
+    "Demokratik liderlikte lider ekibin görüşünü sistemli biçimde alır ve ekibi karar sürecine ortak eder.",
+    "Serbest bırakıcı liderlikte lider karar ve yönlendirmeyi büyük ölçüde ekibe bırakır, müdahaleyi en aza indirir.",
+    "Demokratik lider karar sürecinin içindedir: sorunu çerçeveler, tartışmayı yönetir ve kararın sorumluluğunu üstlenir.",
+    "Serbest bırakıcı lider ise karar sürecinden büyük ölçüde çekilir; demokratik liderlikten temel farkı budur.",
+    "Otokratik liderlikte bütün kararların ve hataların yükü liderde toplanır."
+   ]
+  },
+  {
+   "topic": "Liderlik tarzlarının kullanım alanları",
+   "sourceTitle": "Liderlik Türleri ve Arasındaki Farklılıklar (Sosyal Bilgiler)",
+   "source": "https://www.sosyalbilgiler.org/liderlik-turleri-ve-arasindaki-farkliliklar/",
+   "sentences": [
+    "Otokratik liderlikte iletişim tek yönlüdür; demokratik liderlikte ise karşılıklı fikir alışverişine dayanır.",
+    "Otokratik liderlik, hızlı karar gerektiren acil durumlarda işe yarayabilir.",
+    "Serbest bırakıcı liderlik, deneyimli ve kendi kendini yönetebilen ekiplerde daha uygun bir tarzdır.",
+    "Dönüşümcü liderlikte vizyon, ilham ve izleyenlerin kişisel gelişimi merkezdedir.",
+    "Otokratik liderlikte emir-komuta ve sıkı denetim, dönüşümcü liderlikte gönüllü katılım esastır."
+   ]
+  }
+ ],
+ "2-3": [
+  {
+   "topic": "İletişim sürecinin ögeleri",
+   "sourceTitle": "İletişim (Vikipedi)",
+   "source": "https://tr.wikipedia.org/wiki/%C4%B0leti%C5%9Fim",
+   "sentences": [
+    "İletişim, belirli mesajların kodlanarak bir kanal aracılığıyla bir kaynaktan bir alıcıya aktarılması sürecidir.",
+    "İletişimin temel ögeleri kaynak, alıcı, ileti, kanal, dönüt ve bağlamdır.",
+    "Kaynak, duygu, düşünce ya da isteği aktaran kişi veya topluluktur.",
+    "İleti, kaynak ile alıcı arasında aktarılan duygu, düşünce ya da istektir.",
+    "Kanal, iletinin kaynaktan alıcıya hangi yolla gönderildiğini ifade eder.",
+    "Bağlam, iletişimin gerçekleştiği ortamdır."
+   ]
+  },
+  {
+   "topic": "Halkla ilişkilerde iletişim",
+   "sourceTitle": "Halkla İlişkilerde İletişim Süreci Nedir? (Network Okulu)",
+   "source": "https://networkokulu.net/halkla-iliskilerde-iletisim-sureci-nedir/",
+   "sentences": [
+    "Geri bildirim, alıcının mesajı aldıktan sonra kaynağa verdiği yanıt ve tepkilerin tümüdür.",
+    "Mesajın sade, açık ve anlaşılır olması iletişimin başarısını artırır.",
+    "Alıcı, kaynağın mesajını ulaştırmak istediği kişi ya da kesimdir.",
+    "Kodlama mesajın simgelere dönüştürülmesi, kod açma ise alıcının bu simgeleri yorumlamasıdır.",
+    "Geri bildirim, hedef kitlenin mesajı nasıl algıladığını gösterdiği için iletişimin değerlendirilmesinde temel ölçüttür."
+   ]
+  }
+ ],
+ "2-4": [
+  {
+   "topic": "Kişi ve ehliyet kavramları",
+   "sourceTitle": "Hukukun Temel Kavramları – Ünite Özetleri",
+   "source": "https://firatoner.wixsite.com/senveben/niteler",
+   "sentences": [
+    "Hukuk düzeni gerçek kişi ve tüzel kişi olmak üzere iki tür kişi kabul eder.",
+    "Gerçek kişiler yalnızca insanlardır.",
+    "Tüzel kişiler, belirli bir amacı gerçekleştirmek üzere kurulmuş kişi toplulukları ile mal topluluklarıdır.",
+    "Fiil ehliyeti, bir kimsenin kendi fiilleriyle hak edinebilmesi ve borç altına girebilmesidir.",
+    "Fiil ehliyetinin koşulları ayırt etme gücüne sahip olmak, ergin olmak ve kısıtlı olmamaktır.",
+    "Fiil ehliyetinin kapsamına hukuki işlem ehliyeti, haksız fiillerden sorumlu olma ehliyeti ve dava ehliyeti girer.",
+    "Yaş, cinsiyet ve hısımlık gibi yalnızca insana özgü niteliklere bağlı haklar tüzel kişiler için söz konusu olmaz."
+   ]
+  },
+  {
+   "topic": "Hak ehliyeti ve kişiliğin başlangıcı",
+   "sourceTitle": "Hukukun Temel Kavramları 10. Ünite Özeti (Açıköğretim Adalet Bölümü)",
+   "source": "https://acikogretimadaletcikmissorular.blogspot.com/",
+   "sentences": [
+    "Hak ehliyeti, kişinin haklara ve borçlara sahip olabilme yeteneğidir.",
+    "Türk Medeni Kanunu'na göre her insanın hak ehliyeti vardır.",
+    "Gerçek kişilerde kişilik, çocuğun sağ olarak tamamıyla doğduğu anda başlar ve ölümle sona erer.",
+    "Tüzel kişiler, kanuna ve kuruluş belgelerine göre gerekli organlara sahip olmakla fiil ehliyeti kazanır.",
+    "Dernekler kişi topluluğu, vakıflar ise mal topluluğu niteliğindeki tüzel kişilerdir."
+   ]
+  }
+ ],
+ "3-0": [
+  {
+   "topic": "Antrenörün rolleri",
+   "sourceTitle": "Antrenör ve Sahip Olması Gereken Özellikler (Ankara Üniversitesi Açık Ders)",
+   "source": "https://acikders.ankara.edu.tr/mod/resource/view.php?id=5204",
+   "sentences": [
+    "Antrenörün üstlendiği temel roller liderlik, öğretmenlik ve organizatörlüktür.",
+    "Antrenör; sporcuya yeterlilik ve bağımsızlık kazandıran bir eğitimci, iyi bir organizatör, etkili bir motivatör ve yöneticidir.",
+    "Antrenörün sporcu üzerindeki etkisinin ölçüsü, bu etkinin spor ortamından yaşamın diğer alanlarına yayılmasıyla da değerlendirilir.",
+    "Lider olarak antrenörden bütün sezonu kapsayan amaçlar belirlemesi beklenir.",
+    "Çocuk sporcuların hakları arasında yetişkin gibi değil çocuk gibi oynama, onurlu davranılma ve başarı için fırsat eşitliği yer alır.",
+    "Her çocuğun kendi gelişim ve yetenek düzeyinde spora katılma hakkı vardır."
+   ]
+  },
+  {
+   "topic": "Antrenörlük alanları ve kademeleri",
+   "sourceTitle": "Avrupa Birliği ile Uyum Sürecinde Antrenör Eğitimi",
+   "source": "http://www.guresdosyasi.com/anteuuyum.pdf",
+   "sentences": [
+    "Antrenörlük iki temel alanda ele alınır: katılıma yönelik antrenörlük ve performansa yönelik antrenörlük.",
+    "Uluslararası çerçevede antrenörlük dört kademede tanımlanır: stajyer antrenör, antrenör, kıdemli antrenör ve usta antrenör.",
+    "Stajyer antrenör, planlanmış antrenmanın uygulanmasına yardımcı olur.",
+    "Antrenör kademesindeki kişi antrenman seanslarını planlar, yaptırır ve gözden geçirir.",
+    "Kıdemli antrenör yıllık antrenmanları planlar, yürütür ve gözden geçirir.",
+    "Usta antrenör çok yıllı programları planlar ve analiz eder; yenilikçilik ve liderlik sergiler."
+   ]
+  }
+ ],
+ "3-1": [
+  {
+   "topic": "Açık–kapalı beceri ve öğrenme aşamaları",
+   "sourceTitle": "Fizyoterapide Motor Öğrenme: Ders İçeriği (Fizyodemi)",
+   "source": "https://www.fizyodemi.com/fizyoterapide-motor-ogrenme-ders-icerigi/",
+   "sentences": [
+    "Açık beceri, hareketli ve önceden kestirilemeyen bir çevrede uygulanan ve uygulayıcının çevreye uyum sağlamasını gerektiren beceridir.",
+    "Kapalı beceri, sabit ve önceden kestirilebilir bir çevrede uygulanan ve uygulayıcının hareketini önceden planlayabildiği beceridir.",
+    "Tenis oynamak açık beceriye örnektir; çünkü oyuncu sürekli değişen koşullara göre hareketini uyarlamak zorundadır.",
+    "Motor öğrenme üç aşamada tanımlanır: bilişsel aşama, ilişkilendirme aşaması ve otonom aşama.",
+    "Otonom aşamada beceri büyük oranda otomatikleşir; performans doğru, istikrarlı ve az hatalıdır.",
+    "Otonom aşamadaki kişi beceriyi yoğun bir bilişsel çaba harcamadan sürdürebilir ve farklı koşullara uyarlayabilir.",
+    "Bilişsel beceride karar verme süreci, motor beceride ise hareketin kontrolü daha ağır basar."
+   ]
+  },
+  {
+   "topic": "Beceri sınıflama ölçütleri",
+   "sourceTitle": "Motor Becerilerin Tek Boyutlu Sınıflandırılması (İnönü Üniversitesi ders notu)",
+   "source": "https://panel.inonu.edu.tr/application/ModuleContent/17264/22-03-2025_100914164.pdf",
+   "sentences": [
+    "Motor beceriler, kullanılan kasların büyüklüğüne göre kaba motor beceriler ve ince motor beceriler olarak ayrılır.",
+    "Motor beceriler, hareketin başlangıç ve bitiş noktalarına göre ayrı, seri ve devamlı beceriler olarak sınıflandırılır.",
+    "Motor beceriler, çevrenin kararlılığına göre açık beceri ve kapalı beceri olarak sınıflandırılır.",
+    "Açık becerilerde hareket rakibin ve takım arkadaşının durumuna göre uyarlanır.",
+    "Kapalı becerilerde hareket önceden planlanır ve uygulama sırasında dışarıdan müdahale olmaz.",
+    "Fitts ve Posner'ın modeline göre bilişsel evredeki öğrenen, ne yapması ve ne yapmaması gerektiğini anlamaya çalışır."
+   ]
+  }
+ ],
+ "3-2": [
+  {
+   "topic": "Temel hareket becerileri ve oyun",
+   "sourceTitle": "Yaş Gruplarında Fiziksel Aktivite (Halk Sağlığı Genel Müdürlüğü)",
+   "source": "https://hsgm.saglik.gov.tr/tr/fiziksel-aktivite/yas-gruplarinda-fiziksel-aktivite.html",
+   "sentences": [
+    "Temel hareket becerileri yer değiştirme hareketleri, dengeleme hareketleri ve nesne kontrolü gerektiren hareketler olarak gruplanır.",
+    "Köşe kapmaca gibi oyunlar yer değiştirme hareketlerini geliştirmek için kullanılır.",
+    "Sek sek gibi oyunlar denge becerisini geliştirmek için kullanılır.",
+    "Atma, yakalama ve hedefe yuvarlama oyunları nesne kontrolü becerilerini geliştirir.",
+    "Beş ile yedi yaş arasında yer değiştirme ve denge hareketlerinde gelişme başlar; dayanıklılık ise henüz zayıftır.",
+    "Beş ile yedi yaş arasındaki çocuklarda el-göz koordinasyonu gelişmeye başlar.",
+    "Müzik ve ritim eşliğinde yapılan oyunlar, çocuğun ritme uygun hareket etme becerisini geliştirir."
+   ]
+  }
+ ],
+ "3-3": [
+  {
+   "topic": "Motor gelişim ilkeleri",
+   "sourceTitle": "Psikomotor Gelişim BESYO – ÖABT (KültürLend)",
+   "source": "http://www.kulturlend.com/2020/11/psikomotor-gelisim-besyo-oabt.html",
+   "sentences": [
+    "Büyüme, boy ve kilo gibi fiziksel yapıda meydana gelen ölçülebilir artışlardır.",
+    "Olgunlaşma, bireyin bir beceriyi gerçekleştirebilecek düzeye gelmesidir ve hazırbulunuşluğun ön koşuludur.",
+    "Hazırbulunuşluk, bireyin bir davranışı yapabilmek için hazır duruma gelmesidir.",
+    "Kritik dönem, belirli bir gelişimin en hızlı ve en kolay gerçekleştiği, çevresel etkilere duyarlılığın yüksek olduğu dönemdir.",
+    "Gelişim baştan ayağa, içten dışa ve genelden özele doğru ilerler.",
+    "Gelişim kalıtım ile çevrenin etkileşiminin ürünüdür.",
+    "Gelişim süreklidir ve bir bütündür; gelişim alanları birbirini etkiler."
+   ]
+  },
+  {
+   "topic": "Motor gelişimin tanımı",
+   "sourceTitle": "Çocuk Gelişimi Dersi 3. Ünite Özeti (AÖF Ders Notları)",
+   "source": "https://www.acikogretim.net.tr/cocuk-gelisimi-dersi-3-unite-ozet.html",
+   "sentences": [
+    "Motor gelişim, bireyin biyolojisi ile çevre koşullarının etkileşimi sonucunda motor davranışlarda yaşam boyu süren değişimdir.",
+    "Motor sözcüğü hareket anlamına gelir.",
+    "Motor gelişim birikimli bir süreçtir; yeni beceriler önceki becerilerin üzerine kurulur.",
+    "Motor gelişimde hem farklılaşma hem de ayrı becerilerin birleşerek bütünleşmesi önemlidir.",
+    "Çocuklarda fiziksel uygunluk çalışmaları dayanıklılık, kuvvet, sürat ve esnekliğin geliştirilmesini kapsar."
+   ]
+  }
+ ],
+ "3-4": [
+  {
+   "topic": "Ölçme, ölçüt ve değerlendirme",
+   "sourceTitle": "Ölçme ve Değerlendirme (Türkçe Bilgi)",
+   "source": "https://www.turkcebilgi.com/ölçme_ve_değerlendirme",
+   "sentences": [
+    "Dolaylı ölçmede özellik doğrudan değil, onunla ilgili olduğu kabul edilen başka bir değişken gözlenerek ölçülür.",
+    "Ölçüt, ölçme sonucunun karşılaştırıldığı değerdir.",
+    "Mutlak ölçüt, değerlendirilecek grup dikkate alınmadan önceden kesin olarak belirlenen ölçüttür.",
+    "Bağıl ölçüt, grubun ortalaması gibi grup performansından çıkarılan ölçüttür.",
+    "Geçerlik, bir ölçme aracının ölçmek istediği özelliği ölçme, yani amacına hizmet etme derecesidir.",
+    "Güvenirlik, ölçme aracının kararlı ve tutarlı sonuçlar vermesi, yani hatadan arınık olma derecesidir.",
+    "Kullanışlılık, bir ölçme aracının hazırlanmasının, uygulanmasının ve puanlanmasının kolay ve ekonomik olmasıdır.",
+    "Geçerlik bir derece sorunudur; bir ölçme aracı amacına hizmet ettiği oranda geçerlidir."
+   ]
+  },
+  {
+   "topic": "Doğrudan ölçme ve araç özellikleri",
+   "sourceTitle": "Ölçme ve Değerlendirme – Eğiticilerin Eğitimi Semineri (Çankırı Karatekin Üniversitesi)",
+   "source": "https://krtknadmn.karatekin.edu.tr/files/bologna/3.%20Hafta%20Ebru%20Do%C4%9Fru%C3%B6z-%C3%96l%C3%A7me%20ve%20De%C4%9Ferlendirme.pdf",
+   "sentences": [
+    "Doğrudan ölçmede özellik, kendisiyle aynı türden bir araçla ölçülür; boy ve ağırlık ölçümü buna örnektir.",
+    "Değişken, farklı değerler alabilen niteliktir.",
+    "İyi bir ölçme aracında bulunması gereken üç temel özellik güvenirlik, geçerlik ve kullanışlılıktır.",
+    "Soruların belirsiz olması, puanlama yanlılığı ve kopya ölçmenin geçerliğini düşürür.",
+    "Geçerli bir ölçme aracı, ölçülen özelliğe sahip olanla olmayanı ayırt edebilir."
+   ]
+  }
+ ],
+ "3-5": [
+  {
+   "topic": "Öğretim stratejileri",
+   "sourceTitle": "Öğretim Stratejileri (ResearchGate)",
+   "source": "https://www.researchgate.net/publication/282504117_Ogretim_Stratejileri",
+   "sentences": [
+    "Öğretim stratejileri sunuş yoluyla, buluş yoluyla ve araştırma-inceleme yoluyla öğretim olarak üç başlıkta toplanır.",
+    "Sunuş yoluyla öğretim öğretmen merkezlidir; bilgi öğretmen tarafından düzenlenerek sunulur.",
+    "Buluş yoluyla ve araştırma-inceleme yoluyla öğretim, öğrenenin etkinliklerini merkeze alan stratejilerdir.",
+    "Sunuş yoluyla öğretim, ön öğrenmelerin yetersiz olduğu ve konuya yeni başlandığı durumlarda etkilidir.",
+    "Buluş yoluyla öğretim tümevarıma dayanır; öğrenci örneklerden yola çıkarak genellemeye kendisi ulaşır.",
+    "Strateji, öğretimde izlenecek yolun genel yönünü ve sınırlarını belirler."
+   ]
+  },
+  {
+   "topic": "Formal ve informal eğitim",
+   "sourceTitle": "Temel Kavramlar – Öğretim İlke ve Yöntemleri (ResearchGate)",
+   "source": "https://www.researchgate.net/publication/356597690_Temel_Kavramlar_Ogretim_Ilke_ve_Yontemleri",
+   "sentences": [
+    "İnformal eğitim, amaçlı ve planlı olmayan, yaşam içinde kendiliğinden gerçekleşen eğitimdir.",
+    "Formal eğitim amaçlı, planlı ve programlıdır; örgün eğitim ve yaygın eğitim olarak ikiye ayrılır.",
+    "Örgün ve yaygın eğitimin ortak noktası, eğitim etkinliklerinin planlı ve programlı olmasıdır.",
+    "Yaygın eğitim, okul eğitimini tamamlama ve insanları yaşam boyu eğitme işlevi görür."
+   ]
+  }
+ ],
+ "4-0": [
+  {
+   "topic": "Antik ve modern olimpiyatlar",
+   "sourceTitle": "Antikten Moderne 28 Asırlık Yolculuk (Yeşilay)",
+   "source": "https://www.yesilay.org.tr/medya/makaleler/antikten-moderne-28-asirlik-yolculuk/",
+   "sentences": [
+    "Tarihte bilinen ilk Olimpiyat Oyunları MÖ 776 yılında Yunanistan'ın Olympia bölgesinde düzenlenmiştir.",
+    "Modern Olimpiyat Oyunları'nın kurucusu Fransız Baron Pierre de Coubertin'dir.",
+    "İlk Modern Olimpiyat Oyunları 1896 yılında Atina'da düzenlenmiştir.",
+    "Antik Olimpiyatlar hep aynı yerde, Modern Olimpiyatlar ise dört yılda bir farklı bir ülkede düzenlenir.",
+    "Antik Olimpiyatlar'da kazanmak ön plandayken Coubertin, Modern Olimpiyatlar'ın felsefesini katılım üzerine kurmuştur.",
+    "Türkiye, Olimpiyat Oyunları'na ilk kez 1908 yılında katılmıştır."
+   ]
+  },
+  {
+   "topic": "Olimpiyatların niteliği",
+   "sourceTitle": "Olimpiyat Oyunlarının Tarihi ve Türkiye'nin Katkıları (Ticari Hayat)",
+   "source": "https://www.ticarihayat.com/olimpiyat-oyunlarinin-tarihi-ve-turkiyenin-katkilari",
+   "sentences": [
+    "Antik Olimpiyat Oyunları tanrı Zeus onuruna düzenlenirdi ve dinî bir şenlik niteliği taşırdı.",
+    "Antik Olimpiyat Oyunları'nda yarışmalara yalnızca erkek sporcular katılabilirdi.",
+    "Antik Olimpiyat Oyunları'ndaki yarışmalar arasında koşu, güreş, disk atma ve pentatlon yer alırdı.",
+    "Coubertin'in amacı gençlerin bedensel ve zihinsel gelişimini desteklemek ve uluslararası barışı güçlendirmekti."
+   ]
+  }
+ ],
+ "4-1": [
+  {
+   "topic": "Spora sosyalleşme ve spor yoluyla sosyalleşme",
+   "sourceTitle": "Spor Sosyolojisi, Sosyalleşme ve Sosyal Bütünleşme (Özgür Yayınları)",
+   "source": "https://www.ozguryayinlari.com/site/catalog/download/62/150/421",
+   "sentences": [
+    "Spora sosyalleşme, bireyi spora kazandıran kişi ve etkenleri, yani bireyin spora nasıl katıldığını inceler.",
+    "Spor yoluyla sosyalleşme, spora katılmanın birey üzerindeki psikolojik ve sosyal sonuçlarını ele alır.",
+    "Spor; bireye grup üyesi olma, grup içinde rol üstlenme ve grup amaçları doğrultusunda davranma alışkanlığı kazandırır.",
+    "Spor, paylaşma ve yardımlaşma duygularını geliştirir.",
+    "Spor, dezavantajlı grupların topluma kazandırılmasında etkili bir araçtır.",
+    "Aile, çocuğun toplumsal yaşama ilişkin öğrenmelerinin başladığı ilk yerdir ve spora yönelmede önemli bir etkendir."
+   ]
+  },
+  {
+   "topic": "Toplumsal bütünleşme",
+   "sourceTitle": "Spor Sosyolojisinde Güncel Yaklaşımlar (Duvar Yayınları)",
+   "source": "https://www.duvaryayinlari.com/Webkontrol/IcerikYonetimi/Dosyalar/spor-sosyolojisinde-guncel-yaklasimlar_icerik_g5150_GsebvrNE.pdf",
+   "sentences": [
+    "Spor, toplumun farklı kesimlerini ortak bir duygu ve hedef etrafında buluşturarak toplumsal bütünleşmeye katkı sağlar.",
+    "Farklı kökenlerden bireyler aynı renk, arma ve marşlarla özdeşleşerek biz bilinci geliştirir.",
+    "Sporun kurallı yapısı, bireyin toplumsal norm ve değerlerle tanışmasını hızlandırır.",
+    "Spor yalnızca fiziksel bir etkinlik değil, toplumsal bir olgudur."
+   ]
+  }
+ ],
+ "4-2": [
+  {
+   "topic": "Uyarılma, kaygı ve performans",
+   "sourceTitle": "Sporda Motivasyon, Motivasyon Teknikleri ve Yüksek Performans (Özgür Yayınları)",
+   "source": "https://www.ozguryayinlari.com/site/catalog/download/330/1670/3862",
+   "sentences": [
+    "Dürtü kuramı, uyarılma düzeyi ile sportif performans arasında doğrusal bir ilişki olduğunu savunur.",
+    "Ters U kuramına göre uyarılma arttıkça performans en uygun noktaya kadar yükselir, bu noktadan sonra kademeli olarak düşer.",
+    "Ters U kuramına göre uyarılmanın çok düşük olması da çok yüksek olması da düşük performansla sonuçlanır.",
+    "Katastrof kuramına göre en uygun noktanın aşılması performansta kademeli değil, ani ve keskin bir düşüşe yol açar.",
+    "Yetersiz güdülenmiş sporcu yeterince çalışmaz ve mücadeleye psikolojik ve fizyolojik olarak hazır değildir."
+   ]
+  },
+  {
+   "topic": "Durumluk ve sürekli kaygı",
+   "sourceTitle": "Sporda Kaygı Kavramı Üzerine Yapılan Çalışmalar (DergiPark)",
+   "source": "https://dergipark.org.tr/tr/download/article-file/3921091",
+   "sentences": [
+    "Durumluk kaygı, belirli bir durum karşısında yaşanan geçici kaygıdır.",
+    "Sürekli kaygı, kişinin kaygı yaşamaya yönelik süreklilik gösteren kişilik eğilimidir.",
+    "Kaygı düzeyi orta düzeyin çok üzerine çıktığında ya da çok altına indiğinde performans düşer.",
+    "Sporda motivasyon, bireyin sportif etkinliğe katılımını başlatan, sürdüren ve yönlendiren psikolojik süreçtir."
+   ]
+  }
+ ],
+ "4-3": [
+  {
+   "topic": "Fair play kuruluşları ve ödülleri",
+   "sourceTitle": "Fair Play ve Tarihçesi (Alyans Spor Kulübü)",
+   "source": "https://alyans.org.tr/fair-play-ve-tarihcesi/",
+   "sentences": [
+    "Fair play, dürüst oyun ve dürüst davranış anlamına gelen Anglosakson kökenli bir terimdir.",
+    "Uluslararası Fair Play Konseyi'nin temeli 1963 yılında Paris'te UNESCO ile uluslararası spor kuruluşlarının temsilcilerince atılmıştır.",
+    "Uluslararası Fair Play Konseyi'nin kısaltması CIFP'dir.",
+    "Uluslararası Olimpiyat Komitesi, Uluslararası Fair Play Konseyi'ni 1981 yılında tanımıştır.",
+    "Türkiye Millî Olimpiyat Komitesi, fair play çalışmalarına 1982 yılında sorumlularını belirleyerek başlamıştır.",
+    "Fair play alanındaki en büyük uluslararası ödül, Pierre de Coubertin adını taşır."
+   ]
+  },
+  {
+   "topic": "Fair play anlayışı",
+   "sourceTitle": "Sporda Fair Play Ruhu ve İnsan (İnsani Değerler)",
+   "source": "https://www.insanidegerler.org/149/SPORDA---FAIR-PLAY-RUHU--VE--INSAN",
+   "sentences": [
+    "Fair play; sporcunun kendisine, rakibine, takım arkadaşlarına, hakemlere ve izleyicilere saygısına dayanan bir anlayıştır.",
+    "Türkiye'de ilk fair play ödülü 1982 yılında, yanlış yöne sapan rakibini uyaran yelkenci Varol Hepağuşlar'a verilmiştir.",
+    "Bisikletçi Ömer Ali Erikçi, vitesi arızalanan rakibine kendi bisikletini verdiği için fair play ödülüne değer görülmüştür.",
+    "Rakibinin yarışı sürdürebilmesi için kendi avantajından vazgeçmek, fair play davranışının tipik örneğidir."
+   ]
+  }
+ ],
+ "4-4": [
+  {
+   "topic": "İstismar türleri",
+   "sourceTitle": "Sporda Çocuk ve Yetişkin Koruma (Türkiye Triatlon Federasyonu)",
+   "source": "https://www.triatlon.org.tr/medya/spordacocukyetiskinkorumavesilealkan.pdf",
+   "sentences": [
+    "Çocuğa yönelik kötü muamele dört türde ele alınır: fiziksel istismar, cinsel istismar, duygusal istismar ve ihmal.",
+    "Fiziksel istismar, çocuğun kaza dışı bir nedenle yaralanmasına ya da bedeninin zarar görmesine yol açan davranışlardır.",
+    "Duygusal istismar; reddetme, aşağılama, tehdit etme ve suçlama gibi davranış ya da sözlerle çocuğun ruh sağlığına zarar verilmesidir.",
+    "İhmal, çocuğa bakmakla yükümlü kişinin çocuğun beslenme, barınma, eğitim ve korunma gibi temel gereksinimlerini karşılamamasıdır.",
+    "Çocuk istismarı; anne baba, öğretmen ve antrenör gibi çocukla sorumluluk, güç ve güven ilişkisi içindeki kişilerce de yapılabilir.",
+    "Sporcunun performansı ya da vücut biçimi hakkında yapılan küçük düşürücü yorumlar duygusal istismar sayılır."
+   ]
+  },
+  {
+   "topic": "Sporda ihmal",
+   "sourceTitle": "Sporda çocuk esenliği üzerine tez çalışması (Bursa Uludağ Üniversitesi Açık Erişim)",
+   "source": "https://acikerisim.uludag.edu.tr/server/api/core/bitstreams/3ccb7620-705a-493f-b2cf-cfe94d610736/content",
+   "sentences": [
+    "Spor ortamında fiziksel ihmal, çocuğun gözetimsiz bırakılması ya da araç gereç güvenliğinin sağlanmaması sonucu yaralanmasıdır.",
+    "Güvenli ortam, çocuğun fiziksel istismar, duygusal şiddet, cinsel taciz ve ihmal risklerinden korunduğu ortamdır.",
+    "Çocuğun karar süreçlerine katılabilmesi ve saygı görmesi, sporda çocuk esenliğinin parçasıdır."
+   ]
+  }
+ ]
+}

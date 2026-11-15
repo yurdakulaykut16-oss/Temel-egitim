@@ -38,12 +38,15 @@ ROOT = Path(__file__).resolve().parents[1]
 BOOK_INDEX = ROOT / 'src' / 'bookIndex.json'
 CONTEXTS = ROOT / 'server' / 'contexts.json'
 OUT = ROOT / 'src' / 'bookSummary.json'
+TOC_OUT = ROOT / 'src' / 'bookToc.json'
 
-DEFAULT_TARGET = 150          # konu başına hedef özet cümlesi (eski özet + kitaptan eklenenler)
+DEFAULT_TARGET = 600          # bölüm başına üst sınır; pratikte süzgeçlerden geçen BÜTÜN cümleler alınır
 BODY_FONT = 'AGaramondPro'    # kitapların gövde yazı tipi
 BODY_SIZE = 11.0              # gövde metni puntosu
 SUMMARY_SIZE = 10.0           # kitabın kendi "bölüm özeti" sayfalarındaki punto
 MIN_SCORE = 2.0               # bundan düşük puanlı cümle özete alınmaz
+HEAD_FONT = 'Swiss721BT-Bold' # gövdedeki konu başlıklarının yazı tipi (13 punto: ana konu, 12 punto: alt konu)
+TOC_PAGES = (5, 6, 7)         # "İçindekiler" sayfaları (PDF sayfa numarası)
 
 UP = 'A-ZÇĞİÖŞÜÂÎÛ'
 LOW = 'a-zçğıöşüâîû'
@@ -123,15 +126,43 @@ def _is_body_span(span, summary_page):
     return BODY_FONT in span['font'] and (size == BODY_SIZE or (summary_page and size == SUMMARY_SIZE))
 
 
-def read_unit_paragraphs(doc, first_page, last_page, summary_pages):
-    """Ünitenin gövde paragrafları: [{pages, text, summary, heading}] (okuma sırasıyla).
+def _head_level(span):
+    """Konu başlığı mı? 2: ana konu (İçindekiler'de girintisiz), 3: alt konu; değilse 0."""
+    if HEAD_FONT in span['font']:
+        size = round(span['size'])
+        if size == 13:
+            return 2
+        if size == 12:
+            return 3
+    return 0
+
+
+def read_unit_paragraphs(doc, first_page, last_page, summary_pages, heads=None):
+    """Ünitenin gövde paragrafları: [{pages, text, summary, heading, h2, h3}] (okuma sırasıyla).
 
     heading: paragrafın hemen üstündeki (ya da satır başındaki) kalın başlık; yoksa ''.
+    h2 / h3: paragrafın altında bulunduğu ana konu ve alt konu başlığı (kitaptaki yazımıyla).
+    heads: verilirse gövdede görülen konu başlıkları [(düzey, metin, sayfa)] buraya eklenir.
     """
     pages = list(range(first_page, last_page + 1))
     compounds = _inline_compounds(doc, pages)
     paragraphs = []
     pending_heading = ''
+    current = {2: '', 3: ''}
+    run = None                   # süren başlık: [düzey, metin, sayfa] (başlık satırlara/bloklara bölünebilir)
+
+    def close_run():
+        nonlocal run
+        if run:
+            level, text, page_no = run
+            text = re.sub(r'\s+', ' ', text).strip()
+            if len(text) >= 3:
+                current[level] = text
+                if level == 2:
+                    current[3] = ''
+                if heads is not None:
+                    heads.append((level, text, page_no))
+            run = None
     for pno in pages:
         page = doc[pno - 1]
         is_summary_page = pno in summary_pages
@@ -147,6 +178,15 @@ def read_unit_paragraphs(doc, first_page, last_page, summary_pages):
                 parts = []
                 for span in line['spans']:
                     n = len(span['text'].strip())
+                    level = _head_level(span) if n else 0
+                    if level:
+                        if run and run[0] == level:
+                            run[1] += ' ' + span['text']
+                        else:
+                            close_run()
+                            run = [level, span['text'], pno]
+                    elif n:
+                        close_run()
                     if _is_body_span(span, is_summary_page):
                         body_chars += n
                         parts.append(span['text'])
@@ -182,8 +222,173 @@ def read_unit_paragraphs(doc, first_page, last_page, summary_pages):
                     and previous['summary'] == is_summary:
                 previous['text'] = _join_lines([previous['text'], text], compounds)
             else:
-                paragraphs.append({'pages': [pno], 'text': text, 'summary': is_summary, 'heading': heading})
+                paragraphs.append({'pages': [pno], 'text': text, 'summary': is_summary, 'heading': heading,
+                                   'h2': current[2], 'h3': current[3]})
+    close_run()
     return paragraphs
+
+
+# ------------------------------------------------------------------ içindekiler
+def norm_title(text):
+    # ı/i ayrımı karşılaştırmada yok sayılır ("FAIR PLAY" → "faır play" olmasın).
+    return re.sub(r'[^0-9a-zçğiöşüâîû]+', ' ', lower(text.replace('ﬁ', 'fi').replace('ﬂ', 'fl')).replace('ı', 'i')).strip()
+
+
+def read_toc(doc):
+    """Kitabın "İçindekiler" sayfalarını (genellikle PDF'in 5. ve 6. sayfası) okur.
+
+    Dönen: {bölüm no: {'title': bölüm adı, 'lines': [(düzey, metin, noktalı)]}}
+    Düzey 2: ana konu (girintisiz satır), düzey 3: alt konu (girintili satır). Uzun başlıklar
+    içindekilerde iki satıra bölünür; satırlar burada birleştirilmez (resolve_sections birleştirir).
+    """
+    chapters = {}
+    for pno in TOC_PAGES:
+        if pno > doc.page_count:
+            continue
+        page = doc[pno - 1]
+        rows = []
+        for block in page.get_text('dict')['blocks']:
+            for line in block.get('lines', []):
+                text = ''.join(span['text'] for span in line['spans']).replace('\t', ' ')
+                if text.strip():
+                    rows.append((line['bbox'][0], line['bbox'][1], round(line['spans'][0]['size']), text.strip()))
+        labels = [(x, y, int(m.group(1))) for x, y, _, text in rows for m in [re.fullmatch(r'BÖLÜM\s+(\d+)', text)] if m]
+        if not labels:
+            continue
+        # İki sütun: sağ sütun, "BÖLÜM n" etiketlerinin sağdaki kümesinden başlar.
+        xs = sorted({round(x) for x, _, _ in labels})
+        split = (xs[-1] - 15) if xs[-1] - xs[0] > 100 else 1e9
+        column = lambda x: 1 if x >= split else 0
+        for col in (0, 1):
+            col_labels = sorted((y, no) for x, y, no in labels if column(x) == col)
+            if not col_labels:
+                continue
+            col_rows = sorted((y, x, size, text) for x, y, size, text in rows if column(x) == col)
+            for y, x, size, text in col_rows:
+                if re.fullmatch(r'BÖLÜM\s+\d+', text) or re.fullmatch(r'[\d\s.\u2001]+', text):
+                    continue
+                if size >= 11:
+                    # Bölüm adı: etiketin hemen yanındaki satırlar.
+                    near = min(col_labels, key=lambda item: abs(item[0] - y))
+                    if abs(near[0] - y) <= 45 and size == 11:
+                        chapters.setdefault(near[1], {'title': '', 'lines': []})
+                        chapters[near[1]]['title'] = (chapters[near[1]]['title'] + ' ' + text).strip()
+                    continue
+                owner = [no for ly, no in col_labels if ly < y]
+                if not owner:
+                    continue
+                dotted = bool(re.search(r'[.\u2001]\s*[.\d\s\u2001]*$', text))
+                clean = re.sub(r'[\s.\u2001]*\d*\s*$', '', re.sub(r'[\u2001]', ' ', text)).strip()
+                clean = re.sub(r'(?:\s+\.)+$', '', clean).strip()
+                if len(clean) < 2:
+                    continue
+                chapters.setdefault(owner[-1], {'title': '', 'lines': []})['lines'].append([x, clean, dotted])
+    for chapter in chapters.values():
+        if chapter['lines']:
+            left = min(x for x, _, _ in chapter['lines'])
+            chapter['lines'] = [(3 if x > left + 10 else 2, text, dotted) for x, text, dotted in chapter['lines']]
+    return chapters
+
+
+def resolve_sections(lines, heads):
+    """İçindekiler satırlarını konu listesine çevirir: [{title, level, page, parent, toc}].
+
+    İki satıra bölünmüş başlıklar, gövdedeki başlıkla (heads) karşılaştırılarak birleştirilir.
+    page: başlığın gövdede görüldüğü sayfa (bulunamadıysa None); parent: alt konunun ana konusu (sıra no).
+    """
+    seen = {}
+    for level, text, page in heads:
+        seen.setdefault(norm_title(text), (page, text, level))
+    sections = []
+    i = 0
+    while i < len(lines):
+        level, text, dotted = lines[i]
+        take = 1
+        title = None
+        page = None
+        for span in (3, 2, 1):
+            chunk = lines[i:i + span]
+            if len(chunk) == span and all(l == level for l, _, _ in chunk) \
+                    and norm_title(' '.join(t for _, t, _ in chunk)) in seen:
+                take = span
+                title = ' '.join(t for _, t, _ in chunk)
+                page = seen[norm_title(title)][0]
+                break
+        if title is None:
+            # Birebir bulunamadı (satır bölünmüş, sayı sayfa numarası sanılmış vb.): içindekiler satırının
+            # kelimeleri gövdedeki bir başlığın başında / içinde geçiyorsa o başlık alınır.
+            words = norm_title(text).split()
+            best = None
+            for key, (head_page, head_text, head_level) in seen.items():
+                head_words = key.split()
+                if len(words) >= 2 and len(head_words) > len(words) and all(w in head_words for w in words) \
+                        and head_words[0] == words[0] and (best is None or len(head_words) < len(best[0].split())):
+                    best = (key, head_page, head_text, head_level)
+            if best:
+                rest = [w for w in best[0].split() if w not in words]
+                title = best[2] if best[3] == 3 else text
+                page = best[1]
+                # Başlığın içindekilerde alt satıra taşan kalanı ayrı bir konu sayılmaz.
+                while i + take < len(lines) and rest and all(w in rest for w in norm_title(lines[i + take][1]).split()):
+                    if best[3] != 3:
+                        title += ' ' + lines[i + take][1]
+                    take += 1
+            else:
+                title = text
+                if not dotted and i + 1 < len(lines) and lines[i + 1][0] == level and norm_title(lines[i + 1][1]) not in seen:
+                    title += ' ' + lines[i + 1][1]
+                    take = 2
+        parent = None
+        if level == 3:
+            for j in range(len(sections) - 1, -1, -1):
+                if sections[j]['level'] == 2:
+                    parent = j
+                    break
+        sections.append({'title': title, 'level': level, 'page': page, 'parent': parent, 'toc': True})
+        i += take
+    return sections
+
+
+def assign_sections(paragraphs, sections):
+    """Her paragrafa konu sıra numarası (`section`) yazar.
+
+    İçindekiler'de yer almayan gövde alt başlıkları (ör. "Aktif Başlangıç") listeye düzey 4 olarak,
+    içindekilerdeki son konunun altına eklenir (toc: False); böylece soru hangi alt başlıktan
+    geldiğini de taşır.
+    """
+    extra = {}
+    last_toc = -1
+    last_h2 = None
+    for par in paragraphs:
+        h2, h3 = par.get('h2', ''), par.get('h3', '')
+        if h2 != last_h2:
+            last_h2 = h2
+            last_toc = section_index(sections, h2, '')
+        index = section_index(sections, h2, h3)
+        if h3 and (index < 0 or sections[index]['level'] != 3):
+            # Alt başlık içindekilerde yok: son içindekiler konusunun altına eklenir.
+            key = (last_toc, norm_title(h3))
+            if key not in extra:
+                sections.append({'title': h3, 'level': 4, 'page': par['pages'][0], 'parent': last_toc if last_toc >= 0 else None, 'toc': False})
+                extra[key] = len(sections) - 1
+            index = extra[key]
+        elif index >= 0:
+            last_toc = index
+        par['section'] = index
+
+
+def section_index(sections, h2, h3):
+    """Paragrafın başlıklarına (gövdedeki yazımıyla) karşılık gelen konu sıra numarası; yoksa -1."""
+    n2, n3 = norm_title(h2), norm_title(h3)
+    top = next((i for i, sec in enumerate(sections) if sec['level'] == 2 and norm_title(sec['title']) == n2), -1)
+    if n3:
+        for i, sec in enumerate(sections):
+            if sec['level'] == 3 and norm_title(sec['title']) == n3 and (top < 0 or sec['parent'] == top):
+                return i
+        for i, sec in enumerate(sections):
+            if sec['level'] == 3 and norm_title(sec['title']) == n3:
+                return i
+    return top
 
 
 # ------------------------------------------------------------------ cümle ayıklama
@@ -583,10 +788,11 @@ def build_unit_summary(paragraphs, existing_summary, keywords, target=DEFAULT_TA
         if not picks:
             continue
         pages = [par['pages'][0]]
-        if out and out[-1]['pages'] == pages:
+        section = par.get('section', -1)
+        if out and out[-1]['pages'] == pages and out[-1]['section'] == section:
             out[-1]['sentences'].extend(picks)
         else:
-            out.append({'pages': pages, 'sentences': picks})
+            out.append({'pages': pages, 'section': section, 'sentences': picks})
     return out
 
 
@@ -601,20 +807,37 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--target', type=int, default=DEFAULT_TARGET)
     parser.add_argument('--check', action='store_true', help='dosya yazmadan yalnızca rapor ver')
+    parser.add_argument('--toc', action='store_true', help='içindekiler eşleşme raporunu yaz')
     args = parser.parse_args()
 
     books = json.loads(BOOK_INDEX.read_text(encoding='utf8'))
     contexts = {c['id']: c for c in json.loads(CONTEXTS.read_text(encoding='utf8'))}
     result = {}
+    toc_out = {}
     total_sentences = total_chars = 0
     for bi, book in enumerate(books):
         doc = pymupdf.open(ROOT / 'public' / book['file'].lstrip('/'))
+        toc = read_toc(doc)
+        outline = [re.sub(r'^Bölüm\s+\d+:\s*', '', title).replace('Е', 'Ö') for level, title, _ in doc.get_toc()
+                   if level == 1 and title.startswith('Bölüm')]
         for ui, unit in enumerate(book['units']):
             uid = f'{bi}-{ui}'
             ctx = contexts[uid]
             summary_pages = set(unit.get('summaryPages') or [])
             last_page = max(summary_pages) if summary_pages else unit.get('testPage', unit['page'] + 1) - 1
-            paragraphs = read_unit_paragraphs(doc, unit['page'], last_page, summary_pages)
+            heads = []
+            paragraphs = read_unit_paragraphs(doc, unit['page'], last_page, summary_pages, heads)
+            chapter = toc.get(ui + 1, {'title': '', 'lines': []})
+            sections = resolve_sections(chapter['lines'], heads)
+            assign_sections(paragraphs, sections)
+            toc_out[uid] = {'no': ui + 1, 'title': outline[ui] if ui < len(outline) else chapter['title'],
+                            'tocTitle': chapter['title'], 'sections': sections}
+            if args.toc:
+                unmatched = [sec['title'] for sec in sections if sec['page'] is None]
+                counts = Counter(sec['level'] for sec in sections)
+                loose = sum(1 for par in paragraphs if par['section'] < 0)
+                print(f"{uid}  {toc_out[uid]['title']}: ana konu {counts[2]}, alt konu {counts[3]}, içindekilerde olmayan alt başlık {counts[4]}; "
+                      f"gövdede bulunamayan {unmatched}; konusuz paragraf {loose}/{len(paragraphs)}")
             base = base_summary(ctx)
             groups = build_unit_summary(paragraphs, base, unit.get('keywords'), args.target)
             # Gövde metni az, ölçüm/test yönergesi çok olan ünite (ör. "Ölçme ve değerlendirme"): hedefin
@@ -632,6 +855,7 @@ def main():
     print(f'Toplam: kitaptan {total_sentences} cümle, {total_chars} karakter.')
     if not args.check:
         OUT.write_text(json.dumps(result, ensure_ascii=False, indent=1) + '\n', encoding='utf8')
+        TOC_OUT.write_text(json.dumps(toc_out, ensure_ascii=False, indent=1) + '\n', encoding='utf8')
         print(f'Yazıldı: {OUT.relative_to(ROOT)}  (ardından: npm run contexts)')
 
 

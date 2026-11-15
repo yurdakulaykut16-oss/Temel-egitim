@@ -8,7 +8,7 @@ export type GeneratedQuestion = {
  status: 'approved' | 'rejected'; model: string; createdAt: string;
  difficulty?: 'kolay' | 'orta' | 'zor';
  curatedBy?: string; curationReason?: string;
- passageId?: string; passageHeading?: string; pages?: number[];
+ passageId?: string; passageHeading?: string; pages?: number[]; section?: string; sectionParent?: string; webSource?: {title?: string; url: string; topic?: string};
  questionType?: string; questionAngle?: string; bloomLevel?: string; qualityScore?: number; examPotential?: number; curatorScore?: number;
  precisionScore?: number; styleScore?: number; precisionTier?: string; tvgfbfAligned?: boolean;
  improvementCount?: number; improvedAt?: string;
@@ -53,10 +53,10 @@ type PlanStep = {key: string; pass: number; difficulty: string; unitId: string; 
 type PlanCell = {difficulty: string; done: number; quota: number; from: number; share: number; parked?: boolean; streak?: number};
 type PlanUnit = {pass: number; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; target: number; cells: PlanCell[]};
 type ProductionPlan = {
- enabled: boolean; quota?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
+ enabled: boolean; quota?: number; passCount?: number; perUnitTarget?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
  current?: PlanStep | null; working?: (PlanStep & {streak?: number})[]; workingUnits?: PlanUnit[]; parallel?: number; parked?: PlanStep[];
  difficulties?: {difficulty: string; done: number; target: number}[];
- passes?: {pass: number; difficulty?: string; done: number; target: number; unitsDone: number; units: number}[];
+ passes?: {pass: number; difficulty?: string; done: number; target: number; unitsDone: number; units: number; mix?: {kolay: number; orta: number; zor: number}}[];
 };
 type Status = {
  connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean;
@@ -87,7 +87,8 @@ const difficultyLabel: Record<string, string> = {kolay: 'Kolay', orta: 'Orta', z
 const typeLabel: Record<string, string> = {
  kavram: 'Kavram', vaka: 'Vaka Analizi', karsilastirma: 'Karşılaştırma',
  neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama',
- en_iyi_secim: 'En İyi Seçim', paragraf: 'Paragraf (Parçaya Dayalı)'
+ en_iyi_secim: 'En İyi Seçim', paragraf: 'Paragraf (Parçaya Dayalı)',
+ tanimdan_terim: 'Tanımdan Terime', bosluk_doldurma: 'Boşluk Doldurma', dogru_yargi: 'Doğru Yargı', ilginc_bilgi: 'İlginç Giriş'
 };
 const angleLabel: Record<string, string> = {
  dogrudan_tanim: '1. Doğrudan Tanım',
@@ -406,7 +407,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       {(plan.workingUnits || []).map(u => (
        <div key={`${u.pass}-${u.unitId}`}>
         <p className="lineup-line">
-         {(plan.workingUnits || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{u.bookNo}. kitap {u.unitNo}. konu — {u.unit}</b> ({u.book}) · bu turda <b>{u.done} / {u.target}</b>
+         {(plan.workingUnits || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{u.bookNo}. kitap {u.unitNo}. bölüm — {u.unit}</b> ({u.book}) · bu turda <b>{u.done} / {u.target}</b>
          {' · '}{u.cells.map(c => `${c.difficulty} ${Math.max(0, c.done - c.from)}/${c.share}${c.parked ? ' (atlandı)' : ''}`).join(' · ')}
          {u.cells.filter(c => (c.streak ?? 0) >= 5).map(c => ` · ${c.difficulty}: üst üste ${c.streak} deneme sonuçsuz (${plan.stuckLimit} olunca atlanır)`).join('')}
         </p>
@@ -415,21 +416,31 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
         </div>
        </div>
       ))}
-      <p className="lineup-line">
-       {(plan.passes || []).map(p => `${p.pass}. tur: ${p.done}/${p.target} (${p.unitsDone}/${p.units} konu)`).join(' · ')}
-      </p>
+      {(() => {
+       // Tur özeti: biten turlar tek satırda toplanır; süren tur ve sıradaki iki tur payıyla birlikte gösterilir.
+       const passes = plan.passes || [];
+       const finished = passes.filter(p => p.done >= p.target).length;
+       const shown = passes.filter(p => p.done < p.target).slice(0, 3);
+       const mixText = (p: {mix?: {kolay: number; orta: number; zor: number}}) => p.mix ? ` · bölüm başına ${p.mix.kolay} kolay + ${p.mix.orta} orta + ${p.mix.zor} zor` : '';
+       return (
+        <p className="lineup-line">
+         {passes.length} turun {finished} tanesi bitti.
+         {shown.map(p => ` ${p.pass}. tur: ${p.done}/${p.target} (${p.unitsDone}/${p.units} bölüm${mixText(p)}).`).join('')}
+        </p>
+       );
+      })()}
       {(plan.difficulties || []).length > 0 && (
        <p className="lineup-line">
-        Bütün konularda toplam: {(plan.difficulties || []).map(d => `${d.difficulty} ${d.done}/${d.target}`).join(' · ')}
+        Bütün bölümlerde toplam: {(plan.difficulties || []).map(d => `${d.difficulty} ${d.done}/${d.target}`).join(' · ')}
        </p>
       )}
       <p className="lineup-line">
-       Sıra: 1. kitabın 1. konusundan başlayarak her konuya {plan.quota} soru; zorluklar karışıktır (kolay → orta → zor → kolay …), yani her konunun kolay, orta ve zor sorusu birlikte gelir. Bütün konular bitince ikinci ve üçüncü tur yapılır; sonunda her konuda {plan.quota} kolay + {plan.quota} orta + {plan.quota} zor soru olur.
-       {(plan.parallel ?? 1) > 1 ? ` Konular ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan konuya yardım eder, grup tamamlanmadan sıradaki konulara geçilmez.` : ''} Sorular konunun kitap sayfalarından derlenmiş özetinden kurulur; her sorunun dayandığı kitap sayfası soru kartında yazar.
+       Sıra: 1. kitabın 1. bölümünden başlayarak her bölüme {plan.quota} soru; zorluklar karışıktır (kolay → orta → zor …), yani her bölümün kolay, orta ve zor sorusu birlikte gelir. Bütün bölümler bitince sıradaki tur başlar ({plan.passCount} tur → bölüm başına {plan.perUnitTarget} soru). 1. tur dengelidir; sonraki turlarda kolay soru gittikçe azalır, soruların yarısı orta yarısı zor yazılır.
+       {(plan.parallel ?? 1) > 1 ? ` Bölümler ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan bölüme yardım eder, grup tamamlanmadan sıradaki bölümlere geçilmez.` : ''} Sorular bölümün kitap sayfalarından (ve işaretli internet kaynaklarından) derlenmiş özetinden kurulur; her soru kartında kitabın içindekiler bölümündeki konu başlığı ve kitap sayfası yazar. Aynı bilgi yeniden sorulduğunda farklı bir soru biçimi kullanılır.
       </p>
       {(plan.parked || []).length > 0 && (
        <p className="lineup-warn">
-        ⚠ Atlanan adımlar: {(plan.parked || []).slice(0, 6).map(p => `${p.bookNo}. kitap ${p.unitNo}. konu ${p.difficulty} (${p.done}/${p.quota})`).join(', ')}{(plan.parked || []).length > 6 ? ` ve ${(plan.parked || []).length - 6} adım daha` : ''}.
+        ⚠ Atlanan adımlar: {(plan.parked || []).slice(0, 6).map(p => `${p.bookNo}. kitap ${p.unitNo}. bölüm ${p.difficulty} (${p.done}/${p.quota})`).join(', ')}{(plan.parked || []).length > 6 ? ` ve ${(plan.parked || []).length - 6} adım daha` : ''}.
         Bu adımlarda üst üste {plan.stuckLimit} deneme soru çıkarmadı (konu özeti o zorlukta yeni soru için yetersiz kalmış olabilir). Diğer adımlar bitince yeniden denenir.
        </p>
       )}
@@ -634,7 +645,9 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       <div className="eyebrow muted">
        {q.book} · {q.unit}
        {q.passageHeading ? ` · ${q.passageHeading}` : ''}
+       {q.section ? ` · ${q.sectionParent ? `${q.sectionParent} › ` : ''}${q.section}` : ''}
        {q.pages?.length ? ` · kitap s. ${q.pages.join(', ')}` : ''}
+       {q.webSource?.url ? <> · internet kaynağı: <a href={q.webSource.url} target="_blank" rel="noreferrer noopener">{q.webSource.title || q.webSource.url}</a></> : null}
       </div>
       <div className="tag-row">
        <span className="topic-label">Konu: {q.topic}</span>

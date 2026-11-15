@@ -48,6 +48,7 @@ test('plan: sonuç vermeyen adım atlanır, üretim sıradaki konuyla sürer', a
   process.env.TEMPO_OFFLINE_ONLY = '1';
   process.env.TEMPO_QUIET = '1';
   process.env.TEMPO_PLAN_QUOTA = '2';
+  process.env.TEMPO_PLAN_PASSES = '2';
   process.env.TEMPO_PLAN_STUCK_LIMIT = '3';
   process.env.TEMPO_QUESTION_INTERVAL_MS = '20';
   delete process.env.TEMPO_PLAN;
@@ -64,7 +65,7 @@ test('plan: sonuç vermeyen adım atlanır, üretim sıradaki konuyla sürer', a
   });
   base = `http://127.0.0.1:${await listen(app)}`;
 
-  // Kota 2: 1. turda her konuya 1 kolay + 1 orta düşer (zor sonraki turlarda).
+  // Kota 2, 2 tur: 1. turda her bölüme 1 kolay + 1 orta, 2. turda 1 orta + 1 zor düşer (kova: kolay 1, orta 2, zor 1).
   // Beklenen akış: 0-0 kolay ve orta (3'er ret → ikisi de atlanır) · 0-1 kolay + orta ·
   // 0-2: hakemler hep "orta" der → kolay hedefli soru da orta kaydedilir, orta kotası (2) dolar;
   // sonraki "orta" kararları reddedilir → kolay 3 ret → atlanır · 0-3 kolay + orta …

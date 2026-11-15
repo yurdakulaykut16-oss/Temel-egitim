@@ -14,7 +14,7 @@ import {mkdtemp, rm, readFile, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createFakeOllama} from './fake-ollama-sim.mjs';
-import {summaryPageOf, evidenceWithinSummary} from '../server/production-plan.mjs';
+import {summaryPageOf, summarySectionOf, summaryWebSourceOf, evidenceWithinSummary} from '../server/production-plan.mjs';
 
 const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 const close = server => new Promise(resolve => server.close(resolve));
@@ -48,6 +48,7 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   process.env.TEMPO_OFFLINE_ONLY = '1';
   process.env.TEMPO_QUIET = '1';
   process.env.TEMPO_PLAN_QUOTA = '3';
+  process.env.TEMPO_PLAN_PASSES = '3';
   process.env.TEMPO_QUESTION_INTERVAL_MS = '20';
   delete process.env.TEMPO_PLAN;
   process.env.TEMPO_AUTO_CONCURRENCY = '1';
@@ -137,7 +138,24 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   assert.equal(status.plan.passes[0].done, contexts.length * 3, '1. tur tamamlanmış görünmeli');
   assert.equal(status.plan.passes[0].unitsDone, contexts.length);
   assert.equal(status.plan.current.pass, 2);
-  assert.ok(status.plan.difficulties.every(d => d.done >= contexts.length && d.target === contexts.length * 3), 'her zorlukta her konudan soru olmalı');
+  // Kota 3, 3 tur: 1. tur 1/1/1, 2. tur 1/1/1, 3. tur 0/1/2 → bölüm başına kolay 2, orta 3, zor 4.
+  assert.deepEqual(status.plan.difficulties.map(d => [d.difficulty, d.target]), [['kolay', contexts.length * 2], ['orta', contexts.length * 3], ['zor', contexts.length * 4]], 'kolay payı turlar ilerledikçe azalır');
+  assert.ok(status.plan.difficulties.every(d => d.done >= contexts.length), 'her zorlukta her bölümden soru olmalı');
+  assert.equal(status.plan.passCount, 3);
+  assert.equal(status.plan.perUnitTarget, 9);
+  assert.deepEqual(status.plan.passes.map(p => [p.pass, p.mix.kolay, p.mix.orta, p.mix.zor]), [[1, 1, 1, 1], [2, 1, 1, 1], [3, 0, 1, 2]], 'her turun kolay / orta / zor karışımı görünmeli');
+  // İçindekilerden gelen konu başlığı ve internet kaynağı soru kaydında görünür.
+  const done = items.slice(0, WANT);
+  for (const q of done) {
+   const ctx = contexts.find(c => c.id === q.unitId);
+   const section = summarySectionOf(ctx, q.evidence);
+   assert.equal(q.section || null, section?.title || null, `${q.unitId}: sorunun konu başlığı kanıt cümlesinin başlığı olmalı`);
+   const web = summaryWebSourceOf(ctx, q.evidence);
+   assert.equal(q.webSource?.url || null, web?.url || null, `${q.unitId}: internet kaynağı`);
+   if (web) assert.equal(q.pages || null, null, 'internet cümlesine dayanan soruya kitap sayfası yazılmaz');
+  }
+  assert.ok(done.filter(q => q.section).length >= WANT * 0.6, `konu başlığı taşıyan soru: ${done.filter(q => q.section).length}/${WANT}`);
+  assert.ok(genRequests.some(r => /\| Konu: /.test(r.prompt || '')), 'üretici istemi konu başlığını taşımalı');
   assert.equal(status.autoConcurrencyEffective, 1);
 
   // Havuz bakımı onaylı soruları toplu reddetmemeli. (Eski hata: 0-100'lük bileşik puan eşiği
