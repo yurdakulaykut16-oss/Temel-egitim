@@ -28,7 +28,7 @@ test('runs requests one at a time and preserves queue order', async () => {
   'judge-a:start', 'judge-a:end',
   'judge-b:start', 'judge-b:end'
  ]);
- assert.deepEqual(queue.snapshot(), { maxConcurrent: 1, active: null, queued: 0 });
+ assert.deepEqual(queue.snapshot(), { maxConcurrent: 1, active: null, activeCount: 0, queued: 0 });
 });
 
 test('a failed request does not block the next request', async () => {
@@ -56,4 +56,28 @@ test('skips a request cancelled while waiting in the queue', async () => {
  await assert.rejects(second, error => error.name === 'AbortError');
  assert.equal(secondRan, false);
  assert.equal(queue.snapshot().queued, 0);
+});
+
+test('parallel slots run multiple requests concurrently and setMaxConcurrent resizes at runtime', async () => {
+ const queue = new SerialTaskQueue(4);
+ let active = 0;
+ let peakActive = 0;
+ const run = (label, wait) => queue.run(label, async () => {
+  active += 1;
+  peakActive = Math.max(peakActive, active);
+  await delay(wait);
+  active -= 1;
+  return label;
+ });
+ const results = await Promise.all([run('a', 40), run('b', 40), run('c', 40), run('d', 40), run('e', 5), run('f', 5)]);
+ assert.equal(results.length, 6);
+ assert.ok(peakActive >= 4, `4 yuva aynı anda çalışmalıydı; görülen tepe: ${peakActive}`);
+ assert.equal(queue.snapshot().maxConcurrent, 4);
+ assert.equal(queue.setMaxConcurrent(2), 2);
+ assert.equal(queue.snapshot().maxConcurrent, 2);
+ const g = queue.run('g', async () => 'g');
+ const h = queue.run('h', async () => 'h');
+ const i = queue.run('i', async () => 'i');
+ const more = await Promise.all([g, h, i]);
+ assert.deepEqual(more, ['g', 'h', 'i']);
 });

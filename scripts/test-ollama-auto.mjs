@@ -105,6 +105,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   process.env.OLLAMA_BASE_URL=`http://127.0.0.1:${fakePort}`;process.env.OLLAMA_MODEL='fake:1';process.env.OLLAMA_VERIFIER_MODEL='fake:1';process.env.TEMPO_DATA_DIR=dir;
   process.env.OLLAMA_JUDGE2_MODEL='fake:1';
   delete process.env.TEMPO_DISABLE_AUTOLOOP;
+  process.env.TEMPO_AUTO_CONCURRENCY='1';
  const mod=await import('../server/ollama.mjs');const ollamaPlugin=mod.ollamaPlugin;stopOllamaLoops=mod.stopOllamaLoops;let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
   app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});

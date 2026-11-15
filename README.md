@@ -2,7 +2,7 @@
 
 Bu rehber **Windows 11 üzerinde, doğrudan kendi bilgisayarında** çalışmak içindir. Ubuntu veya WSL kurman gerekmez. İşlemleri sırayla yap: önce projeyi ve Ollama'yı çalıştır, ardından soruları incele. Model eğitimi isteğe bağlıdır ve sonraki adımlardadır.
 
-> **SIFIR DÜĞME — İKİ MOTOR, KESİNTİSİZ:** Proje açıldığı andan itibaren **hiçbir düğmeye basman gerekmez** ve projede sürekli çalışan yalnızca **iki şey** vardır: **(1) kaliteli soru üretimi** — hedef 5 saniyede 1 soru, iki hakem denetimi ve 20.000 kayıtlık havuz bakımıyla birlikte; **(2) üretilmiş soruların kalitesinin sürekli artırılması** — onaylı havuz düzenli taranır, çıtanın altında kalan sorular çift hakem kapısından geçen yükseltilmiş sürümleriyle değiştirilir. Model çağrıları tek bir kuyruktan sırayla geçer, bu yüzden **iki model asla aynı anda çakışmaz**; kalite iyileştirme motoru modeli yalnızca üretim boştayken kullanır. İnternet araştırması, konuyu anlatım, ses gibi diğer her şey yalnızca senin açtığın sayfalarda çalışır; kesintisiz çalışan ek arka plan ajanı yoktur.
+> **SIFIR DÜĞME — İKİ MOTOR, KESİNTİSİZ:** Proje açıldığı andan itibaren **hiçbir düğmeye basman gerekmez** ve projede sürekli çalışan yalnızca **iki şey** vardır: **(1) kaliteli soru üretimi** — hedef 5 saniyede 1 soru, iki hakem denetimi ve 20.000 kayıtlık havuz bakımıyla birlikte; **(2) üretilmiş soruların kalitesinin sürekli artırılması** — onaylı havuz düzenli taranır, çıtanın altında kalan sorular çift hakem kapısından geçen yükseltilmiş sürümleriyle değiştirilir. Model çağrıları uygulama içindeki sınırlı kuyruktan geçer (varsayılan **4 paralel yuva**, 1–8 arası ayarlanabilir); kalite iyileştirme motoru modeli yalnızca üretim boştayken kullanır. İnternet araştırması, konuyu anlatım, ses gibi diğer her şey yalnızca senin açtığın sayfalarda çalışır; kesintisiz çalışan ek arka plan ajanı yoktur.
 
 > **Önce GitHub sürümünü kontrol et:** Depo adresi [github.com/yurdakulaykut16-oss/Temel-egitim](https://github.com/yurdakulaykut16-oss/Temel-egitim). Bu rehberde anlatılan güncel dosyalar, GitHub'da yer aldıkları daldan indirilmelidir. Arena'daki değişiklikler kendiliğinden GitHub'a aktarılmaz. GitHub'da seçili dalda `package.json`, `src`, `server`, `training` ve `public/books` yoksa o sürüm bu uygulamanın tamamı değildir. Çalışma dalı `arena/41dcbbc1-temel-egitim` GitHub'a gönderilmediyse o daldan indirme yapılamaz.
 
@@ -147,15 +147,15 @@ Listede indirdiğin modeller görünmeli. Uygulama açılışında **Durumu yeni
 
 > **Not:** Tek bir model bile indirsen (örneğin sadece `qwen3:8b`) uygulama açılışta durmaz; tüm rolleri otomatik o modele yerleştirir ve açılışta bir kez `tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder` uzman profillerini senin adına oluşturur. Gerçek bağımsız denetim için **2. hakem olarak farklı bir model ailesi** (`gemma3:12b` / `gemma3:4b`) bulundurman önerilir.
 
-### 4.1 Düşük yükte çalışma ayarları (sıralı model kuyruğu · 20k havuz)
+### 4.1 Hız ayarları (paralel yuvalar · 20k havuz)
 
-Uygulama varsayılan olarak **az yakan ve sıralı** çalışır:
+Uygulama varsayılan olarak **paralel** çalışır ve her soru **tam modelle iki hakem onayından** geçer:
 
-- **Tek model kuyruğu:** Üretici ve iki hakemin Ollama çağrıları ortak bir FIFO kuyruğundan geçer; aynı anda **yalnızca bir** model çağrısı yapılır, dolayısıyla modeller birbiriyle çakışmaz. Uygulamadaki eşzamanlılık 1'e sabitlenmiştir.
-- **Her 5 saniyede bir yeni soru:** Üretim döngüsü her turdan sonra 5 saniyelik hedef tempoya göre bekler (üretim daha uzun sürerse sıradaki soru hemen peşine gelir; asla üst üste binmez). Tempo `TEMPO_QUESTION_INTERVAL_MS` ile değiştirilebilir (ms).
-- **Tek soru / çağrı:** Her turda 1 soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi korunur.
+- **Paralel model yuvaları (varsayılan 4):** Üretici ve iki hakemin Ollama çağrıları uygulama içindeki kuyruktan geçer; aynı anda en fazla **4 model çağrısı** çalışır (1–8 arası ayarlanabilir). Böylece 4 soru üretim hattı aynı anda ilerler; yine de her soru tek tek pasaja, iki bağımsız hakeme ve öz-düzeltme kapısına takılır. VRAM'in yetmiyorsa `TEMPO_AUTO_CONCURRENCY=2` (hatta `1`) yapabilirsin; güçlü GPU'da 6–8'e kadar çıkabilir.
+- **Ollama tarafı da paralelleştirin (önerilir):** Ollama servisini `setx OLLAMA_NUM_PARALLEL "4"` ile başlatıp yeniden aç; böylece 4 eşzamanlı istek gerçekten aynı model örneği üzerinde bir arada işlenir ve hız neredeyse 4 katına yaklaşır. Bu değişken olmadan da 4 yuva çalışır ama istekler Ollama tarafında sıraya girebilir.
+- **Seri moda dönüş:** Eski davranışın (1 yuva + 5 sn hedef tempo) tamamını `TEMPO_AUTO_CONCURRENCY=1` ile geri alabilirsin ya da ayarlar dosyasındaki `autoConcurrency: 1` yapılabilir. Arayüzden yuva sayısı **Soru stüdyosu > Bağlantı** bölümünden de değiştirebilirsin.
 - **20.000 kayıt havuz sınırı:** Onaylı havuz 20.000'e ulaşınca küratör en zayıf ve tekrar soruları ayıklayıp havuzu ~18.500 civarına indirir; üretim hiç durmaz.
-- **Hafif varsayılanlar:** üretici `qwen3:8b`, 2. hakem `gemma3:4b`, istek zaman aşımı 180 sn, `keep_alive=0` (model çağrıdan sonra boşaltılır; VRAM'de üst üste model birikmez). Çalışma materyali üretimi, otomatik evrim ve alt-saniye tüm-bot sürüsü kapalıdır.
+- **Hafif varsayılanlar:** üretici `qwen3:8b`, 2. hakem `gemma3:4b`, istek zaman aşımı 180 sn, `keep_alive=0` (model çağrıdan sonra boşaltılır; VRAM'de üst üste model birikmez). Otomatik evrim ve alt-saniye tüm-bot sürüsü kapalıdır.
 
 Daha hızlı/yoğun çalışmak istersen (opsiyonel):
 
@@ -181,6 +181,8 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_UNLOAD_STALE_PINS` | `0` | `1` yapılınca açılışta VRAM'deki eski modeller boşaltılır |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
 | `TEMPO_QUESTION_INTERVAL_MS` | `5000` | Hedef üretim temposu (ms); model yavaşsa tempo kendiliğinden uzar |
+| `TEMPO_AUTO_CONCURRENCY` | `4` | Paralel üretim yuvası sayısı (1–8); `1` eski seri davranışı verir |
+| `OLLAMA_NUM_PARALLEL` | `1` | Ollama servisinin aynı model üzerinde aynı anda işlediği istek sayısı; `4` önerilir |
 | `TEMPO_PARAGRAPH_QUESTION_RATIO` | `0.12` | Paragraf (parçaya dayalı) soruların sıklığı; `0` yapılınca hiç üretilmez |
 
 ### 4.2 Soru ve çeldirici kalitesi
@@ -302,7 +304,7 @@ Proje başladığı saniyeden itibaren **hiçbir düğmeye basman gerekmez** ve 
 1. **Motor 1 — Sürekli Kaliteli Soru Üretimi (her zaman önceliklidir):** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece soru üretimi durmaz; hedef tempo **5 saniyede 1 soru**dur. Her turda tek soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, çeldirici kalite kapısı, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi uygulanır. Kalite, hızdan önce gelir: iki hakem onaylamadıkça soru havuza girmez.
 2. **Motor 2 — Sürekli Kalite İyileştirme (hiç durmaz):** Onaylı havuzdaki sorular düzenli olarak 0-API puanlamasından geçer (hakem puanı, sınav potansiyeli, çeldirici dengesi, kanıt derinliği, benzerlik cezası). Ortalama çıtanın (74/100) altında kalan sorular tek tek yeniden yazılır; yeni sürüm ancak **iki bağımsız hakemin** onayından ve en az **+4 puan** iyileşme kapısından geçerse eski sürümün yerine geçer ve bu sırada soru kimliği ile oluşturulma tarihi korunur. Motor 2 model çağrılarını **yalnızca üretim boştayken** yapar — üretim hiçbir zaman iyileştirme için beklemez; havuz 20.000'e ulaştığında en zayıf soruları ayıklayıp yer açma görevini de dördüncü turda bir kez üstlenir.
 3. **Havuz 20.000 ile sınırlı:** Onaylı soru sayısı 20.000'e ulaşınca küratör bot en zayıf ve birbirine benzeyen soruları ayıklayıp havuzu ~18.500'e indirir; üretim devam eder. Toplam kayıt sayısı da 20.000'i geçmez.
-4. **Modeller asla çakışmaz:** Tüm model çağrıları (Motor 1 ve Motor 2) uygulama içindeki tek kuyruktan sırayla geçer; aynı anda yalnızca bir model çalışır, eş zamanlı yuva sayısı 1'e sabittir. Motor 2'nin çağrıları üretim çağrıları arasında sıraya girer; üretim haklıdır, iyileştirme bekler.
+4. **Modeller kontrollü paralel çalışır:** Tüm model çağrıları (Motor 1 ve Motor 2) uygulama içindeki sınırlı kuyruktan geçer; aynı anda en fazla `TEMPO_AUTO_CONCURRENCY` (varsayılan **4**, 1–8 arası) model çağrısı çalışır. Her üretim hattı kendi tam çift-hakem doğrulamasından geçer; Motor 2'nin çağrıları üretim boştayken sıraya girer. En yüksek hız için Ollama servisini `OLLAMA_NUM_PARALLEL=4` ile çalıştır.
 5. **Model kurulumu açılışta yalnızca bir kez yapılır:** Ollama'daki modeller taranır; Üretici, 1. Hakem, 2. Hakem ve Evrim rolleri otomatik atanır. Eksik uzman profiller (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder` ve gerekirse `tempo-osym-uzmani`, `tempo-celdirici-muhendisi` vb.) açılışta bir kez oluşturulur. Bundan sonra projede **kesintisiz çalışan üçüncü bir ajan yoktur**.
 6. **İki motoru Soru stüdyosunda izle:** Uygulamadaki **Soru stüdyosu** sayfasının en üstünde iki motor kartı bulunur: Motor 1 (üretilen/onaylanan soru, havuz doluluğu, onay oranı, hız, zorluk dağılımı) ve Motor 2 (ortalama kalite puanı vs 74 hedefi, taranan/iyileştirilen soru sayısı, son iyileştirilen sorular). Hiçbir düğmeye basmadan ikisi de canlı akar.
 

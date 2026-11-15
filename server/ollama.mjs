@@ -36,7 +36,9 @@ import { createSummaryGrounding, SUMMARY_GROUNDING_DEFAULT_MIN } from './summary
 import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
 
 const execFileAsync = promisify(execFile);
-const modelInferenceQueue = new SerialTaskQueue();
+const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
+const DEFAULT_AUTO_CONCURRENCY = Number.isFinite(envConcurrency) && envConcurrency >= 1 ? Math.min(8, Math.round(envConcurrency)) : 4;
+const modelInferenceQueue = new SerialTaskQueue(DEFAULT_AUTO_CONCURRENCY);
 
 const contexts = JSON.parse(await readFile(new URL('./contexts.json', import.meta.url), 'utf8'));
 const questionBank = JSON.parse(await readFile(new URL('./question-bank.json', import.meta.url), 'utf8'));
@@ -441,7 +443,6 @@ let lastNexusAutoApplyAt = 0;
 
 const defaultModel = process.env.OLLAMA_MODEL || 'qwen3:8b';
 const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || 'gemma3:4b';
-const defaultConcurrency = 1;
 const envDefaultTimeout = Number(process.env.OLLAMA_AUTO_TIMEOUT_MS);
 const defaultAutoTimeoutMs = Number.isFinite(envDefaultTimeout) && envDefaultTimeout >= 1000 ? Math.round(envDefaultTimeout) : 180000;
 // Hedef üretim temposu: her 5 saniyede bir yeni soru. Model çağrıları tek kuyruktan
@@ -573,8 +574,13 @@ async function autoRunningEnabled() {
  return v.autoRunning !== false;
 }
 async function autoConcurrencyLimit() {
- // Uygulama genelinde Ollama'ya aynı anda yalnızca tek istek gönderilir.
- return defaultConcurrency;
+ // Paralel yuva sayısı: ayar (kalıcı) yoksa ortam değişkeni, o da yoksa 4.
+ // 1'e sabitlenmiş eski davranış TEMPO_AUTO_CONCURRENCY=1 ya da ayar ile geri alınır.
+ const v = await readSettings();
+ const n = Number(v.autoConcurrency);
+ const limit = Number.isFinite(n) && n >= 1 ? Math.min(8, Math.round(n)) : DEFAULT_AUTO_CONCURRENCY;
+ if (modelInferenceQueue.maxConcurrent !== limit) modelInferenceQueue.setMaxConcurrent(limit);
+ return limit;
 }
 async function autoTimeoutMs() {
  const v = await readSettings();
@@ -3102,10 +3108,16 @@ async function autoScheduler() {
        if (!a.invalid && !a.duplicates) {
         const ctx = contexts[autoCursor++ % contexts.length];
         const waveStart = Date.now();
-        await launchAutoUnit(ctx, model, verifierModel, judge2Model, await autoTimeoutMs(), cfg);
-        // Her 5 saniyede bir yeni soru: üretim erken biterse kalan süre kadar dinlen.
-        const restMs = QUESTION_INTERVAL_MS - (Date.now() - waveStart);
-        if (restMs > 0) await sleep(restMs);
+        const timeoutMs = await autoTimeoutMs();
+        if (limit <= 1) {
+         await launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg);
+         // Her 5 saniyede bir yeni soru: üretim erken biterse kalan süre kadar dinlen.
+         const restMs = QUESTION_INTERVAL_MS - (Date.now() - waveStart);
+         if (restMs > 0) await sleep(restMs);
+        } else {
+         // Paralel turbo: yuva boşaldıkça hemen doldur; model çağrıları kuyrukta sınırlı sayıda çalışır.
+         launchAutoUnit(ctx, model, verifierModel, judge2Model, timeoutMs, cfg);
+        }
        }
       }
      }
@@ -3114,7 +3126,7 @@ async function autoScheduler() {
   } catch (e) {
    autoLastError = e.message || String(e);
   }
-  await sleep(1500);
+  await sleep((await autoConcurrencyLimit()) > 1 ? 250 : 1500);
  }
 }
 
@@ -4096,7 +4108,7 @@ export function ollamaPlugin() {
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
        questionIntervalMs: QUESTION_INTERVAL_MS,
-       modelInferenceConcurrency: 1,
+       modelInferenceConcurrency: modelInferenceQueue.snapshot().maxConcurrent,
        modelInferenceQueue: modelInferenceQueue.snapshot(),
        autoActive: autoPhases.length,
        autoPhases, autoLastError,
@@ -5114,11 +5126,12 @@ export function ollamaPlugin() {
      if (req.method === 'POST' && path === '/concurrency') {
       const input = await body(req);
       const n = Number(input.value);
-      if (n !== 1) {
-       return respond(res, 400, { error: 'Model çakışmasını önlemek için uygulama eşzamanlılığı 1 ile sabittir.' });
+      if (!Number.isFinite(n) || Math.round(n) !== n || n < 1 || n > 8) {
+       return respond(res, 400, { error: 'Eşzamanlı üretim yuvası 1 ile 8 arasında bir tam sayı olmalı.' });
       }
-      await writeSettings({ autoConcurrency: 1 });
-      return respond(res, 200, { autoConcurrency: 1, modelInferenceConcurrency: 1 });
+      await writeSettings({ autoConcurrency: n });
+      const slots = modelInferenceQueue.setMaxConcurrent(n);
+      return respond(res, 200, { autoConcurrency: n, modelInferenceConcurrency: slots });
      }
 
      if (req.method === 'POST' && path === '/timeout') {

@@ -188,6 +188,21 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   }
  };
 
+ const setConcurrency = async (n: number) => {
+  try {
+   const r = await fetch(`${api}/concurrency`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({value: n})
+   });
+   const data = await r.json();
+   if (!r.ok) throw Error(data.error || 'Yuva sayısı ayarlanamadı.');
+   setError('');
+   await refresh();
+  } catch (e) {
+   setError(e instanceof Error ? e.message : 'Yuva sayısı ayarlanamadı.');
+  }
+ };
+
  const filtered = items.filter(q => q.status === view);
  const completedWithQuestions = new Set(items.filter(q => q.status === 'approved' && read.includes(q.unitId)).map(q => q.unitId)).size;
  const tel = status?.telemetry;
@@ -348,6 +363,10 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
      <span>{status?.modelInferenceQueue?.active
       ? `Çalışıyor: ${status.modelInferenceQueue.active.label}`
       : 'Boşta'} · {status?.modelInferenceQueue?.queued ?? 0} bekleyen · aynı anda {status?.modelInferenceConcurrency ?? 1} çağrı</span>
+     <label htmlFor="concurrency-choice" style={{marginLeft: 10}}>Paralel yuva (1-8)</label>
+     <select id="concurrency-choice" value={status?.autoConcurrency ?? 4} onChange={e => setConcurrency(Number(e.target.value))}>
+      {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>{n}</option>)}
+     </select>
      <label htmlFor="timeout-choice" style={{marginLeft: 10}}>İstek zaman aşımı ms (1000-300000)</label>
      <input id="timeout-choice" type="number" min={1000} max={300000} step={1000} value={timeoutInput} placeholder={String(status?.autoTimeoutMs || 180000)} onChange={e => setTimeoutInput(e.target.value)}/>
      <button className="outline" onClick={setTimeoutBudget} disabled={!timeoutInput}>Uygula</button>
