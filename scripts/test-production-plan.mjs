@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  buildPlanSteps, planSnapshot, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
- sanitizePlanState, evidenceWithinSummary, pickFocusSentence, splitSummarySentences, pickPlanSteps,
+ sanitizePlanState, evidenceWithinSummary, pickFocusSentence, splitSummarySentences, planBatch, pickPlanWork,
  planConfigFromEnv, describeStep, stepKey
 } from '../server/production-plan.mjs';
 
@@ -69,26 +69,53 @@ test('atlanan adım geçilir; geriye yalnızca atlananlar kalınca allParked bil
  assert.equal(snap.allParked, true);
 });
 
-test('aynı anda iki konu: sıradaki ilk N adım seçilir; aynı konu iki kez ve meşgul konu seçilmez', () => {
- const [a, b, c] = contexts;
- let snap = planSnapshot({ contexts, items: [], quota: 50 });
- assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(a.id, 'kolay'), stepKey(b.id, 'kolay')]);
- assert.deepEqual(pickPlanSteps(snap.queue, 1).map(s => s.key), [stepKey(a.id, 'kolay')]);
- // 1. konuda soru hazırlanıyorsa boş yuva 2. konuya gider; ikisi de meşgulse 3. konuya DEĞİL, hiçbirine (N=2 sınırı çağıranda).
- assert.deepEqual(pickPlanSteps(snap.queue, 1, new Set([a.id])).map(s => s.key), [stepKey(b.id, 'kolay')]);
- // 1. konu doldu → 2. ve 3. konu birlikte.
- snap = planSnapshot({ contexts, items: many(50, a.id, 'kolay'), quota: 50 });
- assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(b.id, 'kolay'), stepKey(c.id, 'kolay')]);
- // Tur sınırı: son konunun kolayı ile ilk konunun ortası birlikte çalışabilir.
+test('ikili grup: biri dolunca boşalan hat eksik kalan konuya yardım eder; grup bitmeden sıradaki konuya geçilmez', () => {
+ const [a, b, c, d] = contexts;
+ const K = (x, z = 'kolay') => stepKey(x.id, z);
+ const snapOf = (items, parked = {}) => planSnapshot({ contexts, items, quota: 50, parked });
+ const keys = steps => steps.map(s => s.key);
+
+ // Başlangıç: 1. ve 2. konu birlikte; iki hat ayrı konulara dağılır.
+ let snap = snapOf([]);
+ assert.deepEqual(keys(planBatch(snap.all, 2)), [K(a), K(b)]);
+ assert.equal(pickPlanWork(snap.all, 2, {}).key, K(a));
+ assert.equal(pickPlanWork(snap.all, 2, { [K(a)]: 1 }).key, K(b), 'ikinci hat boş olan konuya gider');
+ assert.equal(pickPlanWork(snap.all, 2, { [K(a)]: 1, [K(b)]: 1 }).key, K(a), 'üçüncü bir hat olsaydı en az yüklü konuya eklenirdi');
+
+ // 1. konu doldu, 2. konu 40'ta: boşalan hat 3. konuya GEÇMEZ, 2. konuya yardım eder.
+ snap = snapOf([...many(50, a.id, 'kolay'), ...many(40, b.id, 'kolay')]);
+ assert.deepEqual(keys(planBatch(snap.all, 2)), [K(b)]);
+ assert.equal(pickPlanWork(snap.all, 2, { [K(b)]: 1 }).key, K(b));
+
+ // Kota aşılmaz: 49/50 iken bir soru hazırlanıyorsa ikinci hat beklemeye alınır (3. konuya da geçmez).
+ snap = snapOf([...many(50, a.id, 'kolay'), ...many(49, b.id, 'kolay')]);
+ assert.equal(pickPlanWork(snap.all, 2, { [K(b)]: 1 }), null);
+ assert.equal(pickPlanWork(snap.all, 2, {}).key, K(b));
+
+ // Grup tamamlanınca sıradaki grup (3. ve 4. konu) birlikte başlar.
+ snap = snapOf([...many(50, a.id, 'kolay'), ...many(50, b.id, 'kolay')]);
+ assert.deepEqual(keys(planBatch(snap.all, 2)), [K(c), K(d)]);
+
+ // Gruptaki konu atlandıysa (özet yetmedi) grup bitmiş sayılır; atlanan konuya hat verilmez.
+ snap = snapOf([...many(50, a.id, 'kolay'), ...many(31, b.id, 'kolay')], { [K(b)]: {} });
+ assert.deepEqual(keys(planBatch(snap.all, 2)), [K(c), K(d)]);
+ snap = snapOf([...many(10, a.id, 'kolay')], { [K(b)]: {} });
+ assert.deepEqual(keys(planBatch(snap.all, 2)), [K(a)], 'atlanan konunun eşi tek başına tamamlanır');
+
+ // Tek hat: konular teker teker; üç hat: üçlü gruplar.
+ snap = snapOf([]);
+ assert.deepEqual(keys(planBatch(snap.all, 1)), [K(a)]);
+ assert.deepEqual(keys(planBatch(snap.all, 3)), [K(a), K(b), K(c)]);
+
+ // Tur sınırı (29 konu tek sayı): son konunun kolayı ile ilk konunun ortası aynı grupta.
  const last = contexts[contexts.length - 1];
- const pass1ButLast = contexts.slice(0, -1).flatMap(x => many(50, x.id, 'kolay'));
- snap = planSnapshot({ contexts, items: pass1ButLast, quota: 50 });
- assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(last.id, 'kolay'), stepKey(a.id, 'orta')]);
- // Aynı konunun iki adımı (atlanan kolay yeniden denenirken ortası da sıradaysa) birlikte seçilmez.
- const onlyA = contexts.flatMap(x => ['kolay', 'orta', 'zor'].flatMap(d => (x.id === a.id && d !== 'zor' ? [] : many(50, x.id, d))));
- snap = planSnapshot({ contexts, items: onlyA, quota: 50 });
- assert.deepEqual(snap.queue.map(s => s.key), [stepKey(a.id, 'kolay'), stepKey(a.id, 'orta')]);
- assert.deepEqual(pickPlanSteps(snap.queue, 2).map(s => s.key), [stepKey(a.id, 'kolay')]);
+ snap = snapOf(contexts.slice(0, -1).flatMap(x => many(50, x.id, 'kolay')));
+ assert.deepEqual(keys(planBatch(snap.all, 2)), [K(last), K(a, 'orta')]);
+
+ // Plan bitti: grup boş.
+ snap = snapOf(contexts.flatMap(x => ['kolay', 'orta', 'zor'].flatMap(z => many(50, x.id, z))));
+ assert.deepEqual(planBatch(snap.all, 2), []);
+ assert.equal(pickPlanWork(snap.all, 2, {}), null);
 });
 
 test('takılma sayacı: adım başına üst üste retler sayılır; sınırda adım park edilir', () => {
@@ -162,6 +189,10 @@ test('odak cümlesi: en az soru sorulmuş özet cümlesi seçilir, denemeler ara
  const allOnce = sentences.map(s => ({ evidence: s }));
  const pick = pickFocusSentence(summary, [...allOnce, { evidence: sentences[0] }], 0);
  assert.equal(pick.index, 1); assert.equal(pick.usage, 1);
+ // En az kullanılan tek cümle kalsa bile art arda iki deneme (aynı konuda çalışan iki hat) farklı cümle alır.
+ const allButThird = sentences.filter((_, i) => i !== 3).map(s => ({ evidence: s }));
+ assert.equal(pickFocusSentence(summary, allButThird, 0).index, 3);
+ assert.notEqual(pickFocusSentence(summary, allButThird, 1).index, 3);
  assert.equal(pickFocusSentence('', [], 0), null);
 });
 

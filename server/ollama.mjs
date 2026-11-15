@@ -38,7 +38,7 @@ import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './o
 import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
 import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
 import {
- planConfigFromEnv, planSnapshot, pickPlanSteps, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
+ planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep
 } from './production-plan.mjs';
 
@@ -850,15 +850,17 @@ async function savePlanState() {
 }
 
 /**
- * Boş yuva için planın sıradaki adımı (plan kapalıysa, tamamlandıysa ya da sıradaki bütün
- * konularda zaten soru hazırlanıyorsa null). Aynı anda N soru hazırlanıyorsa sıradaki ilk N
- * konu birlikte çalışır; aynı konuda aynı anda iki soru hazırlanmaz.
+ * Boşalan hat için planın işi (plan kapalıysa ya da tamamlandıysa planActive=false; grupta
+ * şu an verilecek iş yoksa step=null ve hat kısa süre bekler).
+ * Aynı anda N soru hazırlanıyorsa konular N'li gruplar hâlinde işlenir: gruptaki bir konu
+ * dolunca boşalan hat sıradaki gruba geçmez, grubun eksik kalan konusuna yardım eder.
+ * @param inflight  { [stepKey]: o adımda şu an hazırlanan soru sayısı }
  */
-async function nextPlanStep(items, busyUnits = new Set()) {
+async function nextPlanStep(items, inflight = {}, size = 1) {
  if (!PLAN.enabled) return { step: null, planActive: false };
  await loadPlanState();
  let snap = planSnapshot({ contexts, items, quota: PLAN.quota, parked: planState.parked });
- if (snap.allParked && busyUnits.size === 0) {
+ if (snap.allParked && Object.keys(inflight).length === 0) {
   // Geriye yalnızca atlanan adımlar kaldı: hepsi yeniden denenir.
   tempoLog(`Plan: sıradaki adımların hepsi tamamlandı; atlanan ${snap.parkedSteps.length} adım yeniden deneniyor.`);
   planState = { parked: {}, streaks: {} };
@@ -874,7 +876,7 @@ async function nextPlanStep(items, busyUnits = new Set()) {
   }
   return { step: null, planActive: false };
  }
- const [step] = pickPlanSteps(snap.queue, 1, busyUnits);
+ const step = pickPlanWork(snap.all, size, inflight);
  if (step && !planAnnounced.has(step.key)) {
   planAnnounced.add(step.key);
   tempoLog(`Plan: ${describeStep(step)} · ${step.done}/${step.quota} (toplam ${snap.totalDone}/${snap.totalTarget})`);
@@ -918,8 +920,8 @@ async function publicPlan(items) {
   totalTarget: snap.totalTarget,
   current: slim(snap.current),
   currentLabel: describeStep(snap.current),
-  // Aynı anda çalışan adımlar (plan sırasıyla ilk N konu) ve her birinin sonuçsuz deneme sayacı.
-  working: pickPlanSteps(snap.queue, Math.max(1, autoState.effectiveConcurrency || 1)).map(step => ({ ...slim(step), streak: planState.streaks[step.key] || 0 })),
+  // Şu an üzerinde çalışılan grup (eksik kalan konular) ve her birinin sonuçsuz deneme sayacı.
+  working: planBatch(snap.all, Math.max(1, autoState.effectiveConcurrency || 1)).map(step => ({ ...slim(step), streak: planState.streaks[step.key] || 0 })),
   parallel: Math.max(1, autoState.effectiveConcurrency || 1),
   passes,
   parked: snap.parkedSteps.map(slim)
@@ -1612,6 +1614,12 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   const record = validate(parsed, ctx, latest, model, passage, policy);
   record.verification = verification;
   record.difficulty = verification.difficulty;
+  // Plan kotası kesindir: iki hat aynı konuda çalışırken bile hiçbir kova 50'yi aşamaz.
+  if (PLAN.enabled && DIFFICULTIES.includes(record.difficulty) && planDifficultyForUnit(ctx.id, latest, PLAN.quota)
+   && (countApproved(latest).get(stepKey(ctx.id, record.difficulty)) || 0) >= PLAN.quota) {
+   recordRejection('plan_quota_full');
+   throw Error(`Bu konunun ${record.difficulty} kotası (${PLAN.quota}) doldu; soru kaydedilmedi.`);
+  }
   if (Number.isFinite(verification.qualityScore)) record.qualityScore = verification.qualityScore;
   if (Number.isFinite(verification.examPotential)) record.examPotential = verification.examPotential;
   if (!record.questionAngle && targetAngle) record.questionAngle = targetAngle;
@@ -2189,8 +2197,10 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  const passage = !summaryOnly && passageMode === 'full-book' ? selectPassageForUnit(ctx, items, passageMode) : null;
  notePassageAttempt(passage);
  const targetDifficulty = DIFFICULTIES.includes(opts.targetDifficulty) ? opts.targetDifficulty : nextDifficulty(ctx, items);
- const targetType = nextQuestionType(ctx, items);
- const targetAngle = nextQuestionAngle(ctx, items);
+ // Aynı konuda aynı anda ikinci bir soru hazırlanıyorsa farklı tip ve açı kullanılır.
+ const variantOffset = Number.isInteger(opts.variantOffset) && opts.variantOffset > 0 ? opts.variantOffset : 0;
+ const targetType = nextQuestionType(ctx, items, variantOffset);
+ const targetAngle = nextQuestionAngle(ctx, items, variantOffset);
  const repairSource = `${passage?.text || ''}\n${ctx?.text || ''}`;
 
  const runInstantLocalFallback = async (reason = 'subsecond-local') => {
@@ -2981,7 +2991,7 @@ async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeo
 function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg, extra = {}) {
  const startedAt = Date.now();
  const planStep = extra.planStep || null;
- const entry = { unit: ctx.id, phase: 'loading', startedAt, model };
+ const entry = { unit: ctx.id, phase: 'loading', startedAt, model, ...(planStep ? { planKey: planStep.key } : {}) };
  const ctrl = new AbortController();
  autoControllers.set(ctrl, entry);
  // Güvenlik ağı: tek tek model çağrılarının kendi bekçileri var; bu yalnızca yuva sızıntısını önler.
@@ -2993,11 +3003,13 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
   selfCorrection: cfg.selfCorrection,
   fastThink: cfg.fastThink,
   ...(planStep ? { targetDifficulty: planStep.difficulty } : {}),
+  ...(extra.variantOffset ? { variantOffset: extra.variantOffset } : {}),
   ...(typeof extra.parallelJudges === 'boolean' ? { parallelJudges: extra.parallelJudges } : {})
  })
   .then(async record => {
    const onTarget = planStep && record?.difficulty === planStep.difficulty;
-   const done = planStep ? planStep.done + (onTarget ? 1 : 0) : 0;
+   // İki hat aynı adımda çalışabildiği için ilerleme havuzdan yeniden sayılır.
+   const done = planStep ? (countApproved(await load().catch(() => [])).get(planStep.key) || 0) : 0;
    handleUnitSuccess(ctx, record, startedAt, planStep ? { step: planStep, done } : null);
    // Hedef kovaya giren soru ilerlemedir; başka zorlukla kaydedilen soru sayacı değiştirmez.
    await recordPlanOutcome(planStep, onTarget ? 'approved' : 'other', done);
@@ -3939,18 +3951,23 @@ async function autoScheduler() {
        nextSleep = 5000;
       } else {
        setAutoBlock('', '');
-       // Plan: sıradaki ilk N konu birlikte çalışır; o an sorusu hazırlanan konuya ikinci soru açılmaz.
-       const busyUnits = new Set([...autoControllers.values()].map(entry => entry.unit));
-       const { step: planStep, planActive } = await nextPlanStep(items, busyUnits);
+       // Plan: konular `limit`'li gruplar hâlinde işlenir; gruptaki bir konu dolunca boşalan hat
+       // eksik kalan konuya yardım eder, grup bitmeden sıradaki konulara geçilmez.
+       const inflight = {};
+       for (const entry of autoControllers.values()) if (entry.planKey) inflight[entry.planKey] = (inflight[entry.planKey] || 0) + 1;
+       const { step: planStep, planActive } = await nextPlanStep(items, inflight, limit);
        if (planActive && !planStep) {
-        // Sıradaki bütün konularda zaten soru hazırlanıyor; yuva boşalınca yeniden bakılır.
+        // Grubun kalan soruları zaten hazırlanıyor (kota aşılmasın diye yeni soru açılmaz); sonuç beklenir.
         nextSleep = 200;
        } else {
         const ctx = (planStep && contexts.find(c => c.id === planStep.unitId)) || contexts[autoCursor++ % contexts.length];
         autoState.lastLaunchAt = Date.now();
+        // Aynı konuda o an hazırlanan soru sayısı: ikinci hat farklı soru tipi/açısıyla yazar.
+        const sameUnitBusy = [...autoControllers.values()].filter(entry => entry.unit === ctx.id).length;
         const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
          parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model,
-         planStep
+         planStep,
+         variantOffset: sameUnitBusy
         });
         // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
         if (limit <= 1) await run;

@@ -403,7 +403,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       {(plan.working || []).map(step => (
        <div key={step.key}>
         <p className="lineup-line">
-         {(plan.working || []).length > 1 ? 'Aynı anda: ' : 'Şu an: '}<b>{step.bookNo}. kitap {step.unitNo}. konu — {step.unit}</b> ({step.book}) · {step.difficulty} <b>{step.done} / {step.quota}</b>
+         {(plan.working || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{step.bookNo}. kitap {step.unitNo}. konu — {step.unit}</b> ({step.book}) · {step.difficulty} <b>{step.done} / {step.quota}</b>
          {(step.streak ?? 0) >= 5 ? ` · üst üste ${step.streak} deneme sonuçsuz (${plan.stuckLimit} olunca bu adım atlanır)` : ''}
         </p>
         <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={step.quota} aria-valuenow={step.done}>
@@ -416,7 +416,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       </p>
       <p className="lineup-line">
        Sıra: 1. kitabın 1. konusundan başlayarak her konuya {plan.quota} kolay soru; bütün konular bitince her konuya {plan.quota} orta, sonra {plan.quota} zor.
-       {(plan.parallel ?? 1) > 1 ? ` Sıradaki ${plan.parallel} konu aynı anda hazırlanır; biri dolunca sıradaki konu başlar.` : ''} Sorular yalnızca konu özetinden kurulur.
+       {(plan.parallel ?? 1) > 1 ? ` Konular ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan konuya yardım eder, grup tamamlanmadan sıradaki konulara geçilmez.` : ''} Sorular yalnızca konu özetinden kurulur.
       </p>
       {(plan.parked || []).length > 0 && (
        <p className="lineup-warn">

@@ -6,9 +6,10 @@
 //   2. tur (ORTA) : aynı sıra, her konuya 50 soru
 //   3. tur (ZOR)  : aynı sıra, her konuya 50 soru
 //
-// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) sıradaki ilk N adım birlikte çalışır:
-// ör. 1. ve 2. konu aynı anda dolar, biri bitince 3. konu başlar. Aynı konuda aynı anda iki soru
-// hazırlanmaz (tekrar üretmesin diye).
+// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) adımlar N'li GRUPLAR hâlinde işlenir:
+// ör. 1. ve 2. konu birlikte başlar; biri 50'ye ulaşınca boşalan hat 3. konuya GEÇMEZ, eksik kalan
+// konuya yardım eder. Gruptaki bütün konular 50'ye ulaşınca (ya da atlanınca) sıradaki grup başlar.
+// Böylece hiçbir konu yarım bırakılıp ilerlenmez.
 //
 // Bir adım (konu + zorluk) kotası dolmadan o yuva sıradaki adıma geçmez. Konu özeti kısa olduğu
 // için kota dolmayabilir: üst üste çok sayıda deneme sonuç vermezse adım "atlanır" (park
@@ -81,9 +82,10 @@ export function countApproved(items) {
 /**
  * Planın anlık durumu.
  * @param parked  { [stepKey]: {...} } — atlanan adımlar
- * @returns { current, queue, complete, allParked, totalDone, totalTarget, parkedSteps, steps, counts }
+ * @returns { current, queue, all, complete, allParked, totalDone, totalTarget, parkedSteps, steps, counts }
  *   current: sıradaki (kotası dolmamış ve atlanmamış) ilk adım; yoksa null.
  *   queue: kotası dolmamış ve atlanmamış bütün adımlar, plan sırasıyla.
+ *   all: bütün adımlar, plan sırasıyla; her biri { ...adım, done, parked }.
  *   allParked: geriye yalnızca atlanan adımlar kaldıysa true (çağıran taraf park listesini temizleyip yeniden dener).
  */
 export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, parked = {} }) {
@@ -92,9 +94,11 @@ export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, park
  let totalDone = 0;
  const parkedSteps = [];
  const queue = [];
+ const all = [];
  for (const step of steps) {
   const done = Math.min(quota, counts.get(step.key) || 0);
   totalDone += done;
+  all.push({ ...step, done, parked: Boolean(parked[step.key]) && done < quota });
   if (done >= quota) continue;
   if (parked[step.key]) { parkedSteps.push({ ...step, done }); continue; }
   queue.push({ ...step, done });
@@ -105,6 +109,7 @@ export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, park
  return {
   current,
   queue,
+  all,
   complete,
   allParked: !complete && !current && parkedSteps.length > 0,
   totalDone,
@@ -116,19 +121,34 @@ export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, park
 }
 
 /**
- * Sıradan, aynı anda çalışacak adımları seçer: plan sırasıyla ilk `limit` adım; aynı konu
- * iki kez seçilmez ve `busyUnits` içindeki (o an sorusu hazırlanan) konular atlanır.
+ * Şu an üzerinde çalışılan grup: plan sırası `size`'lı gruplara bölünür (1-2, 3-4, …); içinde
+ * kotası dolmamış ve atlanmamış adım bulunan İLK grubun açık adımları döner. Grup bitmeden
+ * sıradaki gruba geçilmez.
+ * @param all  planSnapshot().all
  */
-export function pickPlanSteps(queue, limit = 1, busyUnits = new Set()) {
- const picked = [];
- const seen = new Set(busyUnits);
- for (const step of queue || []) {
-  if (picked.length >= limit) break;
-  if (seen.has(step.unitId)) continue;
-  seen.add(step.unitId);
-  picked.push(step);
+export function planBatch(all, size = 1) {
+ const n = Math.max(1, Math.floor(size) || 1);
+ for (let i = 0; i < (all || []).length; i += n) {
+  const open = all.slice(i, i + n).filter(step => step.done < step.quota && !step.parked);
+  if (open.length) return open;
  }
- return picked;
+ return [];
+}
+
+/**
+ * Boşalan hat için iş seçer: gruptaki açık adımlardan, üzerinde en az hat çalışanı (eşitlikte
+ * plan sırasıyla ilki). Bir adımda "tamamlanan + hazırlanmakta olan" soru sayısı kotaya ulaştıysa
+ * o adıma yeni hat verilmez (kota aşılmasın). Uygun adım yoksa null (hat kısa süre bekler).
+ * @param inflight  { [stepKey]: o adımda şu an hazırlanan soru sayısı }
+ */
+export function pickPlanWork(all, size = 1, inflight = {}) {
+ let best = null;
+ for (const step of planBatch(all, size)) {
+  const busy = inflight[step.key] || 0;
+  if (step.done + busy >= step.quota) continue;
+  if (!best || busy < best.busy) best = { step, busy };
+ }
+ return best ? best.step : null;
 }
 
 /** Bir konu için plan sırasına göre sıradaki zorluk: kotası dolmamış ilk kova (hepsi doluysa null). */
@@ -241,7 +261,13 @@ export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
   if (best >= 0 && bestRatio >= 0.6) usage[best]++;
  }
  const min = Math.min(...usage);
- const candidates = usage.map((u, i) => ({ u, i })).filter(x => x.u === min).map(x => x.i);
+ let candidates = usage.map((u, i) => ({ u, i })).filter(x => x.u === min).map(x => x.i);
+ // Tek aday kaldıysa bir sonraki en az kullanılan cümle de havuza katılır: aynı konuda aynı anda
+ // hazırlanan iki soru (ve art arda denemeler) aynı cümleye yığılmasın.
+ if (candidates.length < 2 && sentences.length >= 2) {
+  const rest = usage.map((u, i) => ({ u, i })).filter(x => x.i !== candidates[0]).sort((a, b) => a.u - b.u || a.i - b.i);
+  candidates = [candidates[0], rest[0].i];
+ }
  const index = candidates[((rotation % candidates.length) + candidates.length) % candidates.length];
  return { index, sentence: sentences[index], usage: usage[index], total: sentences.length };
 }

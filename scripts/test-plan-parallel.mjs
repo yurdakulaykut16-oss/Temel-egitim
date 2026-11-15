@@ -1,10 +1,12 @@
-// ÜRETİM PLANI: İKİ KONU AYNI ANDA (uçtan uca, Ollama simülatörüyle)
+// ÜRETİM PLANI: İKİ KONU AYNI ANDA, YARIM BIRAKMADAN (uçtan uca, Ollama simülatörüyle)
 // ---------------------------------------------------------------------------
-// Varsayılan ayarda (aynı anda 2 soru) plan sıradaki İKİ konuyu birlikte doldurur: 1. ve 2. konu
-// aynı anda çalışır, biri dolunca 3. konu başlar. Doğrulananlar:
-//  1) İki farklı konuda aynı anda soru hazırlanır; aynı konuda aynı anda iki soru hazırlanmaz.
-//  2) Sıra korunur: bir soru yazıldığında, kendi adımından önceki adımlardan en çok BİRİ eksiktir.
-//  3) Hiçbir konu kotasını aşmaz; ilk turda yalnızca kolay üretilir.
+// Varsayılan ayarda (aynı anda 2 soru) konular ikili gruplar hâlinde işlenir: 1. ve 2. konu birlikte
+// başlar. Biri kotasına ulaşınca boşalan hat 3. konuya GEÇMEZ; eksik kalan konuya yardım eder.
+// İkisi de dolunca 3. ve 4. konu başlar. Doğrulananlar:
+//  1) İki farklı konuda aynı anda soru hazırlanır.
+//  2) 1. konu dolduktan sonra iki hat birlikte (geride kalan) 2. konuda çalışır.
+//  3) Grup tamamlanmadan sıradaki grubun konularına tek soru yazılmaz.
+//  4) Hiçbir konu kotasını aşmaz (iki hat aynı konuda çalışırken bile); ilk turda yalnızca kolay üretilir.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -16,16 +18,27 @@ import {createFakeOllama} from './fake-ollama-sim.mjs';
 const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 const close = server => new Promise(resolve => server.close(resolve));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const QUOTA = 3;
-const WANT = QUOTA * 6;
+const QUOTA = 6;
 
-test('plan: sıradaki iki konu aynı anda dolar, sıra ve kota korunur', async () => {
+test('plan: iki konu aynı anda; biri dolunca boşalan hat eksik kalana yardım eder, kota aşılmaz', async () => {
  let app, sim, dir, base, stopOllamaLoops;
  let failure = null;
  try {
   const contexts = JSON.parse(await readFile(new URL('../server/contexts.json', import.meta.url), 'utf8'));
   const stepIndex = new Map(contexts.map((c, i) => [c.id, i])); // 1. tur: adım sırası = konu sırası
-  sim = createFakeOllama({ loadMs: 30, genMs: 120, judgeMs: 60 });
+  const [A, B, C, D] = contexts;
+  // 2. konu geride kalsın diye hakem o konunun İLK 4 sorusunu reddeder.
+  const lagMarker = B.text.slice(0, 60);
+  const rejectedStems = new Set();
+  sim = createFakeOllama({
+   loadMs: 30, genMs: 120, judgeMs: 60,
+   judgeHook(verdict, { prompt }) {
+    if (!prompt.includes(lagMarker)) return verdict;
+    const stem = (prompt.match(/\nSORU: ([\s\S]*?)\nSEÇENEKLER:/) || [])[1] || '';
+    if (!rejectedStems.has(stem) && rejectedStems.size < 4) rejectedStems.add(stem);
+    return rejectedStems.has(stem) ? { ...verdict, supported: false, qualityOk: false } : verdict;
+   }
+  });
   const fakePort = await sim.listen();
   dir = await mkdtemp(join(tmpdir(), 'tempo-par-'));
   process.env.OLLAMA_BASE_URL = `http://127.0.0.1:${fakePort}`;
@@ -51,47 +64,52 @@ test('plan: sıradaki iki konu aynı anda dolar, sıra ve kota korunur', async (
   });
   base = `http://127.0.0.1:${await listen(app)}`;
 
+  const count = (list, ctx) => list.filter(q => q.unitId === ctx.id).length;
   let items = [];
   let sawTwoUnitsAtOnce = false;
-  let sameUnitTwice = false;
-  let workingSeen = null;
-  for (let i = 0; i < 1200 && items.length < WANT; i++) {
-   await sleep(50);
+  let sawBothHelpingLagging = false;
+  let workingPair = null;
+  let workingSingle = null;
+  for (let i = 0; i < 1600; i++) {
+   await sleep(40);
    const status = await (await fetch(`${base}/api/ollama/status`)).json();
    const activeUnits = (status.autoPhases || []).map(p => p.unit);
    if (new Set(activeUnits).size >= 2) sawTwoUnitsAtOnce = true;
-   if (new Set(activeUnits).size !== activeUnits.length) sameUnitTwice = true;
-   if (!workingSeen && (status.plan?.working || []).length === 2) workingSeen = status.plan;
-   if (i % 4 === 0) items = (await (await fetch(`${base}/api/ollama/questions`)).json()).items.filter(q => q.status === 'approved');
+   if (activeUnits.length === 2 && activeUnits.every(u => u === B.id)) sawBothHelpingLagging = true;
+   const working = status.plan?.working || [];
+   if (!workingPair && working.length === 2) workingPair = status.plan;
+   if (!workingSingle && working.length === 1 && working[0].unitId === B.id) workingSingle = status.plan;
+   if (i % 3 === 0) items = (await (await fetch(`${base}/api/ollama/questions`)).json()).items.filter(q => q.status === 'approved');
+   if (count(items, C) >= 2 && count(items, D) >= 2) break;
   }
   const status = await (await fetch(`${base}/api/ollama/status`)).json();
-  assert.ok(items.length >= WANT, `en az ${WANT} soru üretilmeliydi; üretilen: ${items.length}, engel: ${JSON.stringify(status.autoBlock)}, son olay: ${JSON.stringify(status.autoEvents?.[0])}`);
-
   const seq = items.map(q => q.unitId);
-  console.log(`\nSıra (konu): ${seq.slice(0, WANT).join(' ')}`);
+  console.log(`\nSıra (konu): ${seq.join(' ')}`);
+  assert.ok(count(items, C) >= 2 && count(items, D) >= 2, `3. ve 4. konuya geçilmeliydi; sıra: ${seq.join(' ')}, engel: ${JSON.stringify(status.autoBlock)}, son olay: ${JSON.stringify(status.autoEvents?.[0])}`);
 
   assert.equal(status.autoConcurrencyEffective, 2, 'aynı anda 2 soru hazırlanmalı');
   assert.ok(sawTwoUnitsAtOnce, 'iki farklı konuda aynı anda soru hazırlanmalı');
-  assert.equal(sameUnitTwice, false, 'aynı konuda aynı anda iki soru hazırlanmamalı');
-  assert.ok(workingSeen, '/status plan.working iki adımı göstermeli');
-  assert.equal(workingSeen.parallel, 2);
-  assert.notEqual(workingSeen.working[0].unitId, workingSeen.working[1].unitId);
+  assert.ok(sawBothHelpingLagging, '1. konu dolunca boşalan hat geride kalan 2. konuya yardım etmeli (iki hat da 2. konuda)');
+  assert.ok(workingPair, '/status plan.working iki konuyu birlikte göstermeli');
+  assert.equal(workingPair.parallel, 2);
+  assert.deepEqual(workingPair.working.map(w => w.unitId), [A.id, B.id]);
+  assert.ok(workingSingle, '1. konu dolunca /status yalnızca eksik kalan 2. konuyu göstermeli');
 
-  // İki konu gerçekten iç içe ilerledi mi? (A, B, A örüntüsü)
-  assert.ok(seq.some((u, i) => i + 2 < seq.length && seq[i + 1] !== u && seq.indexOf(u, i + 2) !== -1), `konular iç içe ilerlemeliydi: ${seq.join(' ')}`);
-
-  // Sıra: her soru yazıldığında kendi adımından önceki adımlardan en çok biri eksik olabilir.
+  // Grup tamamlanmadan sıradaki grubun konularına soru yazılmaz; hiçbir kota aşılmaz.
   const counts = new Map();
   for (const q of items) {
    assert.equal(q.difficulty, 'kolay', 'ilk turda yalnızca kolay üretilir');
-   const idx = stepIndex.get(q.unitId);
-   const incompleteBefore = contexts.slice(0, idx).filter(c => (counts.get(c.id) || 0) < QUOTA).length;
-   assert.ok(incompleteBefore <= 1, `${q.unitId} sorusu yazılırken önceki ${incompleteBefore} konu eksikti (en çok 1 olmalı): ${seq.join(' ')}`);
+   const group = Math.floor(stepIndex.get(q.unitId) / 2);
+   const earlier = contexts.slice(0, group * 2);
+   const unfinished = earlier.filter(c => (counts.get(c.id) || 0) < QUOTA).map(c => c.id);
+   assert.deepEqual(unfinished, [], `${q.unitId} sorusu yazılırken önceki gruptaki ${unfinished.join(', ')} eksikti: ${seq.join(' ')}`);
    counts.set(q.unitId, (counts.get(q.unitId) || 0) + 1);
-   assert.ok(counts.get(q.unitId) <= QUOTA, `${q.unitId} kotasını (${QUOTA}) aşmamalı`);
+   assert.ok(counts.get(q.unitId) <= QUOTA, `${q.unitId} kotasını (${QUOTA}) aşmamalı: ${seq.join(' ')}`);
   }
-  assert.equal(counts.get(contexts[0].id), QUOTA);
-  assert.equal(counts.get(contexts[1].id), QUOTA);
+  assert.equal(counts.get(A.id), QUOTA);
+  assert.equal(counts.get(B.id), QUOTA);
+  // 2. konunun son soruları, 1. konu bittikten sonra yazıldı (yardım gerçekten işe yaradı).
+  assert.ok(seq.lastIndexOf(B.id) > seq.lastIndexOf(A.id));
  } catch (e) {
   failure = e;
  }
