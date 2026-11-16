@@ -37,6 +37,12 @@ import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
 import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './ollama-client.mjs';
 import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
 import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
+import {
+ planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, summaryPageOf, PLAN_DIFFICULTIES, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
+ sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep, bucketQuota, planBucketHasRoom, passShare, summarySectionOf, summaryWebSourceOf, leastUsedOption
+} from './production-plan.mjs';
+import { OPTION_COUNT, MIN_OPTION_COUNT, isStoredOptionCount, isDraftOptionCount } from './option-count.mjs';
+import { buildStyleLibrary, pickStyleExample, buildExamStyleBlock, styleLibraryStats } from './exam-style.mjs';
 
 const execFileAsync = promisify(execFile);
 const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
@@ -46,7 +52,22 @@ const DEFAULT_AUTO_CONCURRENCY = Number.isFinite(envConcurrency) && envConcurren
 const modelInferenceQueue = new SerialTaskQueue(DEFAULT_AUTO_CONCURRENCY);
 
 const contexts = JSON.parse(await readFile(new URL('./contexts.json', import.meta.url), 'utf8'));
+// TEMPO_WEB_SUMMARY=0: internetten derlenen ek anlatım kullanılmaz (sorular yalnızca kitaptan kurulur).
+if (process.env.TEMPO_WEB_SUMMARY === '0') {
+ for (const c of contexts) {
+  if (Number.isInteger(c.webStart)) {
+   c.text = c.text.slice(0, c.webStart).trimEnd();
+   c.webStart = null; c.webMarks = []; c.webSources = [];
+  }
+ }
+}
 const questionBank = JSON.parse(await readFile(new URL('./question-bank.json', import.meta.url), 'utf8'));
+// Kullanıcının gönderdiği örnek / çıkmış sorular (scripts/build-context.ts üretir).
+let examSamples = [];
+try {
+ const raw = JSON.parse(await readFile(new URL('./exam-samples.json', import.meta.url), 'utf8'));
+ examSamples = Array.isArray(raw?.samples) ? raw.samples : [];
+} catch {}
 
 let bookStyleQuestionsRaw = null;
 try {
@@ -55,6 +76,10 @@ try {
  bookStyleQuestionsRaw = null;
 }
 const bookStyleQuestions = Array.isArray(bookStyleQuestionsRaw?.questions) ? bookStyleQuestionsRaw.questions : [];
+// Sınav tarzı örnek kitaplığı: kullanıcı örnekleri (öncelikli) + kitapların kendi soruları.
+// TEMPO_EXAM_STYLE=0 ile kapatılır.
+const EXAM_STYLE_ENABLED = process.env.TEMPO_EXAM_STYLE !== '0';
+const examStyleLibrary = EXAM_STYLE_ENABLED ? buildStyleLibrary({ samples: examSamples, bookQuestions: bookStyleQuestions }) : [];
 
 let bookParallelRaw = null;
 try {
@@ -75,7 +100,22 @@ const passagesByUnit = new Map();
 const passageById = new Map();
 const fullUnitTextNorm = new Map();
 
-const norm = s => (typeof s === 'string' ? s : '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+const normRaw = s => (typeof s === 'string' ? s : '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+// Tekrar denetimi her taslakta havuzdaki BÜTÜN soruların kökünü, cevabını ve şıklarını normalleştirir.
+// On binlerce soruluk havuzda bu, soru başına saniyeler tutuyordu; kısa metinlerin sonucu saklanır.
+const NORM_CACHE_LIMIT = 1_500_000;
+const normCache = new Map();
+const norm = s => {
+ if (typeof s !== 'string') return '';
+ if (s.length > 400) return normRaw(s);
+ let out = normCache.get(s);
+ if (out === undefined) {
+  if (normCache.size >= NORM_CACHE_LIMIT) normCache.clear();
+  out = normRaw(s);
+  normCache.set(s, out);
+ }
+ return out;
+};
 
 for (const ctx of contexts) {
  const unitEntry = bookPassagesRaw?.units?.find(u => u.id === ctx.id);
@@ -105,10 +145,16 @@ const dataFile = resolve(dataDir, 'questions.json');
 const settingsFile = resolve(dataDir, 'settings.json');
 const ledgerFile = resolve(dataDir, 'ollama-created.json');
 const tracesFile = resolve(dataDir, 'rejected-traces.jsonl');
+const planFile = resolve(dataDir, 'production-plan.json');
 const storageLimit = 100_000_000_000;
-const QUESTION_POOL_CAPACITY = 20_000;
-const QUESTION_POOL_REFILL_TARGET = 18_500;
-const MAX_QUESTIONS = 20_000;
+// Onaylı soru havuzunun üst sınırı. TEMPO_POOL_CAPACITY ile değiştirilir (5.000–200.000).
+// Sınıra ulaşılınca havuz bekçisi en zayıf / en benzer soruları ayıklayıp %92,5'ine indirir.
+const envPoolCapacity = Math.floor(Number(process.env.TEMPO_POOL_CAPACITY));
+const QUESTION_POOL_CAPACITY = Number.isFinite(envPoolCapacity) && envPoolCapacity > 0
+ ? Math.max(5_000, Math.min(200_000, envPoolCapacity))
+ : 65_000;
+const QUESTION_POOL_REFILL_TARGET = Math.round(QUESTION_POOL_CAPACITY * 0.925);
+const MAX_QUESTIONS = QUESTION_POOL_CAPACITY;
 const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
 
 const verifier100 = new HundredWayVerifier(dataDir, process.cwd());
@@ -493,7 +539,7 @@ const defaultKeepAlive = process.env.TEMPO_OLLAMA_KEEP_ALIVE && process.env.TEMP
 const DEFAULT_NUM_CTX = clampNumCtx(process.env.TEMPO_NUM_CTX, 4096);
 
 const DIFFICULTIES = ['kolay', 'orta', 'zor'];
-const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama', 'en_iyi_secim'];
+const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama', 'en_iyi_secim', 'tanimdan_terim', 'bosluk_doldurma', 'dogru_yargi', 'ilginc_bilgi', 'durum_kavram', 'kisa_net'];
 // Paragraf (parçaya dayalı) sorular: sınavda bu kalıbın çıkıp çıkmadığı resmî olarak
 // doğrulanmadığı için ana akışı bozmasın diye SEYREK üretilir (ör. her 8 soruda bir).
 const PARAGRAPH_QUESTION_TYPE = 'paragraf';
@@ -514,26 +560,32 @@ const QUESTION_TYPE_HINTS = {
  neden_sonuc: 'NEDEN-SONUÇ: Bir mekanizmanın, uygulamanın veya hatanın fizyolojik/psikolojik/yönetsel sonucunu ya da nedenini sor.',
  istisna: 'İSTİSNA (HANGİSİ DEĞİLDİR / YANLIŞTIR): 3 tamamen doğru, 1 kesin yanlış ifade kurarak istisnayı buldur.',
  uygulama: 'UYGULAMA: Bir kuralı, protokolü, ilkeyi veya hesaplamayı somut bir karar anına uygulat.',
- en_iyi_secim: 'EN İYİ / EN UYGUN SEÇİM (ÇELDİRİCİ SORU): Dört şık da makul ve konuyla ilgili olsun; ancak yalnızca biri kaynağa göre tam ve en kapsamlı doğru olsun. "En uygun yaklaşım hangisidir?" kalıbını kullan; şıkları yaygın hatalı uygulamalardan ve eksik doğru yaklaşımlardan kur.',
+ durum_kavram: 'DURUMDAN KAVRAMA (BASKIN / ÖNCELİKLİ OLAN): Soru kökünde bir koşul ver (süre, şiddet, yaş aralığı, dönem, evre ya da amaç) ve bu koşulda BASKIN / ÖNCELİKLİ / UYGUN olan kavramı sor: "… egzersizlerde enerji üretiminde hangi sistem baskın olarak kullanılır?" gibi. Şıklar aynı sınıflandırmanın üyeleri olsun (hepsi enerji sistemi, hepsi evre, hepsi ilke …).',
+ kisa_net: 'ÇIKMIŞ SORU TARZI (KISA VE NET): Soru kökü TEK cümle ve en fazla 140 karakter olsun; giriş, vaka ya da süsleme yok. Doğrudan bilgiyi sor: "… için hangi … gerekmektedir?", "… aşağıdakilerden hangisidir?". Şıklar 1-3 kelimelik, aynı aileden kavram adları olsun.',
+ tanimdan_terim: 'TANIMDAN TERİME: Soru kökünde kavramın ADINI ANMADAN tanımını, işlevini ya da ayırt edici özelliğini ver; "Tanımı verilen kavram aşağıdakilerden hangisidir?" diye sor. Şıklar aynı aileden kavram adları olsun.',
+ bosluk_doldurma: 'BOŞLUK DOLDURMA: Konu anlatımındaki bilgiyi kendi cümlenle yeniden kur, kritik terimin yerine "……" koy ve "Bu cümlede boş bırakılan yere aşağıdakilerden hangisi getirilmelidir?" diye sor. Şıklar boşluğa dilbilgisi olarak uyan, aynı aileden terimler olsun.',
+ dogru_yargi: 'DOĞRU YARGI: "… ile ilgili aşağıdaki ifadelerden hangisi doğrudur?" diye sor; bütün şıklar aynı konuda, aynı kalıpta tam cümle olsun: biri konu anlatımına göre kesin doğru, diğerleri yaygın yanılgıları taşıyan kesin yanlış ifade.',
+ ilginc_bilgi: 'İLGİNÇ GİRİŞ / GÜNLÜK HAYAT: Soru köküne bilgiyi akılda tutturan kısa ve ilginç bir girişle başla (gündelik bir benzetme, sahadan tanıdık bir an ya da "çoğu kişi … sanır, oysa …" türü bir şaşırtma), sonra konu anlatımındaki bilgiyi sor. Giriş konu anlatımıyla çelişen ya da orada olmayan bir bilgi içermesin.',
+ en_iyi_secim: 'EN İYİ / EN UYGUN SEÇİM (ÇELDİRİCİ SORU): Bütün şıklar makul ve konuyla ilgili olsun; ancak yalnızca biri kaynağa göre tam ve en kapsamlı doğru olsun. "En uygun yaklaşım hangisidir?" kalıbını kullan; şıkları yaygın hatalı uygulamalardan ve eksik doğru yaklaşımlardan kur.',
  paragraf: 'PARAGRAF (PARÇAYA DAYALI): Önce konu anlatımından BİREBİR alınmış kısa bir parça ver, sonra yalnızca o parça okunarak yanıtlanabilecek bir soru sor (parçanın ana fikri, parçadan çıkarılabilecek yargı, parçayla çelişen ifade, parçada vurgulanan ilke). Soru kökü parçaya gönderme yapmalı.'
 };
 const BANNED_OPTION_PATTERN = /\b(yukarıdakilerin hepsi|aşağıdakilerin hepsi|hiçbiri|tümü birden|hepsi doğrudur|yalnız a ve b|a ve b birlikte|her ikisi de)\b/i;
 
-// Çeldirici mühendisliği: dört şık da aynı kavram ailesinden, "az kalsın doğru" niteliğinde
+// Çeldirici mühendisliği: bütün şıklar aynı kavram ailesinden, "az kalsın doğru" niteliğinde
 // ve birbirine yakın olmalı; alakasız/komik dolgu şıklar kesinlikle yasak.
 const DISTRACTOR_ENGINEERING_RULES = `ÇELDİRİCİ MÜHENDİSLİĞİ (EN KRİTİK KURAL — BU KURALA UYMAYAN SORU REDDEDİLİR):
-1) Dört şık da AYNI KAVRAM AİLESİNDEN olmalı: aynı ünitenin terimleri, aynı dilbilgisi kalıbı, birbirine çok yakın uzunluk (±%20) ve aynı ifade biçimi (hepsi isim tamlaması ya da hepsi cümle).
+1) Bütün şıklar AYNI KAVRAM AİLESİNDEN olmalı: aynı ünitenin terimleri, aynı dilbilgisi kalıbı, birbirine çok yakın uzunluk (±%20) ve aynı ifade biçimi (hepsi isim tamlaması ya da hepsi cümle).
 2) Her çeldirici "AZ KALSIN DOĞRU" olmalı: yaygın yanılgı, birbirine karıştırılan iki kavramın yer değiştirmesi, bir koşulun/adımın eksik ya da fazla olması, yakın sayı/süre/değer, kısmen doğru ama eksik ifade, doğru kavramın yanlış bağlama uygulanması.
 3) KESİNLİKLE YASAK ŞIKLAR: konuyla alakasız veya komik dolgu şıklar ("Tahkim kurulu", "Bürokrasi", "İhmal" gibi), alay/mizah içeren ifadeler, "hepsi/hiçbiri" kalıpları, soru kökündeki ayırt edici kelimeyi aynen taşıyan şık, bariz şekilde diğerlerinden uzun/kısa şık.
 4) Doğru şık KAYNAKTA AÇIKÇA desteklenen TEK ifade olmalı; çeldiriciler kaynaktaki başka kavramlardan türetilmeli (uydurma değil) ama doğru kabul edilemeyecek kadar net biçimde yanlış/eksik olmalı.
-5) Şıkları yazmadan önce son kontrol: "Cevabı bilmeyen bir aday bu dört şık arasında gerçekten zorlanır mı? Dört şıktan biri bariz alakasız mı?" — Cevap hayırsa şıkları yeniden yaz.
-6) Çeldirici ağırlıklı soru kalıplarını da kullan: "hangisi yanlıştır/söylenemez", "hangisi ... dışında kalır", "en uygun/en kapsamlı yaklaşım hangisidir" (dört şık da makul ama yalnızca biri tam doğru).`;
+5) Şıkları yazmadan önce son kontrol: "Cevabı bilmeyen bir aday bu şıklar arasında gerçekten zorlanır mı? Şıklardan biri bariz alakasız mı?" — Cevap hayırsa şıkları yeniden yaz.
+6) Çeldirici ağırlıklı soru kalıplarını da kullan: "hangisi yanlıştır/söylenemez", "hangisi ... dışında kalır", "en uygun/en kapsamlı yaklaşım hangisidir" (bütün şıklar makul ama yalnızca biri tam doğru).`;
 
 const PARAGRAPH_QUESTION_RULES = `PARAGRAF SORUSU EK KURALLARI (bu tipte zorunlu):
 1) "paragraph" alanına aşağıdaki KONU ANLATIMI'ndan BİREBİR (hiç değiştirmeden, kelimesi kelimesine) alınmış, art arda gelen 3-5 cümlelik, 250-800 karakterlik bir parça yaz. Uydurma cümle, kendi yorumun veya kaynakta geçmeyen bilgi KESİNLİKLE YASAK.
 2) "question" alanı yalnızca soru kökü olsun (en fazla 260 karakter) ve parçaya gönderme yapsın: "Bu parçaya göre ...", "Parçada vurgulanan ...", "Bu parçadan aşağıdaki yargıların hangisine ulaşılabilir?" gibi.
 3) Soru, parça okunmadan yanıtlanamayacak olsun: doğru cevap parçadaki bilgiyi DOĞRU YORUMLAMAYI gerektirsin (ana fikir / parçada desteklenen yargı / parçayla çelişen ifade / parçadan çıkarım).
-4) Dört şık da parçadaki kavramlarla ilişkili olsun; parçada geçen ama sorunun cevabı OLMAYAN ifadeleri ve yaygın yanlış yorumları çeldirici olarak kullan.
+4) Bütün şıklar parçadaki kavramlarla ilişkili olsun; parçada geçen ama sorunun cevabı OLMAYAN ifadeleri ve yaygın yanlış yorumları çeldirici olarak kullan.
 5) "evidence" alanı, paragraph içinde geçen, kaynaktan birebir alınmış en az 15 karakterlik bir alıntı olsun.`;
 
 const unsupportedThinkModels = new Set();
@@ -814,7 +866,162 @@ async function getPipelineConfig() {
  };
 }
 
+// --- ÜRETİM PLANI (bkz. server/production-plan.mjs) ---------------------------------
+// Bölümlere tur tur uğranır; her uğrayışta bölüme PLAN.quota (50) soru yazılır, zorluklar karışıktır.
+// 1. tur dengelidir; sonraki turlarda kolay payı azalır, sorular yarı yarıya orta ve zor olur.
+// Sorular yalnızca konu özetinden kurulur. TEMPO_PLAN=0 planı kapatır (eski dengeli dolaşım).
+const PLAN = planConfigFromEnv(process.env);
+// Plan hedefi soru havuzunun kapasitesini aşmasın (aşarsa havuz bakımı soruları siler, plan baştan doldurur).
+PLAN.passes = Math.max(1, Math.min(PLAN.passes, Math.floor((QUESTION_POOL_CAPACITY * 0.95) / Math.max(1, contexts.length * PLAN.quota)) || 1));
+const planCap = difficulty => bucketQuota(PLAN.quota, PLAN.passes, PLAN_DIFFICULTIES.indexOf(difficulty));
+let planState = { parked: {}, streaks: {} };
+let planStateLoaded = false;
+let planLastSnapshot = null;
+const planAnnounced = new Set(); // terminale "Plan: …" satırı yazılmış adımlar
+const planFocusRotation = new Map(); // unitId -> deneme sayacı (odak cümlesini döndürmek için)
+
+async function loadPlanState() {
+ if (planStateLoaded) return planState;
+ planStateLoaded = true;
+ try {
+  planState = sanitizePlanState(JSON.parse(await readFile(planFile, 'utf8')), contexts);
+ } catch {
+  planState = sanitizePlanState(null, contexts);
+ }
+ return planState;
+}
+
+async function savePlanState() {
+ try {
+  await mkdir(dataDir, { recursive: true });
+  const tmp = `${planFile}.${process.pid}.${Date.now()}.tmp`;
+  await writeFile(tmp, JSON.stringify(planState, null, 2), 'utf8');
+  await rename(tmp, planFile);
+ } catch { /* plan durumu yazılamazsa üretim durmaz; yalnızca atlananlar yeniden denenir */ }
+}
+
+/**
+ * Boşalan hat için planın işi (plan kapalıysa ya da tamamlandıysa planActive=false; grupta
+ * şu an verilecek iş yoksa step=null ve hat kısa süre bekler).
+ * Aynı anda N soru hazırlanıyorsa konular N'li gruplar hâlinde işlenir: gruptaki bir konu
+ * dolunca boşalan hat sıradaki gruba geçmez, grubun eksik kalan konusuna yardım eder.
+ * @param inflight  { [stepKey]: o adımda şu an hazırlanan soru sayısı }
+ */
+async function nextPlanStep(items, inflight = {}, size = 1) {
+ if (!PLAN.enabled) return { step: null, planActive: false };
+ await loadPlanState();
+ let snap = planSnapshot({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked });
+ if (snap.allParked && Object.keys(inflight).length === 0) {
+  // Geriye yalnızca atlanan adımlar kaldı: hepsi yeniden denenir.
+  tempoLog(`Plan: sıradaki adımların hepsi tamamlandı; atlanan ${snap.parkedSteps.length} adım yeniden deneniyor.`);
+  planState = { parked: {}, streaks: {} };
+  planAnnounced.clear();
+  await savePlanState();
+  snap = planSnapshot({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked });
+ }
+ planLastSnapshot = snap;
+ if (snap.complete) {
+  if (!planAnnounced.has('complete')) {
+   planAnnounced.add('complete');
+   tempoLog(`Plan tamamlandı: ${snap.totalDone}/${snap.totalTarget} soru. Üretim dengeli dolaşımla sürüyor.`);
+  }
+  return { step: null, planActive: false };
+ }
+ const step = pickPlanWork(snap.all, size, inflight);
+ // Konu başına bir kez duyurulur (zorluklar konu içinde karışık ilerler).
+ const visitKey = step ? `${step.pass}|${step.unitId}` : '';
+ if (step && !planAnnounced.has(visitKey)) {
+  planAnnounced.add(visitKey);
+  const unitCells = snap.all.filter(x => x.pass === step.pass && x.unitId === step.unitId);
+  tempoLog(`Plan: ${step.pass}. tur · ${step.bookNo}. kitap ${step.unitNo}. bölüm — ${step.unit} · ${unitCells.map(x => `${x.difficulty} ${x.done}/${x.quota}`).join(', ')} (toplam ${snap.totalDone}/${snap.totalTarget})`);
+ }
+ return { step: step || null, planActive: true };
+}
+
+/** Bir plan adımının sonucunu işler; üst üste sonuçsuz kalan adımı atlar. */
+async function recordPlanOutcome(step, outcome, done = 0) {
+ if (!PLAN.enabled || !step) return;
+ await loadPlanState();
+ const before = JSON.stringify(planState);
+ const res = notePlanOutcome(planState, step, outcome, { stuckLimit: PLAN.stuckLimit, done });
+ planState = res.state;
+ if (res.parkedNow) {
+  const msg = `${describeStep(step)}: üst üste ${PLAN.stuckLimit} deneme soru çıkarmadı (${done}/${step.quota}). Konu özeti bu zorlukta yeni soru için yetersiz kalmış olabilir; adım atlandı, sıradakine geçiliyor.`;
+  tempoLog(`Plan: ${msg}`);
+  pushAutoEvent({ unit: step.unitId, ok: false, kind: 'plan_skipped', message: msg });
+ }
+ if (JSON.stringify(planState) !== before) await savePlanState();
+}
+
+/** /status için plan özeti (arayüz bunu gösterir). */
+async function publicPlan(items) {
+ if (!PLAN.enabled) return { enabled: false };
+ await loadPlanState();
+ const snap = planSnapshot({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked });
+ const slim = step => step && ({ key: step.key, pass: step.pass, difficulty: step.difficulty, unitId: step.unitId, book: step.book, unit: step.unit, bookNo: step.bookNo, unitNo: step.unitNo, done: step.done, quota: step.quota, from: step.from, share: step.share });
+ // Tur özeti: her turda her konuya PLAN.quota soru (zorluklar karışık) yazılır.
+ const passes = Array.from({ length: PLAN.passes }, (_, i) => i + 1).map(pass => {
+  const cells = snap.all.filter(x => x.pass === pass);
+  const done = cells.reduce((sum, x) => sum + Math.max(0, x.done - x.from), 0);
+  const target = cells.reduce((sum, x) => sum + x.share, 0);
+  const unitIds = [...new Set(cells.map(x => x.unitId))];
+  const unitsDone = unitIds.filter(id => cells.every(x => x.unitId !== id || x.done >= x.quota)).length;
+  const mix = PLAN_DIFFICULTIES.map(d => cells.filter(x => x.difficulty === d).reduce((sum, x) => sum + x.share, 0) / Math.max(1, unitIds.length));
+  return { pass, done, target, unitsDone, units: unitIds.length, mix: { kolay: mix[0], orta: mix[1], zor: mix[2] } };
+ });
+ // Zorluk özeti: bütün konularda toplam kolay / orta / zor.
+ const difficulties = PLAN_DIFFICULTIES.map(difficulty => ({
+  difficulty,
+  done: contexts.reduce((sum, c) => sum + Math.min(planCap(difficulty), snap.counts.get(stepKey(c.id, difficulty)) || 0), 0),
+  target: contexts.length * planCap(difficulty)
+ }));
+ const size = Math.max(1, autoState.effectiveConcurrency || 1);
+ const batch = planBatch(snap.all, size);
+ // Şu an üzerinde çalışılan konular: her konunun bu turdaki kolay / orta / zor ilerlemesi.
+ const workingUnits = [...new Set(batch.map(x => `${x.pass}|${x.unitId}`))].map(id => {
+  const [pass, unitId] = [Number(id.split('|')[0]), id.slice(id.indexOf('|') + 1)];
+  const cells = snap.all.filter(x => x.pass === pass && x.unitId === unitId);
+  const first = cells[0];
+  return {
+   pass, unitId, book: first.book, unit: first.unit, bookNo: first.bookNo, unitNo: first.unitNo,
+   done: cells.reduce((sum, x) => sum + Math.max(0, x.done - x.from), 0),
+   target: cells.reduce((sum, x) => sum + x.share, 0),
+   cells: cells.map(x => ({ difficulty: x.difficulty, done: x.done, quota: x.quota, from: x.from, share: x.share, parked: x.parked, streak: planState.streaks[x.key] || 0 }))
+  };
+ });
+ return {
+  enabled: true,
+  quota: PLAN.quota,
+  passCount: PLAN.passes,
+  perUnitTarget: PLAN.quota * PLAN.passes,
+  stuckLimit: PLAN.stuckLimit,
+  summaryOnly: true,
+  complete: snap.complete,
+  totalDone: snap.totalDone,
+  totalTarget: snap.totalTarget,
+  current: slim(snap.current),
+  currentLabel: describeStep(snap.current),
+  // Şu an üzerinde çalışılan grup (eksik kalan konular) ve her birinin sonuçsuz deneme sayacı.
+  working: batch.map(step => ({ ...slim(step), streak: planState.streaks[step.key] || 0 })),
+  workingUnits,
+  parallel: size,
+  mixed: true,
+  passes,
+  difficulties,
+  parked: snap.parkedSteps.map(slim)
+ };
+}
+
+/**
+ * Sıradaki sorunun hedef zorluğu.
+ * Plan açıkken konu içinde zorluklar karışık ilerler: kotası dolmamış kovalardan en az sorusu olan seçilir.
+ * Plan kapalıyken (ya da konunun bütün kotaları dolduysa) ünite içinde en az sorusu olan zorluk seçilir.
+ */
 function nextDifficulty(ctx, items, offset = 0) {
+ if (PLAN.enabled && offset === 0) {
+  const planned = planDifficultyForUnit(ctx.id, items, PLAN.quota, PLAN.passes);
+  if (planned) return planned;
+ }
  const unitAiItems = [...questionBank, ...items].filter(x => x.unitId === ctx.id && DIFFICULTIES.includes(x.difficulty));
  if (offset === 0 && unitAiItems.length === 0) return DIFFICULTIES[0];
  const counts = { kolay: 0, orta: 0, zor: 0 };
@@ -1022,6 +1229,10 @@ async function appendTrace(entry) {
 
 let _qCache = null;
 let _qSig = null;
+// Havuz her değiştiğinde (kayıt ya da dosyanın yeniden okunması) artar; arayüz bu sayede
+// havuzun tamamını yalnızca gerçekten değiştiğinde ister.
+let _qRev = 0;
+const poolRevision = () => `${_qSig || 'bos'}#${_qRev}`;
 async function load() {
  try {
   const st = await stat(dataFile);
@@ -1031,9 +1242,11 @@ async function load() {
   const arr = Array.isArray(data) ? data : [];
   _qCache = arr;
   _qSig = sig;
+  _qRev += 1;
   return arr.slice();
  } catch (e) {
   if (e.code === 'ENOENT') {
+   if (_qSig !== null || !_qCache) _qRev += 1;
    _qCache = [];
    _qSig = null;
    return [];
@@ -1095,9 +1308,9 @@ async function saveJsonAtomic(filePath, dataObj) {
  try {
   const st = await stat(filePath);
   const sig = `${st.mtimeMs}:${st.size}`;
-  if (filePath === dataFile) { _qCache = Array.isArray(dataObj) ? dataObj : []; _qSig = sig; }
+  if (filePath === dataFile) { _qCache = Array.isArray(dataObj) ? dataObj : []; _qSig = sig; _qRev += 1; }
  } catch {
-  if (filePath === dataFile) { _qCache = null; _qSig = null; }
+  if (filePath === dataFile) { _qCache = null; _qSig = null; _qRev += 1; }
  }
  if (_storageCache) {
   _storageCache = { ..._storageCache, generated: _storageCache.generated + Math.max(0, Buffer.byteLength(text, 'utf8') / 10) };
@@ -1155,12 +1368,22 @@ function safeOrigin(req) {
  }
 }
 
+// Test merkezinin kullandığı alanlar (hakem raporları gibi büyük alanlar gönderilmez).
+const QUIZ_FIELDS = ['id', 'unitId', 'status', 'question', 'options', 'answer', 'explanation', 'topic', 'paragraph', 'model', 'difficulty', 'questionType', 'questionAngle', 'examPotential', 'pages', 'passageId', 'tvgfbfAligned'];
+function quizView(q) {
+ const out = {};
+ for (const key of QUIZ_FIELDS) if (q[key] !== undefined && q[key] !== null) out[key] = q[key];
+ return out;
+}
+
+// Denetim özeti havuz değişmedikçe yeniden hesaplanmaz (arayüz 5 saniyede bir sorar).
+const auditCache = { revision: null, value: null };
 function audit(existing) {
  const seen = new Set();
  let duplicates = 0, invalid = 0;
  const answers = new Set();
  for (const q of [...questionBank, ...existing]) {
-  if (!q || typeof q.question !== 'string' || typeof q.answer !== 'string' || !Array.isArray(q.options) || q.options.length !== 4 || !q.options.includes(q.answer) || q.options.some(x => typeof x !== 'string') || new Set((q.options || []).map(norm)).size !== 4) {
+  if (!q || typeof q.question !== 'string' || typeof q.answer !== 'string' || !Array.isArray(q.options) || !isStoredOptionCount(q.options.length) || !q.options.includes(q.answer) || q.options.some(x => typeof x !== 'string') || new Set((q.options || []).map(norm)).size !== q.options.length) {
    invalid++;
    continue;
   }
@@ -1237,15 +1460,20 @@ function optionOverlapRatio(a, b) {
  const setA = new Set(listA.map(o => norm(o)));
  let inter = 0;
  for (const o of listB) if (setA.has(norm(o))) inter++;
- return inter / Math.max(4, listB.length);
+ return inter / Math.max(MIN_OPTION_COUNT, listA.length, listB.length);
 }
 
 /**
  * Havuzdaki (ve kitap bankasındaki) sorularla birebir/çok benzer olup olmadığını
  * yoklar. Yalnızca soru köküne değil; şık takımına ve doğru cevaba da bakar, böylece
  * "tıpatıp benzeri" ve "aynı şıklarla yeniden yazılmış" sorular havuza girmez.
+ *
+ * Aynı bilgi farklı bir soru biçimiyle (ör. önce tanım, sonra vaka ya da boşluk doldurma) yeniden
+ * sorulabilir: iki sorunun tipi biliniyor ve farklıysa "aynı cevap" tek başına tekrar sayılmaz;
+ * kök gerçekten benzemeli (>= 0,70) ya da şıkların büyük bölümü (4 şıkta 3'ü, 5 şıkta 4'ü) aynı olmalıdır. Aynı tipte kurallar eskisi gibidir.
+ * Şık örtüşmesi, iki sorudan şık sayısı fazla olana göre ölçülür (4 ya da 5 şık).
  */
-function findDuplicateReason(draft, ctx, pool) {
+export function findDuplicateReason(draft, ctx, pool) {
  const qNorm = norm(draft.question);
  const answerNorm = norm(draft.answer);
  for (const x of pool) {
@@ -1256,8 +1484,9 @@ function findDuplicateReason(draft, ctx, pool) {
   const optSim = optionOverlapRatio(draft, x);
   if (optSim >= 1) return 'Bu şıkların tamamıyla aynı olduğu bir soru zaten kayıtlı.';
   if (sameUnit && stemSim >= 0.78) return 'Bu ünite için çok benzer bir soru bulundu.';
-  if (sameUnit && stemSim >= 0.62 && norm(x.answer) === answerNorm) return 'Aynı cevabı ve kavramı paylaşan benzer bir soru bulundu.';
-  if (sameUnit && norm(x.answer) === answerNorm && optSim >= 0.5) return 'Aynı cevabı ve şıklarının çoğunu paylaşan bir soru zaten kayıtlı.';
+  const otherForm = Boolean(draft.questionType && x.questionType && draft.questionType !== x.questionType);
+  if (sameUnit && stemSim >= (otherForm ? 0.70 : 0.62) && norm(x.answer) === answerNorm) return 'Aynı cevabı ve kavramı paylaşan benzer bir soru bulundu.';
+  if (sameUnit && norm(x.answer) === answerNorm && optSim >= (otherForm ? 0.75 : 0.5)) return 'Aynı cevabı ve şıklarının çoğunu paylaşan bir soru zaten kayıtlı.';
   if (sameUnit && stemSim >= 0.70 && optSim >= 0.5) return 'Kökü ve şıkları büyük ölçüde örtüşen bir soru bulundu.';
   if (sameUnit && optSim >= 0.9) return 'Şıkları neredeyse aynı olan bir soru zaten kayıtlı.';
  }
@@ -1302,10 +1531,13 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
  if (![question, answer, explanation, evidence, topic].every(x => typeof x === 'string' && x.trim().length >= 4)) {
   throw Error('Soru alanları eksik.');
  }
- if (question.length > 700 || explanation.length > 1200 || topic.length > 120 || evidence.length > 500 || !Array.isArray(options) || options.length !== 4 || options.some(x => typeof x !== 'string' || x.trim().length < 2 || x.length > 300)) {
+ if (Array.isArray(options) && !isDraftOptionCount(options.length)) {
+  throw Error(`Soru ${MIN_OPTION_COUNT} ya da ${OPTION_COUNT} şıklı olmalı (${options.length} şık geldi).`);
+ }
+ if (question.length > 700 || explanation.length > 1200 || topic.length > 120 || evidence.length > 500 || !Array.isArray(options) || options.some(x => typeof x !== 'string' || x.trim().length < 2 || x.length > 300)) {
   throw Error('Soru alanları geçersiz.');
  }
- if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) {
+ if (new Set(options.map(norm)).size !== options.length || !options.includes(answer)) {
   throw Error('Seçenekler veya cevap geçersiz.');
  }
  const hygieneErr = checkDistractorHygiene(options, answer, { question, explanation, evidence, unitId: ctx?.id || '', sourceText: passage?.text || ctx?.text || '' });
@@ -1344,7 +1576,8 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
  if (!fullPrec.ok && fullPrec.firstError) {
   throw Error(fullPrec.firstError);
  }
- const duplicateReason = findDuplicateReason({ question, options, answer }, ctx, [...questionBank, ...bookStyleQuestions, ...existing]);
+ const draftType = wantsParagraph ? PARAGRAPH_QUESTION_TYPE : (QUESTION_TYPES.includes(o.questionType) ? o.questionType : null);
+ const duplicateReason = findDuplicateReason({ question, options, answer, questionType: draftType }, ctx, [...questionBank, ...bookStyleQuestions, ...existing]);
  if (duplicateReason) throw Error(duplicateReason);
  // Evolver AI tarafından kum havuzunda doğrulanan özel JS kuralını uygula
  if (policy?.customRuleCode) {
@@ -1404,7 +1637,7 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
    ? { grounding: { score: Number(groundingRes.score.toFixed(3)), inSource: true } }
    : {}),
   ...(fullPrec.warnings?.length ? { precisionWarnings: fullPrec.warnings.slice(0, 4) } : {}),
-  ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : {}),
+  ...(passage ? { passageId: passage.id, passageHeading: passage.heading, pages: passage.pages } : summaryPagesField(ctx, evidence)),
   ...(typeof o.questionType === 'string' && QUESTION_TYPES.includes(o.questionType) ? { questionType: o.questionType } : {}),
   ...(typeof o.questionAngle === 'string' && QUESTION_ANGLES.includes(o.questionAngle) ? { questionAngle: o.questionAngle } : {}),
   ...(typeof o.bloomLevel === 'string' && o.bloomLevel.trim() ? { bloomLevel: o.bloomLevel.trim().slice(0, 40) } : {}),
@@ -1485,15 +1718,23 @@ async function runModelRequest(which, input, temperature, signal, numPredict = 9
 }
 
 
-async function finalize(parsed, ctx, model, verification, passage = null, policy = null, adaptiveQuality = null, targetAngle = null) {
+async function finalize(parsed, ctx, model, verification, passage = null, policy = null, adaptiveQuality = null, targetAngle = null, targetType = null) {
  return withSaveLock(async () => {
   let latest = await load();
   const record = validate(parsed, ctx, latest, model, passage, policy);
   record.verification = verification;
   record.difficulty = verification.difficulty;
+  // Plan kotası kesindir: iki hat aynı konuda çalışırken bile hiçbir kova 50'yi aşamaz.
+  if (PLAN.enabled && DIFFICULTIES.includes(record.difficulty) && planDifficultyForUnit(ctx.id, latest, PLAN.quota, PLAN.passes)
+   && !planBucketHasRoom(ctx.id, record.difficulty, latest, PLAN.quota, PLAN.passes)) {
+   recordRejection('plan_quota_full');
+   throw Error(`Bu bölümün ${record.difficulty} kotası (${planCap(record.difficulty)}) doldu; soru kaydedilmedi.`);
+  }
   if (Number.isFinite(verification.qualityScore)) record.qualityScore = verification.qualityScore;
   if (Number.isFinite(verification.examPotential)) record.examPotential = verification.examPotential;
   if (!record.questionAngle && targetAngle) record.questionAngle = targetAngle;
+  // Model soru tipini yazmadıysa istenen tip kaydedilir (aynı cümleye sonraki uğrayışta farklı tip seçilebilsin).
+  if (!record.questionType && targetType) record.questionType = targetType;
   if (verification.bloomLevel && !record.bloomLevel) record.bloomLevel = verification.bloomLevel;
   record.curatedBy = 'ai-council';
 
@@ -1518,6 +1759,16 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   telemetry.recentApprovedTimestamps.push(Date.now());
   return record;
  });
+}
+
+/** Havuzdaki şık sayısı dağılımı (arayüz ve durum raporu için). */
+function optionFormatStats(items) {
+ let four = 0, five = 0;
+ for (const q of items || []) {
+  if (!q || q.status !== 'approved' || !Array.isArray(q.options)) continue;
+  if (q.options.length === OPTION_COUNT) five += 1; else if (q.options.length === MIN_OPTION_COUNT) four += 1;
+ }
+ return { allowed: [MIN_OPTION_COUNT, OPTION_COUNT], fourOption: four, fiveOption: five };
 }
 
 function pruneRejectedTail(items, maxRejected = 250) {
@@ -1573,7 +1824,7 @@ async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage =
  if (!parsedDraft || typeof parsedDraft !== 'object') return;
  const { question, options, answer, explanation, evidence, topic } = parsedDraft;
  if (![question, answer, explanation, evidence, topic].every(x => typeof x === 'string' && x.trim().length >= 4)) return;
- if (!Array.isArray(options) || options.length !== 4 || options.some(x => typeof x !== 'string' || x.trim().length < 2)) return;
+ if (!Array.isArray(options) || !isDraftOptionCount(options.length) || options.some(x => typeof x !== 'string' || x.trim().length < 2)) return;
  if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) return;
  await withSaveLock(async () => {
   let latest = await load();
@@ -1670,7 +1921,7 @@ function buildAvoidErrorsSnippet() {
   .map(([k]) => k);
  if (!top.length) return '';
  const hints = {
-  distractor_hygiene: 'Tüm 4 seçenek eşit uzunlukta ve benzersiz olmalı; "hepsi/hiçbiri" asla kullanılmamalı.',
+  distractor_hygiene: 'Tüm seçenekler eşit uzunlukta ve benzersiz olmalı; "hepsi/hiçbiri" asla kullanılmamalı.',
   dual_answer: 'ASLA iki şıkkı da doğru kabul edilebilecek soru kurma; yanlış şıklar kaynakla kesin çelişsin.',
   evidence: 'evidence alanı aşağıdaki KONU ANLATIMI metninden birebir kopyalanmış en az 15 karakterlik tam ifade olmalı.',
   judge_disagree: 'Soruda yalnızca TEK bir tartışmasız doğru cevap olmalı.',
@@ -1689,7 +1940,7 @@ function generatorSchema(qType) {
   evidence: { type: 'string' },
   ...(isParagraph ? { paragraph: { type: 'string' } } : {}),
   question: { type: 'string' },
-  options: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
+  options: { type: 'array', items: { type: 'string' }, minItems: MIN_OPTION_COUNT, maxItems: OPTION_COUNT },
   answer: { type: 'string' },
   explanation: { type: 'string' },
   topic: { type: 'string' },
@@ -1750,6 +2001,59 @@ function packOptionalBlocks(blocks, maxChars) {
  return out.join('');
 }
 
+// Konu özeti kitaptan genişletildi (konu başına ~100 cümle); istemlere özetin TAMAMI değil,
+// ilgili cümlenin (odak / kanıt) çevresindeki pencere konur. Kanıt kapısı ise özetin tamamına bakar.
+const SUMMARY_WINDOW_CHARS = Math.max(1200, Math.min(6000, Number(process.env.TEMPO_SUMMARY_WINDOW_CHARS) || 2400));
+/** Yalnızca-özet modunda sorunun dayandığı cümlenin kitap sayfası ({ pages: [54] }); bilinmiyorsa {}. */
+function summaryPagesField(ctx, evidence) {
+ const page = summaryPageOf(ctx, evidence);
+ const section = summarySectionOf(ctx, evidence);
+ const web = summaryWebSourceOf(ctx, evidence);
+ return {
+  ...(page ? { pages: [page] } : {}),
+  // Kitabın "İçindekiler"ine göre konu başlığı (ve varsa ana konusu).
+  ...(section ? { section: section.title, ...(section.parent ? { sectionParent: section.parent } : {}) } : {}),
+  // İnternetten derlenen ek anlatıma dayanan soru: kaynağı kayıtta görünür.
+  ...(web ? { webSource: { title: web.title, url: web.url, ...(web.topic ? { topic: web.topic } : {}), ...(web.kind ? { kind: web.kind } : {}) } } : {})
+ };
+}
+
+/** Odak cümlesinden daha önce yazılmış soruları (en çok 3) isteme ekler: aynı kök tekrar edilmesin. */
+function focusAskedHint(focus) {
+ const asked = Array.isArray(focus?.asked) ? focus.asked.slice(-3) : [];
+ if (!asked.length) return '';
+ const stems = asked.map(q => String(q.question || '').replace(/\s+/g, ' ').slice(0, 90)).filter(Boolean).join(' / ');
+ return ` Bu cümleden daha önce şu sorular yazıldı; bu kez FARKLI bir soru biçimi ve anlatım kullan: ${stems}`;
+}
+
+function summarySource(ctx, anchor = '') {
+ return summaryWindow(ctx?.text || '', anchor, SUMMARY_WINDOW_CHARS).text;
+}
+
+/** Özetin en az soru sorulmuş cümlesi; her denemede eşit kullanılanlar arasında döner. */
+/**
+ * Odak cümlesinden daha önce soru yazıldıysa bu kez FARKLI bir soru tipi ve açısı seçilir
+ * (aynı bilgi, başka bir soru biçimi). İlk kez sorulan cümlede olağan sıra kullanılır.
+ */
+export function variedTypeAndAngle(focus, fallbackType, fallbackAngle, rotation = 0) {
+ const asked = Array.isArray(focus?.asked) ? focus.asked : [];
+ if (!asked.length) return { type: fallbackType, angle: fallbackAngle };
+ const usedTypes = asked.map(q => q.questionType).filter(Boolean);
+ const usedAngles = asked.map(q => q.questionAngle).filter(Boolean);
+ const type = fallbackType === PARAGRAPH_QUESTION_TYPE || !usedTypes.includes(fallbackType)
+  ? fallbackType
+  : leastUsedOption(QUESTION_TYPES, usedTypes, rotation);
+ const angle = !usedAngles.includes(fallbackAngle) ? fallbackAngle : leastUsedOption(QUESTION_ANGLES, usedAngles, rotation);
+ return { type, angle };
+}
+
+function nextFocusSentence(ctx, items) {
+ const rotation = planFocusRotation.get(ctx.id) || 0;
+ planFocusRotation.set(ctx.id, rotation + 1);
+ const unitItems = items.filter(x => x.unitId === ctx.id && x.status === 'approved');
+ return pickFocusSentence(ctx.text, unitItems, rotation);
+}
+
 function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTypes, policy = null, jarvisMemory = null, researchMemory = null, adaptiveQuality = null, targetAngles = null, studentProfile = null, apexState = null, trainerState = null, promptOpts = {}) {
  const existingQuestions = [...questionBank, ...items].filter(x => x.unitId === ctx.id);
  // Tekrar listesi: önce AYNI pasajdan yazılmış sorular (asıl tekrar riski), sonra ünitenin son soruları.
@@ -1783,7 +2087,7 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
  const perf = lessonEngine.formatStudentPerformance(ctx.id, studentProfile);
  const perfHint = perf.answered > 0 ? `\nÖĞRENCİ PERFORMANS SİNYALİ: ${perf.summaryText} (Zorlandığı yerleri kalıcı öğretecek net sorular kur.)` : '';
  const policyRule = policy?.generatorAddendum ? `\nEK POLİTKA DİREKTİFİ: ${policy.generatorAddendum}` : '';
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, promptOpts?.focus?.sentence || '');
  const pageInfo = passage?.pages?.length ? ` (Kitap s. ${passage.pages.join(', ')})` : '';
  const sectionInfo = passage?.heading ? ` | Alt Bölüm: ${passage.heading}${pageInfo}` : '';
  const angles = Array.isArray(targetAngles) && targetAngles.length ? targetAngles : targetDifficulties.map((_, i) => QUESTION_ANGLES[i % QUESTION_ANGLES.length]);
@@ -1795,11 +2099,22 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
   const typeHint = QUESTION_TYPE_HINTS[qType] || '';
   const angleHint = QUESTION_ANGLE_HINTS[qAngle] || '';
   const isParagraph = qType === PARAGRAPH_QUESTION_TYPE;
-  const coverageHint = buildConceptCoverageSnippet(ctx, items, passage);
-  const bookSeedHint = buildBookSeedSnippet(ctx, items);
+  // Yalnızca-özet modunda kitap içeriği taşıyan bloklar (kitap sorusu örneği, kitap pasajı anahtar
+  // kelimeleri, kitaptan çapraz bağlam) eklenmez: model özet dışı bilgiye kaymasın.
+  const summaryOnly = promptOpts?.summaryOnly === true;
+  const coverageHint = summaryOnly ? '' : buildConceptCoverageSnippet(ctx, items, passage);
+  const bookSeedHint = summaryOnly ? '' : buildBookSeedSnippet(ctx, items);
+  const focus = summaryOnly ? promptOpts?.focus : null;
+  const focusHint = focus?.sentence
+   ? `\nODAK CÜMLE (soruyu bu cümledeki bilgiden kur, \"evidence\" alanına bu cümleyi kopyala): \"${focus.sentence}\"${diff === 'kolay' ? '' : ' Zorluk için metindeki başka bir bilgiyle ilişkilendirebilirsin.'}${focusAskedHint(focus)}`
+   : '';
+  const focusSection = focus?.sentence ? summarySectionOf(ctx, focus.sentence) : null;
+  // Sınav tarzı örneği: bu soru tipine yakışan gerçek bir sınav / kitap sorusu (yalnızca BİÇİM için).
+  const styleExample = isParagraph ? null : pickStyleExample(examStyleLibrary, { unitId: ctx.id, questionType: qType, rotation: existingQuestions.length });
+  const examStyleHint = buildExamStyleBlock(styleExample, { sameUnit: styleExample?.unitId === ctx.id });
 
   // 1) ZORUNLU BAŞLIK: görev + hedefler + kurallar + çıktı biçimi (her çağrıda aynı iskelet).
-  const head = `Sen antrenörlük temel eğitim sınavı için ÖSYM tarzında soru yazan uzman bir ölçme-değerlendirme yazarısın. En altta verilen KONU ANLATIMI metnine dayanarak, KESİNLİKLE TEK doğru cevabı olan, dört seçenekli, özgün BİR sınav sorusu yaz.
+  const head = `Sen antrenörlük temel eğitim sınavı için ÖSYM tarzında soru yazan uzman bir ölçme-değerlendirme yazarısın. En altta verilen KONU ANLATIMI metnine dayanarak, KESİNLİKLE TEK doğru cevabı olan, 4-5 seçenekli, özgün BİR sınav sorusu yaz.
 Sorunun zorluk seviyesi: ${diffMap[diff]}
 Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
@@ -1807,21 +2122,22 @@ Soru tipi: ${typeHint}
 YAZIM SIRASI:
 1) KONU ANLATIMI'ndan sınavda sorulmaya değer TEK bir bilgi seç; o bilgiyi içeren cümleyi "evidence" alanına HARFİ HARFİNE kopyala (kısaltma, birleştirme, yeniden yazma yok).
 2) Yalnızca o bilgiyi ölçen, açık ve tek yargılı bir soru kökü yaz.
-3) Doğru cevabı yaz; ardından aynı kavram ailesinden, metne göre KESİN YANLIŞ üç çeldirici yaz.
+3) Doğru cevabı yaz; ardından aynı kavram ailesinden, metne göre KESİN YANLIŞ 3-4 çeldirici yaz.
 
 ÖSYM SORU KOMİSYONU KURALLARI (uymayan soru otomatik reddedilir):
 - KAYNAK SINIRI: Soru, doğru cevap ve çeldiriciler yalnızca KONU ANLATIMI'nda geçen kavramlarla kurulur. Metinde olmayan bilgi, terim, sayı veya isim uydurma.${isParagraph ? '' : ' Soru kökünde "metne göre", "parçaya göre", "yukarıdaki metinde" gibi ifadeler kullanma; aday metni görmez.'}
 - TEK DOĞRU: Yalnızca bir şık doğru olmalı; diğer üçü metne göre açıkça yanlış olmalı. İki şık aynı anlama gelmemeli, bir şık diğerini kapsamamalı.
-- ÇELDİRİCİLER: Dört şık aynı türden (hepsi kavram adı ya da hepsi aynı kalıpta ifade) ve benzer uzunlukta olmalı; en uzun şık en kısanın 2 katını geçmesin, doğru şık diğerlerinden belirgin uzun olmasın. Çeldiricileri adayın gerçekten karıştıracağı komşu kavramlardan seç; konuyla ilgisiz dolgu şık yazma.
+- ÇELDİRİCİLER: Şıklar aynı türden (hepsi kavram adı ya da hepsi aynı kalıpta ifade) ve benzer uzunlukta olmalı; en uzun şık en kısanın 2 katını geçmesin, doğru şık diğerlerinden belirgin uzun olmasın. Çeldiricileri adayın gerçekten karıştıracağı komşu kavramlardan seç; konuyla ilgisiz dolgu şık yazma.
 - YASAK: "Hepsi", "Hiçbiri", "Yukarıdakilerin hepsi", "A ve B" türü şıklar; şıkların başına A) B) gibi harf koymak; doğru cevabın ayırt edici kelimesini soru kökünde kullanmak.
 - OLUMSUZ KÖK: "değildir / yanlıştır / söylenemez" kullanırsan bu kelimeyi BÜYÜK HARFLE yaz ve diğer üç şıkkın metne göre doğru olduğundan emin ol.
 - DİL: Akıcı ve kusursuz sınav Türkçesi; soru kökü en fazla 300 karakter.
-- TEKRAR YASAĞI: Aşağıda listelenen eski sorulara benzer soru kurma; farklı bir bilgi, farklı bir kök ve farklı bir doğru cevap seç.
+- TEKRAR YASAĞI: Aşağıda listelenen eski sorulara benzer soru kurma; ${focus?.asked?.length ? 'aynı bilgi daha önce sorulduysa bu kez BAMBAŞKA bir soru kökü ve soru biçimi kullan (doğru cevap aynı kalabilir, anlatım aynı olamaz)' : 'farklı bir bilgi, farklı bir kök ve farklı bir doğru cevap seç'}.
 ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
-ÇIKTI: Yalnızca tek bir JSON nesnesi döndür. Alanlar: evidence (KONU ANLATIMI'ndan birebir kopyalanmış, doğru cevabı kanıtlayan cümle; en az 20 karakter)${isParagraph ? ', paragraph (KONU ANLATIMI\'ndan birebir alınmış 3-5 cümlelik parça)' : ''}, question (soru kökü), options (4 farklı metin), answer (options içindeki doğru şıkkın metni, birebir aynı), explanation (1-2 cümle: neden doğru + akılda tutma ipucu), topic (2-5 kelimelik konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").`;
+ÇIKTI: Yalnızca tek bir JSON nesnesi döndür. Alanlar: evidence (KONU ANLATIMI'ndan birebir kopyalanmış, doğru cevabı kanıtlayan cümle; en az 20 karakter)${isParagraph ? ', paragraph (KONU ANLATIMI\'ndan birebir alınmış 3-5 cümlelik parça)' : ''}, question (soru kökü), options (4-5 farklı metin), answer (options içindeki doğru şıkkın metni, birebir aynı), explanation (1-2 cümle: neden doğru + akılda tutma ipucu), topic (2-5 kelimelik konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").`;
 
   // 2) ZORUNLU KUYRUK: kaynak metin her zaman EN SONDA ve TAM olarak yer alır.
-  const tail = `\nKitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}.\nKONU ANLATIMI: ${sourceText}`;
+  const topicInfo = !sectionInfo && focusSection?.title ? ` | Konu: ${focusSection.parent ? `${focusSection.parent} › ` : ''}${focusSection.title}` : '';
+  const tail = `\nKitap: ${ctx.book}. Ünite: ${ctx.unit}${sectionInfo}${topicInfo}.\nKONU ANLATIMI: ${sourceText}`;
 
   // ÖSYM komisyonu yazım protokolünün genel maddeleri yukarıdaki KURALLAR bölümünde zaten
   // (tekrarsız) yer alır; buraya yalnızca üniteye özgü çeldirici kavram tuzakları eklenir.
@@ -1834,11 +2150,13 @@ ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
   const budget = Number.isFinite(promptOpts?.budgetChars) ? promptOpts.budgetChars : generatorPromptBudget(promptOpts?.model || '', isParagraph ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT);
   const freeChars = Math.max(0, Math.min(3200, budget - head.length - tail.length));
   const optional = packOptionalBlocks([
+   focusHint,
    axiomHint,
    osymUnitTraps,
    avoidQuestions ? `\nBU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.` : '',
    jarvisHint,
    researchHint,
+   examStyleHint,
    coverageHint,
    bookSeedHint,
    recentAnswers ? `\nFARKLI BİR DOĞRU CEVAP SEÇ (yakın zamanda kullanılanlar): ${recentAnswers}.` : '',
@@ -1848,7 +2166,7 @@ ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
    recentOptionSets ? `\nYAKIN ZAMANDA KULLANILAN ÇELDİRİCİLERİ TEKRAR KULLANMA: ${recentOptionSets}.` : '',
    exemplars,
    tvgfbfStyleHint,
-   ragCrossHint,
+   summaryOnly ? '' : ragCrossHint,
    trainerHint,
    layeredWorkflowHint,
    apexHint
@@ -1861,7 +2179,7 @@ ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
 ${specs}
 ÖSYM Komisyonu Kuralları:
 - Kolay da olsa orta da olsa zor da olsa her soru gerçek ÖSYM seçiciliğinde ve kalıcı öğretici olmalı (sığ ezber sorma).
-- Tüm 4 şık aynı kavram ailesinden, birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; konuyla alakasız/komik dolgu şık KESİNLİKLE yasak; "hepsi/hiçbiri" yasak.
+- Tüm şıklar (4 ya da 5) aynı kavram ailesinden, birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; konuyla alakasız/komik dolgu şık KESİNLİKLE yasak; "hepsi/hiçbiri" yasak.
 - Her yanlış şık anlatıma göre kesinlikle YANLIŞ olmalı; soru kökünde doğru cevaba kelime sızıntısı olmamalı.
 - Her sorunun "evidence" alanı KONU ANLATIMI içinden kelime kelime alınmış en az 15 karakterlik bir alıntı olsun.
 - Kısa ama püf noktasını öğreten explanation yaz.
@@ -1876,7 +2194,7 @@ KONU ANLATIMI: ${sourceText}`;
 }
 
 function buildVerifierPrompt(ctx, draft, passage = null, policy = null, apexState = null) {
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, draft?.evidence || draft?.question || '');
  const policyRule = policy?.judgeAddendum ? `\nEK KURAL: ${policy.judgeAddendum}` : '';
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
  const paragraphBlock = typeof draft.paragraph === 'string' && draft.paragraph.trim() ? `\nPARÇA: ${draft.paragraph.trim()}` : '';
@@ -1903,7 +2221,7 @@ SEÇENEKLER: ${JSON.stringify(draft.options)}`;
 }
 
 function buildBatchVerifierPrompt(ctx, itemsList, passage = null, policy = null, apexState = null) {
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, itemsList?.[0]?.draft?.evidence || '');
  const policyRule = policy?.judgeAddendum ? `\nEK DENETİM KURALI: ${policy.judgeAddendum}` : '';
  const apexJudge = apex.getBotDirectiveBlock(apexState, 'judge');
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
@@ -1953,6 +2271,9 @@ function parseJudgeVerdict(rawCheck, jm, draft, ctx, passage) {
 
 function difficultyAccepted(agreedDifficulty, targetDifficulty, ctx, items, smartDifficulty) {
  if (agreedDifficulty === targetDifficulty) return true;
+ // Plan açıkken: hakemlerin verdiği zorluğun bu konudaki kotası dolmadıysa soru o zorlukla
+ // kaydedilir (iyi soru çöpe gitmez, ileriki tura sayılır); kota doluysa reddedilir.
+ if (PLAN.enabled && planDifficultyForUnit(ctx.id, items, PLAN.quota, PLAN.passes)) return planAcceptsDifficulty(ctx.id, agreedDifficulty, targetDifficulty, items, PLAN.quota, PLAN.passes);
  if (!smartDifficulty) return false;
  const counts = { kolay: 0, orta: 0, zor: 0 };
  for (const it of items) if (it.unitId === ctx.id && DIFFICULTIES.includes(it.difficulty)) counts[it.difficulty]++;
@@ -1979,15 +2300,15 @@ function resolveJudgedDifficulty(judges, targetDifficulty) {
 }
 
 async function trySelfCorrect(parsedDraft, critiqueReason, ctx, model, targetDifficulty, passage, signal, fastThink) {
- const sourceText = passage ? passage.text : ctx.text;
+ const sourceText = passage ? passage.text : summarySource(ctx, parsedDraft?.evidence || parsedDraft?.question || '');
  const diag = parsedDraft ? precisionEngine.evaluateDraftFull(parsedDraft, ctx, passage) : null;
  const surgicalHints = diag && (diag.errors?.length || diag.warnings?.length)
   ? `\nPSİKOMETRİ VE DOĞRULUK CERRAHİSİ (${diag.precisionScore}/100):\n- Hatalar: ${(diag.errors || []).join(' | ') || 'Yok'}\n- Uyarılar: ${(diag.warnings || []).join(' | ') || 'Yok'}`
   : '';
  const hasParagraph = typeof parsedDraft?.paragraph === 'string' && parsedDraft.paragraph.trim();
  const fixPrompt = `Aşağıdaki çok seçenekli soru taslağı denetimde şu gerekçeyle reddedildi: "${String(critiqueReason || '').slice(0, 400)}".${surgicalHints}
-Yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu düzelt. Gerekirse soru kökünü ve çeldiricileri baştan yaz; ama sonuç KESİNLİKLE TEK DOĞRU CEVAPLI olsun (ikinci bir doğru seçenek ihtimali bırakma), dört şık aynı kavram ailesinden ve benzer uzunlukta olsun (en uzun şık en kısanın 2 katını geçmesin), soru kökü doğru cevabı sızdırmasın, "hepsi/hiçbiri" kullanılmasın, hedef zorluk "${targetDifficulty}" olsun.
-Yalnızca JSON döndür: evidence (KONU ANLATIMI'ndan birebir kopyalanmış cümle)${hasParagraph ? ', paragraph (ESKİ TASLAKTAKİ PARÇAYI KELİMESİ KELİMESİNE AYNEN KORU; değiştirme!)' : ''}, question, options (4 metin), answer (options içindeki doğru metin), explanation, topic, questionType, questionAngle, bloomLevel.
+Yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu düzelt. Gerekirse soru kökünü ve çeldiricileri baştan yaz; ama sonuç KESİNLİKLE TEK DOĞRU CEVAPLI olsun (ikinci bir doğru seçenek ihtimali bırakma), şıklar aynı kavram ailesinden ve benzer uzunlukta olsun (en uzun şık en kısanın 2 katını geçmesin), soru kökü doğru cevabı sızdırmasın, "hepsi/hiçbiri" kullanılmasın, hedef zorluk "${targetDifficulty}" olsun.
+Yalnızca JSON döndür: evidence (KONU ANLATIMI'ndan birebir kopyalanmış cümle)${hasParagraph ? ', paragraph (ESKİ TASLAKTAKİ PARÇAYI KELİMESİ KELİMESİNE AYNEN KORU; değiştirme!)' : ''}, question, options (4 ya da 5 metin), answer (options içindeki doğru metin), explanation, topic, questionType, questionAngle, bloomLevel.
 ESKİ TASLAK: ${JSON.stringify(parsedDraft)}
 KONU ANLATIMI: ${sourceText}`;
  const { parsed, elapsed } = await runModel(model, fixPrompt, 0.35, signal, hasParagraph ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT, {
@@ -2013,7 +2334,7 @@ function preflightRejectionKey(message) {
  const msg = String(message || '');
  if (/örtüş|uzun|kalitesiz|alakasız|çeldirici|sızdır|kapsadığı|simetri/i.test(msg)) return 'distractor_hygiene';
  if (/Kaynak alıntısı|kaynak alıntısı|evidence|sayısal ifade/i.test(msg)) return 'evidence';
- if (/Soru alanları|Seçenekler veya cevap|geçerli bir nesne|paragraph|Paragraf/i.test(msg)) return 'format';
+ if (/Soru alanları|şıklı olmalı|Seçenekler veya cevap|geçerli bir nesne|paragraph|Paragraf/i.test(msg)) return 'format';
  if (/zaten kayıtlı|benzer/i.test(msg)) return 'duplicate';
  if (/özet|kaynakta|kapsam|temellen/i.test(msg)) return 'grounding';
  return 'preflight_other';
@@ -2044,11 +2365,19 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  const resultAudit = audit(items);
  if (resultAudit.invalid || resultAudit.duplicates) throw Error('Havuz denetiminde biçim veya birebir tekrar hatası var; üretim durduruldu.');
 
- const passage = passageMode === 'full-book' ? selectPassageForUnit(ctx, items, passageMode) : null;
+ // Plan açıkken sorular YALNIZCA konu özetinden kurulur (kitap pasajı kullanılmaz).
+ const summaryOnly = opts.summaryOnly ?? (PLAN.enabled || passageMode === 'summary-only');
+ const passage = !summaryOnly && passageMode === 'full-book' ? selectPassageForUnit(ctx, items, passageMode) : null;
  notePassageAttempt(passage);
- const targetDifficulty = nextDifficulty(ctx, items);
- const targetType = nextQuestionType(ctx, items);
- const targetAngle = nextQuestionAngle(ctx, items);
+ const targetDifficulty = DIFFICULTIES.includes(opts.targetDifficulty) ? opts.targetDifficulty : nextDifficulty(ctx, items);
+ // Aynı konuda aynı anda ikinci bir soru hazırlanıyorsa farklı tip ve açı kullanılır.
+ const variantOffset = Number.isInteger(opts.variantOffset) && opts.variantOffset > 0 ? opts.variantOffset : 0;
+ // Odak cümlesi (yalnızca-özet modu): özetin en az soru sorulmuş cümlesi. Aynı cümleye yeniden
+ // uğranıyorsa soru tipi ve açısı öncekilerden farklı seçilir.
+ const focusSentence = summaryOnly ? nextFocusSentence(ctx, items) : null;
+ const varied = variedTypeAndAngle(focusSentence, nextQuestionType(ctx, items, variantOffset), nextQuestionAngle(ctx, items, variantOffset), items.length + variantOffset);
+ const targetType = varied.type;
+ const targetAngle = varied.angle;
  const repairSource = `${passage?.text || ''}\n${ctx?.text || ''}`;
 
  const runInstantLocalFallback = async (reason = 'subsecond-local') => {
@@ -2068,7 +2397,7 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   telemetry.totalGenMs += Math.round(sub.elapsedMs);
   telemetry.verifyCalls += 2;
   onPhase?.('saving');
-  return finalize(sub.parsed, ctx, model || 'subsecond-local-council', sub.verification, passage, policy, adaptiveQuality, targetAngle);
+  return finalize(sub.parsed, ctx, model || 'subsecond-local-council', sub.verification, passage, policy, adaptiveQuality, targetAngle, targetType);
  };
 
  if (forceSubSecond) {
@@ -2081,7 +2410,9 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  const numPredictGen = subSecondEnabled ? 320 : (isParagraphTarget ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT);
  const prompt = buildGeneratorPrompt(ctx, items, passage, [targetDifficulty], [targetType], policy, jarvisMemory, researchMemory, adaptiveQuality, [targetAngle], studentProfile, apexState, trainerState, {
   model,
-  budgetChars: generatorPromptBudget(model, numPredictGen)
+  budgetChars: generatorPromptBudget(model, numPredictGen),
+  summaryOnly,
+  focus: focusSentence
  });
  const temp = Math.max(0.4, Math.min(0.95, 0.7 + (policy?.temperatureOffset || 0)));
 
@@ -2138,6 +2469,18 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   }
  }
 
+ // --- YALNIZCA ÖZET KAPISI: kanıt cümlesi konu özetinde geçmiyorsa soru alınmaz ---
+ // (Genel kaynak kapısı kitabın tam metnini de kabul eder; plan modunda özet dışı bilgi sorulmaz.)
+ if (summaryOnly) {
+  const inSummary = evidenceWithinSummary(draft.evidence, ctx.text);
+  if (!inSummary.ok) {
+   telemetry.rejectedPreflight++;
+   recordRejection('summary_only', inSummary.reason);
+   await appendTrace({ type: 'rejected_preflight', unitId: ctx.id, draft: parsed, reason: inSummary.reason });
+   throw Error(inSummary.reason);
+  }
+ }
+
  // --- İKİ BAĞIMSIZ HAKEM ---
  // Kadro VRAM'e birlikte sığıyorsa iki hakem aynı anda çalışır (hız). Sığmıyorsa sırayla
  // çalışır ve 1. hakem reddederse 2. hakem modeli hiç yüklenmez (boşuna model takası yok).
@@ -2191,7 +2534,7 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
     reason: 'Milisaniye altı ikincil doğrulama: kaynak alıntısı ve şık hijyeni doğrulandı.'
    }));
    onPhase?.('saving');
-   return finalize(parsed, ctx, model, { judges: jFallback, answer: draft.answer, difficulty: targetDifficulty, qualityScore: 4.75, examPotential: 4.8, subSecondVerified: true }, passage, policy, adaptiveQuality, targetAngle);
+   return finalize(parsed, ctx, model, { judges: jFallback, answer: draft.answer, difficulty: targetDifficulty, targetDifficulty, qualityScore: 4.75, examPotential: 4.8, subSecondVerified: true }, passage, policy, adaptiveQuality, targetAngle);
   }
   // Altyapı hatası (zaman aşımı, bağlantı, model yok) içerik reddi değildir.
   if (isInfraError(judgeErr)) throw judgeErr;
@@ -2245,13 +2588,14 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   judges,
   answer: draft.answer,
   difficulty: agreedDifficulty,
+  targetDifficulty,
   qualityScore: avgQuality,
   examPotential: avgExamPot,
   ...(resolvedDifficulty.agreement !== 'unanimous' ? { difficultyAgreement: resolvedDifficulty.agreement } : {}),
   ...(bloomLevel ? { bloomLevel } : {})
  };
  onPhase?.('saving');
- const record = await finalize(parsed, ctx, model, verification, passage, policy, adaptiveQuality, targetAngle);
+ const record = await finalize(parsed, ctx, model, verification, passage, policy, adaptiveQuality, targetAngle, targetType);
  notePassageSuccess(passage);
  return record;
 }
@@ -2773,13 +3117,19 @@ function handleUnitFailure(ctx, e, { manual = false } = {}) {
  return info;
 }
 
-function handleUnitSuccess(ctx, record, startedAt) {
+function handleUnitSuccess(ctx, record, startedAt, plan = null) {
  autoState.consecutiveInfraErrors = 0;
  autoState.backoffUntil = 0;
  telemetry.lastApprovedAt = Date.now();
  const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
  noteUnitOutcome(ctx, { ok: true, kind: 'approved', difficulty: record?.difficulty, seconds: Number(secs), message: String(record?.question || '').slice(0, 160) });
- tempoLog(`✓ ${ctx.id} onaylandı (${record?.difficulty || '?'}, ${secs} sn) — ${String(record?.question || '').slice(0, 90)}`);
+ const target = record?.verification?.targetDifficulty;
+ // Hakemler hedeften farklı etiket verdiyse görünür olsun: "hep kolay" şikâyetinde sorunun
+ // hedef sırasında mı yoksa modelin/hakemin etiketinde mi olduğu buradan anlaşılır.
+ const targetNote = target && target !== record?.difficulty ? `, hedef ${target}` : '';
+ const planNote = plan?.step ? ` [${plan.step.bookNo}. kitap ${plan.step.unitNo}. konu · ${plan.step.difficulty} ${plan.done}/${plan.step.quota}]` : '';
+ const pageNote = !record?.passageId && record?.pages?.length ? `, kitap s.${record.pages.join(',')}` : '';
+ tempoLog(`✓ ${ctx.id}${planNote} onaylandı (${record?.difficulty || '?'}${targetNote}${pageNote}, ${secs} sn) — ${String(record?.question || '').slice(0, 90)}`);
 }
 
 async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeoutMs = UNIT_SAFETY_TIMEOUT_MS, forceSubSecond = false, subSecondBudgetMs = SUBSECOND_BOT_BUDGET_MS } = {}) {
@@ -2818,7 +3168,8 @@ async function generateOneManual(ctx, model, verifierModel, judge2Model, { timeo
 
 function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg, extra = {}) {
  const startedAt = Date.now();
- const entry = { unit: ctx.id, phase: 'loading', startedAt, model };
+ const planStep = extra.planStep || null;
+ const entry = { unit: ctx.id, phase: 'loading', startedAt, model, ...(planStep ? { planKey: planStep.key } : {}) };
  const ctrl = new AbortController();
  autoControllers.set(ctrl, entry);
  // Güvenlik ağı: tek tek model çağrılarının kendi bekçileri var; bu yalnızca yuva sızıntısını önler.
@@ -2829,12 +3180,23 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
   smartDifficulty: cfg.smartDifficulty,
   selfCorrection: cfg.selfCorrection,
   fastThink: cfg.fastThink,
+  ...(planStep ? { targetDifficulty: planStep.difficulty } : {}),
+  ...(extra.variantOffset ? { variantOffset: extra.variantOffset } : {}),
   ...(typeof extra.parallelJudges === 'boolean' ? { parallelJudges: extra.parallelJudges } : {})
  })
-  .then(record => { handleUnitSuccess(ctx, record, startedAt); })
-  .catch(e => {
+  .then(async record => {
+   const onTarget = planStep && record?.difficulty === planStep.difficulty;
+   // İki hat aynı adımda çalışabildiği için ilerleme havuzdan yeniden sayılır.
+   const done = planStep ? (countApproved(await load().catch(() => [])).get(planStep.key) || 0) : 0;
+   handleUnitSuccess(ctx, record, startedAt, planStep ? { step: planStep, done } : null);
+   // Hedef kovaya giren soru ilerlemedir; başka zorlukla kaydedilen soru sayacı değiştirmez.
+   await recordPlanOutcome(planStep, onTarget ? 'approved' : 'other', done);
+  })
+  .catch(async e => {
    const info = handleUnitFailure(ctx, e);
    if (!info.silent) autoLastError = info.message;
+   // Altyapı hataları (Ollama kapalı, zaman aşımı) ve durdurma, adımı "sonuçsuz" saymaz.
+   if (!info.silent && !info.infra) await recordPlanOutcome(planStep, 'rejected', planStep?.done || 0);
   })
   .finally(() => { clearTimeout(timeout); autoControllers.delete(ctrl); });
  return run;
@@ -2852,7 +3214,7 @@ async function healPoolForAudit() {
   const kept = [];
   let removedInvalid = 0, removedDuplicate = 0;
   for (const q of items) {
-   const valid = q && typeof q.question === 'string' && typeof q.answer === 'string' && Array.isArray(q.options) && q.options.length === 4 && q.options.includes(q.answer) && q.options.every(x => typeof x === 'string') && new Set(q.options.map(norm)).size === 4;
+   const valid = q && typeof q.question === 'string' && typeof q.answer === 'string' && Array.isArray(q.options) && isStoredOptionCount(q.options.length) && q.options.includes(q.answer) && q.options.every(x => typeof x === 'string') && new Set(q.options.map(norm)).size === q.options.length;
    if (!valid) { removedInvalid++; continue; }
    const key = norm(q.question);
    if (seen.has(key)) { removedDuplicate++; continue; }
@@ -3141,7 +3503,12 @@ async function runPoolCuratorScan({ forcePrune = false } = {}) {
   const [jCfg, jMem, rMem, apexState] = await Promise.all([jarvis.loadConfig(), jarvis.loadMemory(), researchAgent.loadMemory(), apex.loadState()]);
   if (jCfg.autoCuratePool === false && !forcePrune) return { updated: 0 };
   const adaptive = jarvis.computeAdaptiveQuality(jMem, rMem, getTelemetrySnapshot(), apexState);
-  const curatorThreshold = Math.max(adaptive.minQualityScore, Number(apexState?.hyperParams?.curatorMinScoreHint) || 0);
+  // Eşik HAKEM ölçeğindedir (1-5): soru kaydındaki qualityScore iki hakemin 1-5 puanıdır.
+  // Apex'in curatorMinScoreHint değeri (40-80) 0-100'lük bileşik puan ölçeğindedir; ikisi
+  // Math.max ile karıştırıldığında eşik 68 oluyor ve 1-5 puanlı BÜTÜN onaylı sorular (en iyileri
+  // dahil) "eşik altı" sayılıp reddediliyordu: havuz her bakımda 10 soruya düşüyor, plan aynı
+  // konuları baştan dolduruyordu. Bileşik puan eşiği yalnızca bileşik puanla karşılaştırılır.
+  const curatorThreshold = Math.min(5, Math.max(1, Number(adaptive.minQualityScore) || 3));
   const result = await withSaveLock(async () => {
    const items = await load();
    const curated = await poolCurator.scanAndCurate({
@@ -3150,6 +3517,28 @@ async function runPoolCuratorScan({ forcePrune = false } = {}) {
     adaptiveQuality: adaptive,
     forcePrune
    });
+   // Eski ölçek hatasıyla (yukarıdaki not) haksız yere reddedilmiş sorular geri alınır: hakem puanı
+   // bugünkü eşiği geçiyorsa, aynı kök onaylı havuzda yoksa ve plan kotası doluysa aşılmıyorsa.
+   let councilRestored = 0;
+   {
+    const approvedStems = new Set(curated.items.filter(x => x.status === 'approved').map(x => String(x.question || '').trim().toLocaleLowerCase('tr-TR')));
+    const bucket = countApproved(curated.items);
+    for (const q of curated.items) {
+     if (q.status !== 'rejected' || q.curatedBy !== 'ai-council') continue;
+     if (!String(q.curationReason || '').startsWith('Otonom Kurul: Gelişen kalite standardı')) continue;
+     if (!Number.isFinite(q.qualityScore) || q.qualityScore < curatorThreshold || q.qualityScore > 5) continue;
+     const stem = String(q.question || '').trim().toLocaleLowerCase('tr-TR');
+     if (!stem || approvedStems.has(stem)) continue;
+     const key = stepKey(q.unitId, q.difficulty);
+     if (PLAN.enabled && (bucket.get(key) || 0) >= planCap(q.difficulty)) continue;
+     q.status = 'approved';
+     delete q.curationReason;
+     approvedStems.add(stem);
+     bucket.set(key, (bucket.get(key) || 0) + 1);
+     councilRestored++;
+    }
+    if (councilRestored) tempoLog(`Havuz bakımı: eski ölçek hatasıyla reddedilmiş ${councilRestored} soru yeniden onaylı.`);
+   }
    // Ayrıca Adaptive Quality seviyesi yükseldikçe eşik altı kalanları işaretle (güvenli alt sınırla)
    let councilRejected = 0;
    const remainingApproved = curated.items.filter(x => x.status === 'approved').length;
@@ -3165,10 +3554,10 @@ async function runPoolCuratorScan({ forcePrune = false } = {}) {
     }
    }
    const totalRemoved = (curated.removedCount || 0) + councilRejected;
-   if (totalRemoved > 0 || curated.scoredCount > 0) {
+   if (totalRemoved > 0 || curated.scoredCount > 0 || councilRestored > 0) {
     await save(pruneRejectedTail(curated.items));
    }
-   return { ...curated.report, councilRejected };
+   return { ...curated.report, councilRejected, councilRestored };
   });
   for (const dropped of (result.droppedSamples || []).slice(0, 6)) {
    await appendTrace({ type: 'curator_pruned', unitId: dropped.unitId, question: dropped.question, reason: dropped.reason, score: dropped.score }).catch(() => {});
@@ -3767,14 +4156,28 @@ async function autoScheduler() {
        nextSleep = 5000;
       } else {
        setAutoBlock('', '');
-       const ctx = contexts[autoCursor++ % contexts.length];
-       autoState.lastLaunchAt = Date.now();
-       const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
-        parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model
-       });
-       // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
-       if (limit <= 1) await run;
-       nextSleep = limit <= 1 ? Math.max(50, QUESTION_INTERVAL_MS - (Date.now() - autoState.lastLaunchAt)) : 200;
+       // Plan: konular `limit`'li gruplar hâlinde işlenir; gruptaki bir konu dolunca boşalan hat
+       // eksik kalan konuya yardım eder, grup bitmeden sıradaki konulara geçilmez.
+       const inflight = {};
+       for (const entry of autoControllers.values()) if (entry.planKey) inflight[entry.planKey] = (inflight[entry.planKey] || 0) + 1;
+       const { step: planStep, planActive } = await nextPlanStep(items, inflight, limit);
+       if (planActive && !planStep) {
+        // Grubun kalan soruları zaten hazırlanıyor (kota aşılmasın diye yeni soru açılmaz); sonuç beklenir.
+        nextSleep = 200;
+       } else {
+        const ctx = (planStep && contexts.find(c => c.id === planStep.unitId)) || contexts[autoCursor++ % contexts.length];
+        autoState.lastLaunchAt = Date.now();
+        // Aynı konuda o an hazırlanan soru sayısı: ikinci hat farklı soru tipi/açısıyla yazar.
+        const sameUnitBusy = [...autoControllers.values()].filter(entry => entry.unit === ctx.id).length;
+        const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
+         parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model,
+         planStep,
+         variantOffset: sameUnitBusy
+        });
+        // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
+        if (limit <= 1) await run;
+        nextSleep = limit <= 1 ? Math.max(50, QUESTION_INTERVAL_MS - (Date.now() - autoState.lastLaunchAt)) : 200;
+       }
       }
      } else {
       if (autoState.blockCode === 'backoff' || autoState.blockCode === 'pool_audit') setAutoBlock('', '');
@@ -4053,7 +4456,7 @@ function getQualityLoopSnapshot() {
 }
 
 async function rewriteQuestionForQuality({ model, question, ctx, passage }) {
- const sourceText = (passage?.text || ctx.text || '').slice(0, 3200);
+ const sourceText = (passage?.text || summarySource(ctx, question?.evidence || question?.question || '')).slice(0, 3200);
  const current = {
   question: question.question,
   options: question.options,
@@ -4065,8 +4468,8 @@ async function rewriteQuestionForQuality({ model, question, ctx, passage }) {
  };
  const prompt = `Sen ÖSYM/AÖF soru editörüsün. Aşağıda kitabın aynı ünitesinden çıkmış, tek doğru cevaplı çoktan seçmeli bir soru ve onun dayandığı KONU KAYNAĞI verilmiştir. Görevin: BU SORUYU AYNI KAVRAMI ve AYNI DOĞRU CEVABI koruyarak ölçülebilir biçimde DAHA KALİTELİ yeniden yazmak.
 
-KURAL 1 (AYNI DOĞRU CEVAP): Doğru cevabın kavramı birebir korunur; "answer" alanı, yeni ürettiğin 4 seçeneğin İÇİNDE aynen yer alır.
-KURAL 2 (ÇELDİRİCİLER): Dört şık da aynı kavram ailesinden, gerçek aday yanılgılarına dayanır ve birbirine yakın uzunlukta (en uzun ≤ 1.6x en kısa) ve aynı edâdadır; "yukarıdakilerin hepsi", "hiçbiri", "yalnız I ve II" gibi maddeler YASAKTIR.
+KURAL 1 (AYNI DOĞRU CEVAP): Doğru cevabın kavramı birebir korunur; "answer" alanı, yeni ürettiğin seçeneklerin İÇİNDE aynen yer alır; "options" 4 ya da 5 farklı metindir.
+KURAL 2 (ÇELDİRİCİLER): Bütün şıklar aynı kavram ailesinden, gerçek aday yanılgılarına dayanır ve birbirine yakın uzunlukta (en uzun ≤ 1.6x en kısa) ve aynı edâdadır; "yukarıdakilerin hepsi", "hiçbiri", "yalnız I ve II" gibi maddeler YASAKTIR.
 KURAL 3 (KÖK): Soru kökü tek bir soru sorar; ≤ 220 karakterdir; olumsuzluk eki varsa kök bunu "değildir/söylenemez/yanlıştır" gibi açıkça belirtir.
 KURAL 4 (KANIT): "evidence" alanı, aşağıdaki KONU KAYNAĞI'ndan BİREBİR en az 15 karakterlik alıntıdır; kaynakta olmayan hiçbir bilgi kanıtlanmış sayılamaz.
 KURAL 5 (AÇIKLAMA): "explanation" en fazla 4 cümlede neden doğru cevabın doğru, çeldiricilerin neden yanlış olduğunu açıklar.
@@ -4105,8 +4508,11 @@ async function qualityImprovementPass() {
   qualityTelemetry.scannedTotal += scored.length;
   qualityTelemetry.lastPassAt = new Date().toISOString();
 
-  // 2) Her 4 geçişte bir havuz bakımı: 20k sınırı/yakın tekrar/düşükkali filtre (0-API).
-  if (qualityLoopPasses % 4 === 0) {
+  // 2) Havuz bakımı (sınır / yakın tekrar / düşük kalite filtresi, 0-API). Küçük havuzda her 4 geçişte bir;
+  //    havuz büyüdükçe tarama pahalılaştığı için aralık açılır (her 2.500 onaylı soruya 1 geçiş).
+  //    Havuz sınıra ulaştıysa beklenmez.
+  const maintenanceEvery = Math.max(4, Math.ceil(approved.length / 2500));
+  if (qualityLoopPasses % maintenanceEvery === 0 || (approved.length >= QUESTION_POOL_CAPACITY && qualityLoopPasses % 4 === 0)) {
    try {
     const rep = await runPoolCuratorScan({ forcePrune: approved.length >= QUESTION_POOL_CAPACITY });
     const removed = Number(rep?.removedCount || rep?.lastRunRemoved || 0) + Number(rep?.councilRejected || 0);
@@ -4150,13 +4556,18 @@ async function qualityImprovementPass() {
    const ctx = contexts.find(c => c.id === q.unitId);
    if (!ctx) return;
    const passages = passagesByUnit.get(ctx.id) || [];
-   const passage = passages.find(p => p.id === q.passageId) || selectPassageForUnit(ctx, items, 'full-book');
+   // Plan açıkken iyileştirme de yalnızca konu özetine dayanır (kitap pasajı kullanılmaz).
+   const passage = PLAN.enabled ? null : (passages.find(p => p.id === q.passageId) || selectPassageForUnit(ctx, items, 'full-book'));
    const upgraded = await rewriteQuestionForQuality({ model, question: q, ctx, passage });
    if (!upgraded) { qualityTelemetry.rejectedRewriteTotal += 1; return; }
 
    const policy = await evolver.loadPolicy();
    const freshPool = items.filter(x => x.id !== q.id);
    const record = validate(upgraded, ctx, freshPool, model, passage, policy, q.difficulty || null);
+   if (PLAN.enabled) {
+    const inSummary = evidenceWithinSummary(record.evidence, ctx.text);
+    if (!inSummary.ok) throw Error(inSummary.reason);
+   }
    record.id = q.id; // soru kimliğini koru — aynı sorunun yükseltilmiş sürümüdür
    record.createdAt = q.createdAt || record.createdAt;
    record.improvementCount = (Number(q.improvementCount) || 0) + 1;
@@ -4179,6 +4590,12 @@ async function qualityImprovementPass() {
    }
    const agreedDifficulties = new Set(judges.map(j => j.difficulty));
    const agreedDifficulty = agreedDifficulties.size === 1 && ['kolay', 'orta', 'zor'].includes([...agreedDifficulties][0]) ? [...agreedDifficulties][0] : (record.difficulty || q.difficulty || 'orta');
+   // Plan açıkken yeniden yazım sorunun zorluğunu değiştiremez (konu/zorluk kotaları kaymasın).
+   if (PLAN.enabled && DIFFICULTIES.includes(q.difficulty) && agreedDifficulty !== q.difficulty) {
+    qualityTelemetry.rejectedRewriteTotal += 1;
+    await appendTrace({ type: 'quality_rewrite_rejected', unitId: ctx.id, question: record.question, reason: `difficulty_changed_${q.difficulty}_to_${agreedDifficulty}` }).catch(() => {});
+    return;
+   }
    const avgQuality = +(judges.reduce((s, j) => s + (Number(j.qualityScore) || 4), 0) / judges.length).toFixed(2);
    const avgExamPot = +(judges.reduce((s, j) => s + (Number(j.examPotential) || Number(j.qualityScore) || 4), 0) / judges.length).toFixed(2);
    const bloomLevel = judges.find(j => j.bloomLevel)?.bloomLevel;
@@ -4475,8 +4892,8 @@ export function ollamaPlugin() {
       const question = typeof input?.question === 'string' ? input.question.trim() : '';
       const answer = typeof input?.answer === 'string' ? input.answer.trim() : '';
       const options = Array.isArray(input?.options) ? input.options.filter(o => typeof o === 'string' && o.trim()).map(o => o.trim()) : [];
-      if (question.length < 10 || !answer || options.length < 4) {
-       return respond(res, 400, { error: 'Yeniden yazmak için soru, doğru cevap ve 4 seçenek gerekli.' });
+      if (question.length < 10 || !answer || options.length < MIN_OPTION_COUNT) {
+       return respond(res, 400, { error: 'Yeniden yazmak için soru, doğru cevap ve en az 4 seçenek gerekli.' });
       }
       const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '';
       const ctx = contexts.find(c => c.id === unitId) || null;
@@ -4493,7 +4910,7 @@ export function ollamaPlugin() {
        return respond(res, 200, { ok: true, ...deterministic });
       }
       try {
-       const prompt = `Aşağıdaki dört seçenekli çoktan seçmeli sorunun YALNIZCA SORU KÖKÜNÜ, aynı bilgiyi ölçecek biçimde farklı ve doğal Türkçeyle yeniden yaz. Kurallar:\n- Doğru cevabı ve seçeneklerin METNİNİ asla değiştirme, yeni seçenek uydurma.\n- Soru kökündeki anlamı, kavramı ve olumsuzluk/olumsuzluk yokluğunu birebir koru.\n- Farklı kalıp kullan: "Aşağıdakilerden hangisi X?" yerine "X aşağıdakilerden hangisidir?" gibi.\n- SADECE JSON döndür: {"question": "..."}\n\nSoru: ${question}\nDoğru cevap: ${answer}\nSeçenekler: ${JSON.stringify(options)}`;
+       const prompt = `Aşağıdaki çoktan seçmeli sorunun YALNIZCA SORU KÖKÜNÜ, aynı bilgiyi ölçecek biçimde farklı ve doğal Türkçeyle yeniden yaz. Kurallar:\n- Doğru cevabı ve seçeneklerin METNİNİ asla değiştirme, yeni seçenek uydurma.\n- Soru kökündeki anlamı, kavramı ve olumsuzluk/olumsuzluk yokluğunu birebir koru.\n- Farklı kalıp kullan: "Aşağıdakilerden hangisi X?" yerine "X aşağıdakilerden hangisidir?" gibi.\n- SADECE JSON döndür: {"question": "..."}\n\nSoru: ${question}\nDoğru cevap: ${answer}\nSeçenekler: ${JSON.stringify(options)}`;
        const raw = await runModel(model, prompt, 0.3, null, 220);
        const parsed = raw?.parsed && typeof raw.parsed === 'object' ? raw.parsed : null;
        const rewritten = typeof parsed?.question === 'string' ? parsed.question.trim() : '';
@@ -4743,6 +5160,8 @@ export function ollamaPlugin() {
        rejected: items.filter(x => x.status === 'rejected').length,
        questionCapacity: QUESTION_POOL_CAPACITY,
        maxQuestionsStored: MAX_QUESTIONS,
+       optionFormat: optionFormatStats(items),
+       poolRevision: poolRevision(),
        autonomousMode: true,
        qualityLoop: getQualityLoopSnapshot(),
        difficultyCounts,
@@ -4778,6 +5197,7 @@ export function ollamaPlugin() {
        autoBlock: autoState.blockCode ? { code: autoState.blockCode, reason: autoState.blockReason } : null,
        autoEvents: autoState.recentEvents,
        lineup: publicLineup(lineup),
+       plan: await publicPlan(await load()),
        ollamaRuntime: ollama.snapshot(),
        totalUnits: contexts.length,
        settings: pipelineConfig,
@@ -5400,8 +5820,33 @@ export function ollamaPlugin() {
       });
      }
 
-     if (req.method === 'GET' && path === '/questions') return respond(res, 200, { items: await load() });
-     if (req.method === 'GET' && path === '/audit') return respond(res, 200, audit(await load()));
+     if (req.method === 'GET' && path === '/questions') {
+      const items = await load();
+      const revision = poolRevision();
+      const q = urlObj.searchParams;
+      // ?fields=quiz[&revision=R] → Test merkezi için yalnızca onaylı soruların gerekli alanları.
+      // Havuz değişmediyse (revision aynıysa) liste yeniden gönderilmez.
+      if (q.get('fields') === 'quiz') {
+       if (q.get('revision') === revision) return respond(res, 200, { revision, unchanged: true });
+       return respond(res, 200, { revision, items: items.filter(x => x && x.status === 'approved').map(quizView) });
+      }
+      // ?status=approved|rejected&limit=N → o listedeki EN YENİ N kayıt (arayüzdeki kart listesi).
+      const wantStatus = q.get('status');
+      const limit = Number.parseInt(q.get('limit') || '', 10);
+      if (wantStatus || Number.isFinite(limit)) {
+       let list = wantStatus ? items.filter(x => x && x.status === wantStatus) : items;
+       const total = list.length;
+       if (Number.isFinite(limit) && limit >= 0) list = list.slice(Math.max(0, list.length - Math.min(limit, 5000)));
+       return respond(res, 200, { revision, total, items: list });
+      }
+      return respond(res, 200, { revision, items });
+     }
+     if (req.method === 'GET' && path === '/audit') {
+      const items = await load();
+      const revision = poolRevision();
+      if (auditCache.revision !== revision) { auditCache.revision = revision; auditCache.value = audit(items); }
+      return respond(res, 200, auditCache.value);
+     }
      if (req.method === 'GET' && path === '/curator') {
       return respond(res, 200, {
        questionCapacity: QUESTION_POOL_CAPACITY,
@@ -6359,3 +6804,9 @@ export function ollamaPlugin() {
   }
  };
 }
+
+/** Yüklenen bölüm anlatımları (TEMPO_WEB_SUMMARY ayarı uygulanmış hâliyle); testler için. */
+export function loadedContexts() { return contexts; }
+
+/** Sınav tarzı örnek kitaplığı (kullanıcı örnekleri + kitap soruları); testler için. */
+export function loadedExamStyle() { return { library: examStyleLibrary, stats: styleLibraryStats(examStyleLibrary) }; }

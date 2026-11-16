@@ -821,7 +821,7 @@ export class TvgfbfScoutSwarm {
   }
   // 3) Seçenek uzunluk dengesi ve paralel ifade (kitap değerlendirme testi düzeni)
   const opts = Array.isArray(draft.options) ? draft.options : [];
-  if (opts.length === 4) {
+  if (opts.length >= 4) {
    const lens = opts.map(o => String(o || '').trim().length);
    const maxL = Math.max(...lens);
    const minL = Math.max(1, Math.min(...lens));

@@ -26,7 +26,8 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
    `Doğru kavram ${tag}: ${pick(0)} ile ${pick(1)} birlikte uygulanması`,
    `Eksik yaklaşım ${tag}: ${pick(1)} olmadan yalnız ${pick(2)} uygulanması`,
    `Yanlış bağlam ${tag}: ${pick(2)} yerine ${pick(3)} ile sınırlandırılması`,
-   `Aşırı yorum ${tag}: ${pick(3)} ölçütünün tümden yok sayılması`
+   `Aşırı yorum ${tag}: ${pick(3)} ölçütünün tümden yok sayılması`,
+   `Ters sıralama ${tag}: ${pick(4)} adımının ${pick(0)} önüne alınması`
   ];
  };
  const hash=str=>{let h=0;for(const ch of String(str))h=(h*31+ch.charCodeAt(0))|0;return h};
@@ -106,6 +107,8 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   process.env.OLLAMA_JUDGE2_MODEL='fake:1';
   delete process.env.TEMPO_DISABLE_AUTOLOOP;
   process.env.TEMPO_AUTO_CONCURRENCY='1';
+ // Bu dosya plansız (dengeli dolaşım + kitap pasajı) modu sınar; üretim planı scripts/test-plan-*.mjs içinde sınanır.
+ process.env.TEMPO_PLAN='0';
  const mod=await import('../server/ollama.mjs');const ollamaPlugin=mod.ollamaPlugin;stopOllamaLoops=mod.stopOllamaLoops;let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
   app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});

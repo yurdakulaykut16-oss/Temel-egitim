@@ -1,0 +1,5189 @@
+{
+ "0-0": {
+  "no": 1,
+  "title": "Genel Antrenman Bilimi: Antrenmanla İlgili Temel Kuram ve Kavramlar",
+  "tocTitle": "Genel Antrenman Bilimi: Antrenmanla İlgili Temel Kuram ve Kavramlar",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antrenmanla İlgili Temel Kavramlar",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor",
+    "level": 3,
+    "page": 11,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Fiziksel aktivite",
+    "level": 3,
+    "page": 12,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Performans",
+    "level": 3,
+    "page": 12,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Egzersiz",
+    "level": 3,
+    "page": 13,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antrenman",
+    "level": 3,
+    "page": 14,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antrenör",
+    "level": 3,
+    "page": 14,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Sporcu Gelişim Modelleri",
+    "level": 2,
+    "page": 15,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Uzun Vadeli Sporcu Gelişimi Yaklaşımı",
+    "level": 3,
+    "page": 15,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Sporcu Katılımlı Gelişim Modeli",
+    "level": 3,
+    "page": 21,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Antrenmana Akut ve Kronik Uyum",
+    "level": 2,
+    "page": 25,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Süperkompenzasyon (Fazla tamlama)",
+    "level": 3,
+    "page": 25,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Antrenmansızlaşma",
+    "level": 3,
+    "page": 27,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Sürantrenman",
+    "level": 3,
+    "page": 28,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Aktif Başlangıç",
+    "level": 4,
+    "page": 16,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Temel Eğitim",
+    "level": 4,
+    "page": 16,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Antrenmanı Yapmayı Öğrenmek",
+    "level": 4,
+    "page": 17,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Antrenman İçin Antrenman",
+    "level": 4,
+    "page": 18,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Yarışma İçin Antrenman",
+    "level": 4,
+    "page": 18,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Kazanmak İçin Antrenman",
+    "level": 4,
+    "page": 19,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Aktif Yaşam İçin Antrenman",
+    "level": 4,
+    "page": 19,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "LTAD Uzun Vadeli Sporcu Gelişimi Aşamaları (LTAD Aşamaları)",
+    "level": 4,
+    "page": 20,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Sürantrenmanın Nedenleri",
+    "level": 4,
+    "page": 28,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Sürantrenman Koruyucu Önlemleri",
+    "level": 4,
+    "page": 29,
+    "parent": 14,
+    "toc": false
+   }
+  ]
+ },
+ "0-1": {
+  "no": 2,
+  "title": "Genel Antrenman Bilimi: Antrenmanı Oluşturan Ögeler",
+  "tocTitle": "Genel Antrenman Bilimi: Antrenmanı Oluşturan Ögeler",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 41,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Kondisyonel Hazırlık",
+    "level": 2,
+    "page": 41,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Fiziksel (Bedensel) Hazırlık",
+    "level": 3,
+    "page": 41,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Teknik Hazırlık",
+    "level": 3,
+    "page": 44,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Taktiksel Hazırlık",
+    "level": 3,
+    "page": 46,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Zihinsel ve Kuramsal Hazırlık",
+    "level": 2,
+    "page": 50,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Zihinsel-Psikolojik Hazırlık",
+    "level": 3,
+    "page": 50,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Zihinsel Antrenmanın Sportif Performansa Etkileri",
+    "level": 3,
+    "page": 51,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Zihinsel Antrenman Yöntemleri",
+    "level": 3,
+    "page": 51,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Genel Fiziksel Hazırlık",
+    "level": 4,
+    "page": 42,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Özel (Spor Dalına Özgü) Fiziksel Hazırlık",
+    "level": 4,
+    "page": 43,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Teknik Eğitim",
+    "level": 4,
+    "page": 45,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Tekniğin Öğrenim Safhaları",
+    "level": 4,
+    "page": 45,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Teknik Antrenman",
+    "level": 4,
+    "page": 46,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Taktiğin Sınıflandırılması",
+    "level": 4,
+    "page": 47,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Taktik Uygulama Aşamaları",
+    "level": 4,
+    "page": 47,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Taktik Eğitim",
+    "level": 4,
+    "page": 48,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Taktik Antrenman",
+    "level": 4,
+    "page": 49,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Taktik Antrenman İçin Metodik İlkeler",
+    "level": 4,
+    "page": 49,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Antrenmanın Fiziksel Eğitim ve Yarışma Amaçlı Özellikleri",
+    "level": 4,
+    "page": 52,
+    "parent": 8,
+    "toc": false
+   }
+  ]
+ },
+ "0-2": {
+  "no": 3,
+  "title": "Genel Antrenman Bilimi: Antrenman İlkeleri",
+  "tocTitle": "Genel Antrenman Bilimi: Antrenman İlkeleri",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 59,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antrenmanın Genel İlkeleri",
+    "level": 2,
+    "page": 59,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antrenmana Bilinçli ve Aktif Katılım İlkesi",
+    "level": 3,
+    "page": 59,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Çok Yönlü Gelişim İlkesi",
+    "level": 3,
+    "page": 59,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Özelleşme (Branşlaşma) İlkesi (Antrenmanın Spesifikliği)",
+    "level": 3,
+    "page": 60,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Bireyselleştirme İlkesi",
+    "level": 3,
+    "page": 61,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Çeşitlilik İlkesi",
+    "level": 3,
+    "page": 62,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Model Antrenman İlkesi",
+    "level": 3,
+    "page": 62,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antrenmanın Özel Olma İlkesi",
+    "level": 3,
+    "page": 63,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Yıllık Antrenman Periyotlama İlkesi",
+    "level": 3,
+    "page": 63,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Geriye Dönüşüm İlkesi (Detraining)",
+    "level": 3,
+    "page": 63,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antrenman Yüklenme İlkesi ve Ana Ögeleri",
+    "level": 2,
+    "page": 64,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Yüklenmenin Tanımı ve Türü",
+    "level": 3,
+    "page": 64,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Yüklenmenin Ana Ögeleri",
+    "level": 3,
+    "page": 65,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Artan Yüklenme İlkesi",
+    "level": 3,
+    "page": 67,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Antrenman ve Müsabaka Yüklenmesi (Antrenman Sıklığı İlişkileri) İlkesi",
+    "level": 3,
+    "page": 68,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Aşırı Yüklenme ve Önleyici Tedbirler",
+    "level": 3,
+    "page": 68,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Antrenmanda Yüklenme ve Dinlenmenin Dengelenmesi İlkesi",
+    "level": 3,
+    "page": 69,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Yüklenme Şiddeti",
+    "level": 4,
+    "page": 65,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Yüklenme Sıklığı",
+    "level": 4,
+    "page": 66,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Yüklenme Süresi",
+    "level": 4,
+    "page": 66,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Yüklenme Kapsamı",
+    "level": 4,
+    "page": 66,
+    "parent": 13,
+    "toc": false
+   }
+  ]
+ },
+ "0-3": {
+  "no": 4,
+  "title": "Genel Antrenman Bilimi: Biyomotor Özellikler",
+  "tocTitle": "Genel Antrenman Bilimi: Biyomotor Özellikler",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 79,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Temel Motorik Özellikler",
+    "level": 2,
+    "page": 79,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Dayanıklılık",
+    "level": 3,
+    "page": 79,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Kuvvet",
+    "level": 3,
+    "page": 82,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Sürat",
+    "level": 3,
+    "page": 83,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Temel Motorik Özellikleri Tamamlayıcı Özellikler",
+    "level": 2,
+    "page": 85,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Esneklik",
+    "level": 3,
+    "page": 85,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Beceri",
+    "level": 3,
+    "page": 86,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Beceri Özellikleri",
+    "level": 3,
+    "page": 87,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Dayanıklılığın Etkileri",
+    "level": 4,
+    "page": 80,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Dayanıklılığın Sınıflandırılması",
+    "level": 4,
+    "page": 80,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Kuvvetin Oluşumunu Etkileyen Faktörler",
+    "level": 4,
+    "page": 82,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Kuvvet Türleri",
+    "level": 4,
+    "page": 82,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Esnekliğin Türleri",
+    "level": 4,
+    "page": 85,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "Esnekliği Etkileyen Faktörler",
+    "level": 4,
+    "page": 85,
+    "parent": 6,
+    "toc": false
+   }
+  ]
+ },
+ "0-4": {
+  "no": 5,
+  "title": "Genel Antrenman Bilimi: Koordinatif Özellikler",
+  "tocTitle": "Genel Antrenman Bilimi: Koordinatif Özellikler",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 95,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Koordinasyon",
+    "level": 2,
+    "page": 95,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Koordinasyonu Etkileyen Faktörler",
+    "level": 3,
+    "page": 95,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Koordinasyonun Sınıflandırılması",
+    "level": 3,
+    "page": 96,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Sportif Performans Açısından Koordinasyonun Önemi",
+    "level": 3,
+    "page": 96,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Koordinasyon Antrenmanlarının Özellikleri",
+    "level": 3,
+    "page": 97,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Hareketlilik",
+    "level": 2,
+    "page": 98,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Hareketliliği Etkileyen Faktörler",
+    "level": 3,
+    "page": 98,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Hareketliliğin Sınıflandırılması",
+    "level": 3,
+    "page": 99,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Sportif Performans Açısından Hareketliliğin Önemi",
+    "level": 3,
+    "page": 100,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Hareketlilik Antrenmanlarının Özellikleri",
+    "level": 3,
+    "page": 100,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Hareketlilik Antrenmanlarında Temel İlkeler",
+    "level": 3,
+    "page": 101,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Çeviklik",
+    "level": 2,
+    "page": 102,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Çevikliği Etkileyen Faktörler",
+    "level": 3,
+    "page": 102,
+    "parent": 12,
+    "toc": true
+   },
+   {
+    "title": "Sportif Performans Açısından Çevikliğin Önemi",
+    "level": 3,
+    "page": 103,
+    "parent": 12,
+    "toc": true
+   },
+   {
+    "title": "Çeviklik Antrenmanının Özellikleri",
+    "level": 3,
+    "page": 104,
+    "parent": 12,
+    "toc": true
+   },
+   {
+    "title": "Çeviklik Çalışmalarında Dikkat Edilecek Noktalar",
+    "level": 3,
+    "page": 105,
+    "parent": 12,
+    "toc": true
+   },
+   {
+    "title": "Denge",
+    "level": 2,
+    "page": 106,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Dengeyi Etkileyen Faktörler",
+    "level": 3,
+    "page": 106,
+    "parent": 17,
+    "toc": true
+   },
+   {
+    "title": "Dengenin Sınıflandırılması",
+    "level": 3,
+    "page": 106,
+    "parent": 17,
+    "toc": true
+   },
+   {
+    "title": "Sportif Performans Açısından Dengenin Önemi",
+    "level": 3,
+    "page": 107,
+    "parent": 17,
+    "toc": true
+   },
+   {
+    "title": "Denge Antrenmanının Özellikleri",
+    "level": 3,
+    "page": 107,
+    "parent": 17,
+    "toc": true
+   }
+  ]
+ },
+ "0-5": {
+  "no": 6,
+  "title": "Genel Antrenman Bilimi: Antrenman Planlama ve Periyotlama I",
+  "tocTitle": "Genel Antrenman Bilimi: Antrenman Planlama ve Periyotlama I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 119,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Birim Antrenman Tanımı ve Bölümleri",
+    "level": 2,
+    "page": 119,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Başlangıç (Giriş) Bölümü",
+    "level": 3,
+    "page": 120,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Isınma Bölümü",
+    "level": 3,
+    "page": 120,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Temel (Ana) Bölüm",
+    "level": 3,
+    "page": 121,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Bitiriş (Soğuma)",
+    "level": 3,
+    "page": 122,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antrenman Planlaması ve Periyotlaması",
+    "level": 2,
+    "page": 124,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Haftalık (Mikro) Antrenman Planlaması",
+    "level": 3,
+    "page": 125,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Makro (Aylık) Döngü",
+    "level": 3,
+    "page": 129,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Yıllık Plan",
+    "level": 3,
+    "page": 130,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Çok Yıllık Antrenman Planlaması (Olimpik Döngü)",
+    "level": 3,
+    "page": 132,
+    "parent": 6,
+    "toc": true
+   }
+  ]
+ },
+ "0-6": {
+  "no": 7,
+  "title": "Genel Antrenman Bilimi: Ölçme ve Değerlendirme",
+  "tocTitle": "Genel Antrenman Bilimi: Ölçme ve Değerlendirme",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 139,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Çocuklarda Fiziksel Aktivite ve Ölçme-Değerlendirme",
+    "level": 2,
+    "page": 139,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Çocuklarda Antropometrik Ölçümler ve Fiziksel Performans Testleri",
+    "level": 2,
+    "page": 142,
+    "parent": null,
+    "toc": true
+   }
+  ]
+ },
+ "0-7": {
+  "no": 8,
+  "title": "Yetenek Seçimi ve İlkeleri I",
+  "tocTitle": "Yetenek Seçimi ve İlkeleri I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 165,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Sporda Yetenek Seçimi",
+    "level": 2,
+    "page": 165,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Yetenek Seçimi ile İlişkili Temel Kavramlar",
+    "level": 3,
+    "page": 166,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Yetenek Seçimi ve Yönlendirme Sürecinin Bileşenleri",
+    "level": 3,
+    "page": 169,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Yetenek Tanımı ve Türleri",
+    "level": 3,
+    "page": 170,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Biyomotor Yetenekler",
+    "level": 3,
+    "page": 173,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Yetenek Seçimi ve Yönlendirme İlkeleri",
+    "level": 2,
+    "page": 182,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Yetenek Araştırması Modelleri",
+    "level": 3,
+    "page": 183,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Yetenek Seçimi ve Yönlendirmede Etkili Faktörler",
+    "level": 3,
+    "page": 185,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Gelişim",
+    "level": 4,
+    "page": 166,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Büyüme",
+    "level": 4,
+    "page": 167,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Olgunlaşma",
+    "level": 4,
+    "page": 167,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Hazır Bulunuşluk",
+    "level": 4,
+    "page": 168,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Öğrenme",
+    "level": 4,
+    "page": 168,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Hareket",
+    "level": 4,
+    "page": 168,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Beceri",
+    "level": 4,
+    "page": 168,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Yatkınlık",
+    "level": 4,
+    "page": 169,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Eğilim",
+    "level": 4,
+    "page": 169,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Sportif Uygunluk",
+    "level": 4,
+    "page": 170,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Genel Yetenek",
+    "level": 4,
+    "page": 170,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Özel Yetenek",
+    "level": 4,
+    "page": 172,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Kondisyonel Yetenekler",
+    "level": 4,
+    "page": 173,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Koordinatif Yetenekler",
+    "level": 4,
+    "page": 179,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Doğal Seçim",
+    "level": 4,
+    "page": 183,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Bilimsel Seçim",
+    "level": 4,
+    "page": 185,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Bireysel Faktörler",
+    "level": 4,
+    "page": 186,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Çevresel Faktörler",
+    "level": 4,
+    "page": 189,
+    "parent": 8,
+    "toc": false
+   }
+  ]
+ },
+ "1-0": {
+  "no": 1,
+  "title": "Spor Anatomisi ve Kinesiyoloji I",
+  "tocTitle": "Spor Anatomisi ve Kinesiyoloji I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "İnsan Vücudunun Yapısal Organizasyonu",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Hücre",
+    "level": 3,
+    "page": 11,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Doku",
+    "level": 3,
+    "page": 12,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Organlar ve Sistemler",
+    "level": 3,
+    "page": 19,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Anatomik Terimler ve Kavramlar",
+    "level": 2,
+    "page": 20,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Anatomik Duruş",
+    "level": 3,
+    "page": 20,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Düzlemler",
+    "level": 3,
+    "page": 20,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Eksenler",
+    "level": 3,
+    "page": 21,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Pozisyon ve Hareket ile İlgili Terimler",
+    "level": 3,
+    "page": 21,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Hareket Sistemini Oluşturan Yapılar ve Fonksiyonları",
+    "level": 2,
+    "page": 25,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Aktif Hareket (Kas) Sistemi",
+    "level": 3,
+    "page": 25,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Pasif Hareket (İskelet) Sistemi",
+    "level": 3,
+    "page": 30,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "İnsan Vücudunun Bölümleri",
+    "level": 3,
+    "page": 33,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Epitel Dokusu",
+    "level": 4,
+    "page": 12,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Bağ ve Destek Dokusu",
+    "level": 4,
+    "page": 12,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Kas Dokusu",
+    "level": 4,
+    "page": 16,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Sinir Dokusu",
+    "level": 4,
+    "page": 18,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Organlar",
+    "level": 4,
+    "page": 19,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Organ Sistemleri",
+    "level": 4,
+    "page": 19,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Sagittal (Anteroposterior) Düzlem",
+    "level": 4,
+    "page": 21,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Transvers (Horizontal) Düzlem",
+    "level": 4,
+    "page": 21,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Frontal (Koronal) Düzlem",
+    "level": 4,
+    "page": 21,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Kas Morfolojisi ve Mimarisi",
+    "level": 4,
+    "page": 25,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Kas Kuvveti",
+    "level": 4,
+    "page": 26,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Kas Kasılma Tipleri",
+    "level": 4,
+    "page": 26,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Kasların İşlevlerine Göre Sınıflandırılması",
+    "level": 4,
+    "page": 26,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Kas İskelet Sisteminde Kuvvet İletimi ve Kaldıraç Tipleri",
+    "level": 4,
+    "page": 27,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "İkinci Tip Kaldıraçlar",
+    "level": 4,
+    "page": 28,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Üçüncü Tip Kaldıraçlar",
+    "level": 4,
+    "page": 29,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Kemikler",
+    "level": 4,
+    "page": 30,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Eklemler",
+    "level": 4,
+    "page": 32,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Bağ Doku",
+    "level": 4,
+    "page": 32,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Baş",
+    "level": 4,
+    "page": 33,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Boyun",
+    "level": 4,
+    "page": 34,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Gövde",
+    "level": 4,
+    "page": 34,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Pelvis Kavşağı",
+    "level": 4,
+    "page": 35,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Alt Ekstremite",
+    "level": 4,
+    "page": 35,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Üst Ekstremite",
+    "level": 4,
+    "page": 35,
+    "parent": 13,
+    "toc": false
+   }
+  ]
+ },
+ "1-1": {
+  "no": 2,
+  "title": "Spor Fizyolojisi I",
+  "tocTitle": "Spor Fizyolojisi I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 43,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Fizyolojisine Giriş ve Canlı Kavramı",
+    "level": 2,
+    "page": 43,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Canlı Organizmanın Özellikleri",
+    "level": 3,
+    "page": 43,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "İnsan Vücudunun Yapısal Organizasyonu",
+    "level": 3,
+    "page": 45,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "İnsan Vücudunun İşlevsel Organizasyonu",
+    "level": 3,
+    "page": 49,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Hücre Yapısı ve Organizasyonu",
+    "level": 2,
+    "page": 51,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Hücrenin Kimyasal Yapısı",
+    "level": 3,
+    "page": 51,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Hücrenin Fiziksel Yapısı",
+    "level": 3,
+    "page": 52,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Enerji Sistemleri",
+    "level": 2,
+    "page": 59,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Enerji, İş ve Güç Kavramları",
+    "level": 3,
+    "page": 60,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "ATP Üretme Mekanizmaları",
+    "level": 3,
+    "page": 60,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Dinlenme ve Egzersiz Sırasında Enerji Sistemleri",
+    "level": 2,
+    "page": 65,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Dinlenimde Enerji Sistemleri",
+    "level": 3,
+    "page": 65,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Egzersiz Sırasında Enerji Sistemleri",
+    "level": 3,
+    "page": 65,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Kimyasal Düzeydeki Organizasyon",
+    "level": 4,
+    "page": 45,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Hücresel Düzeydeki Organizasyon",
+    "level": 4,
+    "page": 46,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Doku Düzeyindeki Organizasyon",
+    "level": 4,
+    "page": 46,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Organ ve Organ Sistemlerinin Organizasyonu",
+    "level": 4,
+    "page": 48,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Vücudun İç Ortamı",
+    "level": 4,
+    "page": 49,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Homeostaz",
+    "level": 4,
+    "page": 49,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Vücudun Kontrol Sistemleri",
+    "level": 4,
+    "page": 50,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Hücre Zarı",
+    "level": 4,
+    "page": 52,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Hücre Zarındaki Taşınma Olayları",
+    "level": 4,
+    "page": 54,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Hücre Sitoplazması ve Organelleri",
+    "level": 4,
+    "page": 56,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Hücre İskeleti",
+    "level": 4,
+    "page": 58,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Çekirdek (Nükleus)",
+    "level": 4,
+    "page": 58,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Fosfojen Sistem (ATP-CP)",
+    "level": 4,
+    "page": 61,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Laktik Asit Sistemi (Anaerobik Glikoliz)",
+    "level": 4,
+    "page": 62,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Aerobik Sistem (Oksijen Sistemi)",
+    "level": 4,
+    "page": 63,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Kısa Süreli Egzersiz Sırasında Enerji Sistemleri",
+    "level": 4,
+    "page": 65,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Uzun Süreli Egzersiz Sırasında Enerji Sistemleri",
+    "level": 4,
+    "page": 67,
+    "parent": 13,
+    "toc": false
+   }
+  ]
+ },
+ "1-2": {
+  "no": 3,
+  "title": "Sporda Beslenme I",
+  "tocTitle": "Sporda Beslenme I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 77,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Beslenme Kavramı ve Önemi",
+    "level": 2,
+    "page": 77,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Enerji Sistemleri ve Enerji Kaynakları",
+    "level": 2,
+    "page": 79,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Organizmadaki Enerji Kaynakları ve Metabolizması",
+    "level": 3,
+    "page": 79,
+    "parent": 2,
+    "toc": true
+   },
+   {
+    "title": "Egzersizde Kullanılan Enerji Sistemleri",
+    "level": 3,
+    "page": 80,
+    "parent": 2,
+    "toc": true
+   },
+   {
+    "title": "Karbonhidratlar ve Metabolizması",
+    "level": 2,
+    "page": 81,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Karbonhidratlar ve Sınıflanması",
+    "level": 3,
+    "page": 82,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Karbonhidrat Metabolizması ve Egzersiz Performansı ile İlişkisi",
+    "level": 3,
+    "page": 83,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Proteinler ve Metabolizması",
+    "level": 2,
+    "page": 85,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Proteinler ve Sınıflanması",
+    "level": 3,
+    "page": 85,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Protein Metabolizması ve Egzersiz Performansı ile İlişkisi",
+    "level": 3,
+    "page": 86,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Yağlar ve Metabolizması",
+    "level": 2,
+    "page": 87,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Yağlar ve Sınıflanması",
+    "level": 3,
+    "page": 87,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Yağların Metabolizması ve Egzersiz Performansı ile İlişkisi",
+    "level": 3,
+    "page": 88,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Vitaminler ve Mineraller",
+    "level": 2,
+    "page": 89,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Vitaminler ve Sınıflandırılması",
+    "level": 3,
+    "page": 89,
+    "parent": 14,
+    "toc": true
+   },
+   {
+    "title": "Vitaminlerin Metabolizmadaki Yeri ve Egzersizdeki Önemi",
+    "level": 3,
+    "page": 89,
+    "parent": 14,
+    "toc": true
+   },
+   {
+    "title": "Mineraller ve Sınıflandırılması",
+    "level": 3,
+    "page": 92,
+    "parent": 14,
+    "toc": true
+   },
+   {
+    "title": "Minerallerin Metabolizmadaki Yeri ve Egzersizdeki Önemi",
+    "level": 3,
+    "page": 92,
+    "parent": 14,
+    "toc": true
+   },
+   {
+    "title": "Su ve İçecekler",
+    "level": 2,
+    "page": 95,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Suyun Vücuttaki Oranları ve İşlevleri",
+    "level": 3,
+    "page": 95,
+    "parent": 19,
+    "toc": true
+   },
+   {
+    "title": "Egzersize Bağlı Sıvı Kaybı ve Önlenmesi",
+    "level": 3,
+    "page": 96,
+    "parent": 19,
+    "toc": true
+   }
+  ]
+ },
+ "1-3": {
+  "no": 4,
+  "title": "Sporcu Sağlığı ve İlk Yardım I",
+  "tocTitle": "Sporcu Sağlığı ve İlk Yardım I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 107,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Sağlık Kavramı ve Sporda Sağlık Organizasyonu",
+    "level": 2,
+    "page": 107,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Yaralanması ve Etkili Faktörler",
+    "level": 2,
+    "page": 108,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Yaralanmalarının Önlenmesi",
+    "level": 2,
+    "page": 109,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Yaralanmalarında İlk Yardım İlkeleri ve Ön Tedavi",
+    "level": 2,
+    "page": 111,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Sahada Sporcunun İlk Yardım Açısından Değerlendirilmesi",
+    "level": 3,
+    "page": 113,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Spor Yaralanmalarında İlk Yardım",
+    "level": 3,
+    "page": 114,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Sahada Bulundurulacak İlk Yardım Gereçleri",
+    "level": 3,
+    "page": 114,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Spor Yaralanmalarında Ön Tedavi",
+    "level": 3,
+    "page": 115,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "POLICE Protokolü",
+    "level": 4,
+    "page": 115,
+    "parent": null,
+    "toc": false
+   },
+   {
+    "title": "Koruma - Protection (P)",
+    "level": 4,
+    "page": 116,
+    "parent": null,
+    "toc": false
+   },
+   {
+    "title": "Uygun Yüklenme - Optimal Loading (OL)",
+    "level": 4,
+    "page": 116,
+    "parent": null,
+    "toc": false
+   },
+   {
+    "title": "Soğuk (Buz) Uygulama - Ice (I)",
+    "level": 4,
+    "page": 116,
+    "parent": null,
+    "toc": false
+   },
+   {
+    "title": "Kompresyon - Compression (C)",
+    "level": 4,
+    "page": 117,
+    "parent": null,
+    "toc": false
+   },
+   {
+    "title": "Elevasyon (E)",
+    "level": 4,
+    "page": 117,
+    "parent": null,
+    "toc": false
+   }
+  ]
+ },
+ "1-4": {
+  "no": 5,
+  "title": "Dopingle Mücadele I",
+  "tocTitle": "Dopingle Mücadele I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 125,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Doping ve Dopingle Mücadele",
+    "level": 2,
+    "page": 125,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Dopingin Yasaklanma Nedenleri",
+    "level": 3,
+    "page": 125,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Dopingle Mücadeleden Sorumlu Kuruluşlar",
+    "level": 3,
+    "page": 125,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Dünya Dopingle Mücadele Kuralları",
+    "level": 3,
+    "page": 126,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Dopingle Mücadele Kural İhlalleri",
+    "level": 3,
+    "page": 127,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Yasaklılar Listesi",
+    "level": 2,
+    "page": 128,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Herhangi Bir Madde veya Yöntemin Yasaklılar Listesi’ne Alınma Süreci",
+    "level": 3,
+    "page": 129,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Yasaklılar Listesi Sınıflaması",
+    "level": 3,
+    "page": 129,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Besin Destek Ürünü Kullanımı Güvenli Midir?",
+    "level": 3,
+    "page": 130,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Doping Kontrol İşlemleri",
+    "level": 2,
+    "page": 130,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Doping Kontrolü Yapmaya Yetkili Kuruluşlar",
+    "level": 3,
+    "page": 131,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Doping Kontrol İşleminin 11 Basamağı",
+    "level": 3,
+    "page": 131,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Kan Örneği Alım İşlemi",
+    "level": 3,
+    "page": 133,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Örneklerin Saklanma Süreleri",
+    "level": 3,
+    "page": 133,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Sporcuların ve Antrenörlerin Dopingle Mücadele Görev ve Sorumlulukları",
+    "level": 2,
+    "page": 134,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Sporcuların Görev ve Sorumlulukları",
+    "level": 3,
+    "page": 134,
+    "parent": 15,
+    "toc": true
+   },
+   {
+    "title": "Antrenörlerin Görev ve Sorumlulukları",
+    "level": 3,
+    "page": 134,
+    "parent": 15,
+    "toc": true
+   },
+   {
+    "title": "Sağlık Üzerindeki Olumsuz Etkileri Açısından",
+    "level": 4,
+    "page": 125,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Bireysel ve Sportif Açıdan",
+    "level": 4,
+    "page": 125,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Dünya Dopingle Mücadele Ajansı (WADA)",
+    "level": 4,
+    "page": 125,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Ulusal Dopingle Mücadele Kuruluşları",
+    "level": 4,
+    "page": 126,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Uluslararası Federasyonlar",
+    "level": 4,
+    "page": 126,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Büyük Çaplı Turnuva Düzenleyicileri",
+    "level": 4,
+    "page": 126,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Doping Kontrol Laboratuvarları",
+    "level": 4,
+    "page": 126,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Her Zaman (Müsabaka İçi ve Müsabaka Dışı) Kullanımı Yasaklı Olan Maddeler",
+    "level": 4,
+    "page": 129,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Her Zaman (Müsabaka İçi ve Müsabaka Dışı) Kullanımı Yasaklı Olan Yöntemler",
+    "level": 4,
+    "page": 129,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Müsabaka İçinde Kullanımı Yasaklı Maddeler",
+    "level": 4,
+    "page": 129,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Bazı Özel Sporlarda Kullanımı Yasaklı Maddeler",
+    "level": 4,
+    "page": 129,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Sporcunun Doping Kontrolü için Seçilmesi",
+    "level": 4,
+    "page": 131,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Sporcuya Bildirim Yapılması",
+    "level": 4,
+    "page": 131,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Doping Kontrol İstasyonuna Gidiş",
+    "level": 4,
+    "page": 132,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Örnek Toplama Kabının Seçilmesi",
+    "level": 4,
+    "page": 132,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Örnek Verme İşlemi",
+    "level": 4,
+    "page": 132,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Gerekli Olan İdrar Miktarı",
+    "level": 4,
+    "page": 132,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Örneğin İkiye Bölünmesi",
+    "level": 4,
+    "page": 132,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Örneklerin Kilitlenmesi A ve B Örneği",
+    "level": 4,
+    "page": 133,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Özgül Ağırlık Ölçümü",
+    "level": 4,
+    "page": 133,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Doping Kontrol Formunun Doldurulması",
+    "level": 4,
+    "page": 133,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Örneklerin Analizi",
+    "level": 4,
+    "page": 133,
+    "parent": 12,
+    "toc": false
+   }
+  ]
+ },
+ "2-0": {
+  "no": 1,
+  "title": "Sporda Yönetim ve Organizasyon I",
+  "tocTitle": "Sporda Yönetim ve Organizasyon I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Yönetim Kavramı ve Yaklaşımlar",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Yönetim",
+    "level": 3,
+    "page": 12,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Yönetim Yaklaşımları",
+    "level": 2,
+    "page": 13,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Endüstri Öncesi Yönetim Yaklaşımı",
+    "level": 3,
+    "page": 14,
+    "parent": 3,
+    "toc": true
+   },
+   {
+    "title": "Klasik Yönetim Yaklaşımı",
+    "level": 3,
+    "page": 14,
+    "parent": 3,
+    "toc": true
+   },
+   {
+    "title": "Neo-Klasik Yönetim Yaklaşımı (Davranışsal Yönetim Yaklaşımı)",
+    "level": 3,
+    "page": 17,
+    "parent": 3,
+    "toc": true
+   },
+   {
+    "title": "Yönetimde Çağdaş Yaklaşımlar",
+    "level": 3,
+    "page": 19,
+    "parent": 3,
+    "toc": true
+   },
+   {
+    "title": "Dünyada ve Türkiye’de Spor Yönetiminin Tarihsel Gelişimi",
+    "level": 2,
+    "page": 26,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Dünyada Spor Yönetiminin Gelişimi",
+    "level": 3,
+    "page": 26,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Türkiye’de Spor Yönetiminin Gelişimi",
+    "level": 3,
+    "page": 27,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Spor Yönetiminin Tanım ve Kavramı İle Süreç ve İlkeleri",
+    "level": 2,
+    "page": 32,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Yönetiminin Süreç ve İlkeleri",
+    "level": 3,
+    "page": 33,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Yönetimin Bilim Olma Özelliği",
+    "level": 4,
+    "page": 12,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Yönetimin Sanat Olma Özelliği",
+    "level": 4,
+    "page": 12,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Bilimsel Yönetim Yaklaşımı (Scientific Management Approach)",
+    "level": 4,
+    "page": 14,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Yönetim Süreci Yaklaşımı (Administrative Process Approach)",
+    "level": 4,
+    "page": 16,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Bürokrasi Yaklaşımı",
+    "level": 4,
+    "page": 17,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Klasik Yönetim Yaklaşımına Yöneltilen Eleştiriler",
+    "level": 4,
+    "page": 17,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "İnsanın Motive Edilmesi",
+    "level": 4,
+    "page": 18,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "İnsan Davranışları",
+    "level": 4,
+    "page": 18,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "İnsanın Özellikleri",
+    "level": 4,
+    "page": 18,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "İnsanın Yönetime Katılması",
+    "level": 4,
+    "page": 19,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "İnsanın İş Doyumu",
+    "level": 4,
+    "page": 19,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "Neo-Klasik Yönetim Yaklaşımına (Davranışsal Yönetim Yaklaşımı) Yöneltilen Eleştiriler",
+    "level": 4,
+    "page": 19,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "Modern Yönetim Yaklaşımı",
+    "level": 4,
+    "page": 19,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Yönetimde Mükemmellik Yaklaşımı",
+    "level": 4,
+    "page": 21,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Yönetimde Stratejik Yönetim Yaklaşımı",
+    "level": 4,
+    "page": 21,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Toplam Kalite Yönetimi Yaklaşımı",
+    "level": 4,
+    "page": 24,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Cumhuriyet Öncesi Türk Spor Yönetimi",
+    "level": 4,
+    "page": 27,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Cumhuriyet Döneminden Günümüze Spor Yönetimi",
+    "level": 4,
+    "page": 30,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Spor Yönetiminin Süreçleri",
+    "level": 4,
+    "page": 33,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Spor Yönetiminin İlkeleri",
+    "level": 4,
+    "page": 35,
+    "parent": 12,
+    "toc": false
+   }
+  ]
+ },
+ "2-1": {
+  "no": 2,
+  "title": "Spor İşletmeciliği I",
+  "tocTitle": "Spor İşletmeciliği I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 47,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "İşletmenin Tanımı ve Kavramı",
+    "level": 2,
+    "page": 47,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "İşletme Kavramı ve İşletme Bilimi",
+    "level": 3,
+    "page": 47,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "İşletmeye Olan İhtiyaç",
+    "level": 3,
+    "page": 48,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "İşletme Kurma Gerekliliği",
+    "level": 3,
+    "page": 49,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Spor İşletmelerinin (Tesis) Yönetimi",
+    "level": 3,
+    "page": 50,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "İşletmenin İşlevleri",
+    "level": 2,
+    "page": 51,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Satın Alma İşlevi",
+    "level": 3,
+    "page": 51,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Üretim İşlevi",
+    "level": 3,
+    "page": 52,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Pazarlama İşlevi",
+    "level": 3,
+    "page": 54,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Finans İşlevi",
+    "level": 3,
+    "page": 55,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Muhasebe İşlevi",
+    "level": 3,
+    "page": 56,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Personel İşlevi",
+    "level": 3,
+    "page": 57,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Halkla İlişkiler İşlevi",
+    "level": 3,
+    "page": 60,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Araştırma Geliştirme (AR-GE) İşlevi",
+    "level": 3,
+    "page": 61,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "İnsan İhtiyaçları",
+    "level": 4,
+    "page": 48,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "İhtiyaçların Sınıflandırılması",
+    "level": 4,
+    "page": 48,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Abraham Maslow’un İhtiyaçlar Hiyerarşisi",
+    "level": 4,
+    "page": 49,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Satın Alma Yöntemleri",
+    "level": 4,
+    "page": 52,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Spor İşletmeciliğinde Üretim Stratejileri",
+    "level": 4,
+    "page": 53,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Spor Hizmetleri Sunumu Açısından Pazarlama",
+    "level": 4,
+    "page": 54,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "İşletmenin Finansal Yapısı",
+    "level": 4,
+    "page": 55,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Finansman Planlaması",
+    "level": 4,
+    "page": 56,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "İşletme Yönetimi ve Muhasebe",
+    "level": 4,
+    "page": 57,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Muhasebenin İşlevleri",
+    "level": 4,
+    "page": 57,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Personel İhtiyacının Belirlenmesi",
+    "level": 4,
+    "page": 58,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Personelin Sağlanması ve İşe Alınması",
+    "level": 4,
+    "page": 59,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Spor Hizmetlerinde Personelin Önemi",
+    "level": 4,
+    "page": 59,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Spor İşletmelerinde Personelin İşe Alınması",
+    "level": 4,
+    "page": 60,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Halkla İlişkiler ve Spor",
+    "level": 4,
+    "page": 60,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Halkla İlişkilerde Kullanılan Yöntemler",
+    "level": 4,
+    "page": 61,
+    "parent": 13,
+    "toc": false
+   },
+   {
+    "title": "Araştırma Çeşitleri",
+    "level": 4,
+    "page": 62,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Geliştirme Çeşitleri",
+    "level": 4,
+    "page": 62,
+    "parent": 14,
+    "toc": false
+   }
+  ]
+ },
+ "2-2": {
+  "no": 3,
+  "title": "Sporda Liderlik I",
+  "tocTitle": "Sporda Liderlik I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 69,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Lider ve Liderlik",
+    "level": 2,
+    "page": 69,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Lider ve Liderlik Kavramı",
+    "level": 3,
+    "page": 70,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Spor Bağlamında Liderlik Kavramının Değerlendirilmesi",
+    "level": 3,
+    "page": 71,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Liderde Bulunması Gereken Özellikler",
+    "level": 3,
+    "page": 72,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Liderlik ve Yönetim",
+    "level": 3,
+    "page": 76,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Lider ve Yönetici Arasındaki Farklar",
+    "level": 3,
+    "page": 77,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Liderlik Tarzları",
+    "level": 2,
+    "page": 79,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Otokratik Lider",
+    "level": 3,
+    "page": 79,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Demokratik Lider",
+    "level": 3,
+    "page": 79,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Liberal Lider",
+    "level": 3,
+    "page": 80,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Dönüşümcü Lider",
+    "level": 3,
+    "page": 81,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Vizyoner Lider",
+    "level": 3,
+    "page": 81,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Karizmatik Lider",
+    "level": 3,
+    "page": 82,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Durumsal Lider",
+    "level": 3,
+    "page": 82,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Stratejik Lider",
+    "level": 3,
+    "page": 83,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "İnsanlarda Derinden Temas Sağlama Yeteneği",
+    "level": 4,
+    "page": 73,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Etkin Dinleme",
+    "level": 4,
+    "page": 73,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Güvenilir Olma",
+    "level": 4,
+    "page": 74,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Problemi Çözme Yeteneği",
+    "level": 4,
+    "page": 74,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "İletişim Yeteneği",
+    "level": 4,
+    "page": 74,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Analiz Yeteneği",
+    "level": 4,
+    "page": 75,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Empati",
+    "level": 4,
+    "page": 75,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Takdir",
+    "level": 4,
+    "page": 75,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Disiplin",
+    "level": 4,
+    "page": 76,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Şahsi Bütünlük",
+    "level": 4,
+    "page": 76,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Vizyon Sahibi Olma",
+    "level": 4,
+    "page": 76,
+    "parent": 4,
+    "toc": false
+   }
+  ]
+ },
+ "2-3": {
+  "no": 4,
+  "title": "Sporda İletişim ve Halkla İlişkiler I",
+  "tocTitle": "Sporda İletişim ve Halkla İlişkiler I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 91,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Halkla İlişkilerin Tarihi, Tanımı ve Kavramı",
+    "level": 2,
+    "page": 91,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Halkla İlişkilerin Dünya Tarihi",
+    "level": 3,
+    "page": 91,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Halkla İlişkilerin Türkiye’de Gelişimi ve Tarihi",
+    "level": 3,
+    "page": 93,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Kavramsal Olarak Halkla İlişkiler",
+    "level": 3,
+    "page": 95,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Halkla İlişkilerde Kullanılan Araçlar ve Halkla İlişkilerin Amaçları",
+    "level": 2,
+    "page": 96,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Kulüplerinde Halkla İlişkilerin Faaliyet Alanları",
+    "level": 3,
+    "page": 97,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Medya ve Kurum Stratejileri",
+    "level": 3,
+    "page": 98,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "İletişimin Tanımı ve Bileşenleri",
+    "level": 3,
+    "page": 99,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "İletişimi Engelleyen Faktörler",
+    "level": 3,
+    "page": 101,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Temel İletişim Becerileri",
+    "level": 2,
+    "page": 102,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Dinleme Kavramı",
+    "level": 3,
+    "page": 102,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Dinlemenin Amacı",
+    "level": 3,
+    "page": 104,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Dinlemenin Önemi",
+    "level": 3,
+    "page": 105,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Etkin Dinleme",
+    "level": 3,
+    "page": 105,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Dinlemeyi Etkileyen Faktörler",
+    "level": 3,
+    "page": 106,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Etkili Spor İletişimi",
+    "level": 3,
+    "page": 107,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Spor Medya Okuryazarlığı",
+    "level": 2,
+    "page": 110,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Medya Okuryazarlık Kavramı ve Gelişim Süreci",
+    "level": 3,
+    "page": 110,
+    "parent": 17,
+    "toc": true
+   },
+   {
+    "title": "Spor Medya Okur Yazar Olma Süreci",
+    "level": 3,
+    "page": 111,
+    "parent": 17,
+    "toc": true
+   },
+   {
+    "title": "Uluslararası Alanda Spor Medya Okuryazarlığı",
+    "level": 3,
+    "page": 112,
+    "parent": 17,
+    "toc": true
+   },
+   {
+    "title": "Spor Medya Okuryazarlığı Gelişiminde Motivasyonun Rolü",
+    "level": 3,
+    "page": 113,
+    "parent": 17,
+    "toc": true
+   },
+   {
+    "title": "İletişimin Bileşenleri",
+    "level": 4,
+    "page": 100,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Fiziksel ve Teknik Engeller",
+    "level": 4,
+    "page": 101,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Psiko-Sosyal Engeller",
+    "level": 4,
+    "page": 101,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Örgütsel Engeller",
+    "level": 4,
+    "page": 101,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Diğer Engeller",
+    "level": 4,
+    "page": 101,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Antrenör Sporcu İlişkisinde Etkin Dinleme Becerisinin Geliştirilmesi",
+    "level": 4,
+    "page": 103,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "Etkili Dinleme Türleri",
+    "level": 4,
+    "page": 105,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Etkili Spor İletişiminin Önemi",
+    "level": 4,
+    "page": 107,
+    "parent": 16,
+    "toc": false
+   },
+   {
+    "title": "Spor Kulüplerinin Halkla İlişkiler Faaliyetleri ve Kullandıkları Araçlar",
+    "level": 4,
+    "page": 107,
+    "parent": 16,
+    "toc": false
+   },
+   {
+    "title": "Sosyal Medya ve Halkla İlişkiler",
+    "level": 4,
+    "page": 108,
+    "parent": 16,
+    "toc": false
+   }
+  ]
+ },
+ "2-4": {
+  "no": 5,
+  "title": "Spor Hukuku I",
+  "tocTitle": "Spor Hukuku I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 129,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Hukukun Temel Kavramları",
+    "level": 2,
+    "page": 129,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Toplumsal Yaşam, Toplumsal Düzen ve Toplumsal İlişki Kavramları",
+    "level": 3,
+    "page": 129,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Toplumsal Düzeni Sağlayan Kurallar",
+    "level": 3,
+    "page": 129,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Hukukun Türleri",
+    "level": 2,
+    "page": 132,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Kamu Hukuku ve Özel Hukuk Kavramları",
+    "level": 3,
+    "page": 132,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Karma Hukuk Kavramı",
+    "level": 3,
+    "page": 133,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Hukukta Yaptırım (Müeyyide) ve Türleri",
+    "level": 2,
+    "page": 134,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Cebri İcra (Zorla Yaptırma)",
+    "level": 3,
+    "page": 135,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Tazminat",
+    "level": 3,
+    "page": 135,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Geçersizlik (Geçersiz Sayma - Hükümsüzlük)",
+    "level": 3,
+    "page": 135,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Ceza",
+    "level": 3,
+    "page": 136,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Yokluk",
+    "level": 3,
+    "page": 136,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "İptal",
+    "level": 3,
+    "page": 136,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Hukukun Kaynakları",
+    "level": 2,
+    "page": 136,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Asıl (Asli) Kaynaklar",
+    "level": 3,
+    "page": 137,
+    "parent": 14,
+    "toc": true
+   },
+   {
+    "title": "Hukukun Diğer Kaynakları (Yazısız ve Yardımcı Kaynaklar)",
+    "level": 3,
+    "page": 140,
+    "parent": 14,
+    "toc": true
+   },
+   {
+    "title": "Normlar Hiyerarşisi",
+    "level": 3,
+    "page": 140,
+    "parent": 14,
+    "toc": true
+   },
+   {
+    "title": "Hukukta Kişi ve Hak Kavramları",
+    "level": 2,
+    "page": 142,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Hukukta Kişi Kavramı ve Türleri",
+    "level": 3,
+    "page": 142,
+    "parent": 18,
+    "toc": true
+   },
+   {
+    "title": "Hukukta Hak Kavramı ve Türleri",
+    "level": 3,
+    "page": 143,
+    "parent": 18,
+    "toc": true
+   },
+   {
+    "title": "Spor ve Hukuk İlişkisi",
+    "level": 2,
+    "page": 144,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Hukuku Kavramı ve Özellikleri",
+    "level": 3,
+    "page": 144,
+    "parent": 21,
+    "toc": true
+   },
+   {
+    "title": "Spor Hukukunun Alanı Bakımından İncelenmesi",
+    "level": 3,
+    "page": 145,
+    "parent": 21,
+    "toc": true
+   },
+   {
+    "title": "Spor Hukukunun Konu ve Paydaşları (Süjeleri)",
+    "level": 3,
+    "page": 146,
+    "parent": 21,
+    "toc": true
+   },
+   {
+    "title": "Görgü Kuralları",
+    "level": 4,
+    "page": 130,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Ahlak Kuralları",
+    "level": 4,
+    "page": 130,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Din Kuralları",
+    "level": 4,
+    "page": 130,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Hukuk Kuralları",
+    "level": 4,
+    "page": 131,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Yazılı Kaynaklar",
+    "level": 4,
+    "page": 137,
+    "parent": 15,
+    "toc": false
+   },
+   {
+    "title": "Gerçek Kişiler",
+    "level": 4,
+    "page": 142,
+    "parent": 19,
+    "toc": false
+   },
+   {
+    "title": "Tüzel Kişilik",
+    "level": 4,
+    "page": 142,
+    "parent": 19,
+    "toc": false
+   },
+   {
+    "title": "Kamu ve Özel Haklar",
+    "level": 4,
+    "page": 143,
+    "parent": 20,
+    "toc": false
+   }
+  ]
+ },
+ "3-0": {
+  "no": 1,
+  "title": "Antrenörlük Mesleğine Giriş I",
+  "tocTitle": "Antrenörlük Mesleğine Giriş I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antrenörlük Mesleğinin Gelişimi ve Kapsamı",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antrenörlük Mesleğinin Tarihsel Gelişimi",
+    "level": 3,
+    "page": 11,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antrenörlük Mesleğinin Kapsamı",
+    "level": 3,
+    "page": 12,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antrenörlüğün Amaçları",
+    "level": 3,
+    "page": 13,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Spora Katılım Süreçleri",
+    "level": 2,
+    "page": 14,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Ortamlarına Göre Antrenörlük",
+    "level": 2,
+    "page": 17,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Katılım Sporu-Çocuk Antrenörlüğü",
+    "level": 3,
+    "page": 17,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Katılım Sporu- Ergen ve Yetişkin Antrenörlüğü",
+    "level": 3,
+    "page": 18,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Performans Sporu Antrenörlüğü – Gelişmekte olan Sporcu",
+    "level": 3,
+    "page": 19,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Performans Sporu Ortamı Antrenörlüğü – Performans Dönemi",
+    "level": 3,
+    "page": 19,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Performans Sporu Antrenörlüğü- Yüksek Performans Dönemi",
+    "level": 3,
+    "page": 19,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Spor Ortamlarının Paydaşları",
+    "level": 2,
+    "page": 21,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antrenör-Sporcu Bağı",
+    "level": 3,
+    "page": 21,
+    "parent": 12,
+    "toc": true
+   },
+   {
+    "title": "Ebeveyn- Sporcu İlişkisi",
+    "level": 3,
+    "page": 22,
+    "parent": 12,
+    "toc": true
+   },
+   {
+    "title": "Antrenör - Ebeveyn ilişkisi",
+    "level": 3,
+    "page": 22,
+    "parent": 12,
+    "toc": true
+   }
+  ]
+ },
+ "3-1": {
+  "no": 2,
+  "title": "Beceri Öğrenimi I",
+  "tocTitle": "Beceri Öğrenimi I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 33,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Beceri Öğrenimi",
+    "level": 2,
+    "page": 33,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Beceri Öğrenimi Alanı",
+    "level": 3,
+    "page": 33,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Öğrenme – Performans İlişkisi",
+    "level": 3,
+    "page": 33,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Beceri Sınıflaması",
+    "level": 2,
+    "page": 34,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Tek Boyutlu Sınıflama",
+    "level": 3,
+    "page": 34,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Çok Boyutlu Sınıflama",
+    "level": 3,
+    "page": 36,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Karar Vermeyi Etkileyen Faktörler",
+    "level": 2,
+    "page": 37,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Reaksiyon Zamanı",
+    "level": 3,
+    "page": 37,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Dikkat Teorileri",
+    "level": 3,
+    "page": 38,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Canlılık Düzeyi",
+    "level": 3,
+    "page": 38,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Kas Büyüklüğüne Göre",
+    "level": 4,
+    "page": 35,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Hareketin Başlama ve Bitiş Netliğine Göre",
+    "level": 4,
+    "page": 35,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Çevrenin Tahmin Edilebilirlik Düzeyine Göre",
+    "level": 4,
+    "page": 35,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Motor ve Bilişsel Öğelerin Önemine Göre",
+    "level": 4,
+    "page": 35,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Düzenleyici Şartlar",
+    "level": 4,
+    "page": 36,
+    "parent": 6,
+    "toc": false
+   },
+   {
+    "title": "Hareket Gereklilikleri",
+    "level": 4,
+    "page": 36,
+    "parent": 6,
+    "toc": false
+   }
+  ]
+ },
+ "3-2": {
+  "no": 3,
+  "title": "Hareket Eğitimi ve Oyun I",
+  "tocTitle": "Hareket Eğitimi ve Oyun I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 49,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Hareket Eğitiminin Tanımı, Amacı ve Önemi",
+    "level": 2,
+    "page": 49,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Hareket Eğitiminin Tarihçesi",
+    "level": 3,
+    "page": 50,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Hareket Eğitimi Yaklaşımının Amaçları",
+    "level": 3,
+    "page": 50,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Temel Hareket Becerileri",
+    "level": 2,
+    "page": 51,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Beceri Temaları",
+    "level": 3,
+    "page": 52,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Temel Hareket Becerilerine Ait Örnek Etkinlikler",
+    "level": 3,
+    "page": 53,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Temel Hareket Kavramları",
+    "level": 2,
+    "page": 59,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Temel Hareket Becerileri ve Hareket Kavramlarına Ait Etkinlikler",
+    "level": 3,
+    "page": 61,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Oyunun Tarihsel Gelişimi, Sınıflandırılması ve Çocukların Gelişimine Etkileri",
+    "level": 2,
+    "page": 63,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Oyunun Tarihsel Gelişimi",
+    "level": 3,
+    "page": 63,
+    "parent": 9,
+    "toc": true
+   },
+   {
+    "title": "Oyunların Sınıflandırılması",
+    "level": 3,
+    "page": 64,
+    "parent": 9,
+    "toc": true
+   },
+   {
+    "title": "Oyunun Çocukların Gelişimine Etkileri",
+    "level": 3,
+    "page": 65,
+    "parent": 9,
+    "toc": true
+   },
+   {
+    "title": "Eğitsel Oyunların Yapısı, Özellikleri ve Sınıflandırılması",
+    "level": 2,
+    "page": 68,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Eğitsel Oyunların Yapısı ve Özellikleri",
+    "level": 3,
+    "page": 68,
+    "parent": 13,
+    "toc": true
+   },
+   {
+    "title": "Eğitsel Oyunların Sınıflandırılması",
+    "level": 3,
+    "page": 69,
+    "parent": 13,
+    "toc": true
+   },
+   {
+    "title": "Oyunun Fiziksel Gelişim ve Sağlık Üzerine Etkisi",
+    "level": 4,
+    "page": 65,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Oyunun Sosyal Gelişim Üzerine Etkisi",
+    "level": 4,
+    "page": 66,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Oyunun Psikolojik Gelişim Üzerine Etkisi",
+    "level": 4,
+    "page": 67,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Oyunun Zihinsel Gelişim Üzerine Etkisi",
+    "level": 4,
+    "page": 67,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Eğitsel Oyunların Yapısına Göre Sınıflandırılması",
+    "level": 4,
+    "page": 69,
+    "parent": 15,
+    "toc": false
+   },
+   {
+    "title": "Eğitsel Oyunları Seçmede ve Oynamada Etkili Olan Özelliklere Göre Sınıflandırılması",
+    "level": 4,
+    "page": 70,
+    "parent": 15,
+    "toc": false
+   }
+  ]
+ },
+ "3-3": {
+  "no": 4,
+  "title": "Motor Gelişim I",
+  "tocTitle": "Motor Gelişim I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 83,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Motor Gelişim ve Temel Kavramlar",
+    "level": 2,
+    "page": 83,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Dünden Bugüne Motor Gelişim",
+    "level": 3,
+    "page": 83,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Motor Gelişimde Tanımlar",
+    "level": 3,
+    "page": 84,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Temel Kavramlar",
+    "level": 3,
+    "page": 84,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Gelişimin İlkeleri",
+    "level": 2,
+    "page": 89,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Gelişim Yönü",
+    "level": 3,
+    "page": 89,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Büyüme Hızı",
+    "level": 3,
+    "page": 90,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Farklılaşma ve Bütünleşme",
+    "level": 3,
+    "page": 90,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Kritik (Hassas) Dönem",
+    "level": 3,
+    "page": 90,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Bireysel Farklılıklar",
+    "level": 3,
+    "page": 91,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Beden Ölçüleri",
+    "level": 3,
+    "page": 91,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Filogeni ve Ontogeni",
+    "level": 3,
+    "page": 91,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Gelişimi Etkileyen Faktörler",
+    "level": 2,
+    "page": 92,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Kalıtım",
+    "level": 3,
+    "page": 92,
+    "parent": 13,
+    "toc": true
+   },
+   {
+    "title": "Çevre",
+    "level": 3,
+    "page": 94,
+    "parent": 13,
+    "toc": true
+   },
+   {
+    "title": "Gelişimin Türleri",
+    "level": 2,
+    "page": 99,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Bilişsel Gelişim",
+    "level": 3,
+    "page": 99,
+    "parent": 16,
+    "toc": true
+   },
+   {
+    "title": "Duyuşsal Gelişim",
+    "level": 3,
+    "page": 102,
+    "parent": 16,
+    "toc": true
+   },
+   {
+    "title": "Psikomotor (Devinişsel) Gelişim",
+    "level": 3,
+    "page": 103,
+    "parent": 16,
+    "toc": true
+   },
+   {
+    "title": "Büyüme",
+    "level": 4,
+    "page": 85,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Gelişim",
+    "level": 4,
+    "page": 85,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Psikomotor Gelişim",
+    "level": 4,
+    "page": 85,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Hareket",
+    "level": 4,
+    "page": 86,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Öğrenme",
+    "level": 4,
+    "page": 87,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Olgunlaşma",
+    "level": 4,
+    "page": 87,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Hazırbulunuşluk",
+    "level": 4,
+    "page": 88,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Kalıtımla İlgili Bazı Tanımlar",
+    "level": 4,
+    "page": 93,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Doğum Öncesi Çevre",
+    "level": 4,
+    "page": 95,
+    "parent": 15,
+    "toc": false
+   },
+   {
+    "title": "Doğum Sırasındaki Etmenler",
+    "level": 4,
+    "page": 96,
+    "parent": 15,
+    "toc": false
+   },
+   {
+    "title": "Doğum Sonrası Çevre-Çevre ve Kalıtım ilişkisi",
+    "level": 4,
+    "page": 96,
+    "parent": 15,
+    "toc": false
+   },
+   {
+    "title": "Duyusal Motor Dönem (0-2 yaş)",
+    "level": 4,
+    "page": 100,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "İşlem Öncesi Dönemi (2-6 yaş)",
+    "level": 4,
+    "page": 100,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "Somut İşlemler Dönemi (7-11 Yaş)",
+    "level": 4,
+    "page": 100,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "Soyut işlemler Dönemi (12- + Yaş)",
+    "level": 4,
+    "page": 101,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "Erken Çocukluk (2-5 yaş)Döneminde Bilişsel Gelişim Özellikleri",
+    "level": 4,
+    "page": 101,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "Geç Çocukluk (6-11 yaş) Döneminde Bilişsel Gelişim Özellikleri",
+    "level": 4,
+    "page": 101,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "Erken Çocukluk (2-5 yaş) Döneminde Duyuşsal Gelişim Özellikleri",
+    "level": 4,
+    "page": 102,
+    "parent": 18,
+    "toc": false
+   },
+   {
+    "title": "Geç Çocukluk (6-11 Yaş) Döneminde Duyuşsal Gelişim Özellikleri",
+    "level": 4,
+    "page": 102,
+    "parent": 18,
+    "toc": false
+   },
+   {
+    "title": "Erken Çocukluk (2-5 Yaş) Döneminde Motor Gelişim Özellikleri",
+    "level": 4,
+    "page": 103,
+    "parent": 19,
+    "toc": false
+   },
+   {
+    "title": "Geç Çocukluk (6-11 Yaş) Döneminde Motor Gelişim Özellikleri",
+    "level": 4,
+    "page": 103,
+    "parent": 19,
+    "toc": false
+   }
+  ]
+ },
+ "3-4": {
+  "no": 5,
+  "title": "Ölçme ve Değerlendirme I",
+  "tocTitle": "Ölçme ve Değerlendirme I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 115,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Sporda Ölçme ve Değerlendirmenin Önemi",
+    "level": 2,
+    "page": 115,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Yerleştirme",
+    "level": 3,
+    "page": 116,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Tanı (Teşhis)",
+    "level": 3,
+    "page": 116,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Başarının Değerlendirilmesi",
+    "level": 3,
+    "page": 116,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Tahmin (Kestirim)",
+    "level": 3,
+    "page": 116,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Program Değerlendirme",
+    "level": 3,
+    "page": 116,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Motivasyon",
+    "level": 3,
+    "page": 117,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Ölçme",
+    "level": 2,
+    "page": 117,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Değişken",
+    "level": 3,
+    "page": 118,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Ölçme Türleri",
+    "level": 3,
+    "page": 119,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Ölçmede Kullanılan Ölçekler",
+    "level": 3,
+    "page": 120,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Ölçmede Birim",
+    "level": 3,
+    "page": 121,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Ölçmede Sıfır",
+    "level": 3,
+    "page": 121,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Ölçek Türleri",
+    "level": 3,
+    "page": 122,
+    "parent": 8,
+    "toc": true
+   },
+   {
+    "title": "Değerlendirme",
+    "level": 2,
+    "page": 125,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Ölçme Sonuçları",
+    "level": 3,
+    "page": 125,
+    "parent": 15,
+    "toc": true
+   },
+   {
+    "title": "Ölçüt",
+    "level": 3,
+    "page": 125,
+    "parent": 15,
+    "toc": true
+   },
+   {
+    "title": "Değerlendirme Türleri",
+    "level": 3,
+    "page": 126,
+    "parent": 15,
+    "toc": true
+   },
+   {
+    "title": "Doğrudan Ölçme",
+    "level": 4,
+    "page": 120,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Dolaylı Ölçme",
+    "level": 4,
+    "page": 120,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Türetilmiş Ölçme",
+    "level": 4,
+    "page": 120,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Birimlerde Eşitlik",
+    "level": 4,
+    "page": 121,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Birimlerin Genelliği",
+    "level": 4,
+    "page": 121,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Birimlerin Kullanışlılığı",
+    "level": 4,
+    "page": 121,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Mutlak (Doğal, Gerçek) Sıfır",
+    "level": 4,
+    "page": 122,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Bağıl (Tanımlanmış, Göreceli) Sıfır",
+    "level": 4,
+    "page": 122,
+    "parent": 12,
+    "toc": false
+   },
+   {
+    "title": "Sınıflama (Adlandırma-Nominal) Ölçeği",
+    "level": 4,
+    "page": 122,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Sıralama (Dereceleme) Ölçeği",
+    "level": 4,
+    "page": 123,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Eşit Aralıklı Ölçekler",
+    "level": 4,
+    "page": 123,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Eşit Oranlı Ölçekler",
+    "level": 4,
+    "page": 123,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Mutlak Ölçüt",
+    "level": 4,
+    "page": 125,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "Bağıl Ölçüt",
+    "level": 4,
+    "page": 125,
+    "parent": 17,
+    "toc": false
+   },
+   {
+    "title": "Mutlak Değerlendirme (Kritere Bağlı Değerlendirme) ve Bağıl Değerlendirme (Norm Dayanıklı Değerlendirme)",
+    "level": 4,
+    "page": 126,
+    "parent": 18,
+    "toc": false
+   },
+   {
+    "title": "Tanıma ve Yerleştirmeye Yönelik Değerlendirme, Biçimlendirici Değerlendirme (Formative Değerlendirme) ve Değer Biçmeye Yönelik (Özetleyici) Değerlendirme (Summative Değerlendirme)",
+    "level": 4,
+    "page": 127,
+    "parent": 18,
+    "toc": false
+   }
+  ]
+ },
+ "3-5": {
+  "no": 6,
+  "title": "Spor Pedagojisi I",
+  "tocTitle": "Spor Pedagojisi I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 137,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Eğitim ile İlgili Temel Kavramlar",
+    "level": 2,
+    "page": 137,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Eğitim Kavramı",
+    "level": 3,
+    "page": 137,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Öğretim Kavramı",
+    "level": 3,
+    "page": 139,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Öğrenme Kavramı",
+    "level": 3,
+    "page": 139,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Spor Pedagojisi Kavramları",
+    "level": 3,
+    "page": 140,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Öğrenmeyi Etkileyen Faktörler",
+    "level": 2,
+    "page": 142,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Öğrenenle İlgili Faktörler",
+    "level": 3,
+    "page": 142,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Öğrenme Yöntemi ile İlgili Faktörler",
+    "level": 3,
+    "page": 144,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Öğrenme Malzemesi ile İlgili Faktörler",
+    "level": 3,
+    "page": 144,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Öğretme ve Öğrenmenin Kuramsal Temelleri",
+    "level": 2,
+    "page": 145,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Davranışçı Öğrenme Kuramları",
+    "level": 3,
+    "page": 146,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Sosyal Bilişsel Öğrenme Kuramı",
+    "level": 3,
+    "page": 148,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Bilişsel Öğrenme Kuramları",
+    "level": 3,
+    "page": 149,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Yapılandırmacı Öğrenme Kuramları",
+    "level": 3,
+    "page": 152,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Öğrenme ve Öğretim İlkeleri",
+    "level": 2,
+    "page": 154,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Öğretme Stratejileri",
+    "level": 2,
+    "page": 157,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Genel Öğretim Yöntemleri",
+    "level": 2,
+    "page": 161,
+    "parent": null,
+    "toc": true
+   }
+  ]
+ },
+ "4-0": {
+  "no": 1,
+  "title": "Spor Tarihi I",
+  "tocTitle": "Spor Tarihi I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Teriminin ve Sportif Hareketin Kökeni",
+    "level": 2,
+    "page": 11,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Teriminin Kökeni ve Anlam Gelişimi",
+    "level": 3,
+    "page": 11,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Sportif Hareketin Kökeni ve Farklı Yaklaşımlar",
+    "level": 3,
+    "page": 13,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Antik Çağ’da Beden Eğitimi, Spor ve Olimpiyat Oyunları",
+    "level": 2,
+    "page": 17,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antik Çağ’da Sporun Anlamı ve Olimpiyat Oyunları",
+    "level": 3,
+    "page": 17,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Antik Olimpiyat Oyunlarında Spor Disiplinleri",
+    "level": 3,
+    "page": 20,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Yeniçağ’da Beden Eğitimi ve Öncüleri",
+    "level": 2,
+    "page": 23,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Rönesans’tan Aydınlanma’ya Beden Eğitimi",
+    "level": 3,
+    "page": 24,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Beden Eğitiminin Öncüleri ve Kurumları",
+    "level": 3,
+    "page": 25,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Yakın Çağ’da Cimnastik Akımları ve Modern Sporun Doğuşu",
+    "level": 2,
+    "page": 26,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Cimnastik Akımları ve Öncüleri",
+    "level": 3,
+    "page": 27,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Modern Sporun Doğuşu ve Prensipleri",
+    "level": 3,
+    "page": 30,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Modern Olimpiyatların Kuruluşu",
+    "level": 2,
+    "page": 32,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Modern Olimpiyatların Kuruluşuna Yol Açan Faktörler",
+    "level": 3,
+    "page": 32,
+    "parent": 13,
+    "toc": true
+   },
+   {
+    "title": "Baron Pierre Coubertin ve Modern Olimpiyatların Kuruluşu",
+    "level": 3,
+    "page": 34,
+    "parent": 13,
+    "toc": true
+   },
+   {
+    "title": "Girit-Miken Döneminde Spor ve Olimpiyatlar",
+    "level": 4,
+    "page": 17,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Arkaik Dönemde Spor ve Olimpiyatlar",
+    "level": 4,
+    "page": 17,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Klasik Dönemde Okul Beden Eğitimi ve Olimpiyatlar",
+    "level": 4,
+    "page": 18,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Helenistik ve Helen-Roma Dönemlerinde Spor ve Olimpiyatlar",
+    "level": 4,
+    "page": 20,
+    "parent": 5,
+    "toc": false
+   },
+   {
+    "title": "Alman Jimnastiği ve Friedrich Ludwig Jahn",
+    "level": 4,
+    "page": 27,
+    "parent": 11,
+    "toc": false
+   },
+   {
+    "title": "İsveç Jimnastiği ve Pehr Henrik Ling",
+    "level": 4,
+    "page": 28,
+    "parent": 11,
+    "toc": false
+   }
+  ]
+ },
+ "4-1": {
+  "no": 2,
+  "title": "Spor Sosyolojisi I",
+  "tocTitle": "Spor Sosyolojisi I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 45,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor, Toplum ve Kültür",
+    "level": 2,
+    "page": 45,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spora Sosyolojik Bakış",
+    "level": 3,
+    "page": 46,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Toplumsal ve Kültürel Bir Olgu Olarak Spor",
+    "level": 3,
+    "page": 51,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Spor ve Sosyalleşme",
+    "level": 2,
+    "page": 53,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spora Yönelik Sosyalleşme",
+    "level": 3,
+    "page": 54,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Spor Yoluyla Sosyalleşme",
+    "level": 3,
+    "page": 56,
+    "parent": 4,
+    "toc": true
+   },
+   {
+    "title": "Spor ve Toplumsal Cinsiyet",
+    "level": 2,
+    "page": 59,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Toplumsal Cinsiyet ve Spor ile İlgili Temel Kavramlar",
+    "level": 3,
+    "page": 60,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Sporda Toplumsal Cinsiyet Eşitliği Alanları",
+    "level": 3,
+    "page": 61,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Toplumsal Cinsiyete Duyarlı Antrenör",
+    "level": 3,
+    "page": 65,
+    "parent": 7,
+    "toc": true
+   },
+   {
+    "title": "Sporun Sosyal Kurumlarla İlişkisi",
+    "level": 4,
+    "page": 48,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Spora İlişkin Kuramsal Yaklaşımlar",
+    "level": 4,
+    "page": 50,
+    "parent": 2,
+    "toc": false
+   },
+   {
+    "title": "Toplumsal Cinsiyet Rolleri",
+    "level": 4,
+    "page": 60,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Toplumsal Cinsiyet Kalıp Yargılar",
+    "level": 4,
+    "page": 60,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Cinsiyete Dayalı Ayrımcılık",
+    "level": 4,
+    "page": 61,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Sporda Toplumsal Cinsiyet Eşitliği",
+    "level": 4,
+    "page": 61,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Spora Katılımda Toplumsal Cinsiyet Temsili",
+    "level": 4,
+    "page": 62,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Spor Yönetiminde Toplumsal Cinsiyet Temsili",
+    "level": 4,
+    "page": 63,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Antrenörlük Pozisyonunda Toplumsal Cinsiyet Temsiliyeti",
+    "level": 4,
+    "page": 63,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Sporda Toplumsal Cinsiyet Temelli Şiddet",
+    "level": 4,
+    "page": 63,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Spor Medyasında Toplumsal Cinsiyet Eşitliği",
+    "level": 4,
+    "page": 64,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Spor Eğitimi",
+    "level": 4,
+    "page": 64,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Sporda Toplumsal Cinsiyet Eşitsizliğinin Nedenleri",
+    "level": 4,
+    "page": 64,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Toplumsal Cinsiyet Eşitliğinin Sağlanması İçin Antrenörün Yapması Gerekenler",
+    "level": 4,
+    "page": 65,
+    "parent": 10,
+    "toc": false
+   },
+   {
+    "title": "Sporda Toplumsal Cinsiyete Duyarlı Dil Kullanımı",
+    "level": 4,
+    "page": 65,
+    "parent": 10,
+    "toc": false
+   }
+  ]
+ },
+ "4-2": {
+  "no": 3,
+  "title": "Spor Psikolojisi I",
+  "tocTitle": "Spor Psikolojisi I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 77,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor ve Egzersiz Psikolojisinin Temel Kavramları ve Sporda Psikolojik Performans",
+    "level": 2,
+    "page": 77,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Spor Psikolojisi Tarihçesi",
+    "level": 3,
+    "page": 77,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Egzersiz Psikolojisi",
+    "level": 3,
+    "page": 78,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Spor Psikolojisinin Amaçları",
+    "level": 3,
+    "page": 78,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Spor Psikoloğu",
+    "level": 3,
+    "page": 82,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Çocuk Sporlarında Antrenörlük",
+    "level": 2,
+    "page": 84,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Çocuk ve Genç Sporcuların Spora Katılma ve Bırakma Nedenleri",
+    "level": 3,
+    "page": 85,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Çocuk ve Genç Sporcuların Sporu Bırakmalarını Engelleme Yöntemleri",
+    "level": 3,
+    "page": 86,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Motivasyonel İklim",
+    "level": 3,
+    "page": 88,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Çocuk Sporlarında Antrenörlüğün 12 İlkesi",
+    "level": 3,
+    "page": 90,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Sporda İletişim",
+    "level": 2,
+    "page": 92,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "İletişim",
+    "level": 3,
+    "page": 93,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "İletişim İşlemi",
+    "level": 3,
+    "page": 94,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "İletişim Şekilleri",
+    "level": 3,
+    "page": 95,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Etkili İletişim Yöntemleri",
+    "level": 3,
+    "page": 97,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Verimli İletişim",
+    "level": 3,
+    "page": 99,
+    "parent": 11,
+    "toc": true
+   },
+   {
+    "title": "Fiziksel Performansı Arttırma ve Toparlanmaya Yardımcı Olmak Amacıyla Gerçekleştirilen Spor Psikolojisi Uygulamaları",
+    "level": 4,
+    "page": 79,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Sporcuların Teknik Öğrenimlerini Hızlandırmak ve Müsabakaya Hazırlanmalarını Sağlamak Amacıyla Gerçekleştirilen Çalışmalar",
+    "level": 4,
+    "page": 80,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Performansa Engel Olan Psikolojik Etmenlerin Ortadan Kaldırılması Amacıyla Yapılan Çalışmalar",
+    "level": 4,
+    "page": 81,
+    "parent": 4,
+    "toc": false
+   },
+   {
+    "title": "Sporcularda Yeterlik, Özerklik ve İlişkisellik İhtiyacını Destekleme",
+    "level": 4,
+    "page": 87,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Ustalık İklimli Antrenman Ortamı Oluşturma",
+    "level": 4,
+    "page": 88,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Sporcularda Ustalık Yönelimli Hedefler Geliştirme",
+    "level": 4,
+    "page": 89,
+    "parent": 9,
+    "toc": false
+   },
+   {
+    "title": "Fiziksel Görüntü",
+    "level": 4,
+    "page": 95,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Vücut Hareketleri (Jestler)",
+    "level": 4,
+    "page": 96,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Dokunma",
+    "level": 4,
+    "page": 96,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Ses Özellikleri",
+    "level": 4,
+    "page": 97,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Vücudun Konumu",
+    "level": 4,
+    "page": 97,
+    "parent": 14,
+    "toc": false
+   },
+   {
+    "title": "Mesajları Verimli Alabilmek",
+    "level": 4,
+    "page": 99,
+    "parent": 15,
+    "toc": false
+   },
+   {
+    "title": "İletişimde Çıkan Çatışmalar",
+    "level": 4,
+    "page": 99,
+    "parent": 15,
+    "toc": false
+   }
+  ]
+ },
+ "4-3": {
+  "no": 4,
+  "title": "Sporda Fair Play I",
+  "tocTitle": "Sporda Fair Play I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 113,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Fair Play: Kavram ve Kapsamı",
+    "level": 2,
+    "page": 113,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Fair Play Kavramının Gelişimi",
+    "level": 3,
+    "page": 113,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Fair Play Kavramının Kapsamı",
+    "level": 3,
+    "page": 114,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Fair Play Kavramının Türkiye Serüveni",
+    "level": 3,
+    "page": 116,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Fair Play Anlayışının Tarihsel Gelişimi",
+    "level": 2,
+    "page": 118,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Antik Çağ’da Fair Play Anlayışı",
+    "level": 3,
+    "page": 118,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Orta Çağ’da Fair Play Anlayışı",
+    "level": 3,
+    "page": 119,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Modern Fair Play Anlayışının Gelişimi",
+    "level": 3,
+    "page": 120,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Fair Play Anlayışında Gerileme Süreci",
+    "level": 3,
+    "page": 122,
+    "parent": 5,
+    "toc": true
+   },
+   {
+    "title": "Dünyada ve Türkiye’de Fair Play Kuruluşları ve Fair Play Ödülleri",
+    "level": 2,
+    "page": 124,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Uluslararası Fair Play Komitesi (CIFP)",
+    "level": 3,
+    "page": 125,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Avrupa Fair Play Birliği (EFPM)",
+    "level": 3,
+    "page": 126,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "TMOK Fair Play Konseyi",
+    "level": 3,
+    "page": 128,
+    "parent": 10,
+    "toc": true
+   },
+   {
+    "title": "Formal Fair Play",
+    "level": 4,
+    "page": 115,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "İnformal Fair Play",
+    "level": 4,
+    "page": 116,
+    "parent": 3,
+    "toc": false
+   },
+   {
+    "title": "Yatılı Kolejler ve Fair Play",
+    "level": 4,
+    "page": 120,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "İngiliz Soylular Sınıfı ve Fair Play",
+    "level": 4,
+    "page": 122,
+    "parent": 8,
+    "toc": false
+   },
+   {
+    "title": "Amatör Kurallar ve Fair Play",
+    "level": 4,
+    "page": 122,
+    "parent": 8,
+    "toc": false
+   }
+  ]
+ },
+ "4-4": {
+  "no": 5,
+  "title": "Sporda Koruma I",
+  "tocTitle": "Sporda Koruma I",
+  "sections": [
+   {
+    "title": "Giriş",
+    "level": 2,
+    "page": 139,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Sporda Koruma Temel Kavramlar",
+    "level": 2,
+    "page": 139,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Çocuk Koruma",
+    "level": 3,
+    "page": 139,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Sporda Çocuk Koruma",
+    "level": 3,
+    "page": 141,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Taciz ve İstismar",
+    "level": 3,
+    "page": 142,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Güvenli Spor",
+    "level": 3,
+    "page": 143,
+    "parent": 1,
+    "toc": true
+   },
+   {
+    "title": "Sporda Koruma Alanında Hak Temelli Anlayış",
+    "level": 2,
+    "page": 144,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Uluslararası Çocuk Hakları",
+    "level": 3,
+    "page": 144,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Uluslararası Spor Politika Belgelerinde Spora Katılım Hakkı",
+    "level": 3,
+    "page": 148,
+    "parent": 6,
+    "toc": true
+   },
+   {
+    "title": "Sporda Çocuk İstismarı ve Türleri",
+    "level": 2,
+    "page": 149,
+    "parent": null,
+    "toc": true
+   },
+   {
+    "title": "Fiziksel İstismar",
+    "level": 3,
+    "page": 150,
+    "parent": 9,
+    "toc": true
+   },
+   {
+    "title": "Duygusal İstismar",
+    "level": 3,
+    "page": 151,
+    "parent": 9,
+    "toc": true
+   },
+   {
+    "title": "Cinsel İstismar",
+    "level": 3,
+    "page": 153,
+    "parent": 9,
+    "toc": true
+   },
+   {
+    "title": "İhmal",
+    "level": 3,
+    "page": 154,
+    "parent": 9,
+    "toc": true
+   },
+   {
+    "title": "BM Çocuk Hakları Sözleşmesi",
+    "level": 4,
+    "page": 145,
+    "parent": 7,
+    "toc": false
+   },
+   {
+    "title": "Avrupa Konseyi Çocukların Cinsel Sömürü ve İstismara Karşı Korunması Sözleşmesi",
+    "level": 4,
+    "page": 147,
+    "parent": 7,
+    "toc": false
+   }
+  ]
+ }
+}

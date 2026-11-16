@@ -26,8 +26,8 @@ test('Kitabın kendi "Neler Öğrendik?" sorularının tamamı çıkarıldı', (
  assert.equal(perUnit.size, 29);
  for (const [uid, n] of perUnit) assert.equal(n, 10, `${uid} ünitesinden 10 soru beklenir, gelen: ${n}`);
  for (const q of bookQuestions) {
-  assert.ok(Array.isArray(q.options) && q.options.length === 4, `${q.id}: 4 seçenek olmalı`);
-  assert.equal(new Set(q.options.map(norm)).size, 4, `${q.id}: seçenekler tekrarlı`);
+  assert.ok(Array.isArray(q.options) && q.options.length === 5, `${q.id}: 5 seçenek olmalı`);
+  assert.equal(new Set(q.options.map(norm)).size, 5, `${q.id}: seçenekler tekrarlı`);
   assert.ok(q.options.includes(q.answer), `${q.id}: doğru cevap seçeneklerde yok`);
   assert.ok(q.question.length >= 12, `${q.id}: soru kökü çok kısa`);
   assert.ok(/^[A-E]$/.test(q.answerLetter), `${q.id}: cevap harfi A-E olmalı`);
@@ -47,7 +47,7 @@ test('Kitap paraleli sorular: aynı bilgi, farklı lafız — asla kopya değil'
   for (const o of p.options) {
    assert.ok(seed.options.some(x => norm(x) === norm(o)), `${p.id}: kaynakta olmayan seçenek uydurulmuş`);
   }
-  assert.equal(new Set(p.options.map(norm)).size, 4, `${p.id}: seçenekler tekrarlı`);
+  assert.equal(new Set(p.options.map(norm)).size, 5, `${p.id}: seçenekler tekrarlı`);
   assert.equal(/undefined|NaN|\[object/.test(p.question + p.answer + p.options.join(' ')), false, `${p.id}: bozuk metin`);
   // Soru işaretiyle biter; boşluk doldurma kalıbıysa ("... denir.") nokta kabul edilir.
   assert.ok(/[?.]$/.test(p.question.trim()), `${p.id}: soru kökü soru işaretiyle bitmeli`);
@@ -87,7 +87,7 @@ test('Kaynak temellendirme: özet/kitap dışındaki soru elenir, kaynaklı soru
   { unitId: '4-0', question: 'Mars gezegenindeki yer çekimi ivmesi hangi değere yaklaşık olarak eşittir?', answer: 'Saniye karede metre' }
  ];
  for (const c of controls) {
-  const res = g.evaluate({ ...c, options: [c.answer, 'Birinci seçenek', 'İkinci seçenek', 'Üçüncü seçenek'] });
+  const res = g.evaluate({ ...c, options: [c.answer, 'Birinci seçenek', 'İkinci seçenek', 'Üçüncü seçenek', 'Dördüncü seçenek'] });
   assert.equal(res.ok, false, `Uydurma soru elenmeli: ${c.question}`);
   assert.match(res.reason, /konu anlatım|kitap pasaj/i);
  }
@@ -129,12 +129,12 @@ test('Üretim hattı: kaynak dışı (uydurma) taslak reddedilir, kaynaklı tasl
   const drafts = {
    hallucinated: {
     question: 'Kuantum dolanıklık kuramında süperpozisyon hâli hangi kavramla açıklanır?',
-    options: ['Durum vektörünün çakışması', 'Gözlemcinin kesin ölçümü', 'Klasik kesin yörünge', 'Belirlenmiş tekil sonuç'],
+    options: ['Durum vektörünün çakışması', 'Gözlemcinin kesin ölçümü', 'Klasik kesin yörünge', 'Belirlenmiş tekil sonuç', 'Yerel gizli değişkenler'],
     answer: 'Durum vektörünün çakışması'
    },
    grounded: {
     question: 'Sürantrenman riskini artıran temel yüklenme hatası aşağıdakilerden hangisidir?',
-    options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli ve düzenli artırmak', 'Sezon içi dinlenme günlerini planlamak', 'Bireysel yanıta göre şiddeti ayarlamak'],
+    options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli ve düzenli artırmak', 'Sezon içi dinlenme günlerini planlamak', 'Bireysel yanıta göre şiddeti ayarlamak', 'Yüklenme sonrası uykuyu düzenli tutmak'],
     answer: 'Yetersiz toparlanmayla yükü sürekli artırmak'
    }
   };
@@ -205,13 +205,13 @@ test('Yanlış yapılan soru değiştirilerek yeniden sorulur (hata defteri vary
  const base = {
   question: 'Aşağıdakilerden hangisi antrenmanın temel ilkelerinden biri değildir?',
   answer: 'Rastgele yüklenme',
-  options: ['Rastgele yüklenme', 'Bireyselleştirme', 'Süreklilik', 'Kademeli artış']
+  options: ['Rastgele yüklenme', 'Bireyselleştirme', 'Süreklilik', 'Kademeli artış', 'Çeşitlilik']
  };
  const v1 = buildRetryVariant(base, '0-0::soru-1', 1);
  assert.ok(v1, 'Varyant üretilmeli');
  assert.equal(v1.answer, base.answer, 'Doğru cevap korunmalı');
  assert.notEqual(norm(v1.question), norm(base.question), 'Soru kökü değişmeli');
- assert.equal(v1.wrong.length, 3, '3 çeldirici kalmalı');
+ assert.equal(v1.wrong.length, 4, '4 çeldirici kalmalı');
  assert.ok(!v1.wrong.includes(base.answer), 'Doğru cevap çeldiriciler arasında olmamalı');
  for (const w of v1.wrong) assert.ok(base.options.includes(w), 'Çeldirici kaynak sorudan gelmeli');
  assert.ok(v1.source.includes('Hata Defteri'));

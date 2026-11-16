@@ -11,11 +11,12 @@ import {unique} from './unique';
 import {advanced} from './advanced';
 import {newQuestions} from './newQuestions';
 import {challenge} from './challenge';
+import {examSampleLines} from './examSamples';
 import bookIndex from './bookIndex.json';
 import groundingIndex from './groundingIndex.json';
 import {bookNotes,bookQuestions} from './bookNotes';
 import {expanded} from './expanded';
-import {OllamaStudio,getGenerated,GeneratedQuestion} from './OllamaStudio';
+import {OllamaStudio,getQuizPool,GeneratedQuestion} from './OllamaStudio';
 import {MemoryPath} from './MemoryPath';
 import {VoiceStudio} from './VoiceStudio';
 import {speakWithVoiceStudio,stopVoiceStudio} from './tts/voiceStudio';
@@ -88,7 +89,7 @@ const days=Math.max(0,Math.ceil((new Date('2026-12-20T09:00:00').getTime()-Date.
 function App(){
  const [reviews,setReviews]=useState<Reviews>(()=>loadReviews(localStorage.getItem('tempo-reviews')));
  const saveReviews=(value:Reviews)=>{setReviews(value);localStorage.setItem('tempo-reviews',JSON.stringify(value))};
- const [generated,setGenerated]=useState<GeneratedQuestion[]>([]); useEffect(()=>{getGenerated().then(setGenerated).catch(()=>{});},[]);
+ const [generated,setGenerated]=useState<GeneratedQuestion[]>([]); const generatedRev=useRef<string|null>(null); const generatedAt=useRef(0);
  const [bookOfficialQs,setBookOfficialQs]=useState<BookOfficialQuestion[]>([]);
  const [bookParallelQs,setBookParallelQs]=useState<BookOfficialQuestion[]>([]);
  // Kaynak dışı (konu anlatım özetlerinde/kitapta karşılığı olmayan) sorular testlerden çıkarılsın mı?
@@ -155,6 +156,9 @@ function App(){
    .catch(()=>{});
  },[]);
  const [progress,setProgress]=useState<Progress>(readSaved); const [page,setPage]=useState('Genel bakış'); const [selected,setSelected]=useState<{bi:number;ui:number}|null>(null); const [quiz,setQuiz]=useState<typeof all>([]); const [qi,setQi]=useState(0); const [choice,setChoice]=useState<string|null>(null); const [score,setScore]=useState(0); const [menu,setMenu]=useState(false); const [speaking,setSpeaking]=useState(false); const [mode,setMode]=useState('Konu anlatımı');
+ // Üretilen soru havuzu on binlerce soruya ulaşabilir: liste açılışta, sayfa değiştiğinde (en çok dakikada bir)
+ // ve 5 dakikada bir sorulur; sunucu havuz değişmediyse listeyi yeniden göndermez.
+ useEffect(()=>{let alive=true;const pull=()=>{if(Date.now()-generatedAt.current<60000)return;generatedAt.current=Date.now();getQuizPool(generatedRev.current).then(r=>{if(alive&&r){generatedRev.current=r.revision;setGenerated(r.items);}}).catch(()=>{generatedAt.current=0});};pull();const t=setInterval(pull,300000);return()=>{alive=false;clearInterval(t)};},[page]);
  const [isFullExam,setIsFullExam]=useState(false);
  const [examRemainingSec,setExamRemainingSec]=useState(6000);
  const [inlinePdfUrl,setInlinePdfUrl]=useState<string>('');
@@ -360,7 +364,7 @@ function App(){
     ...(hard||uncovered?[]:[x]),
     ...officialRows,
     ...parallelRows,
-    ...[...(hard||uncovered?[]:(extra[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(scenarios[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(practice[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:[reinforcement[x.bi][x.ui],...(unique[x.id]?.questions||[]),...(advanced[x.id]?.questions||[]),...(newQuestions[x.id]?.questions||[]),...(bookQuestions[x.id]||[])]),...(hard?(challenge[x.id]||[]):[])].map(line=>{const [question,answer,...rest]=line.split('|'); const explanation=rest.pop()!; return {...x,u:{...x.u,question,answer,wrong:rest,key:explanation}}}),
+    ...[...(hard||uncovered?[]:(extra[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(scenarios[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(practice[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:[reinforcement[x.bi][x.ui],...(unique[x.id]?.questions||[]),...(advanced[x.id]?.questions||[]),...(newQuestions[x.id]?.questions||[]),...(bookQuestions[x.id]||[]),...(examSampleLines[x.id]||[])]),...(hard?(challenge[x.id]||[]):[])].map(line=>{const [question,answer,...rest]=line.split('|'); const explanation=rest.pop()!; return {...x,u:{...x.u,question,answer,wrong:rest,key:explanation}}}),
     ...(!hard&&!uncovered&&x.id==='3-4'?calculated.map(u=>({...x,u})):[]),
     ...(!hard?generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(!uncovered||Boolean(q.passageId)||q.questionAngle==='surpriz_baglam')).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,paragraph:q.paragraph,source:`Ollama · ${q.model}${q.difficulty?` · ${q.difficulty.toUpperCase()}`:''}${q.questionAngle?` · ${q.questionAngle.replace('_',' ')}`:''}${q.examPotential?` · Sınav ★${q.examPotential}/5`:''}${q.pages?.length?` · s.${q.pages.join(',')}`:''}`}})):[])
    ];
@@ -702,11 +706,11 @@ function App(){
   {quiz[qi].u.paragraph && <blockquote className="quiz-paragraph">{quiz[qi].u.paragraph}</blockquote>}
   <h2>{quiz[qi].u.question}</h2>
   {!choice&&<div className="joker-bar">
-   <button type="button" className="joker-btn" onClick={triggerFiftyFifty} disabled={curElim.length>0}>✂️ %50 İki Şık Ele</button>
+   <button type="button" className="joker-btn" onClick={triggerFiftyFifty} disabled={curElim.length>0}>✂️ İki Şık Ele</button>
    <button type="button" className="joker-btn" onClick={triggerHint} disabled={isHint}>📖 Kitap İpucu Aç</button>
   </div>}
   {isHint&&!choice&&<div className="quiz-hint-box">💡 <b>İpucu:</b> {quiz[qi].u.key.slice(0,110)}...</div>}
-  <div className="answers">{options(quiz[qi].u).map((a,i)=>{const isElim=curElim.includes(a);return <button key={a} disabled={isElim} onClick={()=>answer(a)} className={isElim?'eliminated':choice?(a===quiz[qi].u.answer?'correct':a===choice?'incorrect':''):''}><span>{'ABCD'[i]}</span>{a}</button>;})}</div>
+  <div className="answers">{options(quiz[qi].u).map((a,i)=>{const isElim=curElim.includes(a);return <button key={a} disabled={isElim} onClick={()=>answer(a)} className={isElim?'eliminated':choice?(a===quiz[qi].u.answer?'correct':a===choice?'incorrect':''):''}><span>{'ABCDE'[i]}</span>{a}</button>;})}</div>
   {choice&&<div className={choice===quiz[qi].u.answer?'feedback good':'feedback bad'}><b>{choice===quiz[qi].u.answer?`Doğru cevap! ${lastXpGain>0?`(+${lastXpGain} XP)`:''}`:'Birlikte tekrar edelim.'}</b><p>{quiz[qi].u.key}</p><button onClick={()=>openUnit(quiz[qi].bi,quiz[qi].ui)}>Konuya dön <ArrowUpRight size={14}/></button></div>}
   {choice&&<div className="ai-council-verdict">
    <div className="acv-head"><b>🤖 100 Yapay Zekâ Konseyi Analizi</b><span>%{(100-meta.solvedBy100AiPct)} Aday Elenmesi · {meta.aiDifficultyLabel}</span></div>
@@ -743,7 +747,7 @@ function App(){
  </div>
  <div className="notice warning"><AlertCircle size={20}/><span>Bu bölümdeki rakamlar (20 soru/ders, 100 soru, 12 doğru/60 puan barajı, yanlışın doğruyu götürmediği, ~100 dakikalık süre) internet üzerinde genel olarak paylaşılan bilgilere dayanır; kademeye, yıla ve kuruma göre değişebilir. Sınava kaydolurken ve sınavdan önce mutlaka resmî duyuruyu (Gençlik ve Spor Bakanlığı Spor Bilgi Sistemi / Anadolu Üniversitesi) kontrol et. Bu metin resmî bir kaynak değildir.</span></div>
  </>}
- <div hidden={page!=='Soru stüdyosu'}><OllamaStudio read={progress.read} onChange={setGenerated}/></div>
+ <div hidden={page!=='Soru stüdyosu'}><OllamaStudio read={progress.read}/></div>
  {page==='Ayarlar'&&<><div className="page-title"><div className="eyebrow muted">ÇALIŞMA ALANIN</div><h1>Ayarlar<span className="accent">.</span></h1><p>İlerlemen bu tarayıcıda saklanır.</p></div><div className="settings-card"><h2>İlerlemeyi sıfırla</h2><p>Tamamlanan üniteler, test sonuçları, hata defteri ve tekrar planı bu tarayıcıdan silinir. Bu işlem geri alınamaz.</p><button className="outline" onClick={()=>{if(confirm('Tüm ilerlemeni, hata defterini ve tekrar planını sıfırlamak istiyor musun?')){save(initial);saveReviews({});saveMistakes([])}}}><RotateCcw size={16}/> İlerlemeyi sıfırla</button></div></>}
  <footer><span>✳ tempo. <i>Öğrenmenin kendi ritmi var.</i></span><span>Senin için, hedeflerine doğru. ♡</span></footer></div></main></div>
 }

@@ -1,7 +1,22 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-const norm = s => (typeof s === 'string' ? s : '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+import { isStoredOptionCount } from './option-count.mjs';
+const normRaw = s => (typeof s === 'string' ? s : '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+// Her taramada havuzdaki bütün şıklar normalleştirilir; büyük havuzda kısa metinlerin sonucu saklanır.
+const NORM_CACHE_LIMIT = 1_000_000;
+const normCache = new Map();
+const norm = s => {
+ if (typeof s !== 'string') return '';
+ if (s.length > 200) return normRaw(s);
+ let out = normCache.get(s);
+ if (out === undefined) {
+  if (normCache.size >= NORM_CACHE_LIMIT) normCache.clear();
+  out = normRaw(s);
+  normCache.set(s, out);
+ }
+ return out;
+};
 
 function tokenSet(text) {
  return new Set(norm(text).split(' ').filter(w => w.length >= 3));
@@ -113,7 +128,7 @@ export class PoolCuratorBot {
   }
 
   // 3) Soru tipi ve açı zenginliği (0..18)
-  const typeBonus = { vaka: 10, istisna: 10, en_iyi_secim: 10, karsilastirma: 9, neden_sonuc: 9, uygulama: 8, kavram: 6 };
+  const typeBonus = { vaka: 10, istisna: 10, en_iyi_secim: 10, karsilastirma: 9, neden_sonuc: 9, ilginc_bilgi: 9, uygulama: 8, bosluk_doldurma: 8, dogru_yargi: 8, tanimdan_terim: 7, kavram: 6 };
   score += typeBonus[q.questionType] || 5;
   const angleBonus = { surpriz_baglam: 8, karsilastirmali_tuzak: 8, ters_eleme_istisna: 7, saha_vakasi: 7, dogrudan_tanim: 5 };
   score += angleBonus[q.questionAngle] || 3;
@@ -126,11 +141,12 @@ export class PoolCuratorBot {
   if (evLen >= 30) score += 5;
   else if (evLen >= 18) score += 2;
 
-  if (Array.isArray(q.options) && q.options.length === 4) {
+  // 4 ve 5 şıklı sorular aynı ölçütle puanlanır.
+  if (Array.isArray(q.options) && isStoredOptionCount(q.options.length)) {
    const lens = q.options.map(o => o.trim().length);
    const ratio = Math.max(...lens) / Math.max(1, Math.min(...lens));
-   const meanL = lens.reduce((s, x) => s + x, 0) / 4;
-   const stdL = Math.sqrt(lens.reduce((s, x) => s + ((x - meanL) ** 2), 0) / 4);
+   const meanL = lens.reduce((s, x) => s + x, 0) / lens.length;
+   const stdL = Math.sqrt(lens.reduce((s, x) => s + ((x - meanL) ** 2), 0) / lens.length);
    if (ratio <= 1.9 && stdL <= meanL * 0.25) score += 10;
    else if (ratio <= 2.3) score += 8;
    else if (ratio <= 3.0) score += 5;

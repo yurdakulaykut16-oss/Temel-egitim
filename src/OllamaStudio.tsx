@@ -8,7 +8,7 @@ export type GeneratedQuestion = {
  status: 'approved' | 'rejected'; model: string; createdAt: string;
  difficulty?: 'kolay' | 'orta' | 'zor';
  curatedBy?: string; curationReason?: string;
- passageId?: string; passageHeading?: string; pages?: number[];
+ passageId?: string; passageHeading?: string; pages?: number[]; section?: string; sectionParent?: string; webSource?: {title?: string; url?: string; topic?: string; kind?: string};
  questionType?: string; questionAngle?: string; bloomLevel?: string; qualityScore?: number; examPotential?: number; curatorScore?: number;
  precisionScore?: number; styleScore?: number; precisionTier?: string; tvgfbfAligned?: boolean;
  improvementCount?: number; improvedAt?: string;
@@ -49,6 +49,15 @@ type CuratorReport = {
  totalPrunedLifetime?: number; lastRunRemoved?: number; nearDuplicatesFound?: number;
  refillPriorityUnits?: string[]; tierBreakdown?: {kolay: number; orta: number; zor: number};
 };
+type PlanStep = {key: string; pass: number; difficulty: string; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; quota: number};
+type PlanCell = {difficulty: string; done: number; quota: number; from: number; share: number; parked?: boolean; streak?: number};
+type PlanUnit = {pass: number; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; target: number; cells: PlanCell[]};
+type ProductionPlan = {
+ enabled: boolean; quota?: number; passCount?: number; perUnitTarget?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
+ current?: PlanStep | null; working?: (PlanStep & {streak?: number})[]; workingUnits?: PlanUnit[]; parallel?: number; parked?: PlanStep[];
+ difficulties?: {difficulty: string; done: number; target: number}[];
+ passes?: {pass: number; difficulty?: string; done: number; target: number; unitsDone: number; units: number; mix?: {kolay: number; orta: number; zor: number}}[];
+};
 type Status = {
  connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean;
  model: string; verifierModel: string; judge2Model: string; models: string[];
@@ -57,7 +66,8 @@ type Status = {
  difficultyCounts?: {kolay: number; orta: number; zor: number};
  curator?: CuratorReport;
  autoRunning: boolean; autoConcurrency: number; autoTimeoutMs: number;
- questionCapacity?: number; maxQuestionsStored?: number;
+ questionCapacity?: number; maxQuestionsStored?: number; poolRevision?: string;
+ optionFormat?: {allowed: number[]; fourOption: number; fiveOption: number};
  questionIntervalMs?: number;
  modelInferenceConcurrency?: number;
  modelInferenceQueue?: {maxConcurrent: number; active: {label: string; startedAt: number} | null; queued: number};
@@ -67,6 +77,7 @@ type Status = {
  autoBlock?: {code: string; reason: string} | null;
  autoEvents?: AutoEvent[];
  lineup?: Lineup;
+ plan?: ProductionPlan;
  ollamaRuntime?: {numCtx?: number; keepAlive?: string | number};
  settings?: {passageMode?: 'full-book' | 'summary-only'};
  telemetry?: Telemetry; coverage?: Coverage; qualityLoop?: QualityLoop;
@@ -77,7 +88,9 @@ const difficultyLabel: Record<string, string> = {kolay: 'Kolay', orta: 'Orta', z
 const typeLabel: Record<string, string> = {
  kavram: 'Kavram', vaka: 'Vaka Analizi', karsilastirma: 'Karşılaştırma',
  neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama',
- en_iyi_secim: 'En İyi Seçim', paragraf: 'Paragraf (Parçaya Dayalı)'
+ en_iyi_secim: 'En İyi Seçim', paragraf: 'Paragraf (Parçaya Dayalı)',
+ tanimdan_terim: 'Tanımdan Terime', bosluk_doldurma: 'Boşluk Doldurma', dogru_yargi: 'Doğru Yargı', ilginc_bilgi: 'İlginç Giriş',
+ durum_kavram: 'Durumdan Kavrama', kisa_net: 'Kısa ve Net (Çıkmış Soru Tarzı)'
 };
 const angleLabel: Record<string, string> = {
  dogrudan_tanim: '1. Doğrudan Tanım',
@@ -114,13 +127,24 @@ const fmtTime = (iso?: string | null) => {
 
 const api = '/api/ollama';
 
-export async function getGenerated(): Promise<GeneratedQuestion[]> {
- const res = await fetch(`${api}/questions`);
+// Test merkezi için onaylı soruların sade listesi. Havuz on binlerce soruya ulaşabildiği için liste
+// yalnızca havuz değiştiyse indirilir: `knownRevision` sunucudaki sürümle aynıysa null döner.
+export async function getQuizPool(knownRevision?: string | null): Promise<{revision: string; items: GeneratedQuestion[]} | null> {
+ const res = await fetch(`${api}/questions?fields=quiz${knownRevision ? `&revision=${encodeURIComponent(knownRevision)}` : ''}`);
+ if (!res.ok) throw Error('Yerel soru servisine ulaşılamadı.');
+ const data = await res.json();
+ return data.unchanged ? null : {revision: data.revision, items: data.items};
+}
+
+// Stüdyodaki kart listesi: seçili sekmenin en yeni soruları (havuzun tamamı indirilmez).
+const STUDIO_LIST_LIMIT = 60;
+async function getLatest(view: 'approved' | 'rejected'): Promise<GeneratedQuestion[]> {
+ const res = await fetch(`${api}/questions?status=${view}&limit=${STUDIO_LIST_LIMIT}`);
  if (!res.ok) throw Error('Yerel soru servisine ulaşılamadı.');
  return (await res.json()).items;
 }
 
-export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items: GeneratedQuestion[]) => void}) {
+export function OllamaStudio({read}: {read: string[]}) {
  const [status, setStatus] = useState<Status | null>(null);
  const [chosenModel, setChosenModel] = useState('');
  const [chosenVerifier, setChosenVerifier] = useState('');
@@ -133,20 +157,30 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  const [timeoutInput, setTimeoutInput] = useState('');
  const [showCoverage, setShowCoverage] = useState(false);
  const mounted = useRef(true);
+ const viewRef = useRef(view);
+ const listKey = useRef('');
 
+ // Durum ve denetim özeti her seferinde; soru kartları yalnızca havuz ya da sekme değiştiğinde yenilenir.
  const refresh = async () => {
   try {
-   const [res, questions, auditResponse] = await Promise.all([
+   const [res, auditResponse] = await Promise.all([
     fetch(`${api}/status`),
-    getGenerated(),
     fetch(`${api}/audit`)
    ]);
    if (!res.ok || !auditResponse.ok) throw Error('Yerel servis yanıt vermedi.');
+   const nextStatus: Status = await res.json();
+   const nextAudit = await auditResponse.json();
    if (!mounted.current) return;
-   setStatus(await res.json());
-   setAudit(await auditResponse.json());
-   setItems(questions);
-   onChange(questions);
+   setStatus(nextStatus);
+   setAudit(nextAudit);
+   const wanted = viewRef.current;
+   const key = `${wanted}|${nextStatus.poolRevision ?? ''}`;
+   if (key !== listKey.current || !nextStatus.poolRevision) {
+    const latest = await getLatest(wanted);
+    if (!mounted.current || viewRef.current !== wanted) return;
+    listKey.current = key;
+    setItems(latest);
+   }
   } catch {
    if (mounted.current) setError('Yerel soru servisine ulaşılamadı. Uygulamayı Ollama ile aynı bilgisayarda npm run dev komutuyla başlat.');
   }
@@ -253,9 +287,11 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  };
 
  const filtered = items.filter(q => q.status === view);
- const completedWithQuestions = new Set(items.filter(q => q.status === 'approved' && read.includes(q.unitId)).map(q => q.unitId)).size;
+ const completedWithQuestions = read.filter(id => (status?.coverage?.perUnit?.[id]?.questions ?? 0) > 0).length;
+ const viewCount = {approved: status?.approved ?? 0, rejected: status?.rejected ?? 0};
  const tel = status?.telemetry;
  const lineup = status?.lineup;
+ const plan = status?.plan?.enabled ? status.plan : null;
  const timeoutRange = status?.modelCallTimeoutRange || {min: 5000, max: 900000, default: 120000};
  const cov = status?.coverage;
  const qg = status?.qualityLoop;
@@ -292,7 +328,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
     <div className="engine-num">
      <strong>{status?.approved ?? 0}</strong>
-     <small>onaylı soru · hedef çıta {status?.questionCapacity ?? 20000} soruluk havuz</small>
+     <small>onaylı soru · hedef çıta {status?.questionCapacity ?? 65000} soruluk havuz</small>
+     {status?.optionFormat && (status.optionFormat.fourOption + status.optionFormat.fiveOption) > 0 && <small>{status.optionFormat.fiveOption} soru 5 şıklı · {status.optionFormat.fourOption} soru 4 şıklı (ikisi de geçerli)</small>}
     </div>
     <div className="progress engine-pool-bar" aria-label={`Havuz doluluk: %${poolPct}`}><div style={{width: `${poolPct}%`, background: '#79bd48'}}/></div>
     <ul className="engine-meta">
@@ -368,7 +405,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
 
     <div className="preset-bar">
      <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
-     <span className="preset-btn active" title="Tek soru üretimi; kitap kaynağı ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
+     <span className="preset-btn active" title="Tek soru üretimi; kaynak ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
      <span className={`jarvis-badge ${lineup?.coResident === false ? 'warn' : 'ok'}`} style={{marginLeft: 8}}>
       {lineup?.coResident === false ? '⚠ Modeller VRAM\'e birlikte sığmıyor: tek hat, sırayla' : `🔒 Aynı anda en çok ${status?.modelInferenceConcurrency ?? 1} model çağrısı`}
      </span>
@@ -379,6 +416,58 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       <b>Üretim şu an ilerlemiyor:</b> {status.autoBlock.reason}
       {lineup?.recommended?.pullCommand && (status.autoBlock.code === 'no_models' || status.autoBlock.code === 'model_missing') && (
        <code>{lineup.recommended.pullCommand}</code>
+      )}
+     </div>
+    )}
+
+    {plan && (
+     <div className="lineup-box plan-box" aria-label="Üretim planı">
+      <div className="lineup-head">
+       <b>Üretim planı</b>
+       <span className={`jarvis-badge ${plan.complete ? 'ok' : 'neutral'}`}>
+        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · kolay + orta + zor karışık` : 'Atlanan adımlar yeniden denenecek'}
+       </span>
+       <span>Toplam <b>{plan.totalDone ?? 0}</b> / {plan.totalTarget ?? 0} soru</span>
+      </div>
+      {(plan.workingUnits || []).map(u => (
+       <div key={`${u.pass}-${u.unitId}`}>
+        <p className="lineup-line">
+         {(plan.workingUnits || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{u.bookNo}. kitap {u.unitNo}. bölüm — {u.unit}</b> ({u.book}) · bu turda <b>{u.done} / {u.target}</b>
+         {' · '}{u.cells.map(c => `${c.difficulty} ${Math.max(0, c.done - c.from)}/${c.share}${c.parked ? ' (atlandı)' : ''}`).join(' · ')}
+         {u.cells.filter(c => (c.streak ?? 0) >= 5).map(c => ` · ${c.difficulty}: üst üste ${c.streak} deneme sonuçsuz (${plan.stuckLimit} olunca atlanır)`).join('')}
+        </p>
+        <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={u.target} aria-valuenow={u.done}>
+         <span style={{width: `${Math.min(100, Math.round((u.done / Math.max(1, u.target)) * 100))}%`}}/>
+        </div>
+       </div>
+      ))}
+      {(() => {
+       // Tur özeti: biten turlar tek satırda toplanır; süren tur ve sıradaki iki tur payıyla birlikte gösterilir.
+       const passes = plan.passes || [];
+       const finished = passes.filter(p => p.done >= p.target).length;
+       const shown = passes.filter(p => p.done < p.target).slice(0, 3);
+       const mixText = (p: {mix?: {kolay: number; orta: number; zor: number}}) => p.mix ? ` · bölüm başına ${p.mix.kolay} kolay + ${p.mix.orta} orta + ${p.mix.zor} zor` : '';
+       return (
+        <p className="lineup-line">
+         {passes.length} turun {finished} tanesi bitti.
+         {shown.map(p => ` ${p.pass}. tur: ${p.done}/${p.target} (${p.unitsDone}/${p.units} bölüm${mixText(p)}).`).join('')}
+        </p>
+       );
+      })()}
+      {(plan.difficulties || []).length > 0 && (
+       <p className="lineup-line">
+        Bütün bölümlerde toplam: {(plan.difficulties || []).map(d => `${d.difficulty} ${d.done}/${d.target}`).join(' · ')}
+       </p>
+      )}
+      <p className="lineup-line">
+       Sıra: 1. kitabın 1. bölümünden başlayarak her bölüme {plan.quota} soru; zorluklar karışıktır (kolay → orta → zor …), yani her bölümün kolay, orta ve zor sorusu birlikte gelir. Bütün bölümler bitince sıradaki tur başlar ({plan.passCount} tur → bölüm başına {plan.perUnitTarget} soru). 1. tur dengelidir; sonraki turlarda kolay soru gittikçe azalır, soruların yarısı orta yarısı zor yazılır.
+       {(plan.parallel ?? 1) > 1 ? ` Bölümler ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan bölüme yardım eder, grup tamamlanmadan sıradaki bölümlere geçilmez.` : ''} Sorular bölümün kitap sayfalarından (ve işaretli internet kaynaklarından) derlenmiş özetinden kurulur; her soru kartında kitabın içindekiler bölümündeki konu başlığı ve kitap sayfası yazar. Aynı bilgi yeniden sorulduğunda farklı bir soru biçimi kullanılır.
+      </p>
+      {(plan.parked || []).length > 0 && (
+       <p className="lineup-warn">
+        ⚠ Atlanan adımlar: {(plan.parked || []).slice(0, 6).map(p => `${p.bookNo}. kitap ${p.unitNo}. bölüm ${p.difficulty} (${p.done}/${p.quota})`).join(', ')}{(plan.parked || []).length > 6 ? ` ve ${(plan.parked || []).length - 6} adım daha` : ''}.
+        Bu adımlarda üst üste {plan.stuckLimit} deneme soru çıkarmadı (konu özeti o zorlukta yeni soru için yetersiz kalmış olabilir). Diğer adımlar bitince yeniden denenir.
+       </p>
       )}
      </div>
     )}
@@ -437,7 +526,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     <div className="config-grid">
      <div className="config-item">
       <label htmlFor="passage-choice">Kaynak genişliği</label>
-      <select id="passage-choice" value={status?.settings?.passageMode || 'full-book'} onChange={e => updateConfig({passageMode: e.target.value})}>
+      <select id="passage-choice" value={plan ? 'summary-only' : (status?.settings?.passageMode || 'full-book')} disabled={Boolean(plan)} title={plan ? 'Üretim planı açıkken sorular yalnızca konu özetinden kurulur.' : undefined} onChange={e => updateConfig({passageMode: e.target.value})}>
        <option value="full-book">5 Kitabın Tamamı (1.021 pasaj)</option>
        <option value="summary-only">Yalnız Kısa Özetler (29 pasaj)</option>
       </select>
@@ -445,7 +534,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · ilgili kitap pasajı · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · kolay/orta/zor dengesi.</b> Her soruda dört şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
+     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">
@@ -490,7 +579,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </p>
     <p>
      Havuz: <b>{status?.count || 0}</b> üretildi ({status?.approved || 0} onaylı, {status?.rejected || 0} reddedilmiş) ·
-     Sınır: onaylı havuz {(status?.questionCapacity || 20000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 20000).toLocaleString('tr-TR')} ·
+     Sınır: onaylı havuz {(status?.questionCapacity || 65000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 65000).toLocaleString('tr-TR')} ·
      Soru başlatma aralığı: en az {(status?.questionIntervalMs || 2000) / 1000} sn ·
      Tamamlanan {read.length} ünitenin {completedWithQuestions} tanesinde hazır soru var.
     </p>
@@ -524,7 +613,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   {curator && (
    <p className="manifest-line">
     🧹 <b>Havuz bakımı:</b> {curator.totalScans ? `${curator.totalScans} tarama` : 'Tarama bekleniyor'}{curator.avgCompositeScore !== undefined ? ` · ortalama skor ${curator.avgCompositeScore}/100` : ''} ·
-    {' '}{curator.nearDuplicatesFound ?? 0} yakın tekrar bulundu · bugüne kadar {curator.totalPrunedLifetime ?? 0} zayıf/tekrar soru temizlendi (havuz 20.000 sınırında tutulur).
+    {' '}{curator.nearDuplicatesFound ?? 0} yakın tekrar bulundu · bugüne kadar {curator.totalPrunedLifetime ?? 0} zayıf/tekrar soru temizlendi (havuz {(status?.questionCapacity || 65000).toLocaleString('tr-TR')} sınırında tutulur).
    </p>
   )}
 
@@ -566,8 +655,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
 
   <div className="tabs studio-tabs">
    {([['approved', 'Hakemler Onayladı'], ['rejected', 'Hakemler Eledi']] as const).map(([v, label]) => (
-    <button key={v} className={view === v ? 'selected' : ''} onClick={() => setView(v)}>
-     {label} ({items.filter(x => x.status === v).length})
+    <button key={v} className={view === v ? 'selected' : ''} onClick={() => { viewRef.current = v; setView(v); setItems([]); listKey.current = ''; refresh(); }}>
+     {label} ({viewCount[v].toLocaleString('tr-TR')})
     </button>
    ))}
   </div>
@@ -576,12 +665,14 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    <div className="empty"><p>Bu listede henüz soru yok.</p></div>
   ) : (
    <div className="generated-list">
-    {filtered.slice().reverse().slice(0, 60).map(q => (
+    {filtered.slice().reverse().slice(0, STUDIO_LIST_LIMIT).map(q => (
      <article className="generated-card" key={q.id}>
       <div className="eyebrow muted">
        {q.book} · {q.unit}
        {q.passageHeading ? ` · ${q.passageHeading}` : ''}
-       {q.pages?.length ? ` (s. ${q.pages.join(', ')})` : ''}
+       {q.section ? ` · ${q.sectionParent ? `${q.sectionParent} › ` : ''}${q.section}` : ''}
+       {q.pages?.length ? ` · kitap s. ${q.pages.join(', ')}` : ''}
+       {q.webSource?.url ? <> · internet kaynağı: <a href={q.webSource.url} target="_blank" rel="noreferrer noopener">{q.webSource.title || q.webSource.url}</a></> : q.webSource?.title ? <> · ders notu: {q.webSource.title}</> : null}
       </div>
       <div className="tag-row">
        <span className="topic-label">Konu: {q.topic}</span>
@@ -597,7 +688,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       </div>
       {q.paragraph && <blockquote className="question-paragraph">{q.paragraph}</blockquote>}
       <h3>{q.question}</h3>
-      <ol>
+      <ol type="A">
        {q.options.map((o, i) => (
         <li key={i} className={o === q.answer ? 'right-option' : ''}>
          {o}{o === q.answer ? ' ✓' : ''}

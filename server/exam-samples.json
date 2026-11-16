@@ -1,0 +1,147 @@
+{
+ "samples": [
+  {
+   "id": "ornek-hareket-denge",
+   "unitId": "0-4",
+   "origin": "kullanıcı örneği",
+   "style": "tanim_terim",
+   "question": "Statik ya da dinamik hareketler sırasında, destek yüzeyi değişse dahi vücudun ağırlık merkezini kontrol altında tutarak istenen pozisyonu sürdürebilme ve postüral stabiliteyi koruyabilme yeteneği aşağıdakilerden hangisidir?",
+   "options5": [
+    "Koordinasyon",
+    "Denge",
+    "Çeviklik",
+    "Reaksiyon süresi",
+    "Esneklik"
+   ],
+   "options": [
+    "Koordinasyon",
+    "Denge",
+    "Çeviklik",
+    "Reaksiyon süresi",
+    "Esneklik"
+   ],
+   "answer": "Denge",
+   "explanation": "Ağırlık merkezini kontrol ederek pozisyonu sürdürme ve postüral stabiliteyi koruma dengenin tanımıdır."
+  },
+  {
+   "id": "ornek-saglik-aerobik",
+   "unitId": "1-1",
+   "origin": "kullanıcı örneği",
+   "style": "durum_kavram",
+   "question": "Uzun süreli ve orta şiddette yapılan dayanıklılık egzersizlerinde enerji üretiminde aşağıdaki sistemlerden hangisi baskın olarak kullanılır?",
+   "options5": [
+    "ATP-PC sistemi",
+    "Anaerobik glikolitik sistem",
+    "Laktik asit sistemi",
+    "Aerobik oksidatif sistem",
+    "Fosfajen sistem"
+   ],
+   "options": [
+    "ATP-PC sistemi",
+    "Anaerobik glikolitik sistem",
+    "Laktik asit sistemi",
+    "Aerobik oksidatif sistem",
+    "Fosfajen sistem"
+   ],
+   "answer": "Aerobik oksidatif sistem",
+   "explanation": "Uzun süreli, düşük-orta şiddetli çalışmalarda enerji oksijen kullanılarak (aerobik yolla) üretilir."
+  },
+  {
+   "id": "cikmis-2024-teknik-antrenman",
+   "unitId": "0-1",
+   "origin": "2024 1. Kademe çıkmış soru",
+   "style": "kisa_net",
+   "question": "Teknik antrenmanda başarılı olunması için hangi antrenmanın iyi bir biçimde tamamlanması gerekmektedir?",
+   "options5": [
+    "Fiziksel antrenman",
+    "Taktik antrenman",
+    "Zihinsel antrenman",
+    "Birim antrenman",
+    "Teknik antrenman"
+   ],
+   "options": [
+    "Fiziksel antrenman",
+    "Taktik antrenman",
+    "Zihinsel antrenman",
+    "Birim antrenman",
+    "Teknik antrenman"
+   ],
+   "answer": "Fiziksel antrenman",
+   "answerVerified": false,
+   "note": "Gönderilen görselde cevap anahtarı yoktu. Cevap kitaba göre belirlendi: antrenman faktörleri piramidinin tabanı fiziksel antrenmandır ve geliştirilmemiş fiziksel yetersizlikler teknik-taktik gelişimi sınırlar (Hareket ve Antrenman Bilimleri I, s. 41).",
+   "explanation": "Antrenman faktörleri piramidinin tabanı fiziksel antrenmandır; fiziksel temel yetersizse teknik ve taktik gelişim de yetersiz kalır."
+  },
+  {
+   "id": "ornek-psikososyal-atif",
+   "unitId": "4-2",
+   "origin": "kullanıcı örneği (açıklamadan yeniden kuruldu)",
+   "style": "durum_kavram",
+   "reconstructed": true,
+   "question": "Atıf (yükleme) kuramına göre bir sporcunun sonucu, gösterdiği çabaya bağlaması nasıl bir yüklemedir?",
+   "options5": [
+    "İçsel ve kontrol edilebilir",
+    "İçsel ve kontrol edilemez",
+    "Dışsal ve kontrol edilebilir",
+    "Dışsal ve kontrol edilemez",
+    "Dışsal ve değişmez"
+   ],
+   "options": [
+    "İçsel ve kontrol edilebilir",
+    "İçsel ve kontrol edilemez",
+    "Dışsal ve kontrol edilebilir",
+    "Dışsal ve kontrol edilemez",
+    "Dışsal ve değişmez"
+   ],
+   "answer": "İçsel ve kontrol edilebilir",
+   "explanation": "Çaba kişinin kendisinden kaynaklanır ve kişi tarafından değiştirilebilir; bu nedenle içsel ve kontrol edilebilir bir yüklemedir."
+  },
+  {
+   "id": "ornek-ogrenme-geribildirim",
+   "unitId": "3-1",
+   "origin": "kullanıcı örneği (açıklamadan yeniden kuruldu)",
+   "style": "kisa_net",
+   "reconstructed": true,
+   "question": "Beceri öğreniminde geri bildirimin temel işlevi aşağıdakilerden hangisidir?",
+   "options5": [
+    "Hataları düzeltip doğru hareket paternini pekiştirmek",
+    "Sporcunun fiziksel yorgunluğunu gidermek",
+    "Antrenmanın toplam süresini kısaltmak",
+    "Sporcular arasında başarı sıralaması yapmak",
+    "Rakibin oyun planını önceden çözümlemek"
+   ],
+   "options": [
+    "Hataları düzeltip doğru hareket paternini pekiştirmek",
+    "Sporcunun fiziksel yorgunluğunu gidermek",
+    "Antrenmanın toplam süresini kısaltmak",
+    "Sporcular arasında başarı sıralaması yapmak",
+    "Rakibin oyun planını önceden çözümlemek"
+   ],
+   "answer": "Hataları düzeltip doğru hareket paternini pekiştirmek",
+   "explanation": "Geri bildirim hataları düzeltir, doğru hareket paternini pekiştirir ve öğrenmeyi kalıcı kılar."
+  },
+  {
+   "id": "ornek-yonetim-orgutleme",
+   "unitId": "2-0",
+   "origin": "kullanıcı örneği (açıklamadan yeniden kuruldu)",
+   "style": "tanim_terim",
+   "reconstructed": true,
+   "question": "Görev dağılımının yapılmasını, yetki ve sorumlulukların belirlenmesini kapsayan temel yönetim fonksiyonu aşağıdakilerden hangisidir?",
+   "options5": [
+    "Planlama",
+    "Örgütleme",
+    "Yöneltme",
+    "Koordinasyon",
+    "Denetim"
+   ],
+   "options": [
+    "Planlama",
+    "Örgütleme",
+    "Yöneltme",
+    "Koordinasyon",
+    "Denetim"
+   ],
+   "answer": "Örgütleme",
+   "explanation": "Örgütleme; kimin hangi işi yapacağının, yetki ve sorumlulukların belirlenmesidir."
+  }
+ ]
+}

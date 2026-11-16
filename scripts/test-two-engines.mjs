@@ -19,7 +19,8 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
  let failure = null;
  try {
   let calls = 0;
-  // Havuzda bekleyen ZAYIF soru: düşük kalite puanı → Motor 2'nin ilk yeniden yazma hedefi.
+  // Havuzda bekleyen ZAYIF (4 şıklı) soru: düşük kalite puanı → Motor 2'nin ilk yeniden yazma hedefi.
+  // Yeniden yazılan sürüm 5 şıklıdır: 4 ve 5 şıklı sorular havuzda birlikte geçerlidir.
   const weakSeed = {
    id: 'seed-weak-1', unitId: '0-0', book: 'Hareket Bilimleri', unit: 'Ünite 1',
    topic: 'Zayıf konu',
@@ -29,7 +30,8 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
    explanation: 'Kısa açıklama.',
    evidence: 'kısa',
    status: 'approved', model: 'seed', createdAt: new Date(Date.now() - 86400_000).toISOString(),
-   difficulty: 'kolay', questionType: 'kavram', questionAngle: 'dogrudan_tanim', qualityScore: 1
+   // Hakemlerin vereceği zorlukla aynı: üretim planı açıkken yeniden yazım zorluğu değiştiremez.
+   difficulty: 'orta', questionType: 'kavram', questionAngle: 'dogrudan_tanim', qualityScore: 1
   };
 
   fake = http.createServer(async (req, res) => {
@@ -62,7 +64,8 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
      `Aşırı yüklenme ilkesi: ${phrase} ile kademeli olarak uygulanan planlı yüklenme yaklaşımıdır (${tag})`,
      `Aşırı yüklenme ilkesinin tam tersi: yükün asla artırılmadığı durağan plan yaklaşımıdır (${tag})`,
      `Yalnız toparlanma odaklı yaklaşım: yük olmadan dinlenme günlerinin birleştirilmesidir (${tag})`,
-     `Rastgele değişken yük yaklaşımı: bireysel eşik ölçülmeksizin uygulanan yüklemedir (${tag})`
+     `Rastgele değişken yük yaklaşımı: bireysel eşik ölçülmeksizin uygulanan yüklemedir (${tag})`,
+     `Tek tip sabit yük yaklaşımı: herkese aynı yükün değiştirilmeden uygulanmasıdır (${tag})`
     ];
     result = {
      topic: 'Aşırı yüklenme ilkesi',
@@ -94,7 +97,8 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
      `Planlı kademeli aşırı yüklenme yaklaşımıdır (${tag})`,
      `Yükü hiç artırmadan sabit kalan durağan yaklaşımdır (${tag})`,
      `Yalnız toparlanma günlerinden oluşan dinlenme kuralıdır (${tag})`,
-     `Beslenme düzenini esas alan diyet yaklaşımıdır (${tag})`
+     `Beslenme düzenini esas alan diyet yaklaşımıdır (${tag})`,
+     `Isınma süresini esas alan hazırlık yaklaşımıdır (${tag})`
     ];
     result = {
      question: `${phrase} — anlatımda tarif edilen temel ilke hangisidir? (${tag})`,
@@ -164,6 +168,9 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
   assert.equal(lastQ.id, weakSeed.id, 'Soru kimliği korunmalı (aynı sorunun yükseltilmiş sürümü)');
   assert.ok(Array.isArray(lastQ.verification?.judges) && lastQ.verification.judges.length === 2, 'Yükseltme iki hakem onayından geçmeli');
   assert.ok(Number(lastQ.curatorScore) > 1, 'Havuz skoru yükselmeli');
+  assert.equal(lastQ.options.length, 5, 'Yeniden yazılan soru modelin verdiği 5 şıkla kaydedilmeli');
+  assert.deepEqual(status.optionFormat?.allowed, [4, 5], 'Durum raporu geçerli şık sayılarını bildirmeli');
+  assert.ok(status.optionFormat.fiveOption >= 1);
 
   // 3) Motor 2 dursa da havuz ve kayıt yapısı tutarlı kalmalı (kararlı bitiş)
   console.log(`\nMotor 2: iyileştirilen=${status.qualityLoop.improvedTotal}, taranan=${status.qualityLoop.scannedTotal}, avg=${status.qualityLoop.averageQuality}, pruned=${status.qualityLoop.prunedTotal}`);

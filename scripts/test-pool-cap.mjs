@@ -34,7 +34,7 @@ function seedItems(count) {
    status: 'approved',
    difficulty,
    question: `${subject} çalışmasının ${aspect} ${action} ve ${i} hangi seçenekte verilmiştir?`,
-   options: [answer, 'Pasif dinlenme uygulanarak', 'Tahkim kurulu kararıyla', 'Bürokrasi yaklaşımıyla'],
+   options: [answer, 'Pasif dinlenme uygulanarak', 'Tahkim kurulu kararıyla', 'Bürokrasi yaklaşımıyla', 'Sponsorluk sözleşmesiyle'],
    answer,
    explanation: `${subject} çalışmasında ${aspect} düzenli izlenmeli ve kademeli artırılmalıdır.`,
    evidence: 'Egzersiz planlı ve tekrarlıdır',
@@ -54,6 +54,8 @@ test('soru havuzu 20.000 sınırını aşmaz: yeni soru eklenirken en zayıf kay
  const prevDisable = process.env.TEMPO_DISABLE_AUTOLOOP;
  process.env.TEMPO_DATA_DIR = dir;
  process.env.TEMPO_DISABLE_AUTOLOOP = '1';
+ // Varsayılan sınır 65.000'dir; sınır TEMPO_POOL_CAPACITY ile değişir. Test 20.000 ile sınar.
+ process.env.TEMPO_POOL_CAPACITY = String(CAPACITY);
 
  const fake = http.createServer(async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
@@ -75,7 +77,7 @@ test('soru havuzu 20.000 sınırını aşmaz: yeni soru eklenirken en zayıf kay
   } else {
    result = {
     question: 'Egzersiz ile fiziksel aktivite ayrımında hangi tanım doğrudur?',
-    options: ['Egzersiz planlıdır', 'Aktivite yalnızca uykudur', 'Egzersiz plansızdır', 'İkisi aynıdır'],
+    options: ['Egzersiz planlıdır', 'Aktivite yalnızca uykudur', 'Egzersiz plansızdır', 'İkisi aynıdır', 'Aktivite tekrarlıdır'],
     answer: 'Egzersiz planlıdır',
     explanation: 'Egzersiz planlı, programlı ve tekrarlı bir hareket biçimidir; fiziksel aktivite ise daha geniştir.',
     evidence,
@@ -141,6 +143,7 @@ test('soru havuzu 20.000 sınırını aşmaz: yeni soru eklenirken en zayıf kay
   if (prevData === undefined) delete process.env.TEMPO_DATA_DIR; else process.env.TEMPO_DATA_DIR = prevData;
   if (prevBase === undefined) delete process.env.OLLAMA_BASE_URL; else process.env.OLLAMA_BASE_URL = prevBase;
   if (prevDisable === undefined) delete process.env.TEMPO_DISABLE_AUTOLOOP; else process.env.TEMPO_DISABLE_AUTOLOOP = prevDisable;
+  delete process.env.TEMPO_POOL_CAPACITY;
   await rm(dir, { recursive: true, force: true, maxRetries: 6, retryDelay: 100 }).catch(() => {});
  }
 });

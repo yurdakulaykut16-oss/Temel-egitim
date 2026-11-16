@@ -36,7 +36,8 @@ test('PoolCuratorBot 20.000 eşiğine ulaşınca düşük kaliteli/tekrar sorula
      isLow ? 'Kısa cevap' : `Düzenli ${tagA} progresif yüklenme ve toparlanma dengesi ilkesi`,
      'Tamamen dinlenmeden sürekli maksimal yüklenme uygulanması',
      'Bireysel farklılıkları göz ardı eden sabit tek program şablonu',
-     'Isınma ve soğuma evrelerini tamamen kaldıran yoğunluk modeli'
+     'Isınma ve soğuma evrelerini tamamen kaldıran yoğunluk modeli',
+     'Ölçüm yapmadan yalnızca sezgiye dayanan yüklenme düzeni'
     ],
     answer: isLow ? 'Kısa cevap' : `Düzenli ${tagA} progresif yüklenme ve toparlanma dengesi ilkesi`,
     explanation: isLow ? 'Kısa.' : 'Antrenmanda kalıcı gelişim için progresif yüklenme ile yeterli toparlanma dengesi kurulmalı; püf noktası aşırı yüklenmeden kaçınmaktır.',
@@ -174,7 +175,8 @@ test('ollamaPlugin uçtan uca 5-açı soru üretimi, timing-aware student-state,
        'Planlı ve tekrarlı biçimde fiziksel uygunluğu koruma amacı taşımasına',
        'Günlük yaşamda yalnızca dinlenme halinde ortaya çıkmasına',
        'Sadece müsabaka günlerinde tek sefer uygulanmasına',
-       'Kas kasılması olmadan gerçekleşen zihinsel odaklanmaya'
+       'Kas kasılması olmadan gerçekleşen zihinsel odaklanmaya',
+       'Enerji harcaması gerektirmeyen pasif bekleme süresine'
       ],
       answer: 'Planlı ve tekrarlı biçimde fiziksel uygunluğu koruma amacı taşımasına',
       explanation: 'Egzersiz planlı, tekrarlı ve fiziksel uygunluğu artırmaya dönük özel bir aktivite biçimidir.',
@@ -293,14 +295,14 @@ test('ollamaPlugin uçtan uca 5-açı soru üretimi, timing-aware student-state,
   const scan = await call('POST', '/curator/scan', {});
   assert.equal(scan.status, 200);
   assert.ok(scan.json.report.totalScans >= 1);
-  assert.equal(scan.json.report.pruneThreshold, 20000);
+  assert.equal(scan.json.report.pruneThreshold, 65000);
   assert.ok(scan.json.report.avgCompositeScore > 0);
 
   const status = await call('GET', '/status');
   assert.equal(status.status, 200);
-  assert.equal(status.json.questionCapacity, 20000);
-  assert.equal(status.json.maxQuestionsStored, 20000);
-  assert.equal(status.json.curator.pruneThreshold, 20000);
+  assert.equal(status.json.questionCapacity, 65000);
+  assert.equal(status.json.maxQuestionsStored, 65000);
+  assert.equal(status.json.curator.pruneThreshold, 65000);
   assert.ok(status.json.curator);
   assert.ok(status.json.lessons);
   assert.ok(status.json.angleCounts);

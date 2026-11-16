@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { isStoredOptionCount, DISTRACTOR_COUNT, MIN_DISTRACTOR_COUNT } from './option-count.mjs';
 export const LOCAL_TEAM_ROLES = [
  {
   id: 'osym_committee_chair',
@@ -56,7 +57,7 @@ export const OSYM_CONFUSION_PAIRS = [
 
 const OSYM_DIRECTIVE_FALLBACK = `ÖSYM SORU KOMİSYONU YAZIM PROTOKOLÜ (ZORUNLU):
 1. "Ben ÖSYM sınav komisyonunda olsaydım bu konuyu nasıl sorardım?" mantığıyla sor: ezber tanım yerine I-II-III öncüllü ("hangileri doğrudur?"), saha vakalı veya iki yakın kavram arasındaki ince ayrımı ölçen kök kur.
-2. Tüm 4 şık birbirine çok yakın uzunlukta (±%25), aynı sözcük türünde ve aynı cümle yapısında olsun; öğrenci asla şık uzunluğundan veya dilbilgisi ipucundan cevabı tahmin edemesin.
+2. Tüm şıklar (4 ya da 5) birbirine çok yakın uzunlukta (±%25), aynı sözcük türünde ve aynı cümle yapısında olsun; öğrenci asla şık uzunluğundan veya dilbilgisi ipucundan cevabı tahmin edemesin.
 3. Doğru cevabı soru kökünde kelime olarak sızdırma; çeldiricileri öğrencinin gerçekten karıştıracağı komşu terimlerden kur ("hepsi/hiçbiri" yasak).
 4. Olumsuz köklerde ("DEĞİLDİR", "YANLIŞTIR", "SÖYLENEMEZ", "BEKLENMEZ") vurgu kelimesini BÜYÜK HARFLE yaz ve diğer 3 şıkkın metne %100 uyduğunu doğrula.`;
 
@@ -92,7 +93,7 @@ function normStr(s) {
 }
 
 export function scoreOsymQuestion(q) {
- if (!q || typeof q.question !== 'string' || !Array.isArray(q.options) || q.options.length !== 4) {
+ if (!q || typeof q.question !== 'string' || !Array.isArray(q.options) || !isStoredOptionCount(q.options.length)) {
   return { score: 0, isOsymElite: false, issues: ['Geçersiz soru biçimi'] };
  }
  let score = 40;
@@ -124,7 +125,7 @@ export function scoreOsymQuestion(q) {
  if (!leaked && !heavyOverlap) score += 12;
  else issues.push('Kök cevabı doğrudan ele veriyor');
 
- // Olumsuz kökte vurgu & tüm 4 şıkkın tekil anlam bütünlüğü
+ // Olumsuz kökte vurgu & tüm şıkların tekil anlam bütünlüğü
  if (/(?:değildir|yanlıştır|söylenemez|beklenmez)/i.test(text) && !/(?:DEĞİLDİR|YANLIŞTIR|SÖYLENEMEZ|BEKLENMEZ)/.test(text)) {
   issues.push('Olumsuz kök kelimesi BÜYÜK HARF ile vurgulanmalı');
   score -= 4;
@@ -496,7 +497,7 @@ export class LocalAiTeamHub {
    : [sourceText.slice(0, Math.min(sourceText.length, 160))].filter(s => s.length >= 16);
 
   const flatConfusion = OSYM_CONFUSION_PAIRS.flat();
-  // Çeldiriciler mümkün olduğunca ÜNİTENİN KENDİ metninden türetilir; böylece dört şık da
+  // Çeldiriciler mümkün olduğunca ÜNİTENİN KENDİ metninden türetilir; böylece bütün şıklar
   // aynı kavram ailesinden olur ve konu dışı/saçma şık oluşmaz.
   const normSourceText = normStr(sourceText);
   const confusionInUnit = flatConfusion.filter(term => {
@@ -575,7 +576,7 @@ export class LocalAiTeamHub {
    if (existingNorms.has(normStr(question))) continue;
    if (unitItems.some(u => jaccardLocal(u.question, question) >= 0.65)) continue;
 
-   // Uzunluk simetrisi korunmuş 3 çeldirici seç (maxLenRatio <= 1.55)
+   // Uzunluk simetrisi korunmuş en çok 4 çeldirici seç (soru 4 ya da 5 şıklı olur) (maxLenRatio <= 1.55)
    const targetLen = answer.length;
    const picked = [];
    const usedNorms = new Set([normStr(answer)]);
@@ -583,7 +584,7 @@ export class LocalAiTeamHub {
    const rotatedPool = [...unitFirstPool.slice((offset + attempt) % Math.max(1, unitFirstPool.length)), ...unitFirstPool];
 
    for (const dRaw of rotatedPool) {
-    if (picked.length >= 3) break;
+    if (picked.length >= DISTRACTOR_COUNT) break;
     const minBand = Math.max(18, Math.round(targetLen * 0.68));
     const maxBand = Math.max(26, Math.min(72, Math.round(targetLen * 1.25)));
     let d = dRaw.slice(0, maxBand).trim();
@@ -601,7 +602,8 @@ export class LocalAiTeamHub {
     usedNorms.add(dn);
     picked.push(d);
    }
-   while (picked.length < 3) {
+   // En az 3 çeldirici (4 şık) yeter; uygun dördüncü çeldirici bulunduysa soru 5 şıklı olur.
+   while (picked.length < MIN_DISTRACTOR_COUNT) {
     const pad = `Önerilen hatalı teknik yaklaşım #${picked.length + 1} (${attempt + 1})`.slice(0, Math.max(24, Math.min(72, Math.round(targetLen * 1.15))));
     if (!usedNorms.has(normStr(pad))) {
      usedNorms.add(normStr(pad));
@@ -610,7 +612,7 @@ export class LocalAiTeamHub {
    }
 
    const rawOpts = [answer, ...picked];
-   const rot = (offset + attempt) % 4;
+   const rot = (offset + attempt) % rawOpts.length;
    const options = [...rawOpts.slice(rot), ...rawOpts.slice(0, rot)];
    const osym = scoreOsymQuestion({ question, options, answer });
    const bloomMap = { kolay: 'Hatırlama/Kavrama', orta: 'Uygulama/Analiz', zor: 'Değerlendirme/Sentez' };
@@ -789,7 +791,7 @@ export class LocalAiTeamHub {
    const picked = [];
    const usedNorms = new Set([normStr(answer)]);
    for (const d of outside) {
-    if (picked.length >= 3) break;
+    if (picked.length >= DISTRACTOR_COUNT) break;
     if (Math.max(d.length, targetLen) > Math.min(d.length, targetLen) * 1.5) continue;
     const dn = normStr(d);
     if (usedNorms.has(dn)) continue;
@@ -798,10 +800,10 @@ export class LocalAiTeamHub {
     usedNorms.add(dn);
     picked.push(d);
    }
-   if (picked.length < 3) continue;
+   if (picked.length < MIN_DISTRACTOR_COUNT) continue;
 
    const rawOpts = [answer, ...picked];
-   const rot = (unitItems.length + attempt) % 4;
+   const rot = (unitItems.length + attempt) % rawOpts.length;
    const options = [...rawOpts.slice(rot), ...rawOpts.slice(0, rot)];
    const evidence = core.slice(0, 240);
    const osym = scoreOsymQuestion({ question, options, answer });
@@ -842,7 +844,7 @@ export class LocalAiTeamHub {
        qualityScore: 4.7,
        examPotential: 4.8,
        bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
-       reason: 'Çeldirici Hijyen Denetçisi: Dört şık da aynı ünitenin ifadelerinden, benzer uzunlukta ve tek doğru.'
+       reason: 'Çeldirici Hijyen Denetçisi: Bütün şıklar aynı ünitenin ifadelerinden, benzer uzunlukta ve tek doğru.'
       }
      ],
      answer,

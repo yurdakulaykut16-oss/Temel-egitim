@@ -52,7 +52,8 @@
         "Spor",
         "Fiziksel Aktivite",
         "Performans",
-        "Antrenman"
+        "Antrenman",
+        "Egzersiz"
       ],
       "answer": "Spor",
       "answerLetter": "C",
@@ -63,7 +64,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.231,
+        "summaryScore": 0.769,
         "inSource": true
       }
     },
@@ -85,7 +86,8 @@
         "Egzersiz",
         "Spor",
         "Performans",
-        "Fiziksel Aktivite"
+        "Fiziksel Aktivite",
+        "Antrenman"
       ],
       "answer": "Egzersiz",
       "answerLetter": "A",
@@ -96,7 +98,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.556,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -118,7 +120,8 @@
         "Malzeme kalitesi",
         "Yaş",
         "Alerji",
-        "Otonom sinir sistemi"
+        "Otonom sinir sistemi",
+        "Anatomik yapı"
       ],
       "answer": "Malzeme kalitesi",
       "answerLetter": "D",
@@ -129,7 +132,7 @@
         "score": 0.85,
         "answerScore": 1,
         "stemScore": 0.75,
-        "summaryScore": 0.167,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -151,7 +154,8 @@
         "Spor Antrenmanı",
         "Fiziksel Aktivite",
         "Koşu/Yürüyüş",
-        "Aerobik egzersizler"
+        "Aerobik egzersizler",
+        "Müsabaka/Yarış"
       ],
       "answer": "Spor Antrenmanı",
       "answerLetter": "E",
@@ -162,7 +166,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.364,
+        "summaryScore": 0.818,
         "inSource": true
       }
     },
@@ -184,7 +188,8 @@
         "Antrenman için Antrenman",
         "Temel becerileri",
         "Kazanmak için antrenman",
-        "Antrenman yapmayı Öğrenme"
+        "Antrenman yapmayı Öğrenme",
+        "Yarışma için antrenman"
       ],
       "answer": "Antrenman için Antrenman",
       "answerLetter": "D",
@@ -195,7 +200,7 @@
         "score": 0.925,
         "answerScore": 1,
         "stemScore": 0.875,
-        "summaryScore": 0.222,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -217,7 +222,8 @@
         "Jimnastik",
         "Güreş",
         "Atletizm",
-        "Boks"
+        "Boks",
+        "Futbol"
       ],
       "answer": "Jimnastik",
       "answerLetter": "E",
@@ -228,7 +234,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.429,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -250,7 +256,8 @@
         "13-15",
         "8-11",
         "15-17",
-        "11-13"
+        "11-13",
+        "17- ve üstü"
       ],
       "answer": "13-15",
       "answerLetter": "A",
@@ -261,7 +268,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.375,
+        "summaryScore": 0.75,
         "inSource": true
       }
     },
@@ -283,7 +290,8 @@
         "Sürantrenman",
         "Superkompenzasyon",
         "Detraining",
-        "Antrenman"
+        "Antrenman",
+        "Hipertrofi"
       ],
       "answer": "Sürantrenman",
       "answerLetter": "D",
@@ -294,7 +302,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.429,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -316,7 +324,8 @@
         "Antrenman sayısını artırarak yüklenmeye devam etmek",
         "Antrenman sonrasında masaj yapmak",
         "Sporcunun dengeli beslenmesini sağlamak",
-        "Antrenmanın miktarını ve/veya zorluk derecesini azaltmak."
+        "Antrenmanın miktarını ve/veya zorluk derecesini azaltmak.",
+        "Yenilenmeye olanak verecek derecede antrenmanlara ara vermek"
       ],
       "answer": "Antrenman sayısını artırarak yüklenmeye devam etmek",
       "answerLetter": "A",
@@ -327,7 +336,7 @@
         "score": 0.72,
         "answerScore": 0.8,
         "stemScore": 0.667,
-        "summaryScore": 0.364,
+        "summaryScore": 0.636,
         "inSource": true
       }
     },
@@ -349,7 +358,8 @@
         "Kalp debisi ve atım hacminde artış",
         "Kapiller yoğunlukta azalma",
         "Arteriovenöz oksijen farkında azalma",
-        "Oksidatif enzim aktivitesinde azalma"
+        "Oksidatif enzim aktivitesinde azalma",
+        "Glikolitik enzimlerde sistematik olmayan değişiklikler"
       ],
       "answer": "Kalp debisi ve atım hacminde artış",
       "answerLetter": "C",
@@ -360,7 +370,7 @@
         "score": 0.86,
         "answerScore": 0.8,
         "stemScore": 0.9,
-        "summaryScore": 0.2,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -382,7 +392,8 @@
         "Genel fiziksel hazırlıkta öncelikli spor dalına özgü özelliklerin geliştirilmesi",
         "Genel fiziksel hazırlıkta orta şiddette uzun süreli bir antrenman uygulanması",
         "Genel fiziksel hazırlıkta düz bar, sıra, ip, sağlık topları gibi araçlar kullanılması",
-        "Motor yeteneklerin üst düzey hazırlığında, defalarca özel alıştırma yapılması"
+        "Motor yeteneklerin üst düzey hazırlığında, defalarca özel alıştırma yapılması",
+        "Bedensel hazırlık, temel motorik özelliklerin ve koordinatif yeteneklerin geliştirilmesi"
       ],
       "answer": "Genel fiziksel hazırlıkta öncelikli spor dalına özgü özelliklerin geliştirilmesi",
       "answerLetter": "C",
@@ -393,7 +404,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.714,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -415,7 +426,8 @@
         "Sporcunun uzun boy avantajını kullanıp savunma yapması",
         "Sporcunun sosyal çevresiyle etkileşime girmesi",
         "Sağlık topları ve değişik araçlarla hareketler yapması",
-        "Ailesi ve kendisi için başarılı sporcu olmak istemesi"
+        "Ailesi ve kendisi için başarılı sporcu olmak istemesi",
+        "Bacak kuvvetini geliştirmeye yönelik bacak presi yapması"
       ],
       "answer": "Sporcunun uzun boy avantajını kullanıp savunma yapması",
       "answerLetter": "B",
@@ -426,7 +438,7 @@
         "score": 0.708,
         "answerScore": 0.833,
         "stemScore": 0.625,
-        "summaryScore": 0.214,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -448,7 +460,8 @@
         "Fiziksel hazırlık",
         "Teknik hazırlık",
         "Taktik hazırlık",
-        "Zihinsel hazırlık"
+        "Zihinsel hazırlık",
+        "Eğitim hazırlığı"
       ],
       "answer": "Fiziksel hazırlık",
       "answerLetter": "A",
@@ -459,7 +472,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.667,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -481,7 +494,8 @@
         "Teknik-Taktik",
         "Fiziksel-Teknik",
         "Fiziksel-Taktik",
-        "Teknik-Zihinsel"
+        "Teknik-Zihinsel",
+        "Zihinsel-Fiziksel"
       ],
       "answer": "Teknik-Taktik",
       "answerLetter": "C",
@@ -492,7 +506,7 @@
         "score": 0.891,
         "answerScore": 1,
         "stemScore": 0.818,
-        "summaryScore": 0.231,
+        "summaryScore": 0.308,
         "inSource": true
       }
     },
@@ -514,7 +528,8 @@
         "Topu kontrol etmesi",
         "Oyun zekasını iyi kullanması",
         "Antrenmanlarda üstlendiği rolleri yarışmaya taşıması",
-        "Kendi kendine konuşması"
+        "Kendi kendine konuşması",
+        "Dikkat ve konsantrasyonunu sağlaması"
       ],
       "answer": "Topu kontrol etmesi",
       "answerLetter": "E",
@@ -525,7 +540,7 @@
         "score": 0.867,
         "answerScore": 0.667,
         "stemScore": 1,
-        "summaryScore": 0.571,
+        "summaryScore": 0.714,
         "inSource": true
       }
     },
@@ -547,7 +562,8 @@
         "Fatih Terim gibi yorum yapması",
         "Maradona gibi çalım atması",
         "Hidayet gibi smaç yapması",
-        "Shrapova gibi forehand vurması"
+        "Shrapova gibi forehand vurması",
+        "Naim Süleymanoğlu gibi ağırlık kaldırması"
       ],
       "answer": "Fatih Terim gibi yorum yapması",
       "answerLetter": "D",
@@ -558,7 +574,7 @@
         "score": 0.68,
         "answerScore": 0.5,
         "stemScore": 0.8,
-        "summaryScore": 0.111,
+        "summaryScore": 0.333,
         "inSource": true
       }
     },
@@ -580,7 +596,8 @@
         "Genel fiziksel hazırlık",
         "Özel fiziksel hazırlık",
         "Teknik hazırlık",
-        "Taktik hazırlık"
+        "Taktik hazırlık",
+        "Zihinsel hazırlık"
       ],
       "answer": "Genel fiziksel hazırlık",
       "answerLetter": "A",
@@ -591,7 +608,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.556,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -613,7 +630,8 @@
         "Eğitim hazırlığı",
         "Teknik hazırlık",
         "Taktik hazırlık",
-        "Fiziksel hazırlık"
+        "Fiziksel hazırlık",
+        "Zihinsel hazırlık"
       ],
       "answer": "Eğitim hazırlığı",
       "answerLetter": "E",
@@ -624,7 +642,7 @@
         "score": 0.836,
         "answerScore": 1,
         "stemScore": 0.727,
-        "summaryScore": 0.308,
+        "summaryScore": 0.692,
         "inSource": true
       }
     },
@@ -646,7 +664,8 @@
         "Zihinsel hazırlık",
         "Teknik hazırlık",
         "Taktik hazırlık",
-        "Fiziksel hazırlık"
+        "Fiziksel hazırlık",
+        "Eğitim hazırlığı"
       ],
       "answer": "Zihinsel hazırlık",
       "answerLetter": "D",
@@ -657,7 +676,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.278,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -679,7 +698,8 @@
         "Teknik hazırlık",
         "Fiziksel hazırlık",
         "Taktik hazırlık",
-        "Zihinsel hazırlık"
+        "Zihinsel hazırlık",
+        "Eğitim hazırlığı"
       ],
       "answer": "Teknik hazırlık",
       "answerLetter": "B",
@@ -690,7 +710,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.375,
+        "summaryScore": 0.875,
         "inSource": true
       }
     },
@@ -712,7 +732,8 @@
         "Antrenman metodolojisi ve teorisinin biyolojik, pedagojik, psikolojik ve sosyolojik bilimlere dayalı ilkeleri ile yapılan sporsal antrenmana ait üst düzeyde açıklamaları kapsar.",
         "Somut bir davranış yönergesidir.",
         "Antrenman metodolojisi ve teorisinin biyolojik, pedagojik, psikolojik ve sosyolojik bilimlere dayalı ilkeleri ile yapılan antrenmanın kurallarını kapsar.",
-        "Sporsal verimi yönlendirmede rolü olmayan kavramlar bütünüdür."
+        "Sporsal verimi yönlendirmede rolü olmayan kavramlar bütünüdür.",
+        "Sporsal verimi yönetmede rolü olmayan kavramlar bütünüdür."
       ],
       "answer": "Antrenman metodolojisi ve teorisinin biyolojik, pedagojik, psikolojik ve sosyolojik bilimlere dayalı ilkeleri ile yapılan sporsal antrenmana ait üst düzeyde açıklamaları kapsar.",
       "answerLetter": "B",
@@ -723,7 +744,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.222,
+        "summaryScore": 0.944,
         "inSource": true
       }
     },
@@ -745,7 +766,8 @@
         "İlkeler daha genel kuramsal bir kavram iken kurallar ise ilkeleri yorumlamaya ve somutlaştırmaya yarayan kavramlardır.",
         "İlkeler kuralları yorumlamaya ve somutlaştırmaya yararken kurallar daha genel kuramsal bir kavramdır.",
         "Antrenman ilkeleri ile antrenman kuralları kavramları arasındaki fark, spor dalına ait oyun kurallarıdır.",
-        "Antrenman ilkeleri ile antrenman kuralları kavramları arasındaki fark, spor dalına ait antrenman metotlarıdır."
+        "Antrenman ilkeleri ile antrenman kuralları kavramları arasındaki fark, spor dalına ait antrenman metotlarıdır.",
+        "Antrenman ilkeleri ile antrenman kuralları kavramları arasında fark yoktur."
       ],
       "answer": "İlkeler daha genel kuramsal bir kavram iken kurallar ise ilkeleri yorumlamaya ve somutlaştırmaya yarayan kavramlardır.",
       "answerLetter": "A",
@@ -756,7 +778,7 @@
         "score": 0.92,
         "answerScore": 0.8,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 0.563,
         "inSource": true
       }
     },
@@ -778,7 +800,8 @@
         "Spor branşlarına göre farklılık göstermeksizin organizmada meydana gelen morfolojik ve fonksiyonel değişiklikleri içerir.",
         "İnsan organizmasının yaptığı aktivitelere uyum sağlama sürecini içerir.",
         "Spor dalına özel egzersizlere katılımı dolayısıyla organizmada o branşa özgü morfolojik ve fonksiyonel değişiklikleri içerir.",
-        "Yapılan çalışmaya bağlı olarak organizmanın hem teknik ve taktik hem de fizyolojik uyum sağlama sürecini içerir."
+        "Yapılan çalışmaya bağlı olarak organizmanın hem teknik ve taktik hem de fizyolojik uyum sağlama sürecini içerir.",
+        "Başarı için doğru zamanda branşlaşma ve amaca uygun belirlenen hedeflere yönelik spor dalına özgü çalışmaları içerir."
       ],
       "answer": "Spor branşlarına göre farklılık göstermeksizin organizmada meydana gelen morfolojik ve fonksiyonel değişiklikleri içerir.",
       "answerLetter": "C",
@@ -789,7 +812,7 @@
         "score": 0.9,
         "answerScore": 1,
         "stemScore": 0.833,
-        "summaryScore": 0.176,
+        "summaryScore": 0.882,
         "inSource": true
       }
     },
@@ -811,7 +834,8 @@
         "Sistematik özelleştirme",
         "Antrenman deneyimi ve atletik durum ilişkisinin özelleştirilmesi",
         "Metabolik ve biomekaniksel özelleştirme",
-        "Kinetik ve kinematik özelleştirme"
+        "Kinetik ve kinematik özelleştirme",
+        "Fizyolojik özelleştirme"
       ],
       "answer": "Sistematik özelleştirme",
       "answerLetter": "E",
@@ -822,7 +846,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -844,7 +868,8 @@
         "Sporcunun antrenmanlarının monotonlaşmasına neden olur.",
         "Antrenmanın tek tipe bağlı kalınmaksızın çoklu eğitim drilleri ile işlenmesini sağlar.",
         "Sporcuların zihinsel ve psikolojik sağlığı üzerinde olumlu bir etki yaratır.",
-        "Sporcunun antrenmanı sevmesini sağlar."
+        "Sporcunun antrenmanı sevmesini sağlar.",
+        "Sporcunun sürantrene olmasına neden olur."
       ],
       "answer": "Sporcunun antrenmanlarının monotonlaşmasına neden olur.",
       "answerLetter": "A",
@@ -852,10 +877,10 @@
       "answerPage": 75,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.92,
-        "answerScore": 0.8,
+        "score": 1,
+        "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.4,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -877,7 +902,8 @@
         "Cinsiyet faktörü",
         "Bireye veya takıma özgü hazırlanması",
         "Çevresel faktörler",
-        "Antrenörün yarışmalarda edindiği tecrübeler"
+        "Antrenörün yarışmalarda edindiği tecrübeler",
+        "Yarışma şartlarına uygun hâle getirilerek yapılması"
       ],
       "answer": "Cinsiyet faktörü",
       "answerLetter": "D",
@@ -888,7 +914,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.167,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -910,7 +936,8 @@
         "Kas liflerinin artması",
         "Sürat/Hızın var olan genetik ve diğer özelliklerin düzeyine bağlı olarak aydan aya artması",
         "Esnekliğin günden güne artması",
-        "Kuvvetin haftadan haftaya artması"
+        "Kuvvetin haftadan haftaya artması",
+        "Dayanıklılığın ay-yıl süreci içerisinde artması"
       ],
       "answer": "Kas liflerinin artması",
       "answerLetter": "D",
@@ -921,7 +948,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.273,
+        "summaryScore": 0.818,
         "inSource": true
       }
     },
@@ -943,7 +970,8 @@
         "Antrenmanda yüklenme ve dinlenmenin dengelenmesi ilkesi",
         "Model antrenman ilkesi",
         "Antrenman yükünün sürekli artırılması ilkesi (artan yüklenim)",
-        "Antrenmanın özel olma ilkesi"
+        "Antrenmanın özel olma ilkesi",
+        "Çeşitlilik ilkesi"
       ],
       "answer": "Antrenmanda yüklenme ve dinlenmenin dengelenmesi ilkesi",
       "answerLetter": "B",
@@ -954,7 +982,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -976,7 +1004,8 @@
         "Geriye dönüşüm ilkesi",
         "Antrenmanın özel olma ilkesi",
         "Antrenman yükünün sürekli artırılması ilkesi (artan yüklenim)",
-        "Antrenmanda yüklenme ve dinlenmenin dengelenmesi ilkesi"
+        "Antrenmanda yüklenme ve dinlenmenin dengelenmesi ilkesi",
+        "Model antrenman ilkesi"
       ],
       "answer": "Geriye dönüşüm ilkesi",
       "answerLetter": "C",
@@ -987,7 +1016,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.375,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1009,7 +1038,8 @@
         "Yüklenme türü",
         "Yüklenme kapsamı",
         "Yüklenme şiddeti",
-        "Yüklenme süresi"
+        "Yüklenme süresi",
+        "Yüklenme sıklığı"
       ],
       "answer": "Yüklenme türü",
       "answerLetter": "E",
@@ -1020,7 +1050,7 @@
         "score": 0.829,
         "answerScore": 1,
         "stemScore": 0.714,
-        "summaryScore": 0.222,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -1042,7 +1072,8 @@
         "Temel ve tamamlayıcı motorik özelliklerin düzeyi",
         "Sporcunun yapmış olduğu spor dalındaki kıdemi",
         "Sporcunun antrenörünün başarıları",
-        "Sporcunun ailesinin spor geçmişi"
+        "Sporcunun ailesinin spor geçmişi",
+        "Sporcunun genel kültür seviyesi"
       ],
       "answer": "Temel ve tamamlayıcı motorik özelliklerin düzeyi",
       "answerLetter": "C",
@@ -1053,7 +1084,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1075,7 +1106,8 @@
         "Çalışma anında kullanabildiği karbondioksit miktarı",
         "Sporcunun fiziki ve fizyolojik yorgunluğa dayanma gücü",
         "Yüklenme sonrası organizmanın çok çabuk normale dönme yetisi",
-        "Organizmanın aerobik enerji üretimi"
+        "Organizmanın aerobik enerji üretimi",
+        "İşlevsel potansiyelleri ekonomik olarak kullanma becerisi"
       ],
       "answer": "Çalışma anında kullanabildiği karbondioksit miktarı",
       "answerLetter": "D",
@@ -1086,7 +1118,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.4,
+        "summaryScore": 0.9,
         "inSource": true
       }
     },
@@ -1108,7 +1140,8 @@
         "Süregelen dayanıklılık",
         "Kısa süreli dayanıklılık",
         "Kuvvet dayanıklılığı",
-        "Sürat dayanıklılığı"
+        "Sürat dayanıklılığı",
+        "Uzun süreli dayanıklılık"
       ],
       "answer": "Süregelen dayanıklılık",
       "answerLetter": "B",
@@ -1141,7 +1174,8 @@
         "Çevresel faktörler",
         "Morfolojik-Fizyolojik faktörler",
         "Koordinatif faktörler",
-        "Motivasyonel faktör"
+        "Motivasyonel faktör",
+        "İntermüsküler ve intramüsküler koordinasyon"
       ],
       "answer": "Çevresel faktörler",
       "answerLetter": "A",
@@ -1152,7 +1186,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -1174,7 +1208,8 @@
         "Göz rengi",
         "Kas lifi tipi",
         "Yaş",
-        "Boy"
+        "Boy",
+        "Esneklik"
       ],
       "answer": "Göz rengi",
       "answerLetter": "E",
@@ -1185,7 +1220,7 @@
         "score": 0.6,
         "answerScore": 0,
         "stemScore": 1,
-        "summaryScore": 0.4,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -1207,7 +1242,8 @@
         "Uyarının merkezî sinir sistemine gelmeden kaslara iletilmesi",
         "Duyu organlarının impulslarla algılaması",
         "Uyarının merkezî sinir sistemine gelmesi ve emrin oluşması",
-        "Oluşan emrin kaslara iletilmesi"
+        "Oluşan emrin kaslara iletilmesi",
+        "Emrin kaslara ulaşmasından sonra, kasta mekanik bir olayın oluşması"
       ],
       "answer": "Uyarının merkezî sinir sistemine gelmeden kaslara iletilmesi",
       "answerLetter": "B",
@@ -1218,7 +1254,7 @@
         "score": 0.943,
         "answerScore": 0.857,
         "stemScore": 1,
-        "summaryScore": 0.353,
+        "summaryScore": 0.765,
         "inSource": true
       }
     },
@@ -1240,7 +1276,8 @@
         "Antrenmanın yapıldığı ortamın ısısı",
         "Eklemin yapısı, tipi ve formu",
         "Kas dokusunun, tendon ve ligamentlerin elastikiyeti",
-        "Derinin elastikiyeti"
+        "Derinin elastikiyeti",
+        "Kasın gevşeme ve kasılma yeteneği"
       ],
       "answer": "Antrenmanın yapıldığı ortamın ısısı",
       "answerLetter": "D",
@@ -1251,7 +1288,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.222,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -1273,7 +1310,8 @@
         "Eklem ve ekleme birleşen dokuların ısısı",
         "Günün saati",
         "Giysi ve kullanılan ekipmanın sınırlamaları",
-        "Antrenmanın yapıldığı ortamın ısısı"
+        "Antrenmanın yapıldığı ortamın ısısı",
+        "Çevresel faktörler"
       ],
       "answer": "Eklem ve ekleme birleşen dokuların ısısı",
       "answerLetter": "C",
@@ -1284,7 +1322,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.3,
+        "summaryScore": 0.6,
         "inSource": true
       }
     },
@@ -1306,7 +1344,8 @@
         "Esneklik",
         "KinestetikAyrımlama",
         "Boyutsal Yön Belirleme",
-        "Ritim"
+        "Ritim",
+        "Denge"
       ],
       "answer": "Esneklik",
       "answerLetter": "E",
@@ -1339,7 +1378,8 @@
         "Patlayıcılık",
         "Dayanıklılık",
         "Kuvvet",
-        "Esneklik"
+        "Esneklik",
+        "Sürat"
       ],
       "answer": "Patlayıcılık",
       "answerLetter": "C",
@@ -1347,15 +1387,11 @@
       "answerPage": 92,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.514,
+        "score": 0.6,
         "answerScore": 0,
-        "stemScore": 0.857,
-        "summaryScore": 0.25,
-        "inSource": false,
-        "missingTerms": [
-          "patlayı",
-          "sağlana"
-        ]
+        "stemScore": 1,
+        "summaryScore": 0.875,
+        "inSource": true
       }
     },
     {
@@ -1376,7 +1412,8 @@
         "Kan sıvısı",
         "İskelet kasları",
         "Merkezî sinir sistemi",
-        "Eklemler"
+        "Eklemler",
+        "Eklem bağları"
       ],
       "answer": "Kan sıvısı",
       "answerLetter": "D",
@@ -1387,7 +1424,7 @@
         "score": 0.415,
         "answerScore": 0,
         "stemScore": 0.692,
-        "summaryScore": 0.143,
+        "summaryScore": 0.643,
         "inSource": false,
         "missingTerms": [
           "sıvısı",
@@ -1416,7 +1453,8 @@
         "Koordinasyon",
         "Dayanıklılık",
         "Sürat",
-        "Kuvvet"
+        "Kuvvet",
+        "Hareketlilik"
       ],
       "answer": "Koordinasyon",
       "answerLetter": "E",
@@ -1427,7 +1465,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1449,7 +1487,8 @@
         "Performans",
         "Hareketin akıcılığı",
         "Sevk ve idare yeteneği",
-        "Ritim"
+        "Ritim",
+        "Hareket hissi"
       ],
       "answer": "Performans",
       "answerLetter": "A",
@@ -1460,7 +1499,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.2,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1482,7 +1521,8 @@
         "Hareketlilik",
         "Koordinasyon",
         "Çeviklik",
-        "Denge"
+        "Denge",
+        "Beceri"
       ],
       "answer": "Hareketlilik",
       "answerLetter": "B",
@@ -1493,7 +1533,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1515,7 +1555,8 @@
         "Aktif hareketlilik",
         "Genel hareketlilik",
         "Dinamik hareketlilik",
-        "Statik hareketlilik"
+        "Statik hareketlilik",
+        "Pasif hareketlilik"
       ],
       "answer": "Aktif hareketlilik",
       "answerLetter": "E",
@@ -1526,7 +1567,7 @@
         "score": 0.914,
         "answerScore": 1,
         "stemScore": 0.857,
-        "summaryScore": 0.188,
+        "summaryScore": 0.813,
         "inSource": true
       }
     },
@@ -1548,7 +1589,8 @@
         "Aktif germe alıştırmalarından sonra pasif alıştırmalar yapmak",
         "Hareketlilik çalışmalarını günlük yapmak",
         "Hareketlilik çalışmalarına müsabakadan 30-35 dk önce başlamak",
-        "Hareketlilik çalışmalarını yorgunken yapmamak"
+        "Hareketlilik çalışmalarını yorgunken yapmamak",
+        "Hareketlilik çalışmalarında tek yönlü çalışma yapmamak"
       ],
       "answer": "Aktif germe alıştırmalarından sonra pasif alıştırmalar yapmak",
       "answerLetter": "A",
@@ -1559,7 +1601,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.222,
+        "summaryScore": 0.444,
         "inSource": true
       }
     },
@@ -1581,7 +1623,8 @@
         "Denge aleti üzerinde yürüme alıştırmaları",
         "Hızlanma, yavaşlama ve yön değiştirme alıştırmaları",
         "Geriye ve yanlara koşu ve kayma alıştırmaları.",
-        "Yön değiştirmeli sürat alıştırmaları"
+        "Yön değiştirmeli sürat alıştırmaları",
+        "Ayna ve gölge alıştırmaları"
       ],
       "answer": "Denge aleti üzerinde yürüme alıştırmaları",
       "answerLetter": "C",
@@ -1592,7 +1635,7 @@
         "score": 0.9,
         "answerScore": 0.75,
         "stemScore": 1,
-        "summaryScore": 0.2,
+        "summaryScore": 0.6,
         "inSource": true
       }
     },
@@ -1614,7 +1657,8 @@
         "Çeviklik",
         "Koordinasyon",
         "Beceri",
-        "Denge"
+        "Denge",
+        "Hareketlilik"
       ],
       "answer": "Çeviklik",
       "answerLetter": "B",
@@ -1625,7 +1669,7 @@
         "score": 0.896,
         "answerScore": 1,
         "stemScore": 0.826,
-        "summaryScore": 0.375,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -1647,7 +1691,8 @@
         "Statik denge",
         "Motorsal denge",
         "Dinamik denge",
-        "Objeyle denge"
+        "Objeyle denge",
+        "Aktif denge"
       ],
       "answer": "Statik denge",
       "answerLetter": "C",
@@ -1658,7 +1703,7 @@
         "score": 0.788,
         "answerScore": 1,
         "stemScore": 0.647,
-        "summaryScore": 0.316,
+        "summaryScore": 0.421,
         "inSource": true
       }
     },
@@ -1680,7 +1725,8 @@
         "Denge",
         "Koordinasyon",
         "Hareketlilik",
-        "Çeviklik"
+        "Çeviklik",
+        "Beceri"
       ],
       "answer": "Denge",
       "answerLetter": "D",
@@ -1691,7 +1737,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.158,
+        "summaryScore": 0.947,
         "inSource": true
       }
     },
@@ -1713,7 +1759,8 @@
         "Birim antrenman planı",
         "Yıllık antrenman planı",
         "Haftalık antrenman planı",
-        "Makro antrenman planı"
+        "Makro antrenman planı",
+        "Mikro antrenman planı"
       ],
       "answer": "Birim antrenman planı",
       "answerLetter": "B",
@@ -1724,7 +1771,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.667,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1746,7 +1793,8 @@
         "Giriş, ısınma, ana bölüm ve soğuma",
         "Ana bölüm",
         "Isınma ve ana bölüm",
-        "Isınma ve soğuma"
+        "Isınma ve soğuma",
+        "Ana bölüm ve soğuma"
       ],
       "answer": "Giriş, ısınma, ana bölüm ve soğuma",
       "answerLetter": "D",
@@ -1757,7 +1805,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.857,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1779,7 +1827,8 @@
         "25-30 dakika",
         "5-10 dakika",
         "11-15 dakika",
-        "16-20 dakika"
+        "16-20 dakika",
+        "60-70 dakika"
       ],
       "answer": "25-30 dakika",
       "answerLetter": "D",
@@ -1790,7 +1839,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -1812,7 +1861,8 @@
         "Teknik ve taktik",
         "Genel ısınma",
         "Özel ısınma",
-        "Birim antrenman"
+        "Birim antrenman",
+        "Soğuma"
       ],
       "answer": "Teknik ve taktik",
       "answerLetter": "C",
@@ -1823,7 +1873,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0.286,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -1845,7 +1895,8 @@
         "I, II, III ve IV",
         "I ve IV",
         "II ve III",
-        "I, II ve IV"
+        "I, II ve IV",
+        "II, III ve IV"
       ],
       "answer": "I, II, III ve IV",
       "answerLetter": "E",
@@ -1856,7 +1907,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.875,
         "inSource": true
       }
     },
@@ -1878,7 +1929,8 @@
         "3-6",
         "7-9",
         "10-12",
-        "13-15"
+        "13-15",
+        "16-18"
       ],
       "answer": "3-6",
       "answerLetter": "A",
@@ -1889,7 +1941,7 @@
         "score": 0.914,
         "answerScore": 1,
         "stemScore": 0.857,
-        "summaryScore": 0.429,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -1911,7 +1963,8 @@
         "4-7",
         "1-3",
         "8-9",
-        "10-12"
+        "10-12",
+        "13-15"
       ],
       "answer": "4-7",
       "answerLetter": "B",
@@ -1922,7 +1975,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -1944,7 +1997,8 @@
         "Yıllık plan",
         "Mikro dönem",
         "Makro dönem",
-        "Aylık plan"
+        "Aylık plan",
+        "Çok yıllık"
       ],
       "answer": "Yıllık plan",
       "answerLetter": "C",
@@ -1955,7 +2009,7 @@
         "score": 0.85,
         "answerScore": 1,
         "stemScore": 0.75,
-        "summaryScore": 0.667,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -1977,7 +2031,8 @@
         "8-16 yıl",
         "1-2 yıl",
         "3-4 yıl",
-        "5-6 yıl"
+        "5-6 yıl",
+        "9-18 yıl"
       ],
       "answer": "8-16 yıl",
       "answerLetter": "D",
@@ -1988,7 +2043,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 0.875,
         "inSource": true
       }
     },
@@ -2010,7 +2065,8 @@
         "Hazırlık, müsabaka ve geçiş dönemi",
         "Hazırlık ve müsabaka dönemi",
         "Müsabaka ve geçiş dönemi",
-        "Hazırlık ve geçiş dönemi"
+        "Hazırlık ve geçiş dönemi",
+        "Müsabaka, Geçiş ve Müsabaka dönemi"
       ],
       "answer": "Hazırlık, müsabaka ve geçiş dönemi",
       "answerLetter": "C",
@@ -2021,7 +2077,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2043,7 +2099,8 @@
         "Milli Eğitim Bakanlığı - Gençlik ve Spor Bakanlığı",
         "Aile ve Sosyal Politikalar Bakanlığı - Gençlik ve Spor Bakanlığı",
         "Milli Eğitim Bakanlığı – Avrupa Birliği Bakanlığı",
-        "Aile ve Sosyal Politikalar Bakanlığı - Milli Eğitim Bakanlığı"
+        "Aile ve Sosyal Politikalar Bakanlığı - Milli Eğitim Bakanlığı",
+        "Gençlik ve Spor Bakanlığı – Bilim Sanayi ve Teknoloji Bakanlığı"
       ],
       "answer": "Milli Eğitim Bakanlığı - Gençlik ve Spor Bakanlığı",
       "answerLetter": "E",
@@ -2054,7 +2111,7 @@
         "score": 0.945,
         "answerScore": 1,
         "stemScore": 0.909,
-        "summaryScore": 0.125,
+        "summaryScore": 0.813,
         "inSource": true
       }
     },
@@ -2076,7 +2133,8 @@
         "Temel hareket becerileri eğitimi ve gelişimi modülü - Hareket becerileri gelişimi modülü (orta düzey) - Çoklu Branş Gelişimini İçeren Spor Eğitimi Modülü",
         "Temel hareket becerileri eğitimi ve gelişimi modülü - Temel düzey - Çoklu branş gelişimini içeren spor eğitimi modülü - Hareket becerileri gelişimi modülü (orta düzey)",
         "Hareket becerileri gelişimi modülü (orta düzey) - Temel hareket becerileri eğitimi ve gelişimi modülü - Çoklu branş gelişimini içeren spor eğitimi modülü",
-        "Çoklu branş gelişimini içeren spor eğitimi modülü - Temel hareket becerileri eğitimi ve gelişimi modülü - Hareket becerileri gelişimi modülü (orta düzey)"
+        "Çoklu branş gelişimini içeren spor eğitimi modülü - Temel hareket becerileri eğitimi ve gelişimi modülü - Hareket becerileri gelişimi modülü (orta düzey)",
+        "Temel hareket becerileri eğitimi ve gelişimi modülü - Çoklu branş gelişimini içeren spor eğitimi modülü"
       ],
       "answer": "Temel hareket becerileri eğitimi ve gelişimi modülü - Hareket becerileri gelişimi modülü (orta düzey) - Çoklu Branş Gelişimini İçeren Spor Eğitimi Modülü",
       "answerLetter": "C",
@@ -2087,7 +2145,7 @@
         "score": 0.96,
         "answerScore": 1,
         "stemScore": 0.933,
-        "summaryScore": 0.077,
+        "summaryScore": 0.462,
         "inSource": true
       }
     },
@@ -2109,7 +2167,8 @@
         "Orta parmak",
         "İşaret parmağı",
         "Baş parmak",
-        "Serçe parmağı"
+        "Serçe parmağı",
+        "Yüzük parmağı"
       ],
       "answer": "Orta parmak",
       "answerLetter": "A",
@@ -2120,7 +2179,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0.167,
+        "summaryScore": 0.333,
         "inSource": true
       }
     },
@@ -2142,7 +2201,8 @@
         "Dayanıklılık",
         "Sürat",
         "Kuvvet",
-        "Çeviklik"
+        "Çeviklik",
+        "Esneklik"
       ],
       "answer": "Dayanıklılık",
       "answerLetter": "D",
@@ -2153,7 +2213,7 @@
         "score": 0.945,
         "answerScore": 1,
         "stemScore": 0.909,
-        "summaryScore": 0.5,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -2175,7 +2235,8 @@
         "1",
         "1.5",
         "2",
-        "3"
+        "3",
+        "4"
       ],
       "answer": "1",
       "answerLetter": "A",
@@ -2186,7 +2247,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.077,
+        "summaryScore": 0.769,
         "inSource": true
       }
     },
@@ -2208,7 +2269,8 @@
         "Esneklik",
         "Boy uzunluğu",
         "Kulaç uzunluğu",
-        "Oturma yüksekliği"
+        "Oturma yüksekliği",
+        "Bacak uzunluğu"
       ],
       "answer": "Esneklik",
       "answerLetter": "C",
@@ -2219,7 +2281,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.75,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2241,7 +2303,8 @@
         "10",
         "15",
         "20",
-        "25"
+        "25",
+        "30"
       ],
       "answer": "10",
       "answerLetter": "A",
@@ -2252,7 +2315,7 @@
         "score": 0.929,
         "answerScore": 1,
         "stemScore": 0.882,
-        "summaryScore": 0.059,
+        "summaryScore": 0.471,
         "inSource": true
       }
     },
@@ -2274,7 +2337,8 @@
         "Koordinasyon testi",
         "Çeviklik testi",
         "Topu geriye fırlatma testi",
-        "Dikey sıçrama testi"
+        "Dikey sıçrama testi",
+        "Pençe kuvveti"
       ],
       "answer": "Koordinasyon testi",
       "answerLetter": "D",
@@ -2285,7 +2349,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -2307,7 +2371,8 @@
         "Üst üste 2 kez arka arkaya hata yapıldığında",
         "Sadece 1 kez hata yapıldığında",
         "Aralıklar ile 2 kez hata yapıldığında",
-        "Üst üste 3 kez arka arkaya hat yapıldığında"
+        "Üst üste 3 kez arka arkaya hat yapıldığında",
+        "Aralıklar ile 3 kez hata yapıldığında"
       ],
       "answer": "Üst üste 2 kez arka arkaya hata yapıldığında",
       "answerLetter": "C",
@@ -2318,7 +2383,7 @@
         "score": 0.773,
         "answerScore": 0.6,
         "stemScore": 0.889,
-        "summaryScore": 0.214,
+        "summaryScore": 0.643,
         "inSource": true
       }
     },
@@ -2340,7 +2405,8 @@
         "Öğrencinin görsel bir uyarıya vermiş olduğu tepki süresini ve bu tepkiyi devam ettirebilme düzeyini incelemek",
         "Öğrencinin görsel bir uyarıya vermiş olduğu tepki süresini incelemek",
         "Öğrencinin verdiği tepkiyi devam ettirebilme düzeyini incelemek",
-        "Öğrencinin refleks düzeyini incelemek"
+        "Öğrencinin refleks düzeyini incelemek",
+        "Öğrencinin sadece hızlı karar vermek yetisini incelemek"
       ],
       "answer": "Öğrencinin görsel bir uyarıya vermiş olduğu tepki süresini ve bu tepkiyi devam ettirebilme düzeyini incelemek",
       "answerLetter": "A",
@@ -2351,7 +2417,7 @@
         "score": 0.85,
         "answerScore": 1,
         "stemScore": 0.75,
-        "summaryScore": 0.067,
+        "summaryScore": 0.333,
         "inSource": true
       }
     },
@@ -2373,7 +2439,8 @@
         "Atletizm (100 Metre Sürat)",
         "Maraton",
         "Bisiklet",
-        "Kayak Kros"
+        "Kayak Kros",
+        "1500 Metre koşusu"
       ],
       "answer": "Atletizm (100 Metre Sürat)",
       "answerLetter": "C",
@@ -2384,7 +2451,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.231,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2406,7 +2473,8 @@
         "Bacak Dinamometresi testi",
         "12 dk. Cooper testi",
         "1 Mil koşu testi",
-        "5 m Sprint testi"
+        "5 m Sprint testi",
+        "Uzan-Eriş testi"
       ],
       "answer": "Bacak Dinamometresi testi",
       "answerLetter": "D",
@@ -2417,7 +2485,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.273,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2439,7 +2507,8 @@
         "200 Metre",
         "20 Metre",
         "100 Metre",
-        "400 Metre"
+        "400 Metre",
+        "800 Metre"
       ],
       "answer": "200 Metre",
       "answerLetter": "A",
@@ -2450,7 +2519,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.231,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2472,7 +2541,8 @@
         "3-7",
         "11-14",
         "15-19",
-        "20-23"
+        "20-23",
+        "24-26"
       ],
       "answer": "3-7",
       "answerLetter": "A",
@@ -2483,7 +2553,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.125,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2505,7 +2575,8 @@
         "Yer değiştirme hareketleri - Dengeleme hareketleri - Nesne kontrolü hareketleri",
         "Geri geri yürüme - Dizleri karnına çekme - Ritmik adımlama",
         "Çift ayak ileri sıçrama - Çift ayak geri sıçrama - Parmak ucunda yürüme",
-        "Kanguru hareketleri - Hızlı ve yavaş adımlama – Hizaya dikkat etme hareketleri"
+        "Kanguru hareketleri - Hızlı ve yavaş adımlama – Hizaya dikkat etme hareketleri",
+        "Tırmanma hareketleri - Yuvarlanma hareketleri – Top ile yapılan hareketler"
       ],
       "answer": "Yer değiştirme hareketleri - Dengeleme hareketleri - Nesne kontrolü hareketleri",
       "answerLetter": "C",
@@ -2516,7 +2587,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2538,7 +2609,8 @@
         "Anaerobik kuvvet, kısa tepki süresi, stresle başa çıkma becerisi ve boy-gövde oranıyla beraber uzun bacaklara sahip olunması gerekir.",
         "Anaerobik kuvvet, aerobik kapasite ve stres ile başa çıkma becerisi istenir.",
         "Yüksek aerobik kapasite, düşük vücut ağırlığı, düşük KAH, yorgunluğa karşı dayanma özelliği ve dirençli bir karakter beklenir.",
-        "Uzun boy ve bacaklar, gelişmiş kas kitlesi, büyük eller, patlayıcı kuvvet, yüksek anaerobik güç özellikleri istenir."
+        "Uzun boy ve bacaklar, gelişmiş kas kitlesi, büyük eller, patlayıcı kuvvet, yüksek anaerobik güç özellikleri istenir.",
+        "Yüksek derecede dayanıklılık, hızlı toparlanma özelliği, uzun tepki süresi"
       ],
       "answer": "Anaerobik kuvvet, kısa tepki süresi, stresle başa çıkma becerisi ve boy-gövde oranıyla beraber uzun bacaklara sahip olunması gerekir.",
       "answerLetter": "A",
@@ -2549,7 +2621,7 @@
         "score": 0.957,
         "answerScore": 1,
         "stemScore": 0.929,
-        "summaryScore": 0.2,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -2571,7 +2643,8 @@
         "Eğilim tespiti",
         "Yatkınlık tespiti",
         "Sportif özellik tespiti",
-        "Branşa uygunluk tespiti"
+        "Branşa uygunluk tespiti",
+        "Fiziksel özellikler tespiti"
       ],
       "answer": "Eğilim tespiti",
       "answerLetter": "B",
@@ -2582,7 +2655,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.417,
+        "summaryScore": 0.917,
         "inSource": true
       }
     },
@@ -2604,7 +2677,8 @@
         "Çeviklik",
         "Esneklik",
         "Sürat",
-        "Kuvvet"
+        "Kuvvet",
+        "Dayanıklılık"
       ],
       "answer": "Çeviklik",
       "answerLetter": "C",
@@ -2615,7 +2689,7 @@
         "score": 0.97,
         "answerScore": 1,
         "stemScore": 0.95,
-        "summaryScore": 0.143,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -2637,7 +2711,8 @@
         "Çapraz katılım",
         "Geç katılım",
         "Rekreasyonel katılım",
-        "Erken katılım"
+        "Erken katılım",
+        "Tesadüfen katılım"
       ],
       "answer": "Çapraz katılım",
       "answerLetter": "A",
@@ -2648,7 +2723,7 @@
         "score": 0.967,
         "answerScore": 1,
         "stemScore": 0.944,
-        "summaryScore": 0.15,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -2670,7 +2745,8 @@
         "Sistematik gözlem ve testlere dayanır.",
         "Subjektif antrenör görüşü dikkate alınır.",
         "Sadece yarışma veya maçlarda analiz sonuçlarına dayanır.",
-        "Psikolojik ve sosyolojik koşullar dikkate alınır."
+        "Psikolojik ve sosyolojik koşullar dikkate alınır.",
+        "Branş eğitimcilerinin sübjektif gözlemlerine dayanır."
       ],
       "answer": "Sistematik gözlem ve testlere dayanır.",
       "answerLetter": "B",
@@ -2681,7 +2757,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.417,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -2703,7 +2779,8 @@
         "Protein miktarı",
         "Su miktarı",
         "Amino asit miktarı",
-        "Ozmotik basınç"
+        "Ozmotik basınç",
+        "ATP üretim miktarı"
       ],
       "answer": "Protein miktarı",
       "answerLetter": "D",
@@ -2714,7 +2791,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -2736,7 +2813,8 @@
         "Ekstansiyon",
         "Abduksiyon",
         "Lateral fleksiyon",
-        "İnversiyon"
+        "İnversiyon",
+        "Adduksiyon"
       ],
       "answer": "Ekstansiyon",
       "answerLetter": "E",
@@ -2769,7 +2847,8 @@
         "Eksantrik – İzometrik -Konsantrik",
         "İzometrik – Eksantrik - Konsantrik",
         "Konsantrik – Eksantrik - İzometrik",
-        "Eksantrik – Konsantrik - İzometrik"
+        "Eksantrik – Konsantrik - İzometrik",
+        "İzometrik – Konsantrik - Eksantrik"
       ],
       "answer": "Eksantrik – İzometrik -Konsantrik",
       "answerLetter": "D",
@@ -2780,7 +2859,7 @@
         "score": 0.925,
         "answerScore": 1,
         "stemScore": 0.875,
-        "summaryScore": 0,
+        "summaryScore": 0.727,
         "inSource": true
       }
     },
@@ -2802,7 +2881,8 @@
         "Ligament",
         "Tendon",
         "Kartilaj",
-        "Diyafiz"
+        "Diyafiz",
+        "Kıkırdak"
       ],
       "answer": "Ligament",
       "answerLetter": "A",
@@ -2813,7 +2893,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.2,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2835,7 +2915,8 @@
         "Kollajen",
         "Elastin",
         "Retiküler",
-        "Kas"
+        "Kas",
+        "Kartilaj"
       ],
       "answer": "Kollajen",
       "answerLetter": "A",
@@ -2846,7 +2927,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2868,7 +2949,8 @@
         "Üst ekstremite",
         "Aksiyel iskelet",
         "Alt ekstremite",
-        "Sırasıyla alt ve üst ekstremite"
+        "Sırasıyla alt ve üst ekstremite",
+        "Toraks"
       ],
       "answer": "Üst ekstremite",
       "answerLetter": "B",
@@ -2879,7 +2961,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -2901,7 +2983,8 @@
         "Abduksiyon",
         "Ekstansiyon",
         "Adduksiyon",
-        "Fleksiyon"
+        "Fleksiyon",
+        "Protraksiyon"
       ],
       "answer": "Abduksiyon",
       "answerLetter": "C",
@@ -2912,7 +2995,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0.5,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -2934,7 +3017,8 @@
         "Antagonist",
         "Agonist",
         "Sinerjist",
-        "Stabilizatör"
+        "Stabilizatör",
+        "İzotonik"
       ],
       "answer": "Antagonist",
       "answerLetter": "B",
@@ -2945,7 +3029,7 @@
         "score": 0.914,
         "answerScore": 1,
         "stemScore": 0.857,
-        "summaryScore": 0.25,
+        "summaryScore": 0.75,
         "inSource": true
       }
     },
@@ -2967,7 +3051,8 @@
         "Kas tendonu yük ile eklem aksisi arasındadır.",
         "Mekanik avantaj sağlarlar.",
         "Kuvvet kolu yük kolundan daha uzundur.",
-        "Kas tendonu eklemden uzak bir noktaya bağlanmıştır."
+        "Kas tendonu eklemden uzak bir noktaya bağlanmıştır.",
+        "Az kuvvetle fazla yük kaldırabilirler."
       ],
       "answer": "Kas tendonu yük ile eklem aksisi arasındadır.",
       "answerLetter": "C",
@@ -2978,7 +3063,7 @@
         "score": 0.867,
         "answerScore": 1,
         "stemScore": 0.778,
-        "summaryScore": 0.154,
+        "summaryScore": 0.769,
         "inSource": true
       }
     },
@@ -3000,7 +3085,8 @@
         "Kas - fasikül - kas fibrili - myofibril",
         "Kas fibrili - sarkomer - myofilament - myofibril",
         "Sarkomer - fasikül - myofibril - myofilament",
-        "Kas - kas fibrili - myosin - myofibril"
+        "Kas - kas fibrili - myosin - myofibril",
+        "Fasikül - myofilament - kas fibrili - sarkomer"
       ],
       "answer": "Kas - fasikül - kas fibrili - myofibril",
       "answerLetter": "B",
@@ -3011,7 +3097,7 @@
         "score": 0.583,
         "answerScore": 0.333,
         "stemScore": 0.75,
-        "summaryScore": 0,
+        "summaryScore": 0.286,
         "inSource": true
       }
     },
@@ -3033,7 +3119,8 @@
         "2 mol",
         "3 mol",
         "39 mol",
-        "129 mol"
+        "129 mol",
+        "38 mol"
       ],
       "answer": "2 mol",
       "answerLetter": "C",
@@ -3044,7 +3131,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3066,7 +3153,8 @@
         "Karbondioksit",
         "Laktik asit",
         "Pürivik asit",
-        "Oksijen"
+        "Oksijen",
+        "Laktat"
       ],
       "answer": "Karbondioksit",
       "answerLetter": "D",
@@ -3077,7 +3165,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.6,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3099,7 +3187,8 @@
         "Glikoz",
         "Glikojen+yağlar",
         "Glikojen+proteinler",
-        "Kreatin fosfat"
+        "Kreatin fosfat",
+        "Kreatin fosfat+yağlar"
       ],
       "answer": "Glikoz",
       "answerLetter": "A",
@@ -3110,7 +3199,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3132,7 +3221,8 @@
         "Uyarılabilirlik",
         "Adaptasyon",
         "Üreme",
-        "ATP üretimi"
+        "ATP üretimi",
+        "Metabolizma"
       ],
       "answer": "Uyarılabilirlik",
       "answerLetter": "B",
@@ -3143,7 +3233,7 @@
         "score": 0.963,
         "answerScore": 1,
         "stemScore": 0.938,
-        "summaryScore": 0,
+        "summaryScore": 0.941,
         "inSource": true
       }
     },
@@ -3165,7 +3255,8 @@
         "129 mol",
         "2 mol",
         "3 mol",
-        "39 mol"
+        "39 mol",
+        "132 mol"
       ],
       "answer": "129 mol",
       "answerLetter": "D",
@@ -3176,7 +3267,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3198,7 +3289,8 @@
         "Anabolizma",
         "Adaptasyon",
         "Homeostaz",
-        "Katabolizma"
+        "Katabolizma",
+        "Gelişme"
       ],
       "answer": "Anabolizma",
       "answerLetter": "C",
@@ -3209,7 +3301,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -3231,7 +3323,8 @@
         "II, III ve IV",
         "I ve II",
         "I, II ve III",
-        "I, IV ve V"
+        "I, IV ve V",
+        "II, III, IV ve V"
       ],
       "answer": "II, III ve IV",
       "answerLetter": "C",
@@ -3242,7 +3335,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.444,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3264,7 +3357,8 @@
         "güç",
         "enerji",
         "iş",
-        "kinetik enerji"
+        "kinetik enerji",
+        "kuvvet"
       ],
       "answer": "güç",
       "answerLetter": "B",
@@ -3275,7 +3369,7 @@
         "score": 0.867,
         "answerScore": 1,
         "stemScore": 0.778,
-        "summaryScore": 0,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -3297,7 +3391,8 @@
         "Mitokondri",
         "Ribozom",
         "Golgi aygıtı",
-        "Endoplazmik retikulum"
+        "Endoplazmik retikulum",
+        "Çekirdek"
       ],
       "answer": "Mitokondri",
       "answerLetter": "D",
@@ -3308,7 +3403,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.714,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3330,7 +3425,8 @@
         "III, IV ve V",
         "I, II, III ve IV",
         "II, III ve IV",
-        "I, II ve IV"
+        "I, II ve IV",
+        "II, III, IV ve V"
       ],
       "answer": "III, IV ve V",
       "answerLetter": "E",
@@ -3341,7 +3437,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.1,
+        "summaryScore": 0.9,
         "inSource": true
       }
     },
@@ -3363,7 +3459,8 @@
         "Protein-Yağ-Karbonhidrat",
         "Vitamin-Mineral-Su",
         "Lösin-İzolösin-Valin",
-        "Mineral-Vitamin-Su"
+        "Mineral-Vitamin-Su",
+        "Sodyum-Potasyum-Magnezyum"
       ],
       "answer": "Protein-Yağ-Karbonhidrat",
       "answerLetter": "A",
@@ -3374,7 +3471,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.556,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3396,7 +3493,8 @@
         "Sinir iletim hızının yavaşlaması",
         "Solunum hızının artması",
         "Kas kasılmasının artması",
-        "Enerji harcamasının artması"
+        "Enerji harcamasının artması",
+        "KAH’nın artması"
       ],
       "answer": "Sinir iletim hızının yavaşlaması",
       "answerLetter": "B",
@@ -3407,7 +3505,7 @@
         "score": 0.78,
         "answerScore": 0.75,
         "stemScore": 0.8,
-        "summaryScore": 0.111,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -3429,7 +3527,8 @@
         "Karbonhidrat=4 – Protein=4 – Yağ= 9",
         "Karbonhidrat=9 – Protein=4 – Yağ= 4",
         "Karbonhidrat=4 – Protein=9 – Yağ= 4",
-        "Karbonhidrat=4 – Protein=9 – Yağ= 9"
+        "Karbonhidrat=4 – Protein=9 – Yağ= 9",
+        "Karbonhidrat=4 – Protein=4 – Yağ= 4"
       ],
       "answer": "Karbonhidrat=4 – Protein=4 – Yağ= 9",
       "answerLetter": "A",
@@ -3440,7 +3539,7 @@
         "score": 0.94,
         "answerScore": 1,
         "stemScore": 0.9,
-        "summaryScore": 0.333,
+        "summaryScore": 0.917,
         "inSource": true
       }
     },
@@ -3462,7 +3561,8 @@
         "D, A, E ve K vitaminleri",
         "B grubu vitaminleri ve C vitamini",
         "B12 vitamini",
-        "Tiamin ve Riboflavin"
+        "Tiamin ve Riboflavin",
+        "Riboflavin ve Tiamin"
       ],
       "answer": "D, A, E ve K vitaminleri",
       "answerLetter": "D",
@@ -3473,7 +3573,7 @@
         "score": 0.85,
         "answerScore": 1,
         "stemScore": 0.75,
-        "summaryScore": 0.6,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -3495,7 +3595,8 @@
         "4.5",
         "2.5",
         "3",
-        "8"
+        "8",
+        "5"
       ],
       "answer": "4.5",
       "answerLetter": "E",
@@ -3506,7 +3607,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.182,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3528,7 +3629,8 @@
         "Yüksek oranda karbonhidrat, orta düzeyde protein, düşük yağ tüketilmeli",
         "Tüm besin öğeleri yüksek miktarlarda tüketilmeli",
         "Yüksek oranda yağ ve protein, düşük karbonhidrat tüketilmeli",
-        "Yüksek oranda protein, düşük karbonhidrat ve yağ tüketilmeli"
+        "Yüksek oranda protein, düşük karbonhidrat ve yağ tüketilmeli",
+        "Yüksek yağ, düşük karbonhidrat ve protein tüketilmeli"
       ],
       "answer": "Yüksek oranda karbonhidrat, orta düzeyde protein, düşük yağ tüketilmeli",
       "answerLetter": "B",
@@ -3539,7 +3641,7 @@
         "score": 0.974,
         "answerScore": 1,
         "stemScore": 0.957,
-        "summaryScore": 0.29,
+        "summaryScore": 0.903,
         "inSource": true
       }
     },
@@ -3561,7 +3663,8 @@
         "Protein",
         "Magnezyum",
         "Asetilkolin",
-        "Karbonhidrat"
+        "Karbonhidrat",
+        "Yağ"
       ],
       "answer": "Protein",
       "answerLetter": "E",
@@ -3569,10 +3672,10 @@
       "answerPage": 104,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.815,
+        "score": 0.862,
         "answerScore": 1,
-        "stemScore": 0.692,
-        "summaryScore": 0.429,
+        "stemScore": 0.769,
+        "summaryScore": 0.786,
         "inSource": true
       }
     },
@@ -3594,7 +3697,8 @@
         "Orta-düşük glisemik indekslikatı karbonhidratlar",
         "Düşük glisemik indeksli-katı karbonhidratlar",
         "Orta-düşük glisemik indeksli-sıvı ve katı karbonhidratlar",
-        "Yüksek glisemik indeksli-sıvı ve katı karbonhidratlar"
+        "Yüksek glisemik indeksli-sıvı ve katı karbonhidratlar",
+        "Orta-düşük glisemik indeksli-sıvı karbonhidratlar"
       ],
       "answer": "Orta-düşük glisemik indekslikatı karbonhidratlar",
       "answerLetter": "B",
@@ -3605,7 +3709,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.316,
+        "summaryScore": 0.947,
         "inSource": true
       }
     },
@@ -3627,7 +3731,8 @@
         "Egzersiz sonrası oluşan kas hasarının onarımına yardımcı olmak",
         "Organları sararak dış etkilere karşı korumak",
         "Vücut sıcaklığının korunmasına yardımcı olmak",
-        "Düşük şiddetli egzersizler için enerji kaynağı sağlamak"
+        "Düşük şiddetli egzersizler için enerji kaynağı sağlamak",
+        "Bazı vitaminlerinin sindirimi ve emilmesine katkıda bulunmak"
       ],
       "answer": "Egzersiz sonrası oluşan kas hasarının onarımına yardımcı olmak",
       "answerLetter": "C",
@@ -3638,7 +3743,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.2,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3660,7 +3765,8 @@
         "2 gram",
         "3 gram",
         "1.6 gram",
-        "4 gram"
+        "4 gram",
+        "20 gram"
       ],
       "answer": "2 gram",
       "answerLetter": "A",
@@ -3671,7 +3777,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.071,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3693,7 +3799,8 @@
         "Vücut esnekliğini azaltır.",
         "Bazı kanser türlerini önler.",
         "Diyabet riskini azaltır.",
-        "Kalbi güçlendirir."
+        "Kalbi güçlendirir.",
+        "Kasların güçlenmesini sağlar."
       ],
       "answer": "Vücut esnekliğini azaltır.",
       "answerLetter": "D",
@@ -3704,7 +3811,7 @@
         "score": 0.76,
         "answerScore": 1,
         "stemScore": 0.6,
-        "summaryScore": 0,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -3726,7 +3833,8 @@
         "Biyomekaniksel dizilim bozukluğu",
         "Antrenör tutumu",
         "Hava koşulları",
-        "Spor tipi"
+        "Spor tipi",
+        "Aşırı antrenman yoğunluğu"
       ],
       "answer": "Biyomekaniksel dizilim bozukluğu",
       "answerLetter": "B",
@@ -3737,7 +3845,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.375,
+        "summaryScore": 0.625,
         "inSource": true
       }
     },
@@ -3759,7 +3867,8 @@
         "Ayakta durma durumunun değerlendirilmesi",
         "Nabız değerlendirmesi",
         "Kan basıncının değerlendirilmesi",
-        "Cilt renginin değerlendirilmesi"
+        "Cilt renginin değerlendirilmesi",
+        "Göz bebeklerinin değerlendirilmesi"
       ],
       "answer": "Ayakta durma durumunun değerlendirilmesi",
       "answerLetter": "C",
@@ -3770,7 +3879,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.2,
+        "summaryScore": 0.9,
         "inSource": true
       }
     },
@@ -3792,7 +3901,8 @@
         "Yaş",
         "Spor ayakkabı",
         "Hava koşulları",
-        "Zemin özellikleri"
+        "Zemin özellikleri",
+        "Işıklandırma"
       ],
       "answer": "Yaş",
       "answerLetter": "A",
@@ -3803,7 +3913,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.75,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3825,7 +3935,8 @@
         "İki nefes suni solunum, 15 kalp masajı",
         "Üç nefes suni solunum, 10 kalp masajı",
         "Beş nefes suni solunum, 10 kalp masajı",
-        "Beş nefes suni solunum, 5 kalp masajı"
+        "Beş nefes suni solunum, 5 kalp masajı",
+        "Üç nefes suni solunum, 5 kalp masajı Sporcu Sağlığı ve İlk Yardım I"
       ],
       "answer": "İki nefes suni solunum, 15 kalp masajı",
       "answerLetter": "A",
@@ -3836,7 +3947,7 @@
         "score": 0.933,
         "answerScore": 1,
         "stemScore": 0.889,
-        "summaryScore": 0,
+        "summaryScore": 0.571,
         "inSource": true
       }
     },
@@ -3858,7 +3969,8 @@
         "Risk faktörü analizi",
         "Yüklenme yönetimi",
         "Beceri testleri",
-        "Germe"
+        "Germe",
+        "Fiziksel uygunluk düzeyini geliştirme"
       ],
       "answer": "Risk faktörü analizi",
       "answerLetter": "D",
@@ -3869,7 +3981,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.444,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -3891,7 +4003,8 @@
         "İğnelenme",
         "Ciltte kızarıklık",
         "Şişlik",
-        "Ağrı"
+        "Ağrı",
+        "Ciltte ısı artışı"
       ],
       "answer": "İğnelenme",
       "answerLetter": "D",
@@ -3902,7 +4015,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.273,
+        "summaryScore": 0.818,
         "inSource": true
       }
     },
@@ -3924,7 +4037,8 @@
         "POLICE",
         "RICE",
         "PRICE",
-        "POLICET"
+        "POLICET",
+        "RICED"
       ],
       "answer": "POLICE",
       "answerLetter": "C",
@@ -3932,10 +4046,10 @@
       "answerPage": 121,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.82,
+        "score": 0.88,
         "answerScore": 1,
-        "stemScore": 0.7,
-        "summaryScore": 0.545,
+        "stemScore": 0.8,
+        "summaryScore": 0.818,
         "inSource": true
       }
     },
@@ -3957,7 +4071,8 @@
         "Dinlenme",
         "Koruma",
         "Buz",
-        "Kompresyon"
+        "Kompresyon",
+        "Elevasyon"
       ],
       "answer": "Dinlenme",
       "answerLetter": "B",
@@ -3965,10 +4080,10 @@
       "answerPage": 121,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.6,
-        "answerScore": 0,
+        "score": 1,
+        "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.625,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -3990,7 +4105,8 @@
         "Uygulama süresi minimum 25 dakikadır.",
         "Genellikle sporcu yaralandıktan sonraki ilk 24- 48 saat içinde kullanılır.",
         "Buz kalıbı direkt cilde uygulanmamalı, araya bir bandaj/ havlu yerleştirilmelidir.",
-        "Uygulama yapılan bölge takip edilmeli aşırı morarma, dolaşımsal bozukluk gözlenirse soğuk tedavisi uygulanmamalıdır."
+        "Uygulama yapılan bölge takip edilmeli aşırı morarma, dolaşımsal bozukluk gözlenirse soğuk tedavisi uygulanmamalıdır.",
+        "Açık yara varsa buz torbası direkt yara üzerine uygulanmamalıdır."
       ],
       "answer": "Uygulama süresi minimum 25 dakikadır.",
       "answerLetter": "B",
@@ -4001,7 +4117,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -4023,7 +4139,8 @@
         "Sporcunun sağlığını korumak",
         "Yasaklı maddelerin satılmasına engel olmak",
         "Sporcuların arasındaki rekabeti artırmak",
-        "Yasaklı yöntemleri kullananların ceza almasını sağlamak"
+        "Yasaklı yöntemleri kullananların ceza almasını sağlamak",
+        "İlaç endüstrisinin sporculara erişimini kısıtlamak"
       ],
       "answer": "Sporcunun sağlığını korumak",
       "answerLetter": "D",
@@ -4034,7 +4151,7 @@
         "score": 0.7,
         "answerScore": 1,
         "stemScore": 0.5,
-        "summaryScore": 0.286,
+        "summaryScore": 0.429,
         "inSource": true
       }
     },
@@ -4056,7 +4173,8 @@
         "Müsabaka içi ve müsabaka dışı kullanımı yasaklı madde ve yöntemlerin listesidir.",
         "Müsabakalardan men edilmiş sporcuların listesidir.",
         "Müsabaka içi ve müsabaka dışı uyulması gereken disiplin kuralları listesidir.",
-        "Dopingle mücadele kural ihlalleri nedeniyle ceza almış sporcularla çalışmalarına izin verilmeyen sporcu destek personelinin listesidir."
+        "Dopingle mücadele kural ihlalleri nedeniyle ceza almış sporcularla çalışmalarına izin verilmeyen sporcu destek personelinin listesidir.",
+        "Dopingle mücadele kural ihlalleri nedeniyle ceza almış sporcularla çalışmalarına izin verilmeyen doktorların listesidir."
       ],
       "answer": "Müsabaka içi ve müsabaka dışı kullanımı yasaklı madde ve yöntemlerin listesidir.",
       "answerLetter": "C",
@@ -4067,7 +4185,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.636,
+        "summaryScore": 0.909,
         "inSource": true
       }
     },
@@ -4089,7 +4207,8 @@
         "Her yıl",
         "Her dört yılda bir",
         "Olimpiyatlardan önce",
-        "Her iki yılda bir"
+        "Her iki yılda bir",
+        "Her yıl iki kere"
       ],
       "answer": "Her yıl",
       "answerLetter": "A",
@@ -4122,7 +4241,8 @@
         "Sağlık riski oluşturması",
         "Eczanelerde satılıyor olması",
         "Reçeteli ilaç kapsamına girmesi",
-        "Reçetesiz ilaç kapsamına girmesi"
+        "Reçetesiz ilaç kapsamına girmesi",
+        "Besin destek ürünü kapsamına girmesi"
       ],
       "answer": "Sağlık riski oluşturması",
       "answerLetter": "C",
@@ -4133,7 +4253,7 @@
         "score": 0.925,
         "answerScore": 1,
         "stemScore": 0.875,
-        "summaryScore": 0.455,
+        "summaryScore": 0.818,
         "inSource": true
       }
     },
@@ -4155,7 +4275,8 @@
         "Önceden bildirim yapılması gerekli değildir.",
         "24 saat önce",
         "7 gün önce",
-        "1 ay önce"
+        "1 ay önce",
+        "Sadece müsabaka içi doping kontrollerinde önceden haber verilmelidir."
       ],
       "answer": "Önceden bildirim yapılması gerekli değildir.",
       "answerLetter": "E",
@@ -4166,7 +4287,7 @@
         "score": 0.792,
         "answerScore": 0.667,
         "stemScore": 0.875,
-        "summaryScore": 0.273,
+        "summaryScore": 0.727,
         "inSource": true
       }
     },
@@ -4188,7 +4309,8 @@
         "Sporcular doping kontrolünü reddedemez.",
         "Ailevi yükümlülükler olduğunda.",
         "Yoğun bir program olduğunda.",
-        "Tatile gidilmesi durumunda."
+        "Tatile gidilmesi durumunda.",
+        "Eğitimle ilgili yükümlülükler olduğunda."
       ],
       "answer": "Sporcular doping kontrolünü reddedemez.",
       "answerLetter": "E",
@@ -4199,7 +4321,7 @@
         "score": 0.78,
         "answerScore": 0.75,
         "stemScore": 0.8,
-        "summaryScore": 0.556,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -4221,7 +4343,8 @@
         "Sporcunun branşı, cinsiyeti, bağlı olduğu federasyonu ve doping kontrol tarihi",
         "Sporcunun adı ve doğum tarihi",
         "Sporcunun adı ve telefon numarası",
-        "Sporcunun imzası ve e-posta adresi"
+        "Sporcunun imzası ve e-posta adresi",
+        "Sporcunun adresi ve doğum tarihi"
       ],
       "answer": "Sporcunun branşı, cinsiyeti, bağlı olduğu federasyonu ve doping kontrol tarihi",
       "answerLetter": "C",
@@ -4232,7 +4355,7 @@
         "score": 0.95,
         "answerScore": 0.875,
         "stemScore": 1,
-        "summaryScore": 0.154,
+        "summaryScore": 0.846,
         "inSource": true
       }
     },
@@ -4254,7 +4377,8 @@
         "90 mL",
         "100 mL",
         "120 mL",
-        "50 mL"
+        "50 mL",
+        "80 mL"
       ],
       "answer": "90 mL",
       "answerLetter": "D",
@@ -4265,7 +4389,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.4,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -4287,7 +4411,8 @@
         "10 yıl",
         "3 ay",
         "6 ay",
-        "1 yıl"
+        "1 yıl",
+        "5 yıl"
       ],
       "answer": "10 yıl",
       "answerLetter": "E",
@@ -4298,7 +4423,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.667,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -4320,7 +4445,8 @@
         "Sporcunun kendisi",
         "Sporcunun ailesi",
         "Sporcunun doktoru",
-        "Sporcunun antrenörü"
+        "Sporcunun antrenörü",
+        "Sporcuya maddeyi veren kişi"
       ],
       "answer": "Sporcunun kendisi",
       "answerLetter": "B",
@@ -4331,7 +4457,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 0.571,
         "inSource": true
       }
     },
@@ -4353,7 +4479,8 @@
         "Yaşantımızın çok az alanında yer almaktadır.",
         "Evrenseldir.",
         "İnsanla ilgilidir.",
-        "İnsanın diğer kişilerle ilişkilerini inceler."
+        "İnsanın diğer kişilerle ilişkilerini inceler.",
+        "Yönetim bilimciler, yönetimin bir otorite sistemi olduğunu belirtir."
       ],
       "answer": "Yaşantımızın çok az alanında yer almaktadır.",
       "answerLetter": "D",
@@ -4364,7 +4491,7 @@
         "score": 0.8,
         "answerScore": 1,
         "stemScore": 0.667,
-        "summaryScore": 0.2,
+        "summaryScore": 0.6,
         "inSource": true
       }
     },
@@ -4386,7 +4513,8 @@
         "Katı kuralcılık",
         "Hareket araştırmaları",
         "Esneklik",
-        "İnsana saygı"
+        "İnsana saygı",
+        "Teknik üstünlük"
       ],
       "answer": "Katı kuralcılık",
       "answerLetter": "D",
@@ -4397,7 +4525,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -4419,7 +4547,8 @@
         "Neoklasik Yönetim Yaklaşımı",
         "Modern Yönetim Yaklaşımı",
         "Stratejik Yönetim Yaklaşımı",
-        "Toplam Kalite Yönetimi Yaklaşımı"
+        "Toplam Kalite Yönetimi Yaklaşımı",
+        "Klasik Yönetim Yaklaşımı"
       ],
       "answer": "Neoklasik Yönetim Yaklaşımı",
       "answerLetter": "A",
@@ -4430,7 +4559,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.412,
+        "summaryScore": 0.941,
         "inSource": true
       }
     },
@@ -4452,7 +4581,8 @@
         "Modern Yönetim Yaklaşımı",
         "Klasik Yönetim Yaklaşımı",
         "Neoklasik Yönetim Yaklaşımı",
-        "Toplam Kalite Yönetim Yaklaşımı"
+        "Toplam Kalite Yönetim Yaklaşımı",
+        "Davranışsal Yönetim Yaklaşımı"
       ],
       "answer": "Modern Yönetim Yaklaşımı",
       "answerLetter": "B",
@@ -4463,7 +4593,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -4485,7 +4615,8 @@
         "Bütünü oluşturan parçaların tamamının ele alınmasını",
         "İşletmenin üzerinde kurulmuş bölgeyi",
         "İşletmenin sistemli çalışmasını",
-        "İşin belirli bir bölümünün ele alınmasını"
+        "İşin belirli bir bölümünün ele alınmasını",
+        "Modern üretim araç ve gereçleri kullanılmasını"
       ],
       "answer": "Bütünü oluşturan parçaların tamamının ele alınmasını",
       "answerLetter": "D",
@@ -4496,7 +4627,7 @@
         "score": 0.7,
         "answerScore": 1,
         "stemScore": 0.5,
-        "summaryScore": 0,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -4518,7 +4649,8 @@
         "ABD",
         "İngiltere",
         "İtalya",
-        "İsviçre"
+        "İsviçre",
+        "Hollanda"
       ],
       "answer": "ABD",
       "answerLetter": "C",
@@ -4529,7 +4661,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.3,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -4551,7 +4683,8 @@
         "TİCİ Dönemi",
         "BTGM Dönemi",
         "TSK Dönemi",
-        "GSGM Dönemi"
+        "GSGM Dönemi",
+        "BTSGM Dönemi"
       ],
       "answer": "TİCİ Dönemi",
       "answerLetter": "B",
@@ -4562,7 +4695,7 @@
         "score": 0.914,
         "answerScore": 1,
         "stemScore": 0.857,
-        "summaryScore": 0.556,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -4584,7 +4717,8 @@
         "Spor yönetimi",
         "Spor ekonomisi",
         "Spor endüstrisi",
-        "Spor korsanlığı"
+        "Spor korsanlığı",
+        "Spor iktisadı Spor Yönetimi I"
       ],
       "answer": "Spor yönetimi",
       "answerLetter": "D",
@@ -4595,7 +4729,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.462,
+        "summaryScore": 0.923,
         "inSource": true
       }
     },
@@ -4617,7 +4751,8 @@
         "Planlama",
         "Eğitim",
         "Program",
-        "Yürütme"
+        "Yürütme",
+        "Denetim"
       ],
       "answer": "Planlama",
       "answerLetter": "C",
@@ -4628,7 +4763,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -4650,7 +4785,8 @@
         "Taraflılık",
         "Yeterlilik",
         "Eşitlik",
-        "Denklik"
+        "Denklik",
+        "Güç birliği"
       ],
       "answer": "Taraflılık",
       "answerLetter": "A",
@@ -4661,7 +4797,7 @@
         "score": 0.6,
         "answerScore": 0,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -4683,7 +4819,8 @@
         "İktisadi mal ve hizmet üretme",
         "Kendi ihtiyaçlarını karşılamak üzere üretim yapma",
         "Kamu yararı sunma",
-        "İktisadi teoriler geliştirme"
+        "İktisadi teoriler geliştirme",
+        "Neden-sonuç ilişkisini açıklama"
       ],
       "answer": "İktisadi mal ve hizmet üretme",
       "answerLetter": "D",
@@ -4694,7 +4831,7 @@
         "score": 0.8,
         "answerScore": 1,
         "stemScore": 0.667,
-        "summaryScore": 0.333,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -4716,7 +4853,8 @@
         "Temel fizyolojik ihtiyaçlar",
         "Sevme ve sevilme ihtiyacı",
         "Saygı görme ihtiyacı",
-        "Kendini gerçekleştirme ihtiyacı"
+        "Kendini gerçekleştirme ihtiyacı",
+        "Güvenlik ihtiyacı"
       ],
       "answer": "Temel fizyolojik ihtiyaçlar",
       "answerLetter": "E",
@@ -4727,7 +4865,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -4749,7 +4887,8 @@
         "Saygı görme ihtiyacı",
         "Aidiyet ihtiyacı",
         "Fizyolojik ihtiyaç",
-        "Güvenlik ihtiyacı"
+        "Güvenlik ihtiyacı",
+        "Kendini gerçekleştirme ihtiyacı"
       ],
       "answer": "Saygı görme ihtiyacı",
       "answerLetter": "B",
@@ -4760,7 +4899,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -4782,7 +4921,8 @@
         "Yeni pazar araştırması yapmak",
         "Mali durum tablolarını hazırlamak",
         "Yapılan işlerin kayıtlarını tutmak",
-        "İşletme bütçesini hazırlamak"
+        "İşletme bütçesini hazırlamak",
+        "Üretilen mal ve hizmetlerin maliyetlerini hesaplamak"
       ],
       "answer": "Yeni pazar araştırması yapmak",
       "answerLetter": "A",
@@ -4793,7 +4933,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.556,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -4815,7 +4955,8 @@
         "Sabit sermaye",
         "Değişken sermaye",
         "Marjinal sermaye",
-        "Olağanüstü sermaye"
+        "Olağanüstü sermaye",
+        "Esnek sermaye Spor İşletmeciliği I"
       ],
       "answer": "Sabit sermaye",
       "answerLetter": "B",
@@ -4826,7 +4967,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.083,
+        "summaryScore": 0.75,
         "inSource": true
       }
     },
@@ -4848,7 +4989,8 @@
         "Pazarlama",
         "Senyoraj",
         "Ar-ge",
-        "Muhasebe"
+        "Muhasebe",
+        "Finans"
       ],
       "answer": "Pazarlama",
       "answerLetter": "A",
@@ -4859,7 +5001,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -4881,7 +5023,8 @@
         "Halkla ilişkiler",
         "Muhasebe",
         "Satın alma",
-        "Ar-ge"
+        "Ar-ge",
+        "Pazarlama"
       ],
       "answer": "Halkla ilişkiler",
       "answerLetter": "B",
@@ -4892,7 +5035,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.4,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -4914,7 +5057,8 @@
         "Personel",
         "Satın alma",
         "Muhasebe",
-        "Finans"
+        "Finans",
+        "Ar-ge"
       ],
       "answer": "Personel",
       "answerLetter": "B",
@@ -4925,7 +5069,7 @@
         "score": 0.965,
         "answerScore": 1,
         "stemScore": 0.941,
-        "summaryScore": 0.278,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -4947,7 +5091,8 @@
         "Ar-ge",
         "Muhasebe",
         "Satın alma",
-        "Finans"
+        "Finans",
+        "Arbitraj"
       ],
       "answer": "Ar-ge",
       "answerLetter": "D",
@@ -4958,7 +5103,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.692,
         "inSource": true
       }
     },
@@ -4980,7 +5125,8 @@
         "Üretim",
         "Pazarlama",
         "Satın alma",
-        "Personel"
+        "Personel",
+        "Muhasebe Spor Yönetimi I"
       ],
       "answer": "Üretim",
       "answerLetter": "B",
@@ -4991,7 +5137,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -5013,7 +5159,8 @@
         "Değişimlerden etkilenmez.",
         "Soyut bir kavramdır.",
         "Sosyal bir olgudur.",
-        "İnsanları etkileme ve kontrol etme sanatıdır."
+        "İnsanları etkileme ve kontrol etme sanatıdır.",
+        "Değişik olay ve koşullara göre farklı içerikler gerektirir."
       ],
       "answer": "Değişimlerden etkilenmez.",
       "answerLetter": "E",
@@ -5024,7 +5171,7 @@
         "score": 0.8,
         "answerScore": 1,
         "stemScore": 0.667,
-        "summaryScore": 0.6,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -5046,7 +5193,8 @@
         "Kriz yönetiminde hızlı ve negatif tutum sergilemek",
         "Risk ve sorumluluk üstlenmekten kaçınmamak",
         "Enerjik bir yapıya sahip olmak",
-        "Güçlü iletişim becerisine sahip olmak"
+        "Güçlü iletişim becerisine sahip olmak",
+        "Ahlaklı ve inançlı olmak"
       ],
       "answer": "Kriz yönetiminde hızlı ve negatif tutum sergilemek",
       "answerLetter": "A",
@@ -5057,7 +5205,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.182,
+        "summaryScore": 0.909,
         "inSource": true
       }
     },
@@ -5079,7 +5227,8 @@
         "İnsanlarda derinden temas sağlama yeteneği",
         "Problem çözme yeteneği",
         "Güvenilir olma",
-        "Etkin dinleme"
+        "Etkin dinleme",
+        "Empati"
       ],
       "answer": "İnsanlarda derinden temas sağlama yeteneği",
       "answerLetter": "B",
@@ -5090,7 +5239,7 @@
         "score": 0.957,
         "answerScore": 1,
         "stemScore": 0.929,
-        "summaryScore": 0.211,
+        "summaryScore": 0.947,
         "inSource": true
       }
     },
@@ -5112,7 +5261,8 @@
         "Rakibin nasıl davranacağını tahmin etmeyi",
         "Kondisyonun artmasını",
         "Teknik üstünlüğün artmasını",
-        "Sakatlıklardan korunmayı"
+        "Sakatlıklardan korunmayı",
+        "Psikolojik üstünlüğü"
       ],
       "answer": "Rakibin nasıl davranacağını tahmin etmeyi",
       "answerLetter": "D",
@@ -5123,7 +5273,7 @@
         "score": 0.945,
         "answerScore": 1,
         "stemScore": 0.909,
-        "summaryScore": 0.188,
+        "summaryScore": 0.75,
         "inSource": true
       }
     },
@@ -5145,7 +5295,8 @@
         "Arbitraj oranını belirlemek",
         "Bir iş kültürü yerleştirmek",
         "Gelişme için fırsat oluşturmak",
-        "Geniş kapsamlı bir vizyon oluşturmak"
+        "Geniş kapsamlı bir vizyon oluşturmak",
+        "Başkalarını mücadeleye davet etmek"
       ],
       "answer": "Arbitraj oranını belirlemek",
       "answerLetter": "C",
@@ -5156,7 +5307,7 @@
         "score": 0.867,
         "answerScore": 0.667,
         "stemScore": 1,
-        "summaryScore": 0.429,
+        "summaryScore": 0.714,
         "inSource": true
       }
     },
@@ -5178,7 +5329,8 @@
         "Yönetici risk alır, lider garanticidir.",
         "Yönetici idarecidir, lider yenilikçidir.",
         "Yönetici taklit eder, lider orjinaldir.",
-        "Yönetici sistem ve yapı üzerine odaklanır, lider insanlara odaklanır."
+        "Yönetici sistem ve yapı üzerine odaklanır, lider insanlara odaklanır.",
+        "Yönetici sürdürür, lider geliştirir."
       ],
       "answer": "Yönetici risk alır, lider garanticidir.",
       "answerLetter": "E",
@@ -5189,7 +5341,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0.444,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -5211,7 +5363,8 @@
         "Karizmatik",
         "Otokratik",
         "Dönüşümcü",
-        "Liberal"
+        "Liberal",
+        "Vizyoner"
       ],
       "answer": "Karizmatik",
       "answerLetter": "A",
@@ -5222,7 +5375,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.222,
+        "summaryScore": 0.333,
         "inSource": true
       }
     },
@@ -5244,7 +5397,8 @@
         "Çatışma ve bölünmeler",
         "Sevgi, saygı",
         "Spor liderine güven",
-        "Vizyon birliği"
+        "Vizyon birliği",
+        "Üst düzeyde işbirliği"
       ],
       "answer": "Çatışma ve bölünmeler",
       "answerLetter": "A",
@@ -5255,7 +5409,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.2,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -5277,7 +5431,8 @@
         "Fiedler",
         "Ricardo",
         "Friedman",
-        "Weber"
+        "Weber",
+        "Taylor"
       ],
       "answer": "Fiedler",
       "answerLetter": "C",
@@ -5288,7 +5443,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -5310,7 +5465,8 @@
         "Liberal",
         "Durumsal",
         "Dönüşümcü",
-        "Stratejik"
+        "Stratejik",
+        "Demokratik"
       ],
       "answer": "Liberal",
       "answerLetter": "B",
@@ -5321,7 +5477,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.095,
+        "summaryScore": 0.762,
         "inSource": true
       }
     },
@@ -5343,7 +5499,8 @@
         "Halkla ilişkiler",
         "Pazarlama",
         "Strateji",
-        "Medya"
+        "Medya",
+        "İtibar yönetimi"
       ],
       "answer": "Halkla ilişkiler",
       "answerLetter": "C",
@@ -5354,7 +5511,7 @@
         "score": 0.965,
         "answerScore": 1,
         "stemScore": 0.941,
-        "summaryScore": 0.158,
+        "summaryScore": 0.526,
         "inSource": true
       }
     },
@@ -5376,7 +5533,8 @@
         "İletişim",
         "Optimizasyon",
         "Kurumsallaşma",
-        "Kriz yönetimi"
+        "Kriz yönetimi",
+        "Sentezleme"
       ],
       "answer": "İletişim",
       "answerLetter": "D",
@@ -5387,7 +5545,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.385,
+        "summaryScore": 0.846,
         "inSource": true
       }
     },
@@ -5409,7 +5567,8 @@
         "Bütün kaynaklar için yalnız bir ortak hedef geliştirilmesi",
         "Duyurum ihtiyacının tanımlanması",
         "Uygun medya kaynaklarının belirlenmesi",
-        "Hedeflenen kaynaklar için özel bir metot geliştirilmesi"
+        "Hedeflenen kaynaklar için özel bir metot geliştirilmesi",
+        "Duyurum sonuçlarının değerlendirilmesi"
       ],
       "answer": "Bütün kaynaklar için yalnız bir ortak hedef geliştirilmesi",
       "answerLetter": "D",
@@ -5420,7 +5579,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.714,
         "inSource": true
       }
     },
@@ -5442,7 +5601,8 @@
         "Çözümleyici dinleme",
         "Yüzeysel dinleme",
         "Seçerek dinleme",
-        "Görünüşte dinleme"
+        "Görünüşte dinleme",
+        "Kalıplaşmış dinleme Sporda İletişim ve Halkla İlişkiler I"
       ],
       "answer": "Çözümleyici dinleme",
       "answerLetter": "B",
@@ -5453,7 +5613,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -5475,7 +5635,8 @@
         "Proaktif halkla ilişkiler",
         "Optimizasyon",
         "Dışsallaşma",
-        "Reaktif halkla ilişkiler"
+        "Reaktif halkla ilişkiler",
+        "Katı manipülasyon"
       ],
       "answer": "Proaktif halkla ilişkiler",
       "answerLetter": "C",
@@ -5486,7 +5647,7 @@
         "score": 0.933,
         "answerScore": 1,
         "stemScore": 0.889,
-        "summaryScore": 0.333,
+        "summaryScore": 0.917,
         "inSource": true
       }
     },
@@ -5508,7 +5669,8 @@
         "III ve IV",
         "Yalnız I",
         "I ve II",
-        "I, II ve III"
+        "I, II ve III",
+        "I, II, III ve IV"
       ],
       "answer": "III ve IV",
       "answerLetter": "C",
@@ -5519,7 +5681,7 @@
         "score": 0.894,
         "answerScore": 1,
         "stemScore": 0.824,
-        "summaryScore": 0.118,
+        "summaryScore": 0.765,
         "inSource": true
       }
     },
@@ -5541,7 +5703,8 @@
         "I, II, III, IV ve V Spor Yönetimi I",
         "I ve II",
         "I, II ve III",
-        "II, III ve IV"
+        "II, III ve IV",
+        "I, II, III ve V"
       ],
       "answer": "I, II, III, IV ve V Spor Yönetimi I",
       "answerLetter": "E",
@@ -5552,7 +5715,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.357,
+        "summaryScore": 0.786,
         "inSource": true
       }
     },
@@ -5574,7 +5737,8 @@
         "Örgütün fiziksel düzeni",
         "İletişimin amacının net olarak belirlenmemesi",
         "Önyargılar",
-        "Tutum ve davranışlar"
+        "Tutum ve davranışlar",
+        "Bilgi düzeyi"
       ],
       "answer": "Örgütün fiziksel düzeni",
       "answerLetter": "E",
@@ -5585,7 +5749,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.222,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -5607,7 +5771,8 @@
         "Medya okuryazarlığı",
         "İnternet erişimi",
         "Online okuma",
-        "Web tasarımı"
+        "Web tasarımı",
+        "Digital gelişim"
       ],
       "answer": "Medya okuryazarlığı",
       "answerLetter": "C",
@@ -5618,7 +5783,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.417,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -5640,7 +5805,8 @@
         "Dışsal motivasyonu ortadan kaldırması",
         "Konsantrasyon sağlaması",
         "Algılanan yeterliliği artırabilmesi",
-        "Fiziksel aktiviteye karşı olumlu tutum geliştirebilmesi"
+        "Fiziksel aktiviteye karşı olumlu tutum geliştirebilmesi",
+        "Fiziksel aktiviteler için daha fazla çabayı desteklemesi"
       ],
       "answer": "Dışsal motivasyonu ortadan kaldırması",
       "answerLetter": "E",
@@ -5651,7 +5817,7 @@
         "score": 0.7,
         "answerScore": 0.25,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -5673,7 +5839,8 @@
         "Hukuk kuralları",
         "Görgü kuralları",
         "Din kuralları",
-        "Objektif ahlak kuralları"
+        "Objektif ahlak kuralları",
+        "Sübjektif ahlak kuralları"
       ],
       "answer": "Hukuk kuralları",
       "answerLetter": "C",
@@ -5684,7 +5851,7 @@
         "score": 0.7,
         "answerScore": 1,
         "stemScore": 0.5,
-        "summaryScore": 0.333,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -5706,7 +5873,8 @@
         "Borçlar Hukuku",
         "Anayasa Hukuku",
         "Ceza Hukuku",
-        "İdare Hukuku"
+        "İdare Hukuku",
+        "Uluslararası Kamu Hukuku"
       ],
       "answer": "Borçlar Hukuku",
       "answerLetter": "D",
@@ -5717,7 +5885,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.4,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -5739,7 +5907,8 @@
         "Vergi Hukuku",
         "Medeni Hukuk",
         "Borçlar Hukuku",
-        "Ticaret Hukuku"
+        "Ticaret Hukuku",
+        "Devletler Özel Hukuku"
       ],
       "answer": "Vergi Hukuku",
       "answerLetter": "E",
@@ -5750,7 +5919,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.4,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -5772,7 +5941,8 @@
         "Ayıplama",
         "Cebri icra",
         "Hükümsüzlük",
-        "Tazminat"
+        "Tazminat",
+        "Ceza"
       ],
       "answer": "Ayıplama",
       "answerLetter": "C",
@@ -5783,7 +5953,7 @@
         "score": 0.6,
         "answerScore": 0,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -5805,7 +5975,8 @@
         "Ceza",
         "Cebri icra",
         "Hükümsüzlük",
-        "İptal"
+        "İptal",
+        "Tazminat"
       ],
       "answer": "Ceza",
       "answerLetter": "E",
@@ -5816,7 +5987,7 @@
         "score": 0.9,
         "answerScore": 1,
         "stemScore": 0.833,
-        "summaryScore": 0,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -5838,7 +6009,8 @@
         "Anayasa",
         "Kanun",
         "Yönetmelikler",
-        "Milletlerarası Antlaşmalar"
+        "Milletlerarası Antlaşmalar",
+        "Cumhurbaşkanlığı Kararnamesi"
       ],
       "answer": "Anayasa",
       "answerLetter": "A",
@@ -5849,7 +6021,7 @@
         "score": 0.9,
         "answerScore": 1,
         "stemScore": 0.833,
-        "summaryScore": 0.143,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -5871,7 +6043,8 @@
         "Örf Adet",
         "Kanunlar",
         "Yönetmelik",
-        "Milletlerarası Antlaşmalar"
+        "Milletlerarası Antlaşmalar",
+        "Cumhurbaşkanlığı Kararnamesi"
       ],
       "answer": "Örf Adet",
       "answerLetter": "B",
@@ -5882,7 +6055,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -5904,7 +6077,8 @@
         "Sporcu",
         "Spor federasyonu",
         "Spor kulübü",
-        "Şirket"
+        "Şirket",
+        "Tahkim Kurulu"
       ],
       "answer": "Sporcu",
       "answerLetter": "D",
@@ -5915,7 +6089,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.417,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -5937,7 +6111,8 @@
         "Gençlik ve Spor Bakanlığı",
         "Antrenörler",
         "Hakemler",
-        "Sporcular"
+        "Sporcular",
+        "Spor yöneticisi"
       ],
       "answer": "Gençlik ve Spor Bakanlığı",
       "answerLetter": "A",
@@ -5948,7 +6123,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -5970,7 +6145,8 @@
         "Yargı",
         "Yürütme",
         "Adalet",
-        "Denetleme"
+        "Denetleme",
+        "Yasama"
       ],
       "answer": "Yargı",
       "answerLetter": "E",
@@ -5981,7 +6157,7 @@
         "score": 0.945,
         "answerScore": 1,
         "stemScore": 0.909,
-        "summaryScore": 0,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -6003,7 +6179,8 @@
         "Yarışma performansına önem verilmesi",
         "Spor ortamlarının eğlenceli ve zevkli olması",
         "Etkinliklerin ilgi çekici ve tatmin edici olması",
-        "Temel hareket gelişimine önem verilmesi"
+        "Temel hareket gelişimine önem verilmesi",
+        "Çocukların sosyal gelişimine de eşit önemin verilmesi"
       ],
       "answer": "Yarışma performansına önem verilmesi",
       "answerLetter": "B",
@@ -6014,7 +6191,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.538,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6036,7 +6213,8 @@
         "Beceri gelişiminin daha önem kazanması",
         "Spor ortamlarında eğlencenin olması",
         "Sosyal etkileşimi destekleyen unsurların olması",
-        "Temel hareket gelişimini destekleyen etkinliklerin olması"
+        "Temel hareket gelişimini destekleyen etkinliklerin olması",
+        "Bir spor dalı aracılığıyla sosyal becerilerin kazanılması"
       ],
       "answer": "Beceri gelişiminin daha önem kazanması",
       "answerLetter": "C",
@@ -6047,7 +6225,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.571,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6069,7 +6247,8 @@
         "Katılım antrenörü de, performans antrenörü gibi yaptığı performansa dayalı ölçüm ve gözlemler sonucuna göre antrenmanlarını planlar.",
         "Katılım antrenörlüğü kısa süreli planlama yaparken; performans antrenörü daha çok orta ve uzun süreli planlama yapar.",
         "Katılım antrenörü bireysel ve sosyal gelişime, performans antrenöründen daha çok öncelik verir.",
-        "Çocuk spor ortamlarında katılım antrenörü amaçlı oyunlara, performans antrenörü ise amaçlı alıştırma etkinliklerine daha çok yer verir."
+        "Çocuk spor ortamlarında katılım antrenörü amaçlı oyunlara, performans antrenörü ise amaçlı alıştırma etkinliklerine daha çok yer verir.",
+        "Katılım antrenörü, oyun kurallarında esneklik yaparak etkinliklere katılımı artırmayı amaçlarken, performans ortamı antrenörleri oyun kurallarına daha bağlı kalırlar."
       ],
       "answer": "Katılım antrenörü de, performans antrenörü gibi yaptığı performansa dayalı ölçüm ve gözlemler sonucuna göre antrenmanlarını planlar.",
       "answerLetter": "C",
@@ -6080,7 +6259,7 @@
         "score": 0.84,
         "answerScore": 0.9,
         "stemScore": 0.8,
-        "summaryScore": 0.35,
+        "summaryScore": 0.55,
         "inSource": true
       }
     },
@@ -6102,7 +6281,8 @@
         "Yüksek performans dönemi antrenörlüğü",
         "Çocuk katılım antrenörlüğü",
         "Ergen katılım antrenörlüğü",
-        "Yetişkin katılım antrenörlüğü"
+        "Yetişkin katılım antrenörlüğü",
+        "Gelişmekte olan sporcu antrenörlüğü"
       ],
       "answer": "Yüksek performans dönemi antrenörlüğü",
       "answerLetter": "E",
@@ -6113,7 +6293,7 @@
         "score": 0.914,
         "answerScore": 1,
         "stemScore": 0.857,
-        "summaryScore": 0.556,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -6135,7 +6315,8 @@
         "Çocuk katılım spor ortamı",
         "Ergen katılım spor ortamı",
         "Performans sporu antrenörlüğü – Gelişmekte olan sporcu",
-        "Performans sporu ortamı antrenörlüğü – Performans dönemi"
+        "Performans sporu ortamı antrenörlüğü – Performans dönemi",
+        "Performans sporu antrenörlüğü- Yüksek performans dönemi"
       ],
       "answer": "Çocuk katılım spor ortamı",
       "answerLetter": "A",
@@ -6146,7 +6327,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.462,
+        "summaryScore": 0.923,
         "inSource": true
       }
     },
@@ -6168,7 +6349,8 @@
         "Yönetici",
         "Antrenör",
         "Sporcu",
-        "Ebeveyn"
+        "Ebeveyn",
+        "Hakem"
       ],
       "answer": "Yönetici",
       "answerLetter": "E",
@@ -6179,7 +6361,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.375,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6201,7 +6383,8 @@
         "Sporcular tarafından ulaşımı zor olmak",
         "Sporcularla etkili iletişim kurmak",
         "Sporculara pozitif destek sağlamak",
-        "Sporculara samimi ve ilgili olmak"
+        "Sporculara samimi ve ilgili olmak",
+        "Sporcuların güvenini kazanmış olmak"
       ],
       "answer": "Sporcular tarafından ulaşımı zor olmak",
       "answerLetter": "D",
@@ -6212,7 +6395,7 @@
         "score": 0.9,
         "answerScore": 0.75,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 0.917,
         "inSource": true
       }
     },
@@ -6234,7 +6417,8 @@
         "Yüksek performans spor ortamı",
         "Çocuk katılım sporu ortamı",
         "Ergen katılım sporu ortamı",
-        "Yetişkin katılım sporu ortamı"
+        "Yetişkin katılım sporu ortamı",
+        "Gelişmekte olan performans sporu ortamı"
       ],
       "answer": "Yüksek performans spor ortamı",
       "answerLetter": "E",
@@ -6245,7 +6429,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 0.917,
         "inSource": true
       }
     },
@@ -6267,7 +6451,8 @@
         "Çocukların yaşadıkları başarı veya başarısızlık durumlarını, kişisel olarak algılamalarını istemek",
         "Spor ortamının amaçları doğrultusunda çocukları desteklemelerini istemek",
         "Ebeveynlerin tutum ve çabaları ile, çocuklara iyi birer rol model olmaya gayret göstermelerini istemek",
-        "Çocukların teknik beceri gelişiminin yanında, bireysel ve sosyal gelişimine de odaklanmalarını istemek"
+        "Çocukların teknik beceri gelişiminin yanında, bireysel ve sosyal gelişimine de odaklanmalarını istemek",
+        "Belirlenen amaçlar doğrultusunda spor ortamının gelişimine katkı sunmasını istemek Antrenörlük Mesleğine Giriş I"
       ],
       "answer": "Çocukların yaşadıkları başarı veya başarısızlık durumlarını, kişisel olarak algılamalarını istemek",
       "answerLetter": "D",
@@ -6278,7 +6463,7 @@
         "score": 0.9,
         "answerScore": 1,
         "stemScore": 0.833,
-        "summaryScore": 0.308,
+        "summaryScore": 0.885,
         "inSource": true
       }
     },
@@ -6300,7 +6485,8 @@
         "Ebeveynlerin spor ortamından uzak tutulması",
         "Ebeveynlere olumlu davranış geliştirmeleri için eğitim verilmesi",
         "Ebeveynlerle düzenli toplantılar düzenlenmesi",
-        "Ebeveynlerle iki yönlü iletişim kurulması"
+        "Ebeveynlerle iki yönlü iletişim kurulması",
+        "Ebeveynlerin davranışları için kurallar belirlenmesi"
       ],
       "answer": "Ebeveynlerin spor ortamından uzak tutulması",
       "answerLetter": "E",
@@ -6311,7 +6497,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.462,
+        "summaryScore": 0.846,
         "inSource": true
       }
     },
@@ -6333,7 +6519,8 @@
         "İstemsiz yapılır.",
         "Öğrenilmiş olmalıdır.",
         "İstemli yapılmalıdır.",
-        "Beden/uzuv hareketi içerir."
+        "Beden/uzuv hareketi içerir.",
+        "Bir gaye ile yapılmamalıdır."
       ],
       "answer": "İstemsiz yapılır.",
       "answerLetter": "B",
@@ -6344,7 +6531,7 @@
         "score": 0.6,
         "answerScore": 0,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 0.714,
         "inSource": true
       }
     },
@@ -6366,7 +6553,8 @@
         "Öğrenme doğrudan gözlemlenir.",
         "Öğrenme belirli bir süreç gerektirir.",
         "Öğrenme alıştırma yapmanın sonucunda oluşur.",
-        "Öğrenme hareket kapasitesinin artırımıdır."
+        "Öğrenme hareket kapasitesinin artırımıdır.",
+        "Öğrenme deneyimlerimiz ile meydana gelen değişimdir."
       ],
       "answer": "Öğrenme doğrudan gözlemlenir.",
       "answerLetter": "E",
@@ -6377,7 +6565,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.429,
+        "summaryScore": 0.714,
         "inSource": true
       }
     },
@@ -6399,7 +6587,8 @@
         "İnce motor beceri",
         "Seri motor beceri",
         "Kesik motor beceri",
-        "Devamlı motor beceri"
+        "Devamlı motor beceri",
+        "Kapalı beceri"
       ],
       "answer": "İnce motor beceri",
       "answerLetter": "D",
@@ -6410,7 +6599,7 @@
         "score": 0.829,
         "answerScore": 1,
         "stemScore": 0.714,
-        "summaryScore": 0.4,
+        "summaryScore": 0.7,
         "inSource": true
       }
     },
@@ -6432,7 +6621,8 @@
         "Yüzmek",
         "Düz takla atmak",
         "Tenis servis atışı",
-        "Basketbolda turnike"
+        "Basketbolda turnike",
+        "Voleybolda yerleşme"
       ],
       "answer": "Yüzmek",
       "answerLetter": "A",
@@ -6443,7 +6633,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -6465,7 +6655,8 @@
         "Bir sürat koşucusunun yarışa başlama anı",
         "Bir trafik lambasının olduğu kavşağa bir arabanın yanaşması",
         "Bir koşucunun parkuru üzerinde bir şey(ler) bulması",
-        "Hakemin uyarısından sonra basketbolda serbest atış"
+        "Hakemin uyarısından sonra basketbolda serbest atış",
+        "Yukarıdakilerin hepsi"
       ],
       "answer": "Bir sürat koşucusunun yarışa başlama anı",
       "answerLetter": "C",
@@ -6476,7 +6667,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.125,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -6498,7 +6689,8 @@
         "kapasitesi azalır",
         "kapasitesinde bir değişme olmaz",
         "kapasitesi artar",
-        "kapasitesi iki katına çıkar"
+        "kapasitesi iki katına çıkar",
+        "kapasitesi azalır sonra artar"
       ],
       "answer": "kapasitesi azalır",
       "answerLetter": "C",
@@ -6509,7 +6701,7 @@
         "score": 0.543,
         "answerScore": 0.5,
         "stemScore": 0.571,
-        "summaryScore": 0.125,
+        "summaryScore": 0.438,
         "inSource": false,
         "missingTerms": [
           "azalır",
@@ -6538,7 +6730,8 @@
         "Sporcuların hareketi neden öğrenmemiz gerektiğine ilişkin bilgi vermek",
         "Sporcuları sırtları güneşe gelecek şekilde düzenlemek",
         "Sporcuların dikkatlerini dağıtmayacak bir alanda düzene koymak",
-        "Bütün sporcuların bizi gördüğünden ve duyduğundan emin olmak"
+        "Bütün sporcuların bizi gördüğünden ve duyduğundan emin olmak",
+        "Yukarıdakilerin hepsi"
       ],
       "answer": "Sporcuların hareketi neden öğrenmemiz gerektiğine ilişkin bilgi vermek",
       "answerLetter": "D",
@@ -6549,7 +6742,7 @@
         "score": 0.933,
         "answerScore": 1,
         "stemScore": 0.889,
-        "summaryScore": 0.313,
+        "summaryScore": 0.813,
         "inSource": true
       }
     },
@@ -6571,7 +6764,8 @@
         "Olacak olay hakkında önceden bilgi vermek",
         "Tepki seçeneklerinin sayısını artırmak",
         "Uyaranın tahmin edilebilirliğini azaltmak",
-        "Uyarı sinyalinin sunumunu çıkarmak"
+        "Uyarı sinyalinin sunumunu çıkarmak",
+        "Tepki verildikten sonra ek bir iş istemek"
       ],
       "answer": "Olacak olay hakkında önceden bilgi vermek",
       "answerLetter": "A",
@@ -6579,10 +6773,10 @@
       "answerPage": 45,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.767,
-        "answerScore": 0.667,
+        "score": 0.833,
+        "answerScore": 0.833,
         "stemScore": 0.833,
-        "summaryScore": 0.167,
+        "summaryScore": 0.583,
         "inSource": true
       }
     },
@@ -6604,7 +6798,8 @@
         "aldatma",
         "Hick Kanunu",
         "Fitts Kanunu",
-        "uyarı tepki tutarlılığı"
+        "uyarı tepki tutarlılığı",
+        "zamansal sezinleme"
       ],
       "answer": "aldatma",
       "answerLetter": "A",
@@ -6615,7 +6810,7 @@
         "score": 0.786,
         "answerScore": 1,
         "stemScore": 0.643,
-        "summaryScore": 0.067,
+        "summaryScore": 0.4,
         "inSource": true
       }
     },
@@ -6637,7 +6832,8 @@
         "dikkat",
         "sezinleme",
         "seçici dikkat",
-        "canlılık düzeyi"
+        "canlılık düzeyi",
+        "seçici reaksiyon zamanı"
       ],
       "answer": "dikkat",
       "answerLetter": "A",
@@ -6648,7 +6844,7 @@
         "score": 0.887,
         "answerScore": 1,
         "stemScore": 0.813,
-        "summaryScore": 0.176,
+        "summaryScore": 0.353,
         "inSource": true
       }
     },
@@ -6670,7 +6866,8 @@
         "Alan farkındalığı",
         "Vücut farkındalığı",
         "Efor farkındalığı",
-        "Hareket ilişkileri"
+        "Hareket ilişkileri",
+        "Çaba farkındalığı"
       ],
       "answer": "Alan farkındalığı",
       "answerLetter": "B",
@@ -6681,7 +6878,7 @@
         "score": 0.943,
         "answerScore": 1,
         "stemScore": 0.905,
-        "summaryScore": 0.174,
+        "summaryScore": 0.478,
         "inSource": true
       }
     },
@@ -6703,7 +6900,8 @@
         "Yer değiştirme",
         "Birleştirilmiş hareketler",
         "Dengeleme hareketleri",
-        "Nesne kontrolü"
+        "Nesne kontrolü",
+        "Yer hareketleri"
       ],
       "answer": "Yer değiştirme",
       "answerLetter": "C",
@@ -6714,7 +6912,7 @@
         "score": 0.909,
         "answerScore": 1,
         "stemScore": 0.848,
-        "summaryScore": 0.088,
+        "summaryScore": 0.529,
         "inSource": true
       }
     },
@@ -6736,7 +6934,8 @@
         "Okul öncesi ve ilkokul",
         "İlkokul ve ortaokul",
         "Okul öncesi",
-        "İlkokul"
+        "İlkokul",
+        "Tüm okul dönemi"
       ],
       "answer": "Okul öncesi ve ilkokul",
       "answerLetter": "A",
@@ -6747,7 +6946,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6769,7 +6968,8 @@
         "Vücut farkındalığı – nesne kontrol becerisi",
         "Alan farkındalığı – nesne kontrol becerisi",
         "Efor farkındalığı – dengeleme becerisi",
-        "Alan farkındalığı – dengeleme becerisi"
+        "Alan farkındalığı – dengeleme becerisi",
+        "Vücut farkındalığı - akrobatik beceriler"
       ],
       "answer": "Vücut farkındalığı – nesne kontrol becerisi",
       "answerLetter": "C",
@@ -6780,7 +6980,7 @@
         "score": 0.957,
         "answerScore": 1,
         "stemScore": 0.929,
-        "summaryScore": 0.263,
+        "summaryScore": 0.737,
         "inSource": true
       }
     },
@@ -6802,7 +7002,8 @@
         "Temelinde problem çözme vardır.",
         "Hareket eğitimi bireysel bir keşiftir.",
         "Hareket eğitimi öğrenen merkezlidir.",
-        "Geleneksel beden eğitiminden daha az formal yapıdadır."
+        "Geleneksel beden eğitiminden daha az formal yapıdadır.",
+        "Motor becerilerin öğrenilmesini kolaylaştırır."
       ],
       "answer": "Temelinde problem çözme vardır.",
       "answerLetter": "C",
@@ -6813,7 +7014,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.143,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6835,7 +7036,8 @@
         "Taklit – Ritüel- Gelenek",
         "Algılama-Öğrenme- Yaşatma",
         "Bilgi- Görgü- Davranış",
-        "İhtiyaç – Yaşam biçimi – Malzeme"
+        "İhtiyaç – Yaşam biçimi – Malzeme",
+        "Beceri- Eğlenme- Kazanma"
       ],
       "answer": "Taklit – Ritüel- Gelenek",
       "answerLetter": "C",
@@ -6846,7 +7048,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -6868,7 +7070,8 @@
         "Mücadele oyunları",
         "Geleneksel oyunlar",
         "Şans oyunları",
-        "Gösteri - rol oyunları"
+        "Gösteri - rol oyunları",
+        "Macera - heyecan oyunları"
       ],
       "answer": "Mücadele oyunları",
       "answerLetter": "E",
@@ -6879,7 +7082,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.167,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6901,7 +7104,8 @@
         "İyi - kötüyü öğrenir.",
         "Meslekleri öğrenir.",
         "Rolleri öğrenir.",
-        "Toplumsal farklı kültürleri öğrenir."
+        "Toplumsal farklı kültürleri öğrenir.",
+        "Gelenekleri öğrenir."
       ],
       "answer": "İyi - kötüyü öğrenir.",
       "answerLetter": "D",
@@ -6912,7 +7116,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.125,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6934,7 +7138,8 @@
         "Özgür ortam olması",
         "Motivasyon",
         "Motorik özellikleri test etme imkânı",
-        "Sonucun belirsizliği"
+        "Sonucun belirsizliği",
+        "Karmaşıklık Hareket Eğitimi ve Oyun I"
       ],
       "answer": "Özgür ortam olması",
       "answerLetter": "B",
@@ -6942,10 +7147,10 @@
       "answerPage": 79,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.976,
+        "score": 1,
         "answerScore": 1,
-        "stemScore": 0.96,
-        "summaryScore": 0.107,
+        "stemScore": 1,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -6967,7 +7172,8 @@
         "Tiyatro oyunları",
         "Sınıf oyunları",
         "Salon oyunları",
-        "Bahçe veya kırsal alan oyunları"
+        "Bahçe veya kırsal alan oyunları",
+        "Su oyunları"
       ],
       "answer": "Tiyatro oyunları",
       "answerLetter": "E",
@@ -6978,7 +7184,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.143,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -7000,7 +7206,8 @@
         "Büyüme – Gelişme",
         "Gelişim – Hazırbulunuşluk",
         "Büyüme – Hazırbulunuşluk",
-        "Gelişme – Olgunlaşma"
+        "Gelişme – Olgunlaşma",
+        "Olgunlaşma – Hazırbulunuşluk"
       ],
       "answer": "Büyüme – Gelişme",
       "answerLetter": "D",
@@ -7011,7 +7218,7 @@
         "score": 0.8,
         "answerScore": 1,
         "stemScore": 0.667,
-        "summaryScore": 0.043,
+        "summaryScore": 0.522,
         "inSource": true
       }
     },
@@ -7033,7 +7240,8 @@
         "Olgunlaşma – Kalıcı davranış değişikliği – Davranışların yeniden düzenlenmesi",
         "Gelişim - Motor Gelişim – Motor Öğrenme davranışı",
         "Olgunlaşma – Motor Gelişim – Algısal davranış değişikliği",
-        "Gelişme – Kalıcı davranış değişikliği – Davranışların yeniden düzenlenmesi"
+        "Gelişme – Kalıcı davranış değişikliği – Davranışların yeniden düzenlenmesi",
+        "Büyüme – Olgunlaşma - Kalıcı davranış değişikliği"
       ],
       "answer": "Olgunlaşma – Kalıcı davranış değişikliği – Davranışların yeniden düzenlenmesi",
       "answerLetter": "E",
@@ -7044,7 +7252,7 @@
         "score": 0.813,
         "answerScore": 1,
         "stemScore": 0.688,
-        "summaryScore": 0.053,
+        "summaryScore": 0.632,
         "inSource": true
       }
     },
@@ -7066,7 +7274,8 @@
         "Bu durum bireysel olarak farklı olmalarından kaynaklanmaktadır.",
         "Bu durum Buğra’nın üstün yetenekli olmasından kaynaklanmaktadır.",
         "Bu durum Gonca’nın yetersiz olmasından kaynaklanmaktadır.",
-        "Bu durum bireysel olarak aynı olmalarından kaynaklanmaktadır."
+        "Bu durum bireysel olarak aynı olmalarından kaynaklanmaktadır.",
+        "Bu durum Gonca’da gelişim geriliği olmasından kaynaklanmaktadır."
       ],
       "answer": "Bu durum bireysel olarak farklı olmalarından kaynaklanmaktadır.",
       "answerLetter": "D",
@@ -7077,7 +7286,7 @@
         "score": 0.688,
         "answerScore": 1,
         "stemScore": 0.48,
-        "summaryScore": 0.107,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -7099,7 +7308,8 @@
         "Kalıtım",
         "Benzerlik",
         "Farklılık",
-        "Değişim"
+        "Değişim",
+        "Gelişme"
       ],
       "answer": "Kalıtım",
       "answerLetter": "D",
@@ -7110,7 +7320,7 @@
         "score": 0.8,
         "answerScore": 1,
         "stemScore": 0.667,
-        "summaryScore": 0.053,
+        "summaryScore": 0.474,
         "inSource": true
       }
     },
@@ -7132,7 +7342,8 @@
         "Fiziksel Çevre",
         "Kalıtım",
         "Maddi Yetersizlik",
-        "Sosyal Çevre"
+        "Sosyal Çevre",
+        "Kalıtım Çevre ilişkisi"
       ],
       "answer": "Fiziksel Çevre",
       "answerLetter": "C",
@@ -7143,7 +7354,7 @@
         "score": 0.889,
         "answerScore": 1,
         "stemScore": 0.815,
-        "summaryScore": 0.069,
+        "summaryScore": 0.793,
         "inSource": true
       }
     },
@@ -7165,7 +7376,8 @@
         "Duyusal Motor Dönem -İşlem Öncesi Dönemi - Somut İşlemler Dönemi- Soyut İşlemler Dönemi",
         "Duyusal Motor Dönem – İşlem Dönemi – Somut İşlemler Dönemi– Soyut İşlemler Dönemi",
         "İşlem Öncesi - İşlem Sonrası Dönem – Somut İşlem Öncesi – Somut İşlem Sonrası Dönem",
-        "İşlem Öncesi Dönem - İşlem Dönemi – Somut İşlemler Dönemi– Soyut İşlemler Dönemi"
+        "İşlem Öncesi Dönem - İşlem Dönemi – Somut İşlemler Dönemi– Soyut İşlemler Dönemi",
+        "İşlem Öncesi Dönem - İşlem Dönemi - İşlem Sonrası Dönem- Soyut İşlemler Dönemi"
       ],
       "answer": "Duyusal Motor Dönem -İşlem Öncesi Dönemi - Somut İşlemler Dönemi- Soyut İşlemler Dönemi",
       "answerLetter": "C",
@@ -7176,7 +7388,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.308,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -7198,7 +7410,8 @@
         "Bilişsel gelişim süreci",
         "Motor gelişim süreci",
         "Duyuşsal gelişim süreci",
-        "Psikomotor gelişim süreci"
+        "Psikomotor gelişim süreci",
+        "Psikososyal gelişim süreci"
       ],
       "answer": "Bilişsel gelişim süreci",
       "answerLetter": "B",
@@ -7209,7 +7422,7 @@
         "score": 0.788,
         "answerScore": 1,
         "stemScore": 0.647,
-        "summaryScore": 0.15,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -7231,7 +7444,8 @@
         "Filogenetik beceri- Ontogenetik beceri",
         "Motor Beceri- Motor Beceri",
         "Motorgenetik beceri– Ontogenetik beceri",
-        "Ontogenetik beceri- Ontogenetik beceri"
+        "Ontogenetik beceri- Ontogenetik beceri",
+        "Ontogenetik beceri – Filogenetik becer"
       ],
       "answer": "Filogenetik beceri- Ontogenetik beceri",
       "answerLetter": "D",
@@ -7242,7 +7456,7 @@
         "score": 0.829,
         "answerScore": 1,
         "stemScore": 0.714,
-        "summaryScore": 0.2,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -7264,7 +7478,8 @@
         "Başlangıç periyodu-Olgunlaşma periyodu- Norm/tanımlama periyodu-Süreç yönelimli dönem",
         "Başlangıç periyodu-Norm/tanımlama periyodu- Olgunlaşma periyodu-Süreç yönelimli dönem",
         "Başlangıç periyodu-Norm/tanımlama periyodu- Süreç yönelimli dönem-Olgunlaşma periyodu",
-        "Başlangıç periyodu-Süreç yönelimli dönem- Norm/tanımlama periyodu-Olgunlaşma periyodu"
+        "Başlangıç periyodu-Süreç yönelimli dönem- Norm/tanımlama periyodu-Olgunlaşma periyodu",
+        "Başlangıç periyodu-Olgunlaşma periyodu-Süreç yönelimli dönem-Norm/tanımlama periyodu"
       ],
       "answer": "Başlangıç periyodu-Olgunlaşma periyodu- Norm/tanımlama periyodu-Süreç yönelimli dönem",
       "answerLetter": "A",
@@ -7275,7 +7490,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 0.786,
         "inSource": true
       }
     },
@@ -7297,7 +7512,8 @@
         "II ve IV",
         "I ve II",
         "I ve IV",
-        "I, II ve III"
+        "I, II ve III",
+        "I, III ve IV"
       ],
       "answer": "II ve IV",
       "answerLetter": "C",
@@ -7308,7 +7524,7 @@
         "score": 0.767,
         "answerScore": 1,
         "stemScore": 0.611,
-        "summaryScore": 0.111,
+        "summaryScore": 0.333,
         "inSource": true
       }
     },
@@ -7330,7 +7546,8 @@
         "Ölçme",
         "Değerlendirme",
         "Ölçüt",
-        "Ölçekleme"
+        "Ölçekleme",
+        "Birim"
       ],
       "answer": "Ölçme",
       "answerLetter": "C",
@@ -7341,7 +7558,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.444,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -7363,7 +7580,8 @@
         "Mod",
         "Standart Sapma",
         "Korelasyon",
-        "Medyan"
+        "Medyan",
+        "Aritmetik Ortalama"
       ],
       "answer": "Mod",
       "answerLetter": "D",
@@ -7374,7 +7592,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -7396,7 +7614,8 @@
         "Aritmetik Ortalama",
         "Standart Sapma",
         "Mod",
-        "Medyan"
+        "Medyan",
+        "Korelasyon"
       ],
       "answer": "Aritmetik Ortalama",
       "answerLetter": "B",
@@ -7407,7 +7626,7 @@
         "score": 0.925,
         "answerScore": 1,
         "stemScore": 0.875,
-        "summaryScore": 0.2,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -7429,7 +7648,8 @@
         "Mehmet şampiyonlar grubunda, Elis şirinler grubunda yer almıştır.",
         "Ahmet’in ölçme ve değerlendirme dersi notu 75 olduğu için dersten başarılı olmuştur.",
         "Mehtap bilek güreşinde en iyi üç kişiden biri olup 1000 TL almıştır.",
-        "Sinan maaşını düşük bulduğu için yeni teklif edilen işi kabul etmemiştir."
+        "Sinan maaşını düşük bulduğu için yeni teklif edilen işi kabul etmemiştir.",
+        "Ayşe’nin projesi çok pahalı olduğu için jüri üyeleri tarafından seçilmemiştir. Ölçme ve Değerlendirme I"
       ],
       "answer": "Mehmet şampiyonlar grubunda, Elis şirinler grubunda yer almıştır.",
       "answerLetter": "C",
@@ -7440,7 +7660,7 @@
         "score": 0.667,
         "answerScore": 0.167,
         "stemScore": 1,
-        "summaryScore": 0.1,
+        "summaryScore": 0.2,
         "inSource": true
       }
     },
@@ -7462,7 +7682,8 @@
         "Mutlak sıfırın var olduğu ölçme işlemlerinde çarpma ve bölme işlemleri yapılabilir.",
         "Eşit aralıklı ölçeklerde bulunur.",
         "Akademik başarının ölçülmesinde kullanılır.",
-        "Gerçek yokluğu ifade etmez."
+        "Gerçek yokluğu ifade etmez.",
+        "Dağların rakımlarının belirlenmesinde yararlanılır."
       ],
       "answer": "Mutlak sıfırın var olduğu ölçme işlemlerinde çarpma ve bölme işlemleri yapılabilir.",
       "answerLetter": "E",
@@ -7473,7 +7694,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.333,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -7495,7 +7716,8 @@
         "Kavanozdaki bisküvi sayısı",
         "Zeka testi puanı",
         "Erciyes Dağı’nın rakımı",
-        "Okul sıralaması"
+        "Okul sıralaması",
+        "Bitkilerin türleri"
       ],
       "answer": "Kavanozdaki bisküvi sayısı",
       "answerLetter": "A",
@@ -7506,7 +7728,7 @@
         "score": 0.733,
         "answerScore": 0.333,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.714,
         "inSource": true
       }
     },
@@ -7528,7 +7750,8 @@
         "VI I, II, III, IV, V",
         "I, II, IV III, V, VI",
         "IV I, II, III, V, VI",
-        "II, III, V, VI I, IV"
+        "II, III, V, VI I, IV",
+        "I, II, III, VI IV, V"
       ],
       "answer": "VI I, II, III, IV, V",
       "answerLetter": "D",
@@ -7536,10 +7759,10 @@
       "answerPage": 134,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.824,
+        "score": 0.854,
         "answerScore": 1,
-        "stemScore": 0.707,
-        "summaryScore": 0.122,
+        "stemScore": 0.756,
+        "summaryScore": 0.561,
         "inSource": true
       }
     },
@@ -7561,7 +7784,8 @@
         "Aritmetik ortalama puanın üzerinde olanlar dersi geçer.",
         "15 saniyenin altında koşanlar finale kalır.",
         "60 puan alan dersi geçer.",
-        "Ödevini zamanında teslim etmeyen kalır."
+        "Ödevini zamanında teslim etmeyen kalır.",
+        "15 atışın tamamını basket atan 100 alır."
       ],
       "answer": "Aritmetik ortalama puanın üzerinde olanlar dersi geçer.",
       "answerLetter": "A",
@@ -7572,7 +7796,7 @@
         "score": 0.76,
         "answerScore": 1,
         "stemScore": 0.6,
-        "summaryScore": 0.063,
+        "summaryScore": 0.563,
         "inSource": true
       }
     },
@@ -7594,7 +7818,8 @@
         "Kesikli",
         "Bağımlı",
         "Bağımsız",
-        "Sürekli"
+        "Sürekli",
+        "Nicel"
       ],
       "answer": "Kesikli",
       "answerLetter": "D",
@@ -7605,7 +7830,7 @@
         "score": 0.954,
         "answerScore": 1,
         "stemScore": 0.923,
-        "summaryScore": 0.143,
+        "summaryScore": 0.786,
         "inSource": true
       }
     },
@@ -7627,7 +7852,8 @@
         "Doğrudan",
         "Türetilmiş",
         "Dolaylı",
-        "Mutlak"
+        "Mutlak",
+        "Oranlı"
       ],
       "answer": "Doğrudan",
       "answerLetter": "A",
@@ -7635,10 +7861,10 @@
       "answerPage": 134,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.76,
+        "score": 0.82,
         "answerScore": 1,
-        "stemScore": 0.6,
-        "summaryScore": 0.182,
+        "stemScore": 0.7,
+        "summaryScore": 0.636,
         "inSource": true
       }
     },
@@ -7660,7 +7886,8 @@
         "Öğrenme",
         "Eğitim",
         "Öğretim",
-        "Öğretme"
+        "Öğretme",
+        "Algı"
       ],
       "answer": "Öğrenme",
       "answerLetter": "C",
@@ -7671,7 +7898,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.571,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -7693,7 +7920,8 @@
         "Katılma",
         "Genel uyarılmışlık düzeyi",
         "Dikkat",
-        "Eski yaşantılar"
+        "Eski yaşantılar",
+        "Güdü"
       ],
       "answer": "Katılma",
       "answerLetter": "D",
@@ -7704,7 +7932,7 @@
         "score": 0.9,
         "answerScore": 1,
         "stemScore": 0.833,
-        "summaryScore": 0.429,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -7726,7 +7954,8 @@
         "Dönüt",
         "Olgunlaşma",
         "Hazıroluş",
-        "Güdü"
+        "Güdü",
+        "Pekiştireç"
       ],
       "answer": "Dönüt",
       "answerLetter": "E",
@@ -7737,7 +7966,7 @@
         "score": 0.836,
         "answerScore": 1,
         "stemScore": 0.727,
-        "summaryScore": 0.25,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -7759,7 +7988,8 @@
         "Yüksek ses karşısında aniden irkilme",
         "Arkadaşlarının etkisiyle sigara içmeye başlaması",
         "Trafikte yeşil ışıkta geçme",
-        "Bir şiiri ezberden okuma"
+        "Bir şiiri ezberden okuma",
+        "Turnike becerisini yapma Spor Pedagojisi I"
       ],
       "answer": "Yüksek ses karşısında aniden irkilme",
       "answerLetter": "B",
@@ -7770,7 +8000,7 @@
         "score": 0.7,
         "answerScore": 0.25,
         "stemScore": 1,
-        "summaryScore": 0.167,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -7792,7 +8022,8 @@
         "Öğrenilmiş çaresizlik",
         "Kendini gerçekleştiren kehanet",
         "Olumsuz pekiştirme",
-        "Olumsuz transfer"
+        "Olumsuz transfer",
+        "Öğrenmeye ket vurma"
       ],
       "answer": "Öğrenilmiş çaresizlik",
       "answerLetter": "B",
@@ -7803,7 +8034,7 @@
         "score": 0.867,
         "answerScore": 1,
         "stemScore": 0.778,
-        "summaryScore": 0,
+        "summaryScore": 0.636,
         "inSource": true
       }
     },
@@ -7825,7 +8056,8 @@
         "Öğrenmenin odağında ürün olmalıdır.",
         "İçsel güdülenme ve pekiştirme daha fazla tercih edilmelidir.",
         "Öğrenme, algılama ve anlam vermedir.",
-        "Daha çok bireyin zihninde gerçekleşen öğrenmeler üzerinde durur."
+        "Daha çok bireyin zihninde gerçekleşen öğrenmeler üzerinde durur.",
+        "Öğrenme mekanik değil, insanidir."
       ],
       "answer": "Öğrenmenin odağında ürün olmalıdır.",
       "answerLetter": "C",
@@ -7836,7 +8068,7 @@
         "score": 0.9,
         "answerScore": 0.75,
         "stemScore": 1,
-        "summaryScore": 0.444,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -7858,7 +8090,8 @@
         "Davranıştan hemen sonra kullanıldığında",
         "Davranışla birlikte kullanıldığında",
         "Davranıştan önce kullanıldığında",
-        "Davranıştan onbeş dakika sonra kullanıldığında"
+        "Davranıştan onbeş dakika sonra kullanıldığında",
+        "Kullanılma zamanı önemli değildir."
       ],
       "answer": "Davranıştan hemen sonra kullanıldığında",
       "answerLetter": "C",
@@ -7869,7 +8102,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 0.714,
         "inSource": true
       }
     },
@@ -7891,7 +8124,8 @@
         "Problemin çözüm yolları hakkında sporcuları bilgilendirmek",
         "Problem durumunu sporculara hissettirmek",
         "Sporcuların birlikte çalışmasını teşvik etmek",
-        "Sporculara kaynaklar konusunda yardımcı olmak"
+        "Sporculara kaynaklar konusunda yardımcı olmak",
+        "Sporcuları belirledikleri problemlerle ilgili çalışmalarına rehberlik etmek"
       ],
       "answer": "Problemin çözüm yolları hakkında sporcuları bilgilendirmek",
       "answerLetter": "D",
@@ -7902,7 +8136,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.176,
+        "summaryScore": 0.941,
         "inSource": true
       }
     },
@@ -7924,7 +8158,8 @@
         "Basitten karmaşığa",
         "Aktivite",
         "Hayatilik",
-        "Bilinenden bilinmeye"
+        "Bilinenden bilinmeye",
+        "Sporcuya görelik"
       ],
       "answer": "Basitten karmaşığa",
       "answerLetter": "C",
@@ -7935,7 +8170,7 @@
         "score": 0.957,
         "answerScore": 1,
         "stemScore": 0.929,
-        "summaryScore": 0.188,
+        "summaryScore": 0.813,
         "inSource": true
       }
     },
@@ -7957,7 +8192,8 @@
         "Sporcuların sosyo-ekonomik düzeyleri",
         "Sporcuların maksimum düzeyde etkin katılım sağlanması",
         "Sporcuların gelişim düzeyleri ve ön öğrenmeleri",
-        "Araç-gereç ve materyaller"
+        "Araç-gereç ve materyaller",
+        "Antrenmanın hedefleri"
       ],
       "answer": "Sporcuların sosyo-ekonomik düzeyleri",
       "answerLetter": "A",
@@ -7968,7 +8204,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.118,
+        "summaryScore": 0.941,
         "inSource": true
       }
     },
@@ -7990,7 +8226,8 @@
         "De portu",
         "Disportare",
         "Deportare",
-        "To disport"
+        "To disport",
+        "Desport"
       ],
       "answer": "De portu",
       "answerLetter": "D",
@@ -8001,7 +8238,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.278,
+        "summaryScore": 0.944,
         "inSource": true
       }
     },
@@ -8023,7 +8260,8 @@
         "Bumerang atma",
         "Koşma",
         "Tırmanma",
-        "Yüzme"
+        "Yüzme",
+        "Dans"
       ],
       "answer": "Bumerang atma",
       "answerLetter": "E",
@@ -8034,7 +8272,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.19,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -8056,7 +8294,8 @@
         "Hakemlik hakkı politik tarafsızlıkla yükümlü soylulara aitti.",
         "Yarışmalar dinsel festivallerin bir parçasıydı.",
         "Evli kadınların aktif ve pasif katılımları yasaktı.",
-        "Katılımcılar ilk iki yüzyılda sadece soylularla sınırlıydı."
+        "Katılımcılar ilk iki yüzyılda sadece soylularla sınırlıydı.",
+        "Oyunlar süresince ateşkes ilan ediliyordu."
       ],
       "answer": "Hakemlik hakkı politik tarafsızlıkla yükümlü soylulara aitti.",
       "answerLetter": "B",
@@ -8067,7 +8306,7 @@
         "score": 0.943,
         "answerScore": 0.857,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 0.667,
         "inSource": true
       }
     },
@@ -8089,7 +8328,8 @@
         "Hristiyanlığın Roma Devleti tarafından resmi din olarak kabulü",
         "Sert sporlardan hoşlanan Romalıların Yunan sporlarını hafif ve etkisiz bulması",
         "Romalıların oyunların devamını siyasi bir tehdit olarak algılamaları",
-        "Oyunların düzenlendiği Olympiya bölgesinin askeri bölge ilan edilmesi"
+        "Oyunların düzenlendiği Olympiya bölgesinin askeri bölge ilan edilmesi",
+        "Ekonomik nedenlerle oyunların sürdürülebilir olmaması"
       ],
       "answer": "Hristiyanlığın Roma Devleti tarafından resmi din olarak kabulü",
       "answerLetter": "C",
@@ -8100,7 +8340,7 @@
         "score": 0.867,
         "answerScore": 0.833,
         "stemScore": 0.889,
-        "summaryScore": 0.2,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -8122,7 +8362,8 @@
         "Kazanç güdülerek, profesyonelce yapılması",
         "Rekabetçi olması",
         "Yüksek performans amaçlı yapılması",
-        "Bağlayıcı kurallarının olması"
+        "Bağlayıcı kurallarının olması",
+        "Rekor hedefli olması"
       ],
       "answer": "Kazanç güdülerek, profesyonelce yapılması",
       "answerLetter": "D",
@@ -8133,7 +8374,7 @@
         "score": 0.8,
         "answerScore": 0.667,
         "stemScore": 0.889,
-        "summaryScore": 0.167,
+        "summaryScore": 0.583,
         "inSource": true
       }
     },
@@ -8155,7 +8396,8 @@
         "Arkaik Çağ",
         "Girit-Miken Çağı",
         "Klasik Çağ",
-        "Helenistik Çağ"
+        "Helenistik Çağ",
+        "Helen-Roma Dönemi"
       ],
       "answer": "Arkaik Çağ",
       "answerLetter": "B",
@@ -8166,7 +8408,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.3,
+        "summaryScore": 0.9,
         "inSource": true
       }
     },
@@ -8188,7 +8430,8 @@
         "Şövalyeler",
         "Papazlar",
         "Soylular",
-        "Krallar"
+        "Krallar",
+        "Köylüler"
       ],
       "answer": "Şövalyeler",
       "answerLetter": "C",
@@ -8199,7 +8442,7 @@
         "score": 0.92,
         "answerScore": 1,
         "stemScore": 0.867,
-        "summaryScore": 0,
+        "summaryScore": 0.75,
         "inSource": true
       }
     },
@@ -8221,7 +8464,8 @@
         "Akrobatik Cimnastik",
         "Askeri Cimnastik",
         "Estetik Cimnastik",
-        "Tıbbi Cimnastik"
+        "Tıbbi Cimnastik",
+        "Pedagojik Cimnastik"
       ],
       "answer": "Akrobatik Cimnastik",
       "answerLetter": "C",
@@ -8232,7 +8476,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.286,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -8254,7 +8498,8 @@
         "Eskrim",
         "Tenis",
         "Güreş",
-        "Boks"
+        "Boks",
+        "Cimnastik"
       ],
       "answer": "Eskrim",
       "answerLetter": "D",
@@ -8265,7 +8510,7 @@
         "score": 0.887,
         "answerScore": 1,
         "stemScore": 0.813,
-        "summaryScore": 0.176,
+        "summaryScore": 0.647,
         "inSource": true
       }
     },
@@ -8287,7 +8532,8 @@
         "İngiliz coğrafyasının genişliği",
         "İngiliz parlamenter sistemi",
         "Soyluluğun ilk doğan erkek çocukla sınırlandırılması",
-        "İngiliz kulüp sistemi"
+        "İngiliz kulüp sistemi",
+        "İngilizlerin bahis tutkusu"
       ],
       "answer": "İngiliz coğrafyasının genişliği",
       "answerLetter": "E",
@@ -8298,7 +8544,7 @@
         "score": 0.867,
         "answerScore": 0.667,
         "stemScore": 1,
-        "summaryScore": 0.2,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -8320,7 +8566,8 @@
         "İmaj pazarlaması olarak",
         "Örgüt olarak",
         "Yarışma olarak",
-        "Toplumsal sistem olarak"
+        "Toplumsal sistem olarak",
+        "Toplumsal kurum olarak"
       ],
       "answer": "İmaj pazarlaması olarak",
       "answerLetter": "D",
@@ -8331,7 +8578,7 @@
         "score": 0.55,
         "answerScore": 0.5,
         "stemScore": 0.583,
-        "summaryScore": 0.214,
+        "summaryScore": 0.5,
         "inSource": true
       }
     },
@@ -8353,7 +8600,8 @@
         "Amatör bir takımda düzenli olarak antrenmanlara ve maçlara çıkmak",
         "Tuttuğu takımın maçını televizyondan izlemek",
         "Arkadaşlarla birlikte Efeler Voleybol ligi karşılaşması için spor salonuna gitmek",
-        "Oyun konsoluyla oynamak"
+        "Oyun konsoluyla oynamak",
+        "Hipodroma giderek at yarışlarını takip etmek"
       ],
       "answer": "Amatör bir takımda düzenli olarak antrenmanlara ve maçlara çıkmak",
       "answerLetter": "A",
@@ -8361,10 +8609,10 @@
       "answerPage": 73,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.867,
-        "answerScore": 0.667,
+        "score": 0.933,
+        "answerScore": 0.833,
         "stemScore": 1,
-        "summaryScore": 0.077,
+        "summaryScore": 0.692,
         "inSource": true
       }
     },
@@ -8386,7 +8634,8 @@
         "İşlevselci Yaklaşım",
         "Çatışmacı Yaklaşım",
         "Eleştirel Yaklaşım",
-        "Etkileşimci Yaklaşım"
+        "Etkileşimci Yaklaşım",
+        "Eleştirel Feminist Yaklaşım"
       ],
       "answer": "İşlevselci Yaklaşım",
       "answerLetter": "E",
@@ -8397,7 +8646,7 @@
         "score": 0.975,
         "answerScore": 1,
         "stemScore": 0.958,
-        "summaryScore": 0.038,
+        "summaryScore": 0.885,
         "inSource": true
       }
     },
@@ -8419,7 +8668,8 @@
         "Spor",
         "Serbest zaman",
         "Kültür",
-        "Sosyalizasyon"
+        "Sosyalizasyon",
+        "İdeoloji"
       ],
       "answer": "Spor",
       "answerLetter": "C",
@@ -8430,7 +8680,7 @@
         "score": 0.965,
         "answerScore": 1,
         "stemScore": 0.941,
-        "summaryScore": 0.167,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -8452,7 +8702,8 @@
         "Sendika",
         "Aile",
         "Medya",
-        "Arkadaşlar ve Sosyal Çevre"
+        "Arkadaşlar ve Sosyal Çevre",
+        "Okul"
       ],
       "answer": "Sendika",
       "answerLetter": "A",
@@ -8463,7 +8714,7 @@
         "score": 0.6,
         "answerScore": 0,
         "stemScore": 1,
-        "summaryScore": 0.667,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -8485,7 +8736,8 @@
         "Fair Play",
         "Spor yoluyla sosyalleşme",
         "Spor aracılığıyla sosyalleşme",
-        "Kahraman sporcu olmak"
+        "Kahraman sporcu olmak",
+        "Fanatizm"
       ],
       "answer": "Fair Play",
       "answerLetter": "C",
@@ -8496,7 +8748,7 @@
         "score": 0.94,
         "answerScore": 1,
         "stemScore": 0.9,
-        "summaryScore": 0.083,
+        "summaryScore": 0.75,
         "inSource": true
       }
     },
@@ -8518,7 +8770,8 @@
         "Pierre Bourdieu",
         "Anthony Giddens",
         "Max Weber",
-        "Jennifer Hargreaves"
+        "Jennifer Hargreaves",
+        "Chris Bambery"
       ],
       "answer": "Pierre Bourdieu",
       "answerLetter": "B",
@@ -8529,7 +8782,7 @@
         "score": 0.9,
         "answerScore": 1,
         "stemScore": 0.833,
-        "summaryScore": 0.071,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -8551,7 +8804,8 @@
         "Cinsiyet, kadın ve erkeğin taşıdığı biyolojik ve fizyolojik özelliklerdir; toplumsal cinsiyet kadın ve erkeğe toplum tarafından yüklenen roller ve beklentilerdir.",
         "Cinsiyet, toplumun kadına ve erkeğe uygun gördüğü rollerdir; toplumsal cinsiyet kadın ve erkeğin taşıdığı biyolojik özelliklerdir.",
         "Cinsiyet, kadın ve erkeğin sahip olduğu kültürel rollerdir; toplumsal cinsiyet kadın ve erkeğin taşıdığı toplumsal rollerdir.",
-        "Cinsiyet, kadın ve erkeğin sahip olduğu biyolojik özelliklerdir; toplumsal cinsiyet kadın ve erkeğin sahip olduğu fizyolojik özelliklerdir."
+        "Cinsiyet, kadın ve erkeğin sahip olduğu biyolojik özelliklerdir; toplumsal cinsiyet kadın ve erkeğin sahip olduğu fizyolojik özelliklerdir.",
+        "Cinsiyet, kadın ve erkeğin taşıdığı hormonal özelliklerdir; toplumsal cinsiyet kadın ve erkeğin sahip olduğu fizyolojik özelliklerdir."
       ],
       "answer": "Cinsiyet, kadın ve erkeğin taşıdığı biyolojik ve fizyolojik özelliklerdir; toplumsal cinsiyet kadın ve erkeğe toplum tarafından yüklenen roller ve beklentilerdir.",
       "answerLetter": "B",
@@ -8562,7 +8816,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.421,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -8584,7 +8838,8 @@
         "Spor pazarlaması Spor Sosyolojisi I",
         "Spora katılım",
         "Spor yönetimi",
-        "Antrenörlük ve hakemlik"
+        "Antrenörlük ve hakemlik",
+        "Sporda toplumsal cinsiyet temelli şiddet"
       ],
       "answer": "Spor pazarlaması Spor Sosyolojisi I",
       "answerLetter": "E",
@@ -8595,7 +8850,7 @@
         "score": 0.792,
         "answerScore": 0.667,
         "stemScore": 0.875,
-        "summaryScore": 0.364,
+        "summaryScore": 0.727,
         "inSource": true
       }
     },
@@ -8617,7 +8872,8 @@
         "Toplumsal cinsiyet kalıp yargı içeren ifadeler kullanmamak",
         "Sporcuların beslenmesine dikkat etmek",
         "Cinsiyetler arasında işbirliğinden kaçınmak",
-        "Spor malzemelerini sadece erkek sporculara taşıtmak"
+        "Spor malzemelerini sadece erkek sporculara taşıtmak",
+        "Spor tesislerine ulaşım, tesis güvenliği vb. konularla ilgilenmemek"
       ],
       "answer": "Toplumsal cinsiyet kalıp yargı içeren ifadeler kullanmamak",
       "answerLetter": "D",
@@ -8628,7 +8884,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.538,
+        "summaryScore": 0.769,
         "inSource": true
       }
     },
@@ -8650,7 +8906,8 @@
         "1898",
         "1880",
         "1900",
-        "1910"
+        "1910",
+        "1920"
       ],
       "answer": "1898",
       "answerLetter": "B",
@@ -8661,7 +8918,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0.4,
+        "summaryScore": 0.8,
         "inSource": true
       }
     },
@@ -8683,7 +8940,8 @@
         "Beceri öğrenimi ağırlıklı zihinsel antrenmanlar",
         "Sporcu kişiliği",
         "Motivasyon çalışmaları",
-        "Konsantrasyon çalışmaları"
+        "Konsantrasyon çalışmaları",
+        "Algılama çalışmaları"
       ],
       "answer": "Beceri öğrenimi ağırlıklı zihinsel antrenmanlar",
       "answerLetter": "A",
@@ -8694,7 +8952,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.133,
+        "summaryScore": 0.733,
         "inSource": true
       }
     },
@@ -8716,7 +8974,8 @@
         "Gerginlikler",
         "Kendine güven çalışmaları",
         "Çeşitli gevşeme çalışmaları",
-        "Dikkat çalışmaları"
+        "Dikkat çalışmaları",
+        "Algılama çalışmaları"
       ],
       "answer": "Gerginlikler",
       "answerLetter": "B",
@@ -8727,7 +8986,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.417,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -8749,7 +9008,8 @@
         "Klinik spor psikoloğu",
         "Gelişim psikoloğu",
         "Sosyal psikolog",
-        "Eğitimci spor psikoloğu"
+        "Eğitimci spor psikoloğu",
+        "Araştırmacı spor psikoloğu"
       ],
       "answer": "Klinik spor psikoloğu",
       "answerLetter": "E",
@@ -8760,7 +9020,7 @@
         "score": 0.963,
         "answerScore": 1,
         "stemScore": 0.938,
-        "summaryScore": 0.263,
+        "summaryScore": 0.947,
         "inSource": true
       }
     },
@@ -8782,7 +9042,8 @@
         "Tesiste yemek verilmemesi",
         "Sporcunun hissettiği aşırı baskı",
         "Antrenörü sevmeme",
-        "Başarısızlık"
+        "Başarısızlık",
+        "Kazanmaya aşırı önem verilmesi Spor Psikolojisi I"
       ],
       "answer": "Tesiste yemek verilmemesi",
       "answerLetter": "B",
@@ -8793,7 +9054,7 @@
         "score": 0.667,
         "answerScore": 0.667,
         "stemScore": 0.667,
-        "summaryScore": 0,
+        "summaryScore": 0.583,
         "inSource": true
       }
     },
@@ -8815,7 +9076,8 @@
         "Arkadaş edinmede zorlanırlar.",
         "Zorlu ancak gerçekçi görevleri ve rakipleri seçerler.",
         "Başarısızlıktan korkmazlar.",
-        "Yeterlik algıları yüksektir."
+        "Yeterlik algıları yüksektir.",
+        "Yeni beceriler öğrenmede isteklidirler."
       ],
       "answer": "Arkadaş edinmede zorlanırlar.",
       "answerLetter": "C",
@@ -8826,7 +9088,7 @@
         "score": 0.733,
         "answerScore": 0.333,
         "stemScore": 1,
-        "summaryScore": 0.111,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -8848,7 +9110,8 @@
         "Milli takıma seçilmek",
         "Eğlenmek ve heyecan deneyimlemek",
         "Bir gruba ait olduğunu ve kabul edildiğini hissetmek",
-        "Davranışları üzerinde kontrol ve özerklik hissetmek"
+        "Davranışları üzerinde kontrol ve özerklik hissetmek",
+        "Yeterli hissetmek"
       ],
       "answer": "Milli takıma seçilmek",
       "answerLetter": "C",
@@ -8856,10 +9119,10 @@
       "answerPage": 107,
       "source": "textbook_official_neler_ogrendik",
       "grounding": {
-        "score": 0.867,
-        "answerScore": 0.667,
+        "score": 1,
+        "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -8881,7 +9144,8 @@
         "Mesajı gönderecek birey mesajı gönderme kararını verir.",
         "Mesajın ne şekilde iletileceğine karar verilir.",
         "Mesaj uygun kanalla karşı tarafa aktarılır.",
-        "Alıcı tarafından mesaj çözümlenir."
+        "Alıcı tarafından mesaj çözümlenir.",
+        "Alıcı tarafından mesaja verilen içsel tepkiler gerçekleşir."
       ],
       "answer": "Mesajı gönderecek birey mesajı gönderme kararını verir.",
       "answerLetter": "B",
@@ -8892,7 +9156,7 @@
         "score": 0.9,
         "answerScore": 1,
         "stemScore": 0.833,
-        "summaryScore": 0.25,
+        "summaryScore": 0.75,
         "inSource": true
       }
     },
@@ -8914,7 +9178,8 @@
         "Tükenme",
         "Katılımcı Dinleme",
         "Aktif Dinleme",
-        "Destekleyici Dinleme"
+        "Destekleyici Dinleme",
+        "Farkında Olarak Dinleme"
       ],
       "answer": "Tükenme",
       "answerLetter": "C",
@@ -8925,7 +9190,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0,
+        "summaryScore": 0.857,
         "inSource": true
       }
     },
@@ -8947,7 +9212,8 @@
         "Empati",
         "Karşılıklı Güven",
         "Sempati",
-        "Saygı"
+        "Saygı",
+        "Kendine güven"
       ],
       "answer": "Empati",
       "answerLetter": "E",
@@ -8958,7 +9224,7 @@
         "score": 0.94,
         "answerScore": 1,
         "stemScore": 0.9,
-        "summaryScore": 0.091,
+        "summaryScore": 0.727,
         "inSource": true
       }
     },
@@ -8980,7 +9246,8 @@
         "Çevre şartlarının eşitliği",
         "Kurallara uyma",
         "Hakem kararlarını kabullenme",
-        "Rakibe saygı"
+        "Rakibe saygı",
+        "Fırsat eşitliği"
       ],
       "answer": "Çevre şartlarının eşitliği",
       "answerLetter": "E",
@@ -8991,7 +9258,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.25,
+        "summaryScore": 0.917,
         "inSource": true
       }
     },
@@ -9013,7 +9280,8 @@
         "Hakemin doğru karar almasına yardımcı olmak",
         "Gole giden rakibi düşürmemek",
         "Gol sonrası forma çıkarmak",
-        "Doping kullanmamak"
+        "Doping kullanmamak",
+        "Rakibe faul yapmak"
       ],
       "answer": "Hakemin doğru karar almasına yardımcı olmak",
       "answerLetter": "B",
@@ -9024,7 +9292,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0.5,
+        "summaryScore": 0.7,
         "inSource": true
       }
     },
@@ -9046,7 +9314,8 @@
         "Selim Sırrı Tarcan",
         "Baron Pierre de Coubertin",
         "Shakespeare",
-        "Faik Üstünidman"
+        "Faik Üstünidman",
+        "Mazhar Kazancı"
       ],
       "answer": "Selim Sırrı Tarcan",
       "answerLetter": "C",
@@ -9057,7 +9326,7 @@
         "score": 0.867,
         "answerScore": 1,
         "stemScore": 0.778,
-        "summaryScore": 0.167,
+        "summaryScore": 0.333,
         "inSource": true
       }
     },
@@ -9079,7 +9348,8 @@
         "Sporcuların ne pahasına olursa olsun mücadeleyi bırakmamalarıdır. Sporda Fair Play I",
         "Sporcuların yarışmalar esnasında; güçleşen şartlar altında dahi kurallara sabırla, tutarlı ve bilinçli olarak riayet etmeleridir.",
         "Fırsat eşitliğini bozmamak amacıyla haksız avantajları kabullenmemeleridir.",
-        "Rakibin haksız dezavantajlarından yararlanmaya kalkışmamalarıdır."
+        "Rakibin haksız dezavantajlarından yararlanmaya kalkışmamalarıdır.",
+        "Rakibi düşman değil, aksine oyunun gerçekleşmesini sağlayan, eşdeğer haklara sahip birey ve partner olarak görmeleri ve değer vermeleridir."
       ],
       "answer": "Sporcuların ne pahasına olursa olsun mücadeleyi bırakmamalarıdır. Sporda Fair Play I",
       "answerLetter": "E",
@@ -9090,7 +9360,7 @@
         "score": 0.956,
         "answerScore": 0.889,
         "stemScore": 1,
-        "summaryScore": 0.357,
+        "summaryScore": 0.643,
         "inSource": true
       }
     },
@@ -9112,7 +9382,8 @@
         "Uluslararası Fair Play Komitesi",
         "Türkiye Fair Play Konseyi",
         "Avrupa Fair Play Birliği",
-        "Dünya Sağlık Örgütü"
+        "Dünya Sağlık Örgütü",
+        "Türkiye Milli Olimpiyat Komitesi"
       ],
       "answer": "Uluslararası Fair Play Komitesi",
       "answerLetter": "B",
@@ -9123,7 +9394,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.417,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -9145,7 +9416,8 @@
         "Yazılı kuralların belirlenmesi ve hakem otoritesi",
         "Şövalyece düşünüş tarzı",
         "Yazısız kurallara uygun davranılması",
-        "Kural dışı davrananlara heykel yaptırma cezası"
+        "Kural dışı davrananlara heykel yaptırma cezası",
+        "Fırsat eşitliği"
       ],
       "answer": "Yazılı kuralların belirlenmesi ve hakem otoritesi",
       "answerLetter": "A",
@@ -9156,7 +9428,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.364,
+        "summaryScore": 0.818,
         "inSource": true
       }
     },
@@ -9178,7 +9450,8 @@
         "William Shakespeare",
         "Atinalı Kallipsos",
         "Homeros",
-        "Pausanias"
+        "Pausanias",
+        "William Wordsworth"
       ],
       "answer": "William Shakespeare",
       "answerLetter": "C",
@@ -9189,7 +9462,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.143,
+        "summaryScore": 0.786,
         "inSource": true
       }
     },
@@ -9211,7 +9484,8 @@
         "Rakibin kural dışı yollarla düşürülmemesi",
         "Düşen rakibin yerden kaldırılması",
         "Hakemin hatalı kararının düzeltilmesi",
-        "Hakeme topun kendinden çıktığının söylenmesi"
+        "Hakeme topun kendinden çıktığının söylenmesi",
+        "Sakatlanan oyuncuya yardım edilmesi"
       ],
       "answer": "Rakibin kural dışı yollarla düşürülmemesi",
       "answerLetter": "D",
@@ -9222,7 +9496,7 @@
         "score": 0.8,
         "answerScore": 0.8,
         "stemScore": 0.8,
-        "summaryScore": 0.6,
+        "summaryScore": 0.7,
         "inSource": true
       }
     },
@@ -9244,7 +9518,8 @@
         "Formal Fair Play",
         "İnformal Fair Play",
         "Faul Play",
-        "Faul Game"
+        "Faul Game",
+        "Biçimsel Olmayan Fair Play"
       ],
       "answer": "Formal Fair Play",
       "answerLetter": "A",
@@ -9255,7 +9530,7 @@
         "score": 0.96,
         "answerScore": 1,
         "stemScore": 0.933,
-        "summaryScore": 0.611,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -9277,7 +9552,8 @@
         "TMOK",
         "CIFP",
         "EFPM",
-        "UEFA"
+        "UEFA",
+        "EOC"
       ],
       "answer": "TMOK",
       "answerLetter": "C",
@@ -9288,7 +9564,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.273,
+        "summaryScore": 0.909,
         "inSource": true
       }
     },
@@ -9310,7 +9586,8 @@
         "Eğlence unsurunun ön plana çıkarılması",
         "Oyuncu ve antrenör arasındaki güç ilişkisi",
         "Maddi ve manevi getiriler",
-        "Oyuncu ve antrenör arasında kuvvetli güven ilişkisi"
+        "Oyuncu ve antrenör arasında kuvvetli güven ilişkisi",
+        "Fiziksel temasın yoğunluğu"
       ],
       "answer": "Eğlence unsurunun ön plana çıkarılması",
       "answerLetter": "E",
@@ -9321,7 +9598,7 @@
         "score": 0.8,
         "answerScore": 0.5,
         "stemScore": 1,
-        "summaryScore": 0.182,
+        "summaryScore": 0.727,
         "inSource": true
       }
     },
@@ -9343,7 +9620,8 @@
         "Akran Zorbalığı",
         "Fiziksel İstismar",
         "Cinsel İstismar",
-        "Duygusal İstismar"
+        "Duygusal İstismar",
+        "İhmal"
       ],
       "answer": "Akran Zorbalığı",
       "answerLetter": "E",
@@ -9354,7 +9632,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.111,
+        "summaryScore": 0.889,
         "inSource": true
       }
     },
@@ -9376,7 +9654,8 @@
         "Çocuk koruma sadece çocuğun korunmasına yönelik önlemleri içerir.",
         "Önleyici bir programdır.",
         "Hak Temelli bir anlayıştır.",
-        "Çocuğun yaşama, gelişme, korunma ve katılım haklarını güvence altına alır."
+        "Çocuğun yaşama, gelişme, korunma ve katılım haklarını güvence altına alır.",
+        "Kısa sürede yanıt verip müdahale edebilme imkanı sağlar."
       ],
       "answer": "Çocuk koruma sadece çocuğun korunmasına yönelik önlemleri içerir.",
       "answerLetter": "B",
@@ -9387,7 +9666,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.5,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -9409,7 +9688,8 @@
         "Cenevre Bildirgesi",
         "BM Çocuk Haklarına Dair Sözleşme",
         "Avrupa Konseyi Çocukların Cinsel Sömürü ve İstismara Karşı Korunması Sözleşmesi",
-        "İnsan Hakları Evrensel Bildirgesi"
+        "İnsan Hakları Evrensel Bildirgesi",
+        "AB Temel Haklar Bildirgesi"
       ],
       "answer": "Cenevre Bildirgesi",
       "answerLetter": "A",
@@ -9420,7 +9700,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.167,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -9442,7 +9722,8 @@
         "Sporcuya vurmak",
         "Velilerden izin almadan çocuğun fotoğraflarını paylaşmak",
         "Öfkeli bağırmak",
-        "Sporcuyu antrenmandan kovmak"
+        "Sporcuyu antrenmandan kovmak",
+        "Akran zorbalığına müsaade etmek"
       ],
       "answer": "Sporcuya vurmak",
       "answerLetter": "C",
@@ -9453,7 +9734,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.625,
+        "summaryScore": 0.875,
         "inSource": true
       }
     },
@@ -9475,7 +9756,8 @@
         "Uygun olmayan ekipmanlarla antrenman yaptırmak",
         "Uygunsuz herhangi bir temas",
         "Sporcuyu küçük düşürmek",
-        "Takımın başarısızlığını belirli sporcuya yüklemek"
+        "Takımın başarısızlığını belirli sporcuya yüklemek",
+        "Bir ekipman veya cisim fırlatmak"
       ],
       "answer": "Uygun olmayan ekipmanlarla antrenman yaptırmak",
       "answerLetter": "D",
@@ -9486,7 +9768,7 @@
         "score": 0.914,
         "answerScore": 1,
         "stemScore": 0.857,
-        "summaryScore": 0.364,
+        "summaryScore": 0.636,
         "inSource": true
       }
     },
@@ -9508,7 +9790,8 @@
         "Yolculuklarda ve konaklamalarda yetersiz denetim",
         "Çocuğu küçük düşürmek",
         "Lakap takmak",
-        "Olumsuz sorular ve olumsuz iletişim dili kullanmak"
+        "Olumsuz sorular ve olumsuz iletişim dili kullanmak",
+        "Çocuğa değersiz olduğunu hissettirmek"
       ],
       "answer": "Yolculuklarda ve konaklamalarda yetersiz denetim",
       "answerLetter": "E",
@@ -9519,7 +9802,7 @@
         "score": 0.88,
         "answerScore": 1,
         "stemScore": 0.8,
-        "summaryScore": 0.444,
+        "summaryScore": 0.778,
         "inSource": true
       }
     },
@@ -9541,7 +9824,8 @@
         "Çocuklara eşit muamelede bulunmama",
         "Ayrımcılık gözetmeme",
         "Çocuğun yüksek yararı",
-        "Hesap verilebilirlik"
+        "Hesap verilebilirlik",
+        "Katılım"
       ],
       "answer": "Çocuklara eşit muamelede bulunmama",
       "answerLetter": "A",
@@ -9552,7 +9836,7 @@
         "score": 1,
         "answerScore": 1,
         "stemScore": 1,
-        "summaryScore": 0.364,
+        "summaryScore": 1,
         "inSource": true
       }
     },
@@ -9574,7 +9858,8 @@
         "İhmal",
         "Ekonomik istismar",
         "Duygusal istismar",
-        "Cinsel istismar"
+        "Cinsel istismar",
+        "Fiziksel istismar"
       ],
       "answer": "İhmal",
       "answerLetter": "D",
@@ -9585,7 +9870,7 @@
         "score": 0.891,
         "answerScore": 1,
         "stemScore": 0.818,
-        "summaryScore": 0.25,
+        "summaryScore": 0.833,
         "inSource": true
       }
     },
@@ -9607,7 +9892,8 @@
         "Avrupa Konseyi Çocukların Cinsel Sömürü ve İstismara Karşı Korunması Sözleşmesi",
         "Cenevre Bildirgesi",
         "BM Çocuk Hakları Sözleşmesi",
-        "BM İnsan Hakları Evrensel Bildirgesi"
+        "BM İnsan Hakları Evrensel Bildirgesi",
+        "Avrupa Birliği Temel Haklar Bildirgesi"
       ],
       "answer": "Avrupa Konseyi Çocukların Cinsel Sömürü ve İstismara Karşı Korunması Sözleşmesi",
       "answerLetter": "C",
@@ -9618,11 +9904,11 @@
         "score": 0.963,
         "answerScore": 1,
         "stemScore": 0.938,
-        "summaryScore": 0.208,
+        "summaryScore": 0.875,
         "inSource": true
       }
     }
   ],
   "groundingMinScore": 0.55,
-  "outOfSourceCount": 3
+  "outOfSourceCount": 2
 }

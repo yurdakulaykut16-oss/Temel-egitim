@@ -95,7 +95,7 @@ test('server/ollama.mjs 100-AI uç noktaları (/100-ai, /100-ai/solve-pool, /100
  assert.doesNotMatch(mainTsx, /quiz-kbd-hint/, 'Test ekranı klavye kısayol ipucu kaldırılmış olmalı');
  assert.doesNotMatch(mainTsx, /window\.addEventListener\(['"]keydown['"]/, 'Test ekranı klavye kısayol dinleyicisi kaldırılmış olmalı');
  assert.match(mainTsx, /İmkânsız/, '4. seviye İmkânsız zorluk katmanı UI içinde yer almalı');
- assert.match(mainTsx, /%50 İki Şık Ele/, 'Oyunlaştırılmış joker UI içinde yer almalı');
+ assert.match(mainTsx, /İki Şık Ele/, 'Oyunlaştırılmış joker UI içinde yer almalı');
  assert.match(mainTsx, /100 Yapay Zekâ Konseyi/, '100-AI çözüm analizi Test ekranında yer almalı');
 
  const dir = mkdtempSync(join(tmpdir(), 'tempo-100ai-http-'));

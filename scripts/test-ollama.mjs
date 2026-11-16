@@ -28,7 +28,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   }
   calls.push(data);
   const isUnit01=data.prompt.includes('Antrenmanı oluşturan ögeler');
-  const isUnit02=data.prompt.includes('Bireyselleştirme, süreklilik');
+  // Yazar istemi özetin yalnızca odak cümlesinin çevresini içerir; konu, ünite adından da tanınır.
+  const isUnit02=data.prompt.includes('Bireyselleştirme, süreklilik')||data.prompt.includes('Ünite: Antrenman ilkeleri ve yüklenme');
   let evidence='Egzersiz planlı ve tekrarlıdır';
   if(isUnit01)evidence='Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri';
   if(isUnit02)evidence='Bireyselleştirme, süreklilik, çeşitlilik ve branşa özgülük temel ilkelerdir';
@@ -45,10 +46,10 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
    }
    else result={answer:numericOptions?'20 dakika egzersiz':mismatch?'Tekrarlı fakat programsız olması':'Planlı ve tekrarlı olması',singleCorrect:!dualAnswerRisk,dualAnswerRisk,secondBestOption:dualAnswerRisk?'Tekrarlı fakat programsız olması':'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:numericOptions?'orta':'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
   }else{
-   if(isUnit01){result={question:'Antrenmanı oluşturan ögelerden hangileri birlikte sayılır?',options:['Kondisyonel ve teknik hazırlık','Kondisyonel ve taktik hazırlık','Teknik ve zihinsel hazırlık','Yalnızca kondisyonel hazırlık'],answer:'Kondisyonel ve teknik hazırlık',explanation:'Kondisyonel ve teknik hazırlık birlikte sayılır.',evidence,topic:'Antrenmanın ögeleri'};}
-   else if(isUnit02)result={question:'Antrenman yükü planlanırken hangi temel ilkeler gözetilir?',options:['Bireysel ve sürekli ilkeler','Süreklilik ve aşırı yüklenme ilkeleri','Çeşitlilik ve branşa özgülük ilkeleri','Bireysellik ve çeşitlilik ilkeleri'],answer:'Bireysel ve sürekli ilkeler',explanation:'Bireyselleştirme ve süreklilik temel ilkelerdendir.',evidence,topic:'Antrenman ilkeleri'};
-   else if(numericOptions)result={question:'Haftalık başlangıç egzersiz süresi ne kadar olmalıdır?',options:['20 dakika egzersiz','30 dakika egzersiz','45 dakika egzersiz','60 dakika egzersiz'],answer:'20 dakika egzersiz',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Süre planlaması'};
-   else result={question:'Düzenli hareketin planlama niteliği hangi iki özellikle belirlenir?',options:overlapOptions?['Planlama ve tekrar etkinliği','Tekrar ve planlama etkinliği','Programlı fakat tekrarsız etkinlik','Düzensiz ve programsız etkinlik']:['Planlı ve tekrarlı olması','Tekrarlı fakat programsız olması','Yalnızca yüksek şiddette yapılması',sendBannedOption?'Yukarıdakilerin hepsi':'Günlük yaşam akışında kendiliğinden oluşması'],answer:overlapOptions?'Planlama ve tekrar etkinliği':'Planlı ve tekrarlı olması',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Egzersizin özellikleri'};
+   if(isUnit01){result={question:'Antrenmanı oluşturan ögelerden hangileri birlikte sayılır?',options:['Kondisyonel ve teknik hazırlık','Kondisyonel ve taktik hazırlık','Teknik ve zihinsel hazırlık','Yalnızca kondisyonel hazırlık','Taktik ve zihinsel hazırlık'],answer:'Kondisyonel ve teknik hazırlık',explanation:'Kondisyonel ve teknik hazırlık birlikte sayılır.',evidence,topic:'Antrenmanın ögeleri'};}
+   else if(isUnit02)result={question:'Antrenman yükü planlanırken hangi temel ilkeler gözetilir?',options:['Bireysel ve sürekli ilkeler','Süreklilik ve aşırı yüklenme ilkeleri','Çeşitlilik ve branşa özgülük ilkeleri','Bireysellik ve çeşitlilik ilkeleri','Özgüllük ve tersinirlik ilkeleri'],answer:'Bireysel ve sürekli ilkeler',explanation:'Bireyselleştirme ve süreklilik temel ilkelerdendir.',evidence,topic:'Antrenman ilkeleri'};
+   else if(numericOptions)result={question:'Haftalık başlangıç egzersiz süresi ne kadar olmalıdır?',options:['20 dakika egzersiz','30 dakika egzersiz','45 dakika egzersiz','60 dakika egzersiz','90 dakika egzersiz'],answer:'20 dakika egzersiz',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Süre planlaması'};
+   else result={question:'Düzenli hareketin planlama niteliği hangi iki özellikle belirlenir?',options:overlapOptions?['Planlama ve tekrar etkinliği','Tekrar ve planlama etkinliği','Programlı fakat tekrarsız etkinlik','Düzensiz ve programsız etkinlik','Serbest ve denetimsiz etkinlik']:['Planlı ve tekrarlı olması','Tekrarlı fakat programsız olması','Yalnızca yüksek şiddette yapılması','Kısa süreli ve tek seferlik olması',sendBannedOption?'Yukarıdakilerin hepsi':'Günlük yaşam akışında kendiliğinden oluşması'],answer:overlapOptions?'Planlama ve tekrar etkinliği':'Planlı ve tekrarlı olması',explanation:'Egzersiz planlı ve tekrarlıdır.',evidence,topic:'Egzersizin özellikleri'};
   }
   res.end(JSON.stringify({response:JSON.stringify(result),eval_count:120,eval_duration:400_000_000,load_duration:50_000_000}));
  });
@@ -56,6 +57,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
  process.env.OLLAMA_BASE_URL=`http://127.0.0.1:${fakePort}`;process.env.OLLAMA_MODEL='fake:1';process.env.OLLAMA_VERIFIER_MODEL='fake:1';process.env.TEMPO_DATA_DIR=dir;
  process.env.TEMPO_DISABLE_AUTOLOOP='1';
  process.env.TEMPO_AUTO_CONCURRENCY='1';
+ // Bu dosya plansız (dengeli dolaşım + kitap pasajı) modu sınar; üretim planı scripts/test-plan-*.mjs içinde sınanır.
+ process.env.TEMPO_PLAN='0';
  const {ollamaPlugin}=await import('../server/ollama.mjs');let middleware;
  ollamaPlugin().configureServer({middlewares:{use(_path,handler){middleware=handler}}});
  const app=http.createServer((req,res)=>{req.url=req.url.replace(/^\/api\/ollama/,'');middleware(req,res,()=>{res.statusCode=404;res.end()})});const port=await listen(app);const base=`http://127.0.0.1:${port}`;
@@ -79,8 +82,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(status.settings.batchVerify,false);
   assert.equal(status.settings.autoEvolve,false);
   assert.equal(status.modelInferenceConcurrency,1);
-  assert.equal(status.questionCapacity,20000);
-  assert.equal(status.maxQuestionsStored,20000);
+  assert.equal(status.questionCapacity,65000);
+  assert.equal(status.maxQuestionsStored,65000);
   const audit=await (await fetch(`${base}/api/ollama/audit`)).json();assert.equal(audit.invalid,0);assert.equal(audit.duplicates,0);
 
   // Pasaj listesi uç noktası
@@ -147,9 +150,9 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   // Akıllı zorluk dengesi: 0-1 ünitesine 3 "zor" soru yerleştir, böylece zor kademesi doyar
   // ve hedef "kolay" iken hakemlerin ortak "zor" kararı reddedilir.
   writeFileSync(join(dir,'questions.json'),JSON.stringify([
-   {id:'seed-a',unitId:'0-1',status:'approved',difficulty:'zor',question:'Antrenman günlüğü tutmanın temel yararı nedir?',options:['Yüklenme ve toparlanmayı izleyerek programı ayarlamak','Antrenmanı tamamen rastgele planlamak','Yalnızca yarışma gününü kaydetmek','Sporcu sayısını artırmak'],answer:'Yüklenme ve toparlanmayı izleyerek programı ayarlamak',explanation:'Günlük, yüklenme ile toparlanmayı izlemeyi sağlar.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Antrenman izleme',createdAt:new Date().toISOString()},
-   {id:'seed-b',unitId:'0-1',status:'approved',difficulty:'zor',question:'Toparlanma süresi antrenman planında nasıl konumlandırılmalıdır?',options:['Program içine düzenli dinlenme günleri serpiştirilerek','Her antrenmandan sonra belirsiz bırakılarak','Yalnızca sakatlık halinde eklenerek','Sezon sonunda toplu olarak verilerek'],answer:'Program içine düzenli dinlenme günleri serpiştirilerek',explanation:'Toparlanma planın parçası olmalıdır.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Toparlanma',createdAt:new Date().toISOString()},
-   {id:'seed-c',unitId:'0-1',status:'approved',difficulty:'zor',question:'Branşa özgü teknik çalışma hangi dönemde yoğunlaştırılmalıdır?',options:['Hazırlık döneminden yarışma dönemine kademeli artırılarak','Yalnızca sezon başında bir kez yapılarak','Yarışma günü sabahı başlatılarak','Antrenman takvimi dışında bırakılarak'],answer:'Hazırlık döneminden yarışma dönemine kademeli artırılarak',explanation:'Teknik çalışma dönemsel olarak kademeli artar.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Teknik çalışma',createdAt:new Date().toISOString()}
+   {id:'seed-a',unitId:'0-1',status:'approved',difficulty:'zor',question:'Antrenman günlüğü tutmanın temel yararı nedir?',options:['Yüklenme ve toparlanmayı izleyerek programı ayarlamak','Antrenmanı tamamen rastgele planlamak','Yalnızca yarışma gününü kaydetmek','Sporcu sayısını artırmak','Isınma süresini kısaltmak'],answer:'Yüklenme ve toparlanmayı izleyerek programı ayarlamak',explanation:'Günlük, yüklenme ile toparlanmayı izlemeyi sağlar.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Antrenman izleme',createdAt:new Date().toISOString()},
+   {id:'seed-b',unitId:'0-1',status:'approved',difficulty:'zor',question:'Toparlanma süresi antrenman planında nasıl konumlandırılmalıdır?',options:['Program içine düzenli dinlenme günleri serpiştirilerek','Her antrenmandan sonra belirsiz bırakılarak','Yalnızca sakatlık halinde eklenerek','Sezon sonunda toplu olarak verilerek','Yarışma haftasında tümüyle kaldırılarak'],answer:'Program içine düzenli dinlenme günleri serpiştirilerek',explanation:'Toparlanma planın parçası olmalıdır.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Toparlanma',createdAt:new Date().toISOString()},
+   {id:'seed-c',unitId:'0-1',status:'approved',difficulty:'zor',question:'Branşa özgü teknik çalışma hangi dönemde yoğunlaştırılmalıdır?',options:['Hazırlık döneminden yarışma dönemine kademeli artırılarak','Yalnızca sezon başında bir kez yapılarak','Yarışma günü sabahı başlatılarak','Antrenman takvimi dışında bırakılarak','Geçiş döneminde en üst düzeye çıkarılarak'],answer:'Hazırlık döneminden yarışma dönemine kademeli artırılarak',explanation:'Teknik çalışma dönemsel olarak kademeli artar.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Teknik çalışma',createdAt:new Date().toISOString()}
   ]));
   wrongDifficulty=true;let mismatchResponse=await post01();assert.equal(mismatchResponse.status,502);assert.match((await mismatchResponse.json()).error,/hedef zorluk/);
   wrongDifficulty=false;let okResponse=await post01();assert.equal(okResponse.status,200);const item01=(await okResponse.json()).item;assert.equal(item01.difficulty,'kolay');

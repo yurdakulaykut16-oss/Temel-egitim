@@ -1,4 +1,5 @@
 import vm from 'node:vm';
+import { legacyProjections } from './option-count.mjs';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -171,22 +172,45 @@ export class SandboxEvolver {
  }
 
  // Kodu izole node:vm kum havuzunda derler ve yürütür. Dosya sistemi/ağ/process erişimi SIFIRDIR.
+ // Kural kodları (kayıtlı politikadakiler dahil) 4 şıklı adaylar için yazılmıştır. 5 şıklı aday,
+ // bütün şıkları kapsayan iki 4 şıklı görünüm hâlinde denetlenir; ikisi de geçerse aday geçer.
  runSandboxedRule(ruleCode, candidate, contextInfo = {}) {
-  return this._runVmFn(ruleCode, 'evaluateCandidate', [candidate, contextInfo]);
+  return this._firstFailure(legacyProjections(candidate).map(view => this._runVmFn(ruleCode, 'evaluateCandidate', [view, contextInfo])));
  }
 
  // Zorluk geliştirme motorunu izole kum havuzunda çalıştırır (kolay/orta/zor sistemini geliştirir, asla silemez)
  runSandboxedDifficultyEngine(engineCode, candidate, targetDifficulty, contextInfo = {}) {
-  return this._runVmFn(engineCode, 'evaluateDifficultyFit', [candidate, targetDifficulty, contextInfo]);
+  return this._firstFailure(legacyProjections(candidate).map(view => this._runVmFn(engineCode, 'evaluateDifficultyFit', [view, targetDifficulty, contextInfo])));
  }
 
  // Toplu izole yürütme: tek V8 bağlamı ile 96+ tuzağı <3ms içinde doğrular
  runSandboxedRuleBatch(ruleCode, callsList = []) {
-  return this._runVmFnBatch(ruleCode, 'evaluateCandidate', callsList);
+  return this._projectedBatch(ruleCode, 'evaluateCandidate', callsList);
  }
 
  runSandboxedDifficultyBatch(engineCode, callsList = []) {
-  return this._runVmFnBatch(engineCode, 'evaluateDifficultyFit', callsList);
+  return this._projectedBatch(engineCode, 'evaluateDifficultyFit', callsList);
+ }
+
+ _firstFailure(results) {
+  return results.find(r => r && r.ok === false) || results[0];
+ }
+
+ _projectedBatch(code, fnName, callsList = []) {
+  const expanded = [];
+  const spans = [];
+  for (const call of callsList) {
+   const [candidate, ...rest] = Array.isArray(call) ? call : [call];
+   const views = legacyProjections(candidate);
+   spans.push(views.length);
+   for (const view of views) expanded.push([view, ...rest]);
+  }
+  const flat = this._runVmFnBatch(code, fnName, expanded);
+  if (!Array.isArray(flat)) return flat;
+  const out = [];
+  let at = 0;
+  for (const n of spans) { out.push(this._firstFailure(flat.slice(at, at + n))); at += n; }
+  return out;
  }
 
  _normalizeVmOut(out) {

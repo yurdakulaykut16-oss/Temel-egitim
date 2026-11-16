@@ -71,7 +71,7 @@ test('Üretim hattı: havuzdaki soruya çok benzeyen taslak reddedilir, özgün 
    status: 'approved',
    difficulty: 'kolay',
    question: 'Fiziksel egzersizi günlük hareketten ayıran en temel iki nitelik nedir?',
-   options: ['Planlı ve tekrarlı olması', 'Tekrarlı fakat programsız olması', 'Yalnızca yüksek şiddette yapılması', 'Günlük yaşam akışında kendiliğinden oluşması'],
+   options: ['Planlı ve tekrarlı olması', 'Tekrarlı fakat programsız olması', 'Yalnızca yüksek şiddette yapılması', 'Günlük yaşam akışında kendiliğinden oluşması', 'Kısa süreli ve tek seferlik olması'],
    answer: 'Planlı ve tekrarlı olması',
    explanation: 'Egzersiz düzenli, planlı ve tekrarlı bir etkinliktir.',
    evidence: 'Egzersiz planlı ve tekrarlıdır',
@@ -118,19 +118,19 @@ test('Üretim hattı: havuzdaki soruya çok benzeyen taslak reddedilir, özgün 
    // Havuzdaki sorunun yalnızca birkaç sözcüğü değiştirilmiş hâli
    'near-dup': {
     question: 'Fiziksel egzersizi günlük aktivitelerden ayıran en temel iki nitelik nedir?',
-    options: ['Planlı ve tekrarlı olması', 'Programlı fakat tekrarsız olması', 'Yalnızca yüksek şiddette uygulanması', 'Günlük yaşam akışında kendiliğinden oluşması'],
+    options: ['Planlı ve tekrarlı olması', 'Programlı fakat tekrarsız olması', 'Yalnızca yüksek şiddette uygulanması', 'Günlük yaşam akışında kendiliğinden oluşması', 'Kısa süreli ve bir kerelik olması'],
     answer: 'Planlı ve tekrarlı olması'
    },
    // Aynı şıklarla kurulmuş ama kökü farklı bir soru
    'same-options': {
     question: 'Antrenman programının sürdürülebilir olması için hangi iki ölçüt birlikte sağlanmalıdır?',
-    options: ['Planlı ve tekrarlı olması', 'Tekrarlı fakat programsız olması', 'Yalnızca yüksek şiddette yapılması', 'Günlük yaşam akışında kendiliğinden oluşması'],
+    options: ['Planlı ve tekrarlı olması', 'Tekrarlı fakat programsız olması', 'Yalnızca yüksek şiddette yapılması', 'Günlük yaşam akışında kendiliğinden oluşması', 'Kısa süreli ve tek seferlik olması'],
     answer: 'Planlı ve tekrarlı olması'
    },
    // Özgün: farklı kavram, farklı şıklar, farklı cevap
    original: {
     question: 'Sürantrenman riskini artıran temel yüklenme hatası aşağıdakilerden hangisidir?',
-    options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli ve düzenli artırmak', 'Sezon içi dinlenme günlerini planlamak', 'Bireysel yanıta göre şiddeti ayarlamak'],
+    options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli ve düzenli artırmak', 'Sezon içi dinlenme günlerini planlamak', 'Bireysel yanıta göre şiddeti ayarlamak', 'Yüklenme sonrası uykuyu düzenli tutmak'],
     answer: 'Yetersiz toparlanmayla yükü sürekli artırmak'
    }
   };
@@ -256,7 +256,8 @@ test('Paragraf (parçaya dayalı) sorular: kitaptan birebir parça kabul edilir,
    'Egzersizin planlı, yapılandırılmış ve tekrarlı bir etkinlik olması',
    'Egzersizin tek seferlik yüksek şiddetli bir deneme olması',
    'Egzersizin programsız ama günlük tekrarlanan bir akış olması',
-   'Egzersizin müsabaka günüyle sınırlı bir hazırlık olması'
+   'Egzersizin müsabaka günüyle sınırlı bir hazırlık olması',
+   'Egzersizin dinlenme sırasında kendiliğinden gelişen bir süreç olması'
   ];
   return res.end(JSON.stringify({
    response: JSON.stringify({
@@ -306,7 +307,7 @@ test('Paragraf (parçaya dayalı) sorular: kitaptan birebir parça kabul edilir,
   assert.equal(okJson.item.questionType, 'paragraf');
   assert.equal(okJson.item.paragraph, paragraph, 'Parça birebir kaydedilmeli');
   assert.equal(okJson.item.question, 'Bu parçadan aşağıdaki yargılardan hangisine ulaşılabilir?');
-  assert.equal(okJson.item.options.length, 4);
+  assert.equal(okJson.item.options.length, 5);
 
   // Kaydedilen soru listede paragrafıyla birlikte döner
   const list = await (await fetch(`${base}/questions`)).json();
@@ -343,17 +344,17 @@ test('Arka plan üretimi: art arda üretilen sorular birbirinin aynısı/çok be
  const drafts = [
   {
    question: 'Sürantrenman riskini artıran temel yüklenme hatası aşağıdakilerden hangisidir?',
-   options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli artırmak', 'Dinlenme günlerini planlamak', 'Şiddeti bireysel yanıta göre ayarlamak'],
+   options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli artırmak', 'Dinlenme günlerini planlamak', 'Şiddeti bireysel yanıta göre ayarlamak', 'Uyku düzenini sabit tutmak'],
    answer: 'Yetersiz toparlanmayla yükü sürekli artırmak'
   },
   {
    question: 'Akut yanıt ile kronik uyum arasındaki temel ayrım nedir?',
-   options: ['Akut yanıt tek seansa, kronik uyum tekrarlanan çalışmalara bağlıdır', 'İkisi de yalnızca tek seansta oluşur', 'Kronik uyum bir haftada tamamlanır', 'Akut yanıt kalıcıdır, kronik uyum geçicidir'],
+   options: ['Akut yanıt tek seansa, kronik uyum tekrarlanan çalışmalara bağlıdır', 'İkisi de yalnızca tek seansta oluşur', 'Kronik uyum bir haftada tamamlanır', 'Akut yanıt kalıcıdır, kronik uyum geçicidir', 'İkisi de dinlenme döneminde ortaya çıkar'],
    answer: 'Akut yanıt tek seansa, kronik uyum tekrarlanan çalışmalara bağlıdır'
   },
   {
    question: 'Fazla tamamlama (süperkompansasyon) hangi koşulda ortaya çıkar?',
-   options: ['Yeterli toparlanmayla kapasitenin başlangıç düzeyini aşmasıyla', 'Yüklenmenin tamamen kesilmesiyle', 'Toparlanma olmadan yükün artmasıyla', 'Antrenman sıklığının azaltılmasıyla'],
+   options: ['Yeterli toparlanmayla kapasitenin başlangıç düzeyini aşmasıyla', 'Yüklenmenin tamamen kesilmesiyle', 'Toparlanma olmadan yükün artmasıyla', 'Antrenman sıklığının azaltılmasıyla', 'Yük şiddetinin sabit tutulmasıyla'],
    answer: 'Yeterli toparlanmayla kapasitenin başlangıç düzeyini aşmasıyla'
   }
  ];
@@ -472,11 +473,11 @@ test('Havuz botu: yapay zekânın ürettiği tıpatıp benzeri soruları havuzda
    ['Mekik koşusu testi hangi kapasitenin tahmininde kullanılır?', 'Aerobik kapasite']
   ];
   const distractorSets = [
-   ['Yalnızca tek seferlik maksimum yük uygulamak', 'Ölçütü tamamen antrenör sezgisine bırakmak', 'Hedef özelliği dikkate almadan sabit program'],
-   ['Haftalık düzene bakmadan günlük karar vermek', 'Yüklenmeyi yalnızca yarışma gününe bırakmak', 'Blok sıralamasını rastgele değiştirmek'],
-   ['Ölçümü hiç kaydetmemek', 'Sonucu yalnızca gözle değerlendirmek', 'Testi her antrenmanda tekrarlamak'],
-   ['Kademeli artış yerine ani sıçrama yapmak', 'Toparlanmayı planın dışında tutmak', 'Bireysel yanıtı yok saymak'],
-   ['Dönem hedefini göz ardı etmek', 'Bloğu sezon sonuna bırakmak', 'Aynı bloğu tüm sezon tekrarlamak']
+   ['Yalnızca tek seferlik maksimum yük uygulamak', 'Ölçütü tamamen antrenör sezgisine bırakmak', 'Hedef özelliği dikkate almadan sabit program', 'Isınmayı atlayıp doğrudan ana bölüme geçmek'],
+   ['Haftalık düzene bakmadan günlük karar vermek', 'Yüklenmeyi yalnızca yarışma gününe bırakmak', 'Blok sıralamasını rastgele değiştirmek', 'Geçiş dönemini plandan çıkarmak'],
+   ['Ölçümü hiç kaydetmemek', 'Sonucu yalnızca gözle değerlendirmek', 'Testi her antrenmanda tekrarlamak', 'Testi yorgunken uygulamak'],
+   ['Kademeli artış yerine ani sıçrama yapmak', 'Toparlanmayı planın dışında tutmak', 'Bireysel yanıtı yok saymak', 'Yükü haftalarca sabit tutmak'],
+   ['Dönem hedefini göz ardı etmek', 'Bloğu sezon sonuna bırakmak', 'Aynı bloğu tüm sezon tekrarlamak', 'Bloklar arası geçişi atlamak']
   ];
   uniq.forEach(([question, answer], i) => {
    items.push({
@@ -502,7 +503,7 @@ test('Havuz botu: yapay zekânın ürettiği tıpatıp benzeri soruları havuzda
     difficulty: ['kolay', 'orta', 'zor'][i % 3],
     status: 'approved',
     question: `Antrenman yüklenmesinde ${filler} değişkeni için toparlanma dengesi nasıl kurulmalıdır?`,
-    options: ['Progresif yüklenme ve yeterli toparlanma dengesi kurularak', 'Tamamen dinlenmeden sürekli maksimal yüklenme', 'Bireysel farklılıkları göz ardı eden sabit şablon', 'Isınma ve soğumayı kaldıran yoğunluk modeli'],
+    options: ['Progresif yüklenme ve yeterli toparlanma dengesi kurularak', 'Tamamen dinlenmeden sürekli maksimal yüklenme', 'Bireysel farklılıkları göz ardı eden sabit şablon', 'Isınma ve soğumayı kaldıran yoğunluk modeli', 'Ölçüm yapmadan sezgiyle belirlenen yük düzeni'],
     answer: 'Progresif yüklenme ve yeterli toparlanma dengesi kurularak',
     explanation: 'Antrenmanda kalıcı gelişim için yüklenme ile toparlanma dengesi kurulmalıdır.',
     evidence: 'Antrenmanda progresif yüklenme ve toparlanma dengesi temel ilkedir.',

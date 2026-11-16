@@ -90,7 +90,7 @@ test('yavaş model: 25 sn\'den uzun süren soru terk edilmez, onaylanıp havuza 
   const qs = await (await fetch(`${base}/api/ollama/questions`)).json();
   for (const q of qs.items) {
    assert.equal(q.status, 'approved');
-   assert.equal(q.options.length, 4);
+   assert.equal(q.options.length, 5);
    assert.ok(q.options.includes(q.answer), 'cevap şıklardan biri olmalı');
    assert.ok(q.options.every(o => !/^[A-D]\)/.test(o)), 'şık etiketleri temizlenmiş olmalı');
    assert.equal(q.verification.judges.length, 2, 'her soru iki hakemden geçmeli');

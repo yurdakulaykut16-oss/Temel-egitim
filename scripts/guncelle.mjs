@@ -105,5 +105,7 @@ if (process.argv[1] && samePath(fileURLToPath(import.meta.url), process.argv[1])
  } catch (e) {
   console.log(`[baslat] Güncelleme atlandı: ${e?.message || e}`);
  }
- process.exit(0);
+ // Zorla çıkış yok (bkz. ensure-ollama.mjs): süreç kendiliğinden 0 ile biter.
+ process.exitCode = 0;
+ setTimeout(() => process.exit(0), 5_000).unref();
 }
