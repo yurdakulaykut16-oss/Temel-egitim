@@ -188,6 +188,17 @@
   },
   {
     "unitId": "0-1",
+    "question": "Teknik antrenmanda başarılı olunması için hangi antrenmanın iyi bir biçimde tamamlanması gerekmektedir?",
+    "answer": "Fiziksel antrenman",
+    "options": [
+      "Fiziksel antrenman",
+      "Taktik antrenman",
+      "Zihinsel antrenman",
+      "Birim antrenman"
+    ]
+  },
+  {
+    "unitId": "0-1",
     "question": "Bir hareketin branşa uygun ve ekonomik biçimde uygulanması hangi hazırlıkla ilgilidir?",
     "answer": "Teknik hazırlık",
     "options": [
@@ -590,6 +601,17 @@
       "Dinamik denge",
       "Statik denge",
       "Maksimal kuvvet",
+      "Esneklik"
+    ]
+  },
+  {
+    "unitId": "0-4",
+    "question": "Statik ya da dinamik hareketler sırasında, destek yüzeyi değişse dahi vücudun ağırlık merkezini kontrol altında tutarak istenen pozisyonu sürdürebilme ve postüral stabiliteyi koruyabilme yeteneği aşağıdakilerden hangisidir?",
+    "answer": "Denge",
+    "options": [
+      "Denge",
+      "Koordinasyon",
+      "Çeviklik",
       "Esneklik"
     ]
   },
@@ -1189,6 +1211,17 @@
   },
   {
     "unitId": "1-1",
+    "question": "Uzun süreli ve orta şiddette yapılan dayanıklılık egzersizlerinde enerji üretiminde aşağıdaki sistemlerden hangisi baskın olarak kullanılır?",
+    "answer": "Aerobik oksidatif sistem",
+    "options": [
+      "Aerobik oksidatif sistem",
+      "ATP-PC sistemi",
+      "Anaerobik glikolitik sistem",
+      "Laktik asit sistemi"
+    ]
+  },
+  {
+    "unitId": "1-1",
     "question": "Protein senteziyle ilişkili hücresel yapı hangisidir?",
     "answer": "Ribozom",
     "options": [
@@ -1691,6 +1724,17 @@
       "Klasik bürokrasi",
       "Yalnız finansal yaklaşım",
       "Mekanik kaldıraç yaklaşımı"
+    ]
+  },
+  {
+    "unitId": "2-0",
+    "question": "Görev dağılımının yapılmasını, yetki ve sorumlulukların belirlenmesini kapsayan temel yönetim fonksiyonu aşağıdakilerden hangisidir?",
+    "answer": "Örgütleme",
+    "options": [
+      "Örgütleme",
+      "Planlama",
+      "Yöneltme",
+      "Denetim"
     ]
   },
   {
@@ -2439,6 +2483,17 @@
       "Kapalı beceri",
       "Refleks",
       "Statik duruş"
+    ]
+  },
+  {
+    "unitId": "3-1",
+    "question": "Beceri öğreniminde geri bildirimin temel işlevi aşağıdakilerden hangisidir?",
+    "answer": "Hataları düzeltip doğru hareket paternini pekiştirmek",
+    "options": [
+      "Hataları düzeltip doğru hareket paternini pekiştirmek",
+      "Sporcunun fiziksel yorgunluğunu gidermek",
+      "Antrenmanın toplam süresini kısaltmak",
+      "Sporcular arasında başarı sıralaması yapmak"
     ]
   },
   {
@@ -3297,6 +3352,17 @@
       "Yalnız sonuç iklimi",
       "Bürokratik iklim",
       "Pasif iklim"
+    ]
+  },
+  {
+    "unitId": "4-2",
+    "question": "Atıf (yükleme) kuramına göre bir sporcunun sonucu, gösterdiği çabaya bağlaması nasıl bir yüklemedir?",
+    "answer": "İçsel ve kontrol edilebilir",
+    "options": [
+      "İçsel ve kontrol edilebilir",
+      "İçsel ve kontrol edilemez",
+      "Dışsal ve kontrol edilebilir",
+      "Dışsal ve kontrol edilemez"
     ]
   },
   {

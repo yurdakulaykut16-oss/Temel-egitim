@@ -99,6 +99,9 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   const genRequests = sim.stats.requests.filter(r => r.role === 'generator');
   assert.ok(genRequests.length >= WANT && genRequests.every(r => r.focus), 'üretici istemi her soruda özetten bir odak cümlesi vermeli');
   assert.ok(genRequests.every(r => !r.bookSeed), 'yalnızca-özet modunda kitap sorusu örneği isteme eklenmemeli');
+  // Sınav tarzı örneği (yalnızca biçim için) ise plan modunda da verilir; paragraf sorularında verilmez.
+  const styled = genRequests.filter(r => r.examStyle).length;
+  assert.ok(styled >= genRequests.length * 0.7, `sınav tarzı örneği taşıyan üretici istemi: ${styled}/${genRequests.length}`);
 
   // Özet kitaptan büyütüldü (konu başına ~100 cümle): isteme tamamı değil, odak / kanıt cümlesinin
   // çevresindeki bölüm konur; istem modelin bağlam penceresine sığar ve kırpılmaz.

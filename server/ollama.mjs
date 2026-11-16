@@ -41,6 +41,7 @@ import {
  planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, summaryPageOf, PLAN_DIFFICULTIES, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep, bucketQuota, planBucketHasRoom, passShare, summarySectionOf, summaryWebSourceOf, leastUsedOption
 } from './production-plan.mjs';
+import { buildStyleLibrary, pickStyleExample, buildExamStyleBlock, styleLibraryStats } from './exam-style.mjs';
 
 const execFileAsync = promisify(execFile);
 const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
@@ -60,6 +61,12 @@ if (process.env.TEMPO_WEB_SUMMARY === '0') {
  }
 }
 const questionBank = JSON.parse(await readFile(new URL('./question-bank.json', import.meta.url), 'utf8'));
+// Kullanıcının gönderdiği örnek / çıkmış sorular (scripts/build-context.ts üretir).
+let examSamples = [];
+try {
+ const raw = JSON.parse(await readFile(new URL('./exam-samples.json', import.meta.url), 'utf8'));
+ examSamples = Array.isArray(raw?.samples) ? raw.samples : [];
+} catch {}
 
 let bookStyleQuestionsRaw = null;
 try {
@@ -68,6 +75,10 @@ try {
  bookStyleQuestionsRaw = null;
 }
 const bookStyleQuestions = Array.isArray(bookStyleQuestionsRaw?.questions) ? bookStyleQuestionsRaw.questions : [];
+// Sınav tarzı örnek kitaplığı: kullanıcı örnekleri (öncelikli) + kitapların kendi soruları.
+// TEMPO_EXAM_STYLE=0 ile kapatılır.
+const EXAM_STYLE_ENABLED = process.env.TEMPO_EXAM_STYLE !== '0';
+const examStyleLibrary = EXAM_STYLE_ENABLED ? buildStyleLibrary({ samples: examSamples, bookQuestions: bookStyleQuestions }) : [];
 
 let bookParallelRaw = null;
 try {
@@ -120,9 +131,14 @@ const ledgerFile = resolve(dataDir, 'ollama-created.json');
 const tracesFile = resolve(dataDir, 'rejected-traces.jsonl');
 const planFile = resolve(dataDir, 'production-plan.json');
 const storageLimit = 100_000_000_000;
-const QUESTION_POOL_CAPACITY = 20_000;
-const QUESTION_POOL_REFILL_TARGET = 18_500;
-const MAX_QUESTIONS = 20_000;
+// Onaylı soru havuzunun üst sınırı. TEMPO_POOL_CAPACITY ile değiştirilir (5.000–200.000).
+// Sınıra ulaşılınca havuz bekçisi en zayıf / en benzer soruları ayıklayıp %92,5'ine indirir.
+const envPoolCapacity = Math.floor(Number(process.env.TEMPO_POOL_CAPACITY));
+const QUESTION_POOL_CAPACITY = Number.isFinite(envPoolCapacity) && envPoolCapacity > 0
+ ? Math.max(5_000, Math.min(200_000, envPoolCapacity))
+ : 30_000;
+const QUESTION_POOL_REFILL_TARGET = Math.round(QUESTION_POOL_CAPACITY * 0.925);
+const MAX_QUESTIONS = QUESTION_POOL_CAPACITY;
 const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
 
 const verifier100 = new HundredWayVerifier(dataDir, process.cwd());
@@ -507,7 +523,7 @@ const defaultKeepAlive = process.env.TEMPO_OLLAMA_KEEP_ALIVE && process.env.TEMP
 const DEFAULT_NUM_CTX = clampNumCtx(process.env.TEMPO_NUM_CTX, 4096);
 
 const DIFFICULTIES = ['kolay', 'orta', 'zor'];
-const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama', 'en_iyi_secim', 'tanimdan_terim', 'bosluk_doldurma', 'dogru_yargi', 'ilginc_bilgi'];
+const QUESTION_TYPES = ['kavram', 'vaka', 'karsilastirma', 'neden_sonuc', 'istisna', 'uygulama', 'en_iyi_secim', 'tanimdan_terim', 'bosluk_doldurma', 'dogru_yargi', 'ilginc_bilgi', 'durum_kavram', 'kisa_net'];
 // Paragraf (parçaya dayalı) sorular: sınavda bu kalıbın çıkıp çıkmadığı resmî olarak
 // doğrulanmadığı için ana akışı bozmasın diye SEYREK üretilir (ör. her 8 soruda bir).
 const PARAGRAPH_QUESTION_TYPE = 'paragraf';
@@ -528,6 +544,8 @@ const QUESTION_TYPE_HINTS = {
  neden_sonuc: 'NEDEN-SONUÇ: Bir mekanizmanın, uygulamanın veya hatanın fizyolojik/psikolojik/yönetsel sonucunu ya da nedenini sor.',
  istisna: 'İSTİSNA (HANGİSİ DEĞİLDİR / YANLIŞTIR): 3 tamamen doğru, 1 kesin yanlış ifade kurarak istisnayı buldur.',
  uygulama: 'UYGULAMA: Bir kuralı, protokolü, ilkeyi veya hesaplamayı somut bir karar anına uygulat.',
+ durum_kavram: 'DURUMDAN KAVRAMA (BASKIN / ÖNCELİKLİ OLAN): Soru kökünde bir koşul ver (süre, şiddet, yaş aralığı, dönem, evre ya da amaç) ve bu koşulda BASKIN / ÖNCELİKLİ / UYGUN olan kavramı sor: "… egzersizlerde enerji üretiminde hangi sistem baskın olarak kullanılır?" gibi. Şıklar aynı sınıflandırmanın üyeleri olsun (hepsi enerji sistemi, hepsi evre, hepsi ilke …).',
+ kisa_net: 'ÇIKMIŞ SORU TARZI (KISA VE NET): Soru kökü TEK cümle ve en fazla 140 karakter olsun; giriş, vaka ya da süsleme yok. Doğrudan bilgiyi sor: "… için hangi … gerekmektedir?", "… aşağıdakilerden hangisidir?". Şıklar 1-3 kelimelik, aynı aileden kavram adları olsun.',
  tanimdan_terim: 'TANIMDAN TERİME: Soru kökünde kavramın ADINI ANMADAN tanımını, işlevini ya da ayırt edici özelliğini ver; "Tanımı verilen kavram aşağıdakilerden hangisidir?" diye sor. Şıklar aynı aileden kavram adları olsun.',
  bosluk_doldurma: 'BOŞLUK DOLDURMA: Konu anlatımındaki bilgiyi kendi cümlenle yeniden kur, kritik terimin yerine "……" koy ve "Bu cümlede boş bırakılan yere aşağıdakilerden hangisi getirilmelidir?" diye sor. Şıklar boşluğa dilbilgisi olarak uyan, aynı aileden terimler olsun.',
  dogru_yargi: 'DOĞRU YARGI: "… ile ilgili aşağıdaki ifadelerden hangisi doğrudur?" diye sor; dört şık da aynı konuda, aynı kalıpta tam cümle olsun: biri konu anlatımına göre kesin doğru, üçü yaygın yanılgıları taşıyan kesin yanlış ifade.',
@@ -1950,7 +1968,7 @@ function summaryPagesField(ctx, evidence) {
   // Kitabın "İçindekiler"ine göre konu başlığı (ve varsa ana konusu).
   ...(section ? { section: section.title, ...(section.parent ? { sectionParent: section.parent } : {}) } : {}),
   // İnternetten derlenen ek anlatıma dayanan soru: kaynağı kayıtta görünür.
-  ...(web ? { webSource: { title: web.title, url: web.url, ...(web.topic ? { topic: web.topic } : {}) } } : {})
+  ...(web ? { webSource: { title: web.title, url: web.url, ...(web.topic ? { topic: web.topic } : {}), ...(web.kind ? { kind: web.kind } : {}) } } : {})
  };
 }
 
@@ -2045,6 +2063,9 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
    ? `\nODAK CÜMLE (soruyu bu cümledeki bilgiden kur, \"evidence\" alanına bu cümleyi kopyala): \"${focus.sentence}\"${diff === 'kolay' ? '' : ' Zorluk için metindeki başka bir bilgiyle ilişkilendirebilirsin.'}${focusAskedHint(focus)}`
    : '';
   const focusSection = focus?.sentence ? summarySectionOf(ctx, focus.sentence) : null;
+  // Sınav tarzı örneği: bu soru tipine yakışan gerçek bir sınav / kitap sorusu (yalnızca BİÇİM için).
+  const styleExample = isParagraph ? null : pickStyleExample(examStyleLibrary, { unitId: ctx.id, questionType: qType, rotation: existingQuestions.length });
+  const examStyleHint = buildExamStyleBlock(styleExample, { sameUnit: styleExample?.unitId === ctx.id });
 
   // 1) ZORUNLU BAŞLIK: görev + hedefler + kurallar + çıktı biçimi (her çağrıda aynı iskelet).
   const head = `Sen antrenörlük temel eğitim sınavı için ÖSYM tarzında soru yazan uzman bir ölçme-değerlendirme yazarısın. En altta verilen KONU ANLATIMI metnine dayanarak, KESİNLİKLE TEK doğru cevabı olan, dört seçenekli, özgün BİR sınav sorusu yaz.
@@ -2089,6 +2110,7 @@ ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
    avoidQuestions ? `\nBU ÜNİTEDE DAHA ÖNCE SORULMUŞ SORULAR (BUNLARA BENZER BİR SORU KURMA): ${avoidQuestions}.` : '',
    jarvisHint,
    researchHint,
+   examStyleHint,
    coverageHint,
    bookSeedHint,
    recentAnswers ? `\nFARKLI BİR DOĞRU CEVAP SEÇ (yakın zamanda kullanılanlar): ${recentAnswers}.` : '',
@@ -6709,3 +6731,6 @@ export function ollamaPlugin() {
 
 /** Yüklenen bölüm anlatımları (TEMPO_WEB_SUMMARY ayarı uygulanmış hâliyle); testler için. */
 export function loadedContexts() { return contexts; }
+
+/** Sınav tarzı örnek kitaplığı (kullanıcı örnekleri + kitap soruları); testler için. */
+export function loadedExamStyle() { return { library: examStyleLibrary, stats: styleLibraryStats(examStyleLibrary) }; }

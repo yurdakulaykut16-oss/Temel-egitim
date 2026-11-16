@@ -413,7 +413,9 @@ test('internet kaynağı: ek anlatım cümlelerinin kaynağı bilinir, kitap say
   assert.ok(c.webStart > c.pageMarks.at(-1)[0]);
   assert.equal(c.webMarks.length, c.webSources.length);
   for (const [offset, i] of c.webMarks) {
-   assert.match(c.webSources[i].url, /^https?:\/\//);
+   // Kaynak ya bir internet adresidir ya da kullanıcının gönderdiği ders notudur (adres yok, başlık var).
+   if (c.webSources[i].kind === 'ders-notu') { assert.equal(c.webSources[i].url, ''); assert.ok(c.webSources[i].title.length > 5); }
+   else assert.match(c.webSources[i].url, /^https?:\/\//);
    const sentence = splitSummarySentences(c.text.slice(offset))[0];
    assert.equal(summaryWebSourceOf(c, sentence)?.url, c.webSources[i].url);
    assert.equal(summaryPageOf(c, sentence), null);

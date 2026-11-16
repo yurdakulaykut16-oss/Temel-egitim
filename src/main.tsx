@@ -11,6 +11,7 @@ import {unique} from './unique';
 import {advanced} from './advanced';
 import {newQuestions} from './newQuestions';
 import {challenge} from './challenge';
+import {examSampleLines} from './examSamples';
 import bookIndex from './bookIndex.json';
 import groundingIndex from './groundingIndex.json';
 import {bookNotes,bookQuestions} from './bookNotes';
@@ -360,7 +361,7 @@ function App(){
     ...(hard||uncovered?[]:[x]),
     ...officialRows,
     ...parallelRows,
-    ...[...(hard||uncovered?[]:(extra[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(scenarios[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(practice[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:[reinforcement[x.bi][x.ui],...(unique[x.id]?.questions||[]),...(advanced[x.id]?.questions||[]),...(newQuestions[x.id]?.questions||[]),...(bookQuestions[x.id]||[])]),...(hard?(challenge[x.id]||[]):[])].map(line=>{const [question,answer,...rest]=line.split('|'); const explanation=rest.pop()!; return {...x,u:{...x.u,question,answer,wrong:rest,key:explanation}}}),
+    ...[...(hard||uncovered?[]:(extra[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(scenarios[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(practice[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:[reinforcement[x.bi][x.ui],...(unique[x.id]?.questions||[]),...(advanced[x.id]?.questions||[]),...(newQuestions[x.id]?.questions||[]),...(bookQuestions[x.id]||[]),...(examSampleLines[x.id]||[])]),...(hard?(challenge[x.id]||[]):[])].map(line=>{const [question,answer,...rest]=line.split('|'); const explanation=rest.pop()!; return {...x,u:{...x.u,question,answer,wrong:rest,key:explanation}}}),
     ...(!hard&&!uncovered&&x.id==='3-4'?calculated.map(u=>({...x,u})):[]),
     ...(!hard?generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(!uncovered||Boolean(q.passageId)||q.questionAngle==='surpriz_baglam')).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,paragraph:q.paragraph,source:`Ollama · ${q.model}${q.difficulty?` · ${q.difficulty.toUpperCase()}`:''}${q.questionAngle?` · ${q.questionAngle.replace('_',' ')}`:''}${q.examPotential?` · Sınav ★${q.examPotential}/5`:''}${q.pages?.length?` · s.${q.pages.join(',')}`:''}`}})):[])
    ];

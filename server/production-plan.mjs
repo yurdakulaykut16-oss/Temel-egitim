@@ -442,7 +442,7 @@ export function summaryWebSourceOf(ctx, sentence) {
  if (pos < 0 || !inWebPart(ctx, pos)) return null;
  const index = markAt(ctx.webMarks, pos);
  const source = Number.isInteger(index) ? ctx.webSources?.[index] : null;
- return source ? { topic: source.topic || '', title: source.title || '', url: source.url || '' } : null;
+ return source ? { topic: source.topic || '', title: source.title || '', url: source.url || '', ...(source.kind ? { kind: source.kind } : {}) } : null;
 }
 
 /**

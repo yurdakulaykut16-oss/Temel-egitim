@@ -58,15 +58,15 @@ test('odak cümlesinden daha önce soru yazıldıysa bu kez kullanılmamış tip
  assert.notEqual(once.angle, 'dogrudan_tanim');
  // Sıradaki tip zaten kullanılmamışsa değiştirilmez.
  assert.deepEqual(variedTypeAndAngle({ asked: [{ questionType: 'kavram', questionAngle: 'dogrudan_tanim' }] }, 'vaka', 'saha_vakasi', 0), { type: 'vaka', angle: 'saha_vakasi' });
- // Aynı cümleden art arda yazılan sorular hep farklı tipte olur (11 tip tükenene kadar).
+ // Aynı cümleden art arda yazılan sorular hep farklı tipte olur (13 tip tükenene kadar).
  const asked = [];
- for (let i = 0; i < 11; i++) {
+ for (let i = 0; i < 13; i++) {
   const next = variedTypeAndAngle({ asked }, 'kavram', 'dogrudan_tanim', i);
   assert.ok(!asked.some(q => q.questionType === next.type), `${i + 1}. soru yeni bir tipte olmalı (${next.type})`);
   asked.push({ questionType: next.type, questionAngle: next.angle });
  }
- assert.equal(new Set(asked.map(q => q.questionType)).size, 11);
- assert.ok(['tanimdan_terim', 'bosluk_doldurma', 'dogru_yargi', 'ilginc_bilgi'].every(t => asked.some(q => q.questionType === t)), 'yeni soru biçimleri de kullanılmalı');
+ assert.equal(new Set(asked.map(q => q.questionType)).size, 13);
+ assert.ok(['tanimdan_terim', 'bosluk_doldurma', 'dogru_yargi', 'ilginc_bilgi', 'durum_kavram', 'kisa_net'].every(t => asked.some(q => q.questionType === t)), 'yeni soru biçimleri de kullanılmalı');
  assert.equal(new Set(asked.map(q => q.questionAngle)).size, 5);
  // Paragraf sorusu hedeflendiyse tip korunur.
  assert.equal(variedTypeAndAngle({ asked: [{ questionType: 'paragraf' }] }, 'paragraf', 'saha_vakasi', 0).type, 'paragraf');

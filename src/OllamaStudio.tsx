@@ -8,7 +8,7 @@ export type GeneratedQuestion = {
  status: 'approved' | 'rejected'; model: string; createdAt: string;
  difficulty?: 'kolay' | 'orta' | 'zor';
  curatedBy?: string; curationReason?: string;
- passageId?: string; passageHeading?: string; pages?: number[]; section?: string; sectionParent?: string; webSource?: {title?: string; url: string; topic?: string};
+ passageId?: string; passageHeading?: string; pages?: number[]; section?: string; sectionParent?: string; webSource?: {title?: string; url?: string; topic?: string; kind?: string};
  questionType?: string; questionAngle?: string; bloomLevel?: string; qualityScore?: number; examPotential?: number; curatorScore?: number;
  precisionScore?: number; styleScore?: number; precisionTier?: string; tvgfbfAligned?: boolean;
  improvementCount?: number; improvedAt?: string;
@@ -88,7 +88,8 @@ const typeLabel: Record<string, string> = {
  kavram: 'Kavram', vaka: 'Vaka Analizi', karsilastirma: 'Karşılaştırma',
  neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama',
  en_iyi_secim: 'En İyi Seçim', paragraf: 'Paragraf (Parçaya Dayalı)',
- tanimdan_terim: 'Tanımdan Terime', bosluk_doldurma: 'Boşluk Doldurma', dogru_yargi: 'Doğru Yargı', ilginc_bilgi: 'İlginç Giriş'
+ tanimdan_terim: 'Tanımdan Terime', bosluk_doldurma: 'Boşluk Doldurma', dogru_yargi: 'Doğru Yargı', ilginc_bilgi: 'İlginç Giriş',
+ durum_kavram: 'Durumdan Kavrama', kisa_net: 'Kısa ve Net (Çıkmış Soru Tarzı)'
 };
 const angleLabel: Record<string, string> = {
  dogrudan_tanim: '1. Doğrudan Tanım',
@@ -304,7 +305,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
     <div className="engine-num">
      <strong>{status?.approved ?? 0}</strong>
-     <small>onaylı soru · hedef çıta {status?.questionCapacity ?? 20000} soruluk havuz</small>
+     <small>onaylı soru · hedef çıta {status?.questionCapacity ?? 30000} soruluk havuz</small>
     </div>
     <div className="progress engine-pool-bar" aria-label={`Havuz doluluk: %${poolPct}`}><div style={{width: `${poolPct}%`, background: '#79bd48'}}/></div>
     <ul className="engine-meta">
@@ -554,7 +555,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </p>
     <p>
      Havuz: <b>{status?.count || 0}</b> üretildi ({status?.approved || 0} onaylı, {status?.rejected || 0} reddedilmiş) ·
-     Sınır: onaylı havuz {(status?.questionCapacity || 20000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 20000).toLocaleString('tr-TR')} ·
+     Sınır: onaylı havuz {(status?.questionCapacity || 30000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 30000).toLocaleString('tr-TR')} ·
      Soru başlatma aralığı: en az {(status?.questionIntervalMs || 2000) / 1000} sn ·
      Tamamlanan {read.length} ünitenin {completedWithQuestions} tanesinde hazır soru var.
     </p>
@@ -588,7 +589,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   {curator && (
    <p className="manifest-line">
     🧹 <b>Havuz bakımı:</b> {curator.totalScans ? `${curator.totalScans} tarama` : 'Tarama bekleniyor'}{curator.avgCompositeScore !== undefined ? ` · ortalama skor ${curator.avgCompositeScore}/100` : ''} ·
-    {' '}{curator.nearDuplicatesFound ?? 0} yakın tekrar bulundu · bugüne kadar {curator.totalPrunedLifetime ?? 0} zayıf/tekrar soru temizlendi (havuz 20.000 sınırında tutulur).
+    {' '}{curator.nearDuplicatesFound ?? 0} yakın tekrar bulundu · bugüne kadar {curator.totalPrunedLifetime ?? 0} zayıf/tekrar soru temizlendi (havuz {(status?.questionCapacity || 30000).toLocaleString('tr-TR')} sınırında tutulur).
    </p>
   )}
 
@@ -647,7 +648,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
        {q.passageHeading ? ` · ${q.passageHeading}` : ''}
        {q.section ? ` · ${q.sectionParent ? `${q.sectionParent} › ` : ''}${q.section}` : ''}
        {q.pages?.length ? ` · kitap s. ${q.pages.join(', ')}` : ''}
-       {q.webSource?.url ? <> · internet kaynağı: <a href={q.webSource.url} target="_blank" rel="noreferrer noopener">{q.webSource.title || q.webSource.url}</a></> : null}
+       {q.webSource?.url ? <> · internet kaynağı: <a href={q.webSource.url} target="_blank" rel="noreferrer noopener">{q.webSource.title || q.webSource.url}</a></> : q.webSource?.title ? <> · ders notu: {q.webSource.title}</> : null}
       </div>
       <div className="tag-row">
        <span className="topic-label">Konu: {q.topic}</span>

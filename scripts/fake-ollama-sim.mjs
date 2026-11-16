@@ -215,7 +215,8 @@ export function createFakeOllama({
    options: data.options || {}, keep_alive: data.keep_alive, stream: data.stream,
    format: data.format, think: data.think, promptChars: prompt.length, at: Date.now(),
    // İstemde hangi yönlendirme blokları var (testler buna bakar).
-   focus: prompt.includes('ODAK CÜMLE ('), bookSeed: prompt.includes('KİTAP SORUSU ÖRNEĞİ')
+   focus: prompt.includes('ODAK CÜMLE ('), bookSeed: prompt.includes('KİTAP SORUSU ÖRNEĞİ'),
+   examStyle: prompt.includes('SINAV TARZI ÖRNEĞİ')
   };
   if (keepPrompts) entry.prompt = prompt;
   stats.requests.push(entry);

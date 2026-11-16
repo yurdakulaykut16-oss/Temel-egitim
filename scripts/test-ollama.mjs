@@ -82,8 +82,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(status.settings.batchVerify,false);
   assert.equal(status.settings.autoEvolve,false);
   assert.equal(status.modelInferenceConcurrency,1);
-  assert.equal(status.questionCapacity,20000);
-  assert.equal(status.maxQuestionsStored,20000);
+  assert.equal(status.questionCapacity,30000);
+  assert.equal(status.maxQuestionsStored,30000);
   const audit=await (await fetch(`${base}/api/ollama/audit`)).json();assert.equal(audit.invalid,0);assert.equal(audit.duplicates,0);
 
   // Pasaj listesi uç noktası
