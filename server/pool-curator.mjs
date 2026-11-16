@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { isStoredOptionCount, isLegacyOptions } from './option-count.mjs';
 const norm = s => (typeof s === 'string' ? s : '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
 
 function tokenSet(text) {
@@ -9,6 +10,8 @@ function tokenSet(text) {
 
 // Yakın tekrar eşiği: bu oranın üzerindeki benzerlik "tıpatıp benzeri soru" sayılır.
 const DUP_LIMIT = 0.80;
+// Eski 4 şıklı kayıt 5 şıklı eşdeğerinin gerisinde kalsın: sınır aşılınca önce onlar elenir, iyileştirme önce onları ele alır.
+const LEGACY_OPTION_PENALTY = 12;
 
 function jaccardSim(aSet, bSet) {
  if (!aSet.size || !bSet.size) return 0;
@@ -126,11 +129,13 @@ export class PoolCuratorBot {
   if (evLen >= 30) score += 5;
   else if (evLen >= 18) score += 2;
 
-  if (Array.isArray(q.options) && q.options.length === 4) {
+  // Güncel biçim 5 şıktır; eski 4 şıklı kayıtlar puan alır ama 5 şıklıların gerisinde kalır (bkz. aşağıdaki fark).
+  if (Array.isArray(q.options) && isStoredOptionCount(q.options.length)) {
    const lens = q.options.map(o => o.trim().length);
    const ratio = Math.max(...lens) / Math.max(1, Math.min(...lens));
-   const meanL = lens.reduce((s, x) => s + x, 0) / 4;
-   const stdL = Math.sqrt(lens.reduce((s, x) => s + ((x - meanL) ** 2), 0) / 4);
+   const meanL = lens.reduce((s, x) => s + x, 0) / lens.length;
+   const stdL = Math.sqrt(lens.reduce((s, x) => s + ((x - meanL) ** 2), 0) / lens.length);
+   if (isLegacyOptions(q)) score -= LEGACY_OPTION_PENALTY;
    if (ratio <= 1.9 && stdL <= meanL * 0.25) score += 10;
    else if (ratio <= 2.3) score += 8;
    else if (ratio <= 3.0) score += 5;

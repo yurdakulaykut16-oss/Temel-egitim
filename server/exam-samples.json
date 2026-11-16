@@ -14,9 +14,10 @@
     "Esneklik"
    ],
    "options": [
-    "Denge",
     "Koordinasyon",
+    "Denge",
     "Çeviklik",
+    "Reaksiyon süresi",
     "Esneklik"
    ],
    "answer": "Denge",
@@ -36,10 +37,11 @@
     "Fosfajen sistem"
    ],
    "options": [
-    "Aerobik oksidatif sistem",
     "ATP-PC sistemi",
     "Anaerobik glikolitik sistem",
-    "Laktik asit sistemi"
+    "Laktik asit sistemi",
+    "Aerobik oksidatif sistem",
+    "Fosfajen sistem"
    ],
    "answer": "Aerobik oksidatif sistem",
    "explanation": "Uzun süreli, düşük-orta şiddetli çalışmalarda enerji oksijen kullanılarak (aerobik yolla) üretilir."
@@ -61,7 +63,8 @@
     "Fiziksel antrenman",
     "Taktik antrenman",
     "Zihinsel antrenman",
-    "Birim antrenman"
+    "Birim antrenman",
+    "Teknik antrenman"
    ],
    "answer": "Fiziksel antrenman",
    "answerVerified": false,
@@ -86,7 +89,8 @@
     "İçsel ve kontrol edilebilir",
     "İçsel ve kontrol edilemez",
     "Dışsal ve kontrol edilebilir",
-    "Dışsal ve kontrol edilemez"
+    "Dışsal ve kontrol edilemez",
+    "Dışsal ve değişmez"
    ],
    "answer": "İçsel ve kontrol edilebilir",
    "explanation": "Çaba kişinin kendisinden kaynaklanır ve kişi tarafından değiştirilebilir; bu nedenle içsel ve kontrol edilebilir bir yüklemedir."
@@ -109,7 +113,8 @@
     "Hataları düzeltip doğru hareket paternini pekiştirmek",
     "Sporcunun fiziksel yorgunluğunu gidermek",
     "Antrenmanın toplam süresini kısaltmak",
-    "Sporcular arasında başarı sıralaması yapmak"
+    "Sporcular arasında başarı sıralaması yapmak",
+    "Rakibin oyun planını önceden çözümlemek"
    ],
    "answer": "Hataları düzeltip doğru hareket paternini pekiştirmek",
    "explanation": "Geri bildirim hataları düzeltir, doğru hareket paternini pekiştirir ve öğrenmeyi kalıcı kılar."
@@ -129,9 +134,10 @@
     "Denetim"
    ],
    "options": [
-    "Örgütleme",
     "Planlama",
+    "Örgütleme",
     "Yöneltme",
+    "Koordinasyon",
     "Denetim"
    ],
    "answer": "Örgütleme",

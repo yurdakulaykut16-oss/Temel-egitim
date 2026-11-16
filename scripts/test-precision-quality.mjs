@@ -145,7 +145,8 @@ test('Ollama HTTP API: /api/ollama/precision-audit, /status ve aksiyom/psikometr
       'ATP-PC sistemi laktik asit üretir',
       'Glikolitik yol oksijen kullanır',
       'Kreatin kinaz sentezi durdurur',
-      'Mitokondri sayısı anında azalır'
+      'Mitokondri sayısı anında azalır',
+      'Fosfokreatin deposu hiç tükenmez'
      ],
      answer: 'ATP-PC sistemi laktik asit üretir',
      explanation: 'ATP-PC sistemi laktik asit üreterek enerji sağlar.',
@@ -159,7 +160,8 @@ test('Ollama HTTP API: /api/ollama/precision-audit, /status ve aksiyom/psikometr
       'Adenozin trifosfat molekülünün parçalanmasıdır',
       'Serbest yağ asitlerinin oksidasyon hızıdır',
       'Karaciğer glikojeninin kana salınım hızıdır',
-      'Kan plazmasındaki laktat birikim düzeyidir'
+      'Kan plazmasındaki laktat birikim düzeyidir',
+      'Kas hücresindeki fosfokreatin depo miktarıdır'
      ],
      answer: 'Adenozin trifosfat molekülünün parçalanmasıdır',
      explanation: 'Hücrede mekanik kasılma doğrudan ATP hidroliziyle gerçekleşir.',
@@ -223,7 +225,8 @@ test('Ollama HTTP API: /api/ollama/precision-audit, /status ve aksiyom/psikometr
       'Sagittal düzlemde abduksiyon gerçekleşir',
       'Transvers düzlemde fleksiyon oluşur',
       'Medial eksende kalp atımı hızlanır',
-      'Proksimal uçta kas gerimi düşer'
+      'Proksimal uçta kas gerimi düşer',
+      'Frontal düzlemde rotasyon ortaya çıkar'
      ],
      answer: 'Sagittal düzlemde abduksiyon gerçekleşir',
      explanation: 'Sagittal düzlem abduksiyon hareketi ile ilişkilidir.',

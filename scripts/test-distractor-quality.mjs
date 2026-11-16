@@ -36,7 +36,7 @@ test('Çeldirici kalitesi: alakasız/saçma dolgu şıklar reddedilir, yakın ç
  // 1) Konuyla tamamen ilgisiz tek kelimelik dolgu şıklar ("İhmal", "Tahkim", "Bürokrasi")
  const absurd = pe.auditDistractorPsychometrics({
   ...base,
-  options: [UNIT_01_ANSWER, 'İhmal', 'Tahkim', 'Bürokrasi']
+  options: [UNIT_01_ANSWER, 'İhmal', 'Tahkim', 'Bürokrasi', 'Kamulaştırma']
  });
  assert.equal(absurd.ok, false, 'Alakasız dolgu şıklar kabul edilmemeli');
  assert.match(absurd.firstError || '', /alakasız|saçma/);
@@ -48,7 +48,8 @@ test('Çeldirici kalitesi: alakasız/saçma dolgu şıklar reddedilir, yakın ç
    UNIT_01_ANSWER,
    'Kondisyonel ve taktik hazırlık',
    'Teknik ve zihinsel hazırlık',
-   'Yalnızca kondisyonel hazırlık'
+   'Yalnızca kondisyonel hazırlık',
+   'Taktik ve zihinsel hazırlık'
   ]
  });
  assert.equal(nearMiss.ok, true, `Yakın çeldiriciler geçmeli: ${nearMiss.firstError}`);
@@ -121,8 +122,8 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
   const isFix = prompt.includes('ESKİ TASLAK');
   if (!isFix) generatorCalls++;
   const options = isFix
-   ? ['Kondisyonel ve teknik hazırlık', 'Kondisyonel ve taktik hazırlık', 'Teknik ve zihinsel hazırlık', 'Yalnızca kondisyonel hazırlık']
-   : ['Kondisyonel ve teknik hazırlık', 'İhmal', 'Tahkim', 'Bürokrasi'];
+   ? ['Kondisyonel ve teknik hazırlık', 'Kondisyonel ve taktik hazırlık', 'Teknik ve zihinsel hazırlık', 'Yalnızca kondisyonel hazırlık', 'Taktik ve zihinsel hazırlık']
+   : ['Kondisyonel ve teknik hazırlık', 'İhmal', 'Tahkim', 'Bürokrasi', 'Kamulaştırma'];
   lastOptions = options;
   return res.end(JSON.stringify({
    response: JSON.stringify({
@@ -169,7 +170,8 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
    'Kondisyonel ve teknik hazırlık',
    'Kondisyonel ve taktik hazırlık',
    'Teknik ve zihinsel hazırlık',
-   'Yalnızca kondisyonel hazırlık'
+   'Yalnızca kondisyonel hazırlık',
+   'Taktik ve zihinsel hazırlık'
   ], 'Kaydedilen soru düzeltilmiş, birbirine yakın şıkları içermeli');
   assert.equal(goodJson.item.answer, 'Kondisyonel ve teknik hazırlık');
   assert.equal(goodJson.item.verification.judges.length, 2, 'İki hakem denetimi korunmalı');
@@ -180,7 +182,7 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
   const badJson = await bad.json();
   assert.equal(bad.status, 502);
   assert.match(badJson.error || '', /distractorPlausible|çeldirici/);
-  assert.equal(lastOptions.length, 4);
+  assert.equal(lastOptions.length, 5);
  } finally {
   stopOllamaLoops?.();
   app.closeAllConnections?.();

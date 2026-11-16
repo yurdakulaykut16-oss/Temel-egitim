@@ -190,9 +190,9 @@ def main():
                     continue
                 correct_text = opts_map[ans_letter]
                 wrong_texts = [v for k, v in opts_map.items() if k != ans_letter and v]
-                if not correct_text or len(wrong_texts) < 3:
+                if not correct_text or len(wrong_texts) < 4:
                     continue
-                # E şıkkı dışındaki 4 seçenekten (doğru cevap + ilk 3 çeldirici) temiz 4-şıklı yapı oluştur
+                # Kitaptaki 5 şıkkın tamamı kullanılır (doğru cevap + 4 çeldirici): sınav da 5 şıklıdır
                 all_items.append({
                     'id': f'book-{uid}-{qno}',
                     'unitId': uid,
@@ -201,7 +201,7 @@ def main():
                     'topic': topic_hint or ctx['unit'],
                     'question': q['question'],
                     'options5': [opts_map[k] for k in ['A', 'B', 'C', 'D', 'E'] if k in opts_map],
-                    'options': [correct_text, *wrong_texts[:3]],
+                    'options': [correct_text, *wrong_texts[:4]],
                     'answer': correct_text,
                     'answerLetter': ans_letter,
                     'testPage': tp,

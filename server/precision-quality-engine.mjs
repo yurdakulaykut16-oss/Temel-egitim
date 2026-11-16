@@ -1,3 +1,4 @@
+import { isStoredOptionCount } from './option-count.mjs';
 /**
  * PrecisionQualityEngine — 29 Üniteli Temel Eğitim Antrenörlük Alan Aksiyomları,
  * Çok Katmanlı Kanıt Doğrulama, ÖSYM Çeldirici Simetrisi, Polarite & Kök Sızıntısı Analizi.
@@ -466,8 +467,8 @@ export class PrecisionQualityEngine {
   const warnings = [];
   let score = 100;
 
-  if (!Array.isArray(options) || options.length !== 4 || !options.includes(answer)) {
-   return { ok: false, score: 0, errors: ['Seçenekler 4 adet olmalı ve doğru cevap seçenekler arasında yer almalıdır.'], warnings, breakdown: {} };
+  if (!Array.isArray(options) || !isStoredOptionCount(options.length) || !options.includes(answer)) {
+   return { ok: false, score: 0, errors: ['Seçenekler 5 adet olmalı ve doğru cevap seçenekler arasında yer almalıdır.'], warnings, breakdown: {} };
   }
 
   // 1. Yasaklı kolaycı kalıplar ("hepsi/hiçbiri")
@@ -476,12 +477,12 @@ export class PrecisionQualityEngine {
    score -= 40;
   }
 
-  // 2. Şık uzunluklarının birbirine yakınlığı (4 şık aynı aileden görünmeli)
+  // 2. Şık uzunluklarının birbirine yakınlığı (bütün şıklar aynı aileden görünmeli)
   const allLens = options.map(o => o.trim().length);
   const minOptLen = Math.min(...allLens);
   const maxOptLen = Math.max(...allLens);
   if (minOptLen >= 8 && maxOptLen / minOptLen >= 2.8) {
-   errors.push(`Seçenek uzunlukları birbirine çok uzak (en kısa ${minOptLen}, en uzun ${maxOptLen} karakter); dört şık aynı kavram ailesinden ve benzer uzunlukta olmalı.`);
+   errors.push(`Seçenek uzunlukları birbirine çok uzak (en kısa ${minOptLen}, en uzun ${maxOptLen} karakter); beş şık aynı kavram ailesinden ve benzer uzunlukta olmalı.`);
    score -= 22;
   } else if (minOptLen >= 8 && maxOptLen / minOptLen >= 2.1) {
    warnings.push('Seçenek uzunlukları arasında belirgin fark var; şıkları aynı kalıpta dengele.');
@@ -723,7 +724,7 @@ export class PrecisionQualityEngine {
   const dpoEliteCandidates = [];
 
   for (const q of questions) {
-   if (!q || !q.question || !Array.isArray(q.options) || q.options.length !== 4) continue;
+   if (!q || !q.question || !Array.isArray(q.options) || !isStoredOptionCount(q.options.length)) continue;
    if (q.status === 'rejected') continue;
    const ctx = this.contextMap.get(q.unitId) || null;
    const psy = this.auditDistractorPsychometrics({

@@ -34,7 +34,7 @@ function seedItems(count) {
    status: 'approved',
    difficulty,
    question: `${subject} çalışmasının ${aspect} ${action} ve ${i} hangi seçenekte verilmiştir?`,
-   options: [answer, 'Pasif dinlenme uygulanarak', 'Tahkim kurulu kararıyla', 'Bürokrasi yaklaşımıyla'],
+   options: [answer, 'Pasif dinlenme uygulanarak', 'Tahkim kurulu kararıyla', 'Bürokrasi yaklaşımıyla', 'Sponsorluk sözleşmesiyle'],
    answer,
    explanation: `${subject} çalışmasında ${aspect} düzenli izlenmeli ve kademeli artırılmalıdır.`,
    evidence: 'Egzersiz planlı ve tekrarlıdır',
@@ -77,7 +77,7 @@ test('soru havuzu 20.000 sınırını aşmaz: yeni soru eklenirken en zayıf kay
   } else {
    result = {
     question: 'Egzersiz ile fiziksel aktivite ayrımında hangi tanım doğrudur?',
-    options: ['Egzersiz planlıdır', 'Aktivite yalnızca uykudur', 'Egzersiz plansızdır', 'İkisi aynıdır'],
+    options: ['Egzersiz planlıdır', 'Aktivite yalnızca uykudur', 'Egzersiz plansızdır', 'İkisi aynıdır', 'Aktivite tekrarlıdır'],
     answer: 'Egzersiz planlıdır',
     explanation: 'Egzersiz planlı, programlı ve tekrarlı bir hareket biçimidir; fiziksel aktivite ise daha geniştir.',
     evidence,

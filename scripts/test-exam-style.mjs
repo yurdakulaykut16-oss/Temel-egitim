@@ -34,7 +34,7 @@ test('gönderilen örnek sorular: doğru bölümde, tutarlı ve sabit soru banka
   assert.ok(ids.has(s.unitId), `${s.id}: bölüm yok (${s.unitId})`);
   assert.equal(s.options5.length, 5, `${s.id}: sınavdaki hâli 5 şıklı olmalı`);
   assert.equal(new Set(s.options5).size, 5);
-  assert.equal(s.options.length, 4, `${s.id}: uygulamadaki hâli 4 şıklı olmalı`);
+  assert.equal(s.options.length, 5, `${s.id}: uygulamadaki hâli de 5 şıklı olmalı`);
   assert.ok(s.options5.includes(s.answer) && s.options.includes(s.answer), `${s.id}: doğru cevap şıklarda olmalı`);
   assert.ok(s.options.every(o => s.options5.includes(o)), `${s.id}: 4 şık 5 şığın alt kümesi olmalı`);
   assert.ok(STYLE_FAMILIES[s.style], `${s.id}: kalıp ailesi`);

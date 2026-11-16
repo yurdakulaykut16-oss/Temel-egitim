@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { BotParameterMatrix } from './bot-parameter-matrix.mjs';
 import { MultiAiSwarmEvaluator } from './multi-ai-evaluator.mjs';
 
+import { isStoredOptionCount } from './option-count.mjs';
 export const UPGRADE_SCALE_FACTOR = 100;
 export const CUMULATIVE_UPGRADE_FACTOR = 150000;
 export const TRAINING_SCALE_FACTOR = 30000 * UPGRADE_SCALE_FACTOR; // 3,000,000x toplam (önceki 30,000x üzerine 100x yükseltme)
@@ -236,7 +237,7 @@ export class IntelligenceTrainer {
   for (const q of allQuestions) {
    if (!q || q.status === 'rejected') continue;
    if (diffCounts[q.difficulty] !== undefined) diffCounts[q.difficulty]++;
-   if (Array.isArray(q.options) && q.options.length === 4) {
+   if (Array.isArray(q.options) && isStoredOptionCount(q.options.length)) {
     const lens = q.options.map(o => String(o || '').trim().length);
     const minL = Math.max(1, Math.min(...lens));
     const maxL = Math.max(...lens);
@@ -255,7 +256,7 @@ export class IntelligenceTrainer {
    defects.push({
     unitId: lengthLeaks[0],
     category: 'distractor',
-    lesson: `Uzunluk sızıntısı yakalandı (${lengthLeaks.length} soruda doğru şık çeldiricilerden >3x uzun). Tüm 4 şıkkı eşit sözcük bandında kur.`
+    lesson: `Uzunluk sızıntısı yakalandı (${lengthLeaks.length} soruda doğru şık çeldiricilerden >3x uzun). Tüm 5 şıkkı eşit sözcük bandında kur.`
    });
   }
   if (weakEvidence.length) {
@@ -485,7 +486,7 @@ export class IntelligenceTrainer {
    researchAgent: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): ${state.globalConfusionTraps.length} global kavram tuzağını yerel sınav tahmini çeldiricisi olarak besle.`,
    kayseriCoach: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): ${topDu?.kayseriHook || 'Kayserili şivesi + anlık kitap kanıtı'} ile keskin komedi & doğrulama sun.`,
    qwenCodeSandbox: `Ultra-Singularity-705Mx+ (100x · +70,500,000,000%): 96 adversarial tuzak testi ve self-repair JS kurallarını sıfır regresyonla kilitle.`,
-   turboQualityGuard: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Milisaniye turbo hızda dahi en az 25 krk kitap kanıtı ve eşit uzunlukta 4 şık kuralını kilitle.`
+   turboQualityGuard: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Milisaniye turbo hızda dahi en az 25 krk kitap kanıtı ve eşit uzunlukta 5 şık kuralını kilitle.`
   };
   state.botEnrichmentDirectives = enrichedDirectives;
 

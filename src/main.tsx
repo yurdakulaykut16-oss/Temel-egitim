@@ -703,11 +703,11 @@ function App(){
   {quiz[qi].u.paragraph && <blockquote className="quiz-paragraph">{quiz[qi].u.paragraph}</blockquote>}
   <h2>{quiz[qi].u.question}</h2>
   {!choice&&<div className="joker-bar">
-   <button type="button" className="joker-btn" onClick={triggerFiftyFifty} disabled={curElim.length>0}>✂️ %50 İki Şık Ele</button>
+   <button type="button" className="joker-btn" onClick={triggerFiftyFifty} disabled={curElim.length>0}>✂️ İki Şık Ele</button>
    <button type="button" className="joker-btn" onClick={triggerHint} disabled={isHint}>📖 Kitap İpucu Aç</button>
   </div>}
   {isHint&&!choice&&<div className="quiz-hint-box">💡 <b>İpucu:</b> {quiz[qi].u.key.slice(0,110)}...</div>}
-  <div className="answers">{options(quiz[qi].u).map((a,i)=>{const isElim=curElim.includes(a);return <button key={a} disabled={isElim} onClick={()=>answer(a)} className={isElim?'eliminated':choice?(a===quiz[qi].u.answer?'correct':a===choice?'incorrect':''):''}><span>{'ABCD'[i]}</span>{a}</button>;})}</div>
+  <div className="answers">{options(quiz[qi].u).map((a,i)=>{const isElim=curElim.includes(a);return <button key={a} disabled={isElim} onClick={()=>answer(a)} className={isElim?'eliminated':choice?(a===quiz[qi].u.answer?'correct':a===choice?'incorrect':''):''}><span>{'ABCDE'[i]}</span>{a}</button>;})}</div>
   {choice&&<div className={choice===quiz[qi].u.answer?'feedback good':'feedback bad'}><b>{choice===quiz[qi].u.answer?`Doğru cevap! ${lastXpGain>0?`(+${lastXpGain} XP)`:''}`:'Birlikte tekrar edelim.'}</b><p>{quiz[qi].u.key}</p><button onClick={()=>openUnit(quiz[qi].bi,quiz[qi].ui)}>Konuya dön <ArrowUpRight size={14}/></button></div>}
   {choice&&<div className="ai-council-verdict">
    <div className="acv-head"><b>🤖 100 Yapay Zekâ Konseyi Analizi</b><span>%{(100-meta.solvedBy100AiPct)} Aday Elenmesi · {meta.aiDifficultyLabel}</span></div>

@@ -41,6 +41,7 @@ import {
  planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, summaryPageOf, PLAN_DIFFICULTIES, planDifficultyForUnit, planAcceptsDifficulty, notePlanOutcome,
  sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep, bucketQuota, planBucketHasRoom, passShare, summarySectionOf, summaryWebSourceOf, leastUsedOption
 } from './production-plan.mjs';
+import { OPTION_COUNT, LEGACY_OPTION_COUNT, isStoredOptionCount, isLegacyOptions } from './option-count.mjs';
 import { buildStyleLibrary, pickStyleExample, buildExamStyleBlock, styleLibraryStats } from './exam-style.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -548,28 +549,28 @@ const QUESTION_TYPE_HINTS = {
  kisa_net: 'ÇIKMIŞ SORU TARZI (KISA VE NET): Soru kökü TEK cümle ve en fazla 140 karakter olsun; giriş, vaka ya da süsleme yok. Doğrudan bilgiyi sor: "… için hangi … gerekmektedir?", "… aşağıdakilerden hangisidir?". Şıklar 1-3 kelimelik, aynı aileden kavram adları olsun.',
  tanimdan_terim: 'TANIMDAN TERİME: Soru kökünde kavramın ADINI ANMADAN tanımını, işlevini ya da ayırt edici özelliğini ver; "Tanımı verilen kavram aşağıdakilerden hangisidir?" diye sor. Şıklar aynı aileden kavram adları olsun.',
  bosluk_doldurma: 'BOŞLUK DOLDURMA: Konu anlatımındaki bilgiyi kendi cümlenle yeniden kur, kritik terimin yerine "……" koy ve "Bu cümlede boş bırakılan yere aşağıdakilerden hangisi getirilmelidir?" diye sor. Şıklar boşluğa dilbilgisi olarak uyan, aynı aileden terimler olsun.',
- dogru_yargi: 'DOĞRU YARGI: "… ile ilgili aşağıdaki ifadelerden hangisi doğrudur?" diye sor; dört şık da aynı konuda, aynı kalıpta tam cümle olsun: biri konu anlatımına göre kesin doğru, üçü yaygın yanılgıları taşıyan kesin yanlış ifade.',
+ dogru_yargi: 'DOĞRU YARGI: "… ile ilgili aşağıdaki ifadelerden hangisi doğrudur?" diye sor; beş şık da aynı konuda, aynı kalıpta tam cümle olsun: biri konu anlatımına göre kesin doğru, dördü yaygın yanılgıları taşıyan kesin yanlış ifade.',
  ilginc_bilgi: 'İLGİNÇ GİRİŞ / GÜNLÜK HAYAT: Soru köküne bilgiyi akılda tutturan kısa ve ilginç bir girişle başla (gündelik bir benzetme, sahadan tanıdık bir an ya da "çoğu kişi … sanır, oysa …" türü bir şaşırtma), sonra konu anlatımındaki bilgiyi sor. Giriş konu anlatımıyla çelişen ya da orada olmayan bir bilgi içermesin.',
- en_iyi_secim: 'EN İYİ / EN UYGUN SEÇİM (ÇELDİRİCİ SORU): Dört şık da makul ve konuyla ilgili olsun; ancak yalnızca biri kaynağa göre tam ve en kapsamlı doğru olsun. "En uygun yaklaşım hangisidir?" kalıbını kullan; şıkları yaygın hatalı uygulamalardan ve eksik doğru yaklaşımlardan kur.',
+ en_iyi_secim: 'EN İYİ / EN UYGUN SEÇİM (ÇELDİRİCİ SORU): Beş şık da makul ve konuyla ilgili olsun; ancak yalnızca biri kaynağa göre tam ve en kapsamlı doğru olsun. "En uygun yaklaşım hangisidir?" kalıbını kullan; şıkları yaygın hatalı uygulamalardan ve eksik doğru yaklaşımlardan kur.',
  paragraf: 'PARAGRAF (PARÇAYA DAYALI): Önce konu anlatımından BİREBİR alınmış kısa bir parça ver, sonra yalnızca o parça okunarak yanıtlanabilecek bir soru sor (parçanın ana fikri, parçadan çıkarılabilecek yargı, parçayla çelişen ifade, parçada vurgulanan ilke). Soru kökü parçaya gönderme yapmalı.'
 };
 const BANNED_OPTION_PATTERN = /\b(yukarıdakilerin hepsi|aşağıdakilerin hepsi|hiçbiri|tümü birden|hepsi doğrudur|yalnız a ve b|a ve b birlikte|her ikisi de)\b/i;
 
-// Çeldirici mühendisliği: dört şık da aynı kavram ailesinden, "az kalsın doğru" niteliğinde
+// Çeldirici mühendisliği: beş şık da aynı kavram ailesinden, "az kalsın doğru" niteliğinde
 // ve birbirine yakın olmalı; alakasız/komik dolgu şıklar kesinlikle yasak.
 const DISTRACTOR_ENGINEERING_RULES = `ÇELDİRİCİ MÜHENDİSLİĞİ (EN KRİTİK KURAL — BU KURALA UYMAYAN SORU REDDEDİLİR):
-1) Dört şık da AYNI KAVRAM AİLESİNDEN olmalı: aynı ünitenin terimleri, aynı dilbilgisi kalıbı, birbirine çok yakın uzunluk (±%20) ve aynı ifade biçimi (hepsi isim tamlaması ya da hepsi cümle).
+1) Beş şık da AYNI KAVRAM AİLESİNDEN olmalı: aynı ünitenin terimleri, aynı dilbilgisi kalıbı, birbirine çok yakın uzunluk (±%20) ve aynı ifade biçimi (hepsi isim tamlaması ya da hepsi cümle).
 2) Her çeldirici "AZ KALSIN DOĞRU" olmalı: yaygın yanılgı, birbirine karıştırılan iki kavramın yer değiştirmesi, bir koşulun/adımın eksik ya da fazla olması, yakın sayı/süre/değer, kısmen doğru ama eksik ifade, doğru kavramın yanlış bağlama uygulanması.
 3) KESİNLİKLE YASAK ŞIKLAR: konuyla alakasız veya komik dolgu şıklar ("Tahkim kurulu", "Bürokrasi", "İhmal" gibi), alay/mizah içeren ifadeler, "hepsi/hiçbiri" kalıpları, soru kökündeki ayırt edici kelimeyi aynen taşıyan şık, bariz şekilde diğerlerinden uzun/kısa şık.
 4) Doğru şık KAYNAKTA AÇIKÇA desteklenen TEK ifade olmalı; çeldiriciler kaynaktaki başka kavramlardan türetilmeli (uydurma değil) ama doğru kabul edilemeyecek kadar net biçimde yanlış/eksik olmalı.
-5) Şıkları yazmadan önce son kontrol: "Cevabı bilmeyen bir aday bu dört şık arasında gerçekten zorlanır mı? Dört şıktan biri bariz alakasız mı?" — Cevap hayırsa şıkları yeniden yaz.
-6) Çeldirici ağırlıklı soru kalıplarını da kullan: "hangisi yanlıştır/söylenemez", "hangisi ... dışında kalır", "en uygun/en kapsamlı yaklaşım hangisidir" (dört şık da makul ama yalnızca biri tam doğru).`;
+5) Şıkları yazmadan önce son kontrol: "Cevabı bilmeyen bir aday bu beş şık arasında gerçekten zorlanır mı? Beş şıktan biri bariz alakasız mı?" — Cevap hayırsa şıkları yeniden yaz.
+6) Çeldirici ağırlıklı soru kalıplarını da kullan: "hangisi yanlıştır/söylenemez", "hangisi ... dışında kalır", "en uygun/en kapsamlı yaklaşım hangisidir" (beş şık da makul ama yalnızca biri tam doğru).`;
 
 const PARAGRAPH_QUESTION_RULES = `PARAGRAF SORUSU EK KURALLARI (bu tipte zorunlu):
 1) "paragraph" alanına aşağıdaki KONU ANLATIMI'ndan BİREBİR (hiç değiştirmeden, kelimesi kelimesine) alınmış, art arda gelen 3-5 cümlelik, 250-800 karakterlik bir parça yaz. Uydurma cümle, kendi yorumun veya kaynakta geçmeyen bilgi KESİNLİKLE YASAK.
 2) "question" alanı yalnızca soru kökü olsun (en fazla 260 karakter) ve parçaya gönderme yapsın: "Bu parçaya göre ...", "Parçada vurgulanan ...", "Bu parçadan aşağıdaki yargıların hangisine ulaşılabilir?" gibi.
 3) Soru, parça okunmadan yanıtlanamayacak olsun: doğru cevap parçadaki bilgiyi DOĞRU YORUMLAMAYI gerektirsin (ana fikir / parçada desteklenen yargı / parçayla çelişen ifade / parçadan çıkarım).
-4) Dört şık da parçadaki kavramlarla ilişkili olsun; parçada geçen ama sorunun cevabı OLMAYAN ifadeleri ve yaygın yanlış yorumları çeldirici olarak kullan.
+4) Beş şık da parçadaki kavramlarla ilişkili olsun; parçada geçen ama sorunun cevabı OLMAYAN ifadeleri ve yaygın yanlış yorumları çeldirici olarak kullan.
 5) "evidence" alanı, paragraph içinde geçen, kaynaktan birebir alınmış en az 15 karakterlik bir alıntı olsun.`;
 
 const unsupportedThinkModels = new Set();
@@ -1351,7 +1352,7 @@ function audit(existing) {
  let duplicates = 0, invalid = 0;
  const answers = new Set();
  for (const q of [...questionBank, ...existing]) {
-  if (!q || typeof q.question !== 'string' || typeof q.answer !== 'string' || !Array.isArray(q.options) || q.options.length !== 4 || !q.options.includes(q.answer) || q.options.some(x => typeof x !== 'string') || new Set((q.options || []).map(norm)).size !== 4) {
+  if (!q || typeof q.question !== 'string' || typeof q.answer !== 'string' || !Array.isArray(q.options) || !isStoredOptionCount(q.options.length) || !q.options.includes(q.answer) || q.options.some(x => typeof x !== 'string') || new Set((q.options || []).map(norm)).size !== q.options.length) {
    invalid++;
    continue;
   }
@@ -1428,7 +1429,7 @@ function optionOverlapRatio(a, b) {
  const setA = new Set(listA.map(o => norm(o)));
  let inter = 0;
  for (const o of listB) if (setA.has(norm(o))) inter++;
- return inter / Math.max(4, listB.length);
+ return inter / Math.max(LEGACY_OPTION_COUNT, listA.length, listB.length);
 }
 
 /**
@@ -1438,7 +1439,8 @@ function optionOverlapRatio(a, b) {
  *
  * Aynı bilgi farklı bir soru biçimiyle (ör. önce tanım, sonra vaka ya da boşluk doldurma) yeniden
  * sorulabilir: iki sorunun tipi biliniyor ve farklıysa "aynı cevap" tek başına tekrar sayılmaz;
- * kök gerçekten benzemeli (>= 0,70) ya da şıkların dörtte üçü aynı olmalıdır. Aynı tipte kurallar eskisi gibidir.
+ * kök gerçekten benzemeli (>= 0,70) ya da şıkların beşte dördü aynı olmalıdır. Aynı tipte kurallar eskisi gibidir.
+ * Şık örtüşmesi 5 şık üzerinden ölçülür: aynı cevapla birlikte "şıkların çoğunu paylaşma" doğru cevap + 2 çeldirici (3/5) demektir.
  */
 export function findDuplicateReason(draft, ctx, pool) {
  const qNorm = norm(draft.question);
@@ -1498,10 +1500,13 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
  if (![question, answer, explanation, evidence, topic].every(x => typeof x === 'string' && x.trim().length >= 4)) {
   throw Error('Soru alanları eksik.');
  }
- if (question.length > 700 || explanation.length > 1200 || topic.length > 120 || evidence.length > 500 || !Array.isArray(options) || options.length !== 4 || options.some(x => typeof x !== 'string' || x.trim().length < 2 || x.length > 300)) {
+ if (Array.isArray(options) && options.length !== OPTION_COUNT) {
+  throw Error(`Soru ${OPTION_COUNT} şıklı olmalı (${options.length} şık geldi).`);
+ }
+ if (question.length > 700 || explanation.length > 1200 || topic.length > 120 || evidence.length > 500 || !Array.isArray(options) || options.some(x => typeof x !== 'string' || x.trim().length < 2 || x.length > 300)) {
   throw Error('Soru alanları geçersiz.');
  }
- if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) {
+ if (new Set(options.map(norm)).size !== OPTION_COUNT || !options.includes(answer)) {
   throw Error('Seçenekler veya cevap geçersiz.');
  }
  const hygieneErr = checkDistractorHygiene(options, answer, { question, explanation, evidence, unitId: ctx?.id || '', sourceText: passage?.text || ctx?.text || '' });
@@ -1541,7 +1546,7 @@ function validate(o, ctx, existing, model, passage = null, policy = null, target
   throw Error(fullPrec.firstError);
  }
  const draftType = wantsParagraph ? PARAGRAPH_QUESTION_TYPE : (QUESTION_TYPES.includes(o.questionType) ? o.questionType : null);
- const duplicateReason = findDuplicateReason({ question, options, answer, questionType: draftType }, ctx, [...questionBank, ...bookStyleQuestions, ...existing]);
+ const duplicateReason = findDuplicateReason({ question, options, answer, questionType: draftType }, ctx, [...questionBank, ...bookStyleQuestions, ...existing.filter(x => !(x?.status === 'approved' && isLegacyOptions(x)))]);
  if (duplicateReason) throw Error(duplicateReason);
  // Evolver AI tarafından kum havuzunda doğrulanan özel JS kuralını uygula
  if (policy?.customRuleCode) {
@@ -1717,12 +1722,42 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
 
   record.curationReason = `2 hakem + ${adaptiveQuality?.title || 'AI Konseyi'} tarafından otomatik onaylandı`;
   latest = await makeRoomForQuestion(latest);
+  latest = retireSupersededLegacy(latest, record, ctx);
   latest.push(record);
   await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
   telemetry.approvedTotal++;
   telemetry.recentApprovedTimestamps.push(Date.now());
   return record;
  });
+}
+
+/**
+ * Yeni onaylanan 5 şıklı soru, aynı sorunun eski 4 şıklı sürümünün yerini alır: tekrar kuralına göre
+ * aynı sayılan eski kayıtlar havuzdan çıkarılır (aynı soru iki ayrı biçimde durmasın).
+ */
+let legacySupersededTotal = 0;
+function retireSupersededLegacy(items, record, ctx) {
+ let retired = 0;
+ const kept = items.filter(x => {
+  if (!x || x.status !== 'approved' || x.unitId !== record.unitId || !isLegacyOptions(x)) return true;
+  if (!findDuplicateReason(record, ctx, [x])) return true;
+  retired += 1;
+  return false;
+ });
+ if (!retired) return items;
+ legacySupersededTotal += retired;
+ appendTrace({ type: 'legacy_superseded', unitId: record.unitId, question: record.question, retired }).catch(() => {});
+ return kept;
+}
+
+/** Havuzdaki şık sayısı dağılımı (arayüz ve durum raporu için). */
+function optionFormatStats(items) {
+ let current = 0, legacy = 0;
+ for (const q of items || []) {
+  if (!q || q.status !== 'approved') continue;
+  if (isLegacyOptions(q)) legacy += 1; else current += 1;
+ }
+ return { optionCount: OPTION_COUNT, currentFormat: current, legacyFormat: legacy, legacySuperseded: legacySupersededTotal, legacyUpgraded: qualityTelemetry.legacyUpgradedTotal };
 }
 
 function pruneRejectedTail(items, maxRejected = 250) {
@@ -1778,7 +1813,7 @@ async function recordCouncilRejection(parsedDraft, ctx, model, reason, passage =
  if (!parsedDraft || typeof parsedDraft !== 'object') return;
  const { question, options, answer, explanation, evidence, topic } = parsedDraft;
  if (![question, answer, explanation, evidence, topic].every(x => typeof x === 'string' && x.trim().length >= 4)) return;
- if (!Array.isArray(options) || options.length !== 4 || options.some(x => typeof x !== 'string' || x.trim().length < 2)) return;
+ if (!Array.isArray(options) || options.length !== OPTION_COUNT || options.some(x => typeof x !== 'string' || x.trim().length < 2)) return;
  if (new Set(options.map(norm)).size !== 4 || !options.includes(answer)) return;
  await withSaveLock(async () => {
   let latest = await load();
@@ -1875,7 +1910,7 @@ function buildAvoidErrorsSnippet() {
   .map(([k]) => k);
  if (!top.length) return '';
  const hints = {
-  distractor_hygiene: 'Tüm 4 seçenek eşit uzunlukta ve benzersiz olmalı; "hepsi/hiçbiri" asla kullanılmamalı.',
+  distractor_hygiene: 'Tüm 5 seçenek eşit uzunlukta ve benzersiz olmalı; "hepsi/hiçbiri" asla kullanılmamalı.',
   dual_answer: 'ASLA iki şıkkı da doğru kabul edilebilecek soru kurma; yanlış şıklar kaynakla kesin çelişsin.',
   evidence: 'evidence alanı aşağıdaki KONU ANLATIMI metninden birebir kopyalanmış en az 15 karakterlik tam ifade olmalı.',
   judge_disagree: 'Soruda yalnızca TEK bir tartışmasız doğru cevap olmalı.',
@@ -1894,7 +1929,7 @@ function generatorSchema(qType) {
   evidence: { type: 'string' },
   ...(isParagraph ? { paragraph: { type: 'string' } } : {}),
   question: { type: 'string' },
-  options: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
+  options: { type: 'array', items: { type: 'string' }, minItems: OPTION_COUNT, maxItems: OPTION_COUNT },
   answer: { type: 'string' },
   explanation: { type: 'string' },
   topic: { type: 'string' },
@@ -2068,7 +2103,7 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
   const examStyleHint = buildExamStyleBlock(styleExample, { sameUnit: styleExample?.unitId === ctx.id });
 
   // 1) ZORUNLU BAŞLIK: görev + hedefler + kurallar + çıktı biçimi (her çağrıda aynı iskelet).
-  const head = `Sen antrenörlük temel eğitim sınavı için ÖSYM tarzında soru yazan uzman bir ölçme-değerlendirme yazarısın. En altta verilen KONU ANLATIMI metnine dayanarak, KESİNLİKLE TEK doğru cevabı olan, dört seçenekli, özgün BİR sınav sorusu yaz.
+  const head = `Sen antrenörlük temel eğitim sınavı için ÖSYM tarzında soru yazan uzman bir ölçme-değerlendirme yazarısın. En altta verilen KONU ANLATIMI metnine dayanarak, KESİNLİKLE TEK doğru cevabı olan, BEŞ seçenekli, özgün BİR sınav sorusu yaz.
 Sorunun zorluk seviyesi: ${diffMap[diff]}
 Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
@@ -2076,18 +2111,18 @@ Soru tipi: ${typeHint}
 YAZIM SIRASI:
 1) KONU ANLATIMI'ndan sınavda sorulmaya değer TEK bir bilgi seç; o bilgiyi içeren cümleyi "evidence" alanına HARFİ HARFİNE kopyala (kısaltma, birleştirme, yeniden yazma yok).
 2) Yalnızca o bilgiyi ölçen, açık ve tek yargılı bir soru kökü yaz.
-3) Doğru cevabı yaz; ardından aynı kavram ailesinden, metne göre KESİN YANLIŞ üç çeldirici yaz.
+3) Doğru cevabı yaz; ardından aynı kavram ailesinden, metne göre KESİN YANLIŞ dört çeldirici yaz.
 
 ÖSYM SORU KOMİSYONU KURALLARI (uymayan soru otomatik reddedilir):
 - KAYNAK SINIRI: Soru, doğru cevap ve çeldiriciler yalnızca KONU ANLATIMI'nda geçen kavramlarla kurulur. Metinde olmayan bilgi, terim, sayı veya isim uydurma.${isParagraph ? '' : ' Soru kökünde "metne göre", "parçaya göre", "yukarıdaki metinde" gibi ifadeler kullanma; aday metni görmez.'}
 - TEK DOĞRU: Yalnızca bir şık doğru olmalı; diğer üçü metne göre açıkça yanlış olmalı. İki şık aynı anlama gelmemeli, bir şık diğerini kapsamamalı.
-- ÇELDİRİCİLER: Dört şık aynı türden (hepsi kavram adı ya da hepsi aynı kalıpta ifade) ve benzer uzunlukta olmalı; en uzun şık en kısanın 2 katını geçmesin, doğru şık diğerlerinden belirgin uzun olmasın. Çeldiricileri adayın gerçekten karıştıracağı komşu kavramlardan seç; konuyla ilgisiz dolgu şık yazma.
+- ÇELDİRİCİLER: Beş şık aynı türden (hepsi kavram adı ya da hepsi aynı kalıpta ifade) ve benzer uzunlukta olmalı; en uzun şık en kısanın 2 katını geçmesin, doğru şık diğerlerinden belirgin uzun olmasın. Çeldiricileri adayın gerçekten karıştıracağı komşu kavramlardan seç; konuyla ilgisiz dolgu şık yazma.
 - YASAK: "Hepsi", "Hiçbiri", "Yukarıdakilerin hepsi", "A ve B" türü şıklar; şıkların başına A) B) gibi harf koymak; doğru cevabın ayırt edici kelimesini soru kökünde kullanmak.
 - OLUMSUZ KÖK: "değildir / yanlıştır / söylenemez" kullanırsan bu kelimeyi BÜYÜK HARFLE yaz ve diğer üç şıkkın metne göre doğru olduğundan emin ol.
 - DİL: Akıcı ve kusursuz sınav Türkçesi; soru kökü en fazla 300 karakter.
 - TEKRAR YASAĞI: Aşağıda listelenen eski sorulara benzer soru kurma; ${focus?.asked?.length ? 'aynı bilgi daha önce sorulduysa bu kez BAMBAŞKA bir soru kökü ve soru biçimi kullan (doğru cevap aynı kalabilir, anlatım aynı olamaz)' : 'farklı bir bilgi, farklı bir kök ve farklı bir doğru cevap seç'}.
 ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
-ÇIKTI: Yalnızca tek bir JSON nesnesi döndür. Alanlar: evidence (KONU ANLATIMI'ndan birebir kopyalanmış, doğru cevabı kanıtlayan cümle; en az 20 karakter)${isParagraph ? ', paragraph (KONU ANLATIMI\'ndan birebir alınmış 3-5 cümlelik parça)' : ''}, question (soru kökü), options (4 farklı metin), answer (options içindeki doğru şıkkın metni, birebir aynı), explanation (1-2 cümle: neden doğru + akılda tutma ipucu), topic (2-5 kelimelik konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").`;
+ÇIKTI: Yalnızca tek bir JSON nesnesi döndür. Alanlar: evidence (KONU ANLATIMI'ndan birebir kopyalanmış, doğru cevabı kanıtlayan cümle; en az 20 karakter)${isParagraph ? ', paragraph (KONU ANLATIMI\'ndan birebir alınmış 3-5 cümlelik parça)' : ''}, question (soru kökü), options (5 farklı metin), answer (options içindeki doğru şıkkın metni, birebir aynı), explanation (1-2 cümle: neden doğru + akılda tutma ipucu), topic (2-5 kelimelik konu adı), questionType ("${qType}"), questionAngle ("${qAngle}"), bloomLevel ("hatirlama"|"kavrama"|"uygulama"|"analiz").`;
 
   // 2) ZORUNLU KUYRUK: kaynak metin her zaman EN SONDA ve TAM olarak yer alır.
   const topicInfo = !sectionInfo && focusSection?.title ? ` | Konu: ${focusSection.parent ? `${focusSection.parent} › ` : ''}${focusSection.title}` : '';
@@ -2133,7 +2168,7 @@ ${isParagraph ? `${PARAGRAPH_QUESTION_RULES}\n` : ''}
 ${specs}
 ÖSYM Komisyonu Kuralları:
 - Kolay da olsa orta da olsa zor da olsa her soru gerçek ÖSYM seçiciliğinde ve kalıcı öğretici olmalı (sığ ezber sorma).
-- Tüm 4 şık aynı kavram ailesinden, birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; konuyla alakasız/komik dolgu şık KESİNLİKLE yasak; "hepsi/hiçbiri" yasak.
+- Tüm 5 şık aynı kavram ailesinden, birbirine çok yakın uzunlukta, aynı dilbilgisi yapısında ve güçlü komşu çeldiricilerle kurulmalı; konuyla alakasız/komik dolgu şık KESİNLİKLE yasak; "hepsi/hiçbiri" yasak.
 - Her yanlış şık anlatıma göre kesinlikle YANLIŞ olmalı; soru kökünde doğru cevaba kelime sızıntısı olmamalı.
 - Her sorunun "evidence" alanı KONU ANLATIMI içinden kelime kelime alınmış en az 15 karakterlik bir alıntı olsun.
 - Kısa ama püf noktasını öğreten explanation yaz.
@@ -2261,8 +2296,8 @@ async function trySelfCorrect(parsedDraft, critiqueReason, ctx, model, targetDif
   : '';
  const hasParagraph = typeof parsedDraft?.paragraph === 'string' && parsedDraft.paragraph.trim();
  const fixPrompt = `Aşağıdaki çok seçenekli soru taslağı denetimde şu gerekçeyle reddedildi: "${String(critiqueReason || '').slice(0, 400)}".${surgicalHints}
-Yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu düzelt. Gerekirse soru kökünü ve çeldiricileri baştan yaz; ama sonuç KESİNLİKLE TEK DOĞRU CEVAPLI olsun (ikinci bir doğru seçenek ihtimali bırakma), dört şık aynı kavram ailesinden ve benzer uzunlukta olsun (en uzun şık en kısanın 2 katını geçmesin), soru kökü doğru cevabı sızdırmasın, "hepsi/hiçbiri" kullanılmasın, hedef zorluk "${targetDifficulty}" olsun.
-Yalnızca JSON döndür: evidence (KONU ANLATIMI'ndan birebir kopyalanmış cümle)${hasParagraph ? ', paragraph (ESKİ TASLAKTAKİ PARÇAYI KELİMESİ KELİMESİNE AYNEN KORU; değiştirme!)' : ''}, question, options (4 metin), answer (options içindeki doğru metin), explanation, topic, questionType, questionAngle, bloomLevel.
+Yalnızca aşağıdaki KONU ANLATIMI metnine dayanarak soruyu düzelt. Gerekirse soru kökünü ve çeldiricileri baştan yaz; ama sonuç KESİNLİKLE TEK DOĞRU CEVAPLI olsun (ikinci bir doğru seçenek ihtimali bırakma), beş şık aynı kavram ailesinden ve benzer uzunlukta olsun (en uzun şık en kısanın 2 katını geçmesin), soru kökü doğru cevabı sızdırmasın, "hepsi/hiçbiri" kullanılmasın, hedef zorluk "${targetDifficulty}" olsun.
+Yalnızca JSON döndür: evidence (KONU ANLATIMI'ndan birebir kopyalanmış cümle)${hasParagraph ? ', paragraph (ESKİ TASLAKTAKİ PARÇAYI KELİMESİ KELİMESİNE AYNEN KORU; değiştirme!)' : ''}, question, options (TAM 5 metin), answer (options içindeki doğru metin), explanation, topic, questionType, questionAngle, bloomLevel.
 ESKİ TASLAK: ${JSON.stringify(parsedDraft)}
 KONU ANLATIMI: ${sourceText}`;
  const { parsed, elapsed } = await runModel(model, fixPrompt, 0.35, signal, hasParagraph ? GENERATOR_NUM_PREDICT_PARAGRAPH : GENERATOR_NUM_PREDICT, {
@@ -2288,7 +2323,7 @@ function preflightRejectionKey(message) {
  const msg = String(message || '');
  if (/örtüş|uzun|kalitesiz|alakasız|çeldirici|sızdır|kapsadığı|simetri/i.test(msg)) return 'distractor_hygiene';
  if (/Kaynak alıntısı|kaynak alıntısı|evidence|sayısal ifade/i.test(msg)) return 'evidence';
- if (/Soru alanları|Seçenekler veya cevap|geçerli bir nesne|paragraph|Paragraf/i.test(msg)) return 'format';
+ if (/Soru alanları|şıklı olmalı|Seçenekler veya cevap|geçerli bir nesne|paragraph|Paragraf/i.test(msg)) return 'format';
  if (/zaten kayıtlı|benzer/i.test(msg)) return 'duplicate';
  if (/özet|kaynakta|kapsam|temellen/i.test(msg)) return 'grounding';
  return 'preflight_other';
@@ -3168,7 +3203,7 @@ async function healPoolForAudit() {
   const kept = [];
   let removedInvalid = 0, removedDuplicate = 0;
   for (const q of items) {
-   const valid = q && typeof q.question === 'string' && typeof q.answer === 'string' && Array.isArray(q.options) && q.options.length === 4 && q.options.includes(q.answer) && q.options.every(x => typeof x === 'string') && new Set(q.options.map(norm)).size === 4;
+   const valid = q && typeof q.question === 'string' && typeof q.answer === 'string' && Array.isArray(q.options) && isStoredOptionCount(q.options.length) && q.options.includes(q.answer) && q.options.every(x => typeof x === 'string') && new Set(q.options.map(norm)).size === q.options.length;
    if (!valid) { removedInvalid++; continue; }
    const key = norm(q.question);
    if (seen.has(key)) { removedDuplicate++; continue; }
@@ -4369,6 +4404,7 @@ const qualityTelemetry = {
  improvedTotal: 0,
  rejectedRewriteTotal: 0,
  prunedTotal: 0,
+ legacyUpgradedTotal: 0,
  lastImprovedAt: null,
  recentImprovements: []
 };
@@ -4403,6 +4439,7 @@ function getQualityLoopSnapshot() {
   improvedTotal: qualityTelemetry.improvedTotal,
   rejectedRewriteTotal: qualityTelemetry.rejectedRewriteTotal,
   prunedTotal: qualityTelemetry.prunedTotal,
+  legacyUpgradedTotal: qualityTelemetry.legacyUpgradedTotal,
   lastPassAt: qualityTelemetry.lastPassAt,
   lastImprovedAt: qualityTelemetry.lastImprovedAt,
   recentImprovements: qualityTelemetry.recentImprovements.slice(0, QUALITY_RECENT_LIMIT)
@@ -4420,21 +4457,25 @@ async function rewriteQuestionForQuality({ model, question, ctx, passage }) {
   questionType: question.questionType,
   questionAngle: question.questionAngle
  };
+ // Eski sürümde yazılmış 4 şıklı kayıt: soru aynı kalır, şıklar bir çeldirici daha eklenerek 5'e tamamlanır.
+ const legacyNote = isLegacyOptions(question)
+  ? `\n\nÖNEMLİ: MEVCUT SORU eski 4 şıklı biçimdedir. Soru kökünü ve mevcut 4 şıkkı koru; aynı kavram ailesinden, KONU KAYNAĞI'na göre KESİN YANLIŞ BİR çeldirici daha ekleyerek şıkları ${OPTION_COUNT}'e tamamla. Yeni çeldirici ikinci bir doğru cevap olmamalı ve diğer şıklarla benzer uzunlukta olmalı.`
+  : '';
  const prompt = `Sen ÖSYM/AÖF soru editörüsün. Aşağıda kitabın aynı ünitesinden çıkmış, tek doğru cevaplı çoktan seçmeli bir soru ve onun dayandığı KONU KAYNAĞI verilmiştir. Görevin: BU SORUYU AYNI KAVRAMI ve AYNI DOĞRU CEVABI koruyarak ölçülebilir biçimde DAHA KALİTELİ yeniden yazmak.
 
-KURAL 1 (AYNI DOĞRU CEVAP): Doğru cevabın kavramı birebir korunur; "answer" alanı, yeni ürettiğin 4 seçeneğin İÇİNDE aynen yer alır.
-KURAL 2 (ÇELDİRİCİLER): Dört şık da aynı kavram ailesinden, gerçek aday yanılgılarına dayanır ve birbirine yakın uzunlukta (en uzun ≤ 1.6x en kısa) ve aynı edâdadır; "yukarıdakilerin hepsi", "hiçbiri", "yalnız I ve II" gibi maddeler YASAKTIR.
+KURAL 1 (AYNI DOĞRU CEVAP): Doğru cevabın kavramı birebir korunur; "answer" alanı, yeni ürettiğin 5 seçeneğin İÇİNDE aynen yer alır; "options" TAM 5 farklı metindir.
+KURAL 2 (ÇELDİRİCİLER): Beş şık da aynı kavram ailesinden, gerçek aday yanılgılarına dayanır ve birbirine yakın uzunlukta (en uzun ≤ 1.6x en kısa) ve aynı edâdadır; "yukarıdakilerin hepsi", "hiçbiri", "yalnız I ve II" gibi maddeler YASAKTIR.
 KURAL 3 (KÖK): Soru kökü tek bir soru sorar; ≤ 220 karakterdir; olumsuzluk eki varsa kök bunu "değildir/söylenemez/yanlıştır" gibi açıkça belirtir.
 KURAL 4 (KANIT): "evidence" alanı, aşağıdaki KONU KAYNAĞI'ndan BİREBİR en az 15 karakterlik alıntıdır; kaynakta olmayan hiçbir bilgi kanıtlanmış sayılamaz.
 KURAL 5 (AÇIKLAMA): "explanation" en fazla 4 cümlede neden doğru cevabın doğru, çeldiricilerin neden yanlış olduğunu açıklar.
 KURAL 6: "difficulty" kolay|orta|zor, "questionType" kavram|vaka|karsilastirma|neden_sonuc|istisna|uygulama|en_iyi_secim, "questionAngle" dogrudan_tanim|ters_eleme_istisna|saha_vakasi|karsilastirmali_tuzak|surpriz_baglam değerlerinden biri olmalı.
-Yalnızca JSON döndür: {"topic":"...","question":"...","options":["a","b","c","d"],"answer":"...","explanation":"...","evidence":"...","difficulty":"orta","questionType":"kavram","questionAngle":"dogrudan_tanim","bloomLevel":"hatırlama|kavrama|uygulama|analiz|sentez|değerlendirme"}
+Yalnızca JSON döndür: {"topic":"...","question":"...","options":["a","b","c","d","e"],"answer":"...","explanation":"...","evidence":"...","difficulty":"orta","questionType":"kavram","questionAngle":"dogrudan_tanim","bloomLevel":"hatırlama|kavrama|uygulama|analiz|sentez|değerlendirme"}
 
 Kitap: ${ctx.book} · Ünite: ${ctx.unit} (${passage?.heading || 'Ünite özeti'})
 KONU KAYNAĞI: ${sourceText}
 
 MEVCUT SORU (iyileştirilecek):
-${JSON.stringify(current, null, 1)}`;
+${JSON.stringify(current, null, 1)}${legacyNote}`;
  const { parsed } = await runModel(model, prompt, 0.55, null, 800, { fastThink: true, botRole: 'generator' });
  if (!parsed || typeof parsed !== 'object') return null;
  return normalizeDraft(parsed, `${passage?.text || ''}\n${ctx?.text || ''}`).draft;
@@ -4494,10 +4535,13 @@ async function qualityImprovementPass() {
    .sort((a, b) => a.score - b.score);
   if (!candidates.length) return;
   const weak = candidates.filter(x => x.score < QUALITY_TARGET_SCORE);
+  // Eski 4 şıklı kayıtlar önce ele alınır: 5 şıkka tamamlanır (soru silinmez, yerinde yükseltilir).
+  const legacy = candidates.filter(x => isLegacyOptions(x.q));
   // Havuz tamamen hedef skordaysa bile en zayıf soru 3 geçişten birinde cilalanır (sürekli iyileştirme).
-  if (!weak.length && qualityLoopPasses % 3 !== 0) return;
-  const target = weak[0] || candidates[0];
+  if (!legacy.length && !weak.length && qualityLoopPasses % 3 !== 0) return;
+  const target = legacy[0] || weak[0] || candidates[0];
   const { q, score: oldScore } = target;
+  const legacyUpgrade = isLegacyOptions(q);
 
   qualityImproveBusy = true;
   qualityAttemptsRemember(q.id);
@@ -4560,7 +4604,9 @@ async function qualityImprovementPass() {
 
    const newScore = poolCurator.scoreQuestion(record, null, 0);
    record.curatorScore = newScore;
-   if (newScore < oldScore + QUALITY_MIN_GAIN) {
+   // 4 → 5 şık yükseltmesinde puan kazancı aranmaz: biçimin güncellenmesi başlı başına kazançtır.
+   if (legacyUpgrade) record.upgradedFromLegacy = true;
+   if (!legacyUpgrade && newScore < oldScore + QUALITY_MIN_GAIN) {
     qualityTelemetry.rejectedRewriteTotal += 1;
     await appendTrace({ type: 'quality_rewrite_rejected', unitId: ctx.id, question: record.question, reason: `no_gain_${oldScore}_to_${newScore}` }).catch(() => {});
     return;
@@ -4574,6 +4620,7 @@ async function qualityImprovementPass() {
     await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
    });
    qualityTelemetry.improvedTotal += 1;
+   if (legacyUpgrade) qualityTelemetry.legacyUpgradedTotal += 1;
    qualityTelemetry.lastImprovedAt = new Date().toISOString();
    qualityTelemetry.recentImprovements = [
     { id: record.id, unitId: record.unitId, book: record.book, unit: record.unit, topic: record.topic, question: String(record.question || '').slice(0, 140), before: oldScore, after: newScore, at: qualityTelemetry.lastImprovedAt },
@@ -4843,8 +4890,8 @@ export function ollamaPlugin() {
       const question = typeof input?.question === 'string' ? input.question.trim() : '';
       const answer = typeof input?.answer === 'string' ? input.answer.trim() : '';
       const options = Array.isArray(input?.options) ? input.options.filter(o => typeof o === 'string' && o.trim()).map(o => o.trim()) : [];
-      if (question.length < 10 || !answer || options.length < 4) {
-       return respond(res, 400, { error: 'Yeniden yazmak için soru, doğru cevap ve 4 seçenek gerekli.' });
+      if (question.length < 10 || !answer || options.length < LEGACY_OPTION_COUNT) {
+       return respond(res, 400, { error: 'Yeniden yazmak için soru, doğru cevap ve en az 4 seçenek gerekli.' });
       }
       const unitId = typeof input?.unitId === 'string' && input.unitId.trim() ? input.unitId.trim() : '';
       const ctx = contexts.find(c => c.id === unitId) || null;
@@ -4861,7 +4908,7 @@ export function ollamaPlugin() {
        return respond(res, 200, { ok: true, ...deterministic });
       }
       try {
-       const prompt = `Aşağıdaki dört seçenekli çoktan seçmeli sorunun YALNIZCA SORU KÖKÜNÜ, aynı bilgiyi ölçecek biçimde farklı ve doğal Türkçeyle yeniden yaz. Kurallar:\n- Doğru cevabı ve seçeneklerin METNİNİ asla değiştirme, yeni seçenek uydurma.\n- Soru kökündeki anlamı, kavramı ve olumsuzluk/olumsuzluk yokluğunu birebir koru.\n- Farklı kalıp kullan: "Aşağıdakilerden hangisi X?" yerine "X aşağıdakilerden hangisidir?" gibi.\n- SADECE JSON döndür: {"question": "..."}\n\nSoru: ${question}\nDoğru cevap: ${answer}\nSeçenekler: ${JSON.stringify(options)}`;
+       const prompt = `Aşağıdaki çoktan seçmeli sorunun YALNIZCA SORU KÖKÜNÜ, aynı bilgiyi ölçecek biçimde farklı ve doğal Türkçeyle yeniden yaz. Kurallar:\n- Doğru cevabı ve seçeneklerin METNİNİ asla değiştirme, yeni seçenek uydurma.\n- Soru kökündeki anlamı, kavramı ve olumsuzluk/olumsuzluk yokluğunu birebir koru.\n- Farklı kalıp kullan: "Aşağıdakilerden hangisi X?" yerine "X aşağıdakilerden hangisidir?" gibi.\n- SADECE JSON döndür: {"question": "..."}\n\nSoru: ${question}\nDoğru cevap: ${answer}\nSeçenekler: ${JSON.stringify(options)}`;
        const raw = await runModel(model, prompt, 0.3, null, 220);
        const parsed = raw?.parsed && typeof raw.parsed === 'object' ? raw.parsed : null;
        const rewritten = typeof parsed?.question === 'string' ? parsed.question.trim() : '';
@@ -5111,6 +5158,7 @@ export function ollamaPlugin() {
        rejected: items.filter(x => x.status === 'rejected').length,
        questionCapacity: QUESTION_POOL_CAPACITY,
        maxQuestionsStored: MAX_QUESTIONS,
+       optionFormat: optionFormatStats(items),
        autonomousMode: true,
        qualityLoop: getQualityLoopSnapshot(),
        difficultyCounts,

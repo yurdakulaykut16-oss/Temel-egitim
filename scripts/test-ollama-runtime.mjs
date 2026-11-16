@@ -24,7 +24,7 @@ test('ollama-client: model bir kez yüklenir, num_ctx sabit, keep_alive > 0, ak�
   for (const prompt of prompts) {
    const r = await client.generate({ model: 'qwen3:8b', prompt, numPredict: 300 });
    assert.equal(typeof r.parsed, 'object');
-   assert.ok(Array.isArray(r.parsed.options) && r.parsed.options.length === 4);
+   assert.ok(Array.isArray(r.parsed.options) && r.parsed.options.length === 5);
    assert.ok(r.metrics.evalTokens > 0);
   }
   assert.equal(sim.stats.loadsByModel['qwen3:8b'], 1, 'prompt uzunluğu değişse de model yeniden yüklenmemeli');

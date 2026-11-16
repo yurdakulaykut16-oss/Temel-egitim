@@ -93,7 +93,7 @@ export class MultiFrameworkAgentOrchestrator {
   nodesVisited.push({
    node: 'syllabus_planner',
    stateDelta: { angle: 'karsilastirmali_tuzak', bloomLevel: 'Analiz' },
-   output: `Müfredat planlayıcı düğümü ÖSYM Analiz düzeyi + 4 seçenekli ayırt edicilik planı çıkardı.`
+   output: `Müfredat planlayıcı düğümü ÖSYM Analiz düzeyi + 5 seçenekli ayırt edicilik planı çıkardı.`
   });
 
   graphState.draftScore = 91;

@@ -12,7 +12,8 @@ const BMI_CLASSES = [
 ];
 
 const bmiClass = (value: number) => BMI_CLASSES.find(c => value < c.max) || BMI_CLASSES[BMI_CLASSES.length - 1];
-const otherClasses = (value: number) => BMI_CLASSES.filter(c => c.label !== bmiClass(value).label).slice(0, 3);
+// Uygulama 5 şıklıdır: doğru sınıfın dışındaki sınıflardan 4 çeldirici alınır.
+const otherClasses = (value: number) => BMI_CLASSES.filter(c => c.label !== bmiClass(value).label).slice(0, 4);
 
 /**
  * VKİ alıştırmaları: birbirinin aynısı 100 hesaplama sorusu yerine, farklı soru
@@ -37,7 +38,7 @@ export function bmiExercises(base: Unit): Unit[] {
         ...base,
         question: `${weight} kg ağırlığında ve ${m(height)} m boyunda bir kişinin VKİ değeri, bir ondalık basamağa yuvarlandığında kaçtır?`,
         answer: `${fmt(value)} kg/m²`,
-        wrong: [value + 2, value + 4, Math.max(1, value - 2)].map(n => `${fmt(n)} kg/m²`),
+        wrong: [value + 2, value + 4, Math.max(1, value - 2), value + 6].map(n => `${fmt(n)} kg/m²`),
         key: `${baseKey} Bu değer “${cls.label}” aralığındadır.`
       };
     }
@@ -63,7 +64,7 @@ export function bmiExercises(base: Unit): Unit[] {
       ...base,
       question: `VKİ değeri ${fmt(value)} kg/m² olan ve boyu ${m(height)} m olarak ölçülen bir bireyin ağırlığı yaklaşık kaç kilogramdır?`,
       answer: `${weight} kg`,
-      wrong: [weight - 10, weight + 10, weight + 18].map(n => `${Math.max(30, n)} kg`),
+      wrong: [weight - 10, weight + 10, weight + 18, weight + 26].map(n => `${Math.max(30, n)} kg`),
       key: `Ağırlık = VKİ × boy² = ${fmt(value)} × (${m(height)} × ${m(height)}) ≈ ${weight} kg.`
     };
   };

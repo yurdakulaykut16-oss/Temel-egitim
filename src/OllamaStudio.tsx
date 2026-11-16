@@ -67,6 +67,7 @@ type Status = {
  curator?: CuratorReport;
  autoRunning: boolean; autoConcurrency: number; autoTimeoutMs: number;
  questionCapacity?: number; maxQuestionsStored?: number;
+ optionFormat?: {optionCount: number; currentFormat: number; legacyFormat: number; legacySuperseded?: number; legacyUpgraded?: number};
  questionIntervalMs?: number;
  modelInferenceConcurrency?: number;
  modelInferenceQueue?: {maxConcurrent: number; active: {label: string; startedAt: number} | null; queued: number};
@@ -306,6 +307,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     <div className="engine-num">
      <strong>{status?.approved ?? 0}</strong>
      <small>onaylı soru · hedef çıta {status?.questionCapacity ?? 30000} soruluk havuz</small>
+     {(status?.optionFormat?.legacyFormat ?? 0) > 0 && <small title="Önceki sürümle üretilmiş 4 şıklı sorular silinmez ama üretim planına sayılmaz; kalite iyileştirme motoru bunları sırayla 5 şıkka tamamlar.">bunların {status?.optionFormat?.legacyFormat} tanesi eski 4 şıklı · plana sayılmaz, 5 şıkka tamamlanıyor</small>}
     </div>
     <div className="progress engine-pool-bar" aria-label={`Havuz doluluk: %${poolPct}`}><div style={{width: `${poolPct}%`, background: '#79bd48'}}/></div>
     <ul className="engine-meta">
@@ -510,7 +512,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda dört şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
+     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">
@@ -664,7 +666,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
       </div>
       {q.paragraph && <blockquote className="question-paragraph">{q.paragraph}</blockquote>}
       <h3>{q.question}</h3>
-      <ol>
+      <ol type="A">
        {q.options.map((o, i) => (
         <li key={i} className={o === q.answer ? 'right-option' : ''}>
          {o}{o === q.answer ? ' ✓' : ''}

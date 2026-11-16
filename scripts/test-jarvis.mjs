@@ -197,7 +197,7 @@ test('JARVIS + Qwen Code: deneyim hafızası, kesintisiz üretim, Qwen Coder & C
   } else {
    result = {
     question: 'Fiziksel egzersizi günlük hareketten ayıran en temel iki nitelik nedir?',
-    options: ['Planlı ve tekrarlı olma', 'Yalnızca yüklenmenin artırılması', 'Sadece dinlenmeye dayalı olma', 'Rastgele ve düzensiz olma'],
+    options: ['Planlı ve tekrarlı olma', 'Yalnızca yüklenmenin artırılması', 'Sadece dinlenmeye dayalı olma', 'Rastgele ve düzensiz olma', 'Kısa süreli ve yoğun olma'],
     answer: 'Planlı ve tekrarlı olma',
     explanation: 'Egzersiz düzenli, planlı ve tekrarlı bir etkinliktir.',
     evidence: 'Egzersiz planlı ve tekrarlıdır',

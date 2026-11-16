@@ -27,7 +27,8 @@ export function makeOptions(tag, text = '') {
   `Doğru kavram ${tag}: ${pick(0)} ile ${pick(1)} birlikte uygulanması`,
   `Eksik yaklaşım ${tag}: ${pick(1)} olmadan yalnız ${pick(2)} uygulanması`,
   `Yanlış bağlam ${tag}: ${pick(2)} yerine ${pick(3)} ile sınırlandırılması`,
-  `Aşırı yorum ${tag}: ${pick(3)} ölçütünün tümden yok sayılması`
+  `Aşırı yorum ${tag}: ${pick(3)} ölçütünün tümden yok sayılması`,
+  `Ters sıralama ${tag}: ${pick(4)} adımının ${pick(0)} önüne alınması`
  ];
 }
 
@@ -131,7 +132,7 @@ export function createFakeOllama({
   }
   if (isSloppy) {
    // İçerik aynı; yalnızca biçim gerçek küçük modellerdeki gibi dağınık.
-   out.options = out.options.map((o, i) => `${'ABCD'[i]}) ${o}`);
+   out.options = out.options.map((o, i) => `${'ABCDE'[i]}) ${o}`);
    out.answer = 'A';
    const w = sentence.split(/\s+/);
    out.evidence = `"${w.slice(0, Math.max(6, w.length - 1)).join(' ')}"`; // tırnaklı + son kelime eksik
@@ -154,7 +155,7 @@ export function createFakeOllama({
    return {
     evidence: evidence.split(/\s+/).slice(1).join(' '),
     reason: 'Metin bu seçeneği doğrudan destekliyor.',
-    answer: 'ABCD'[Math.max(0, options.indexOf(answer))],
+    answer: 'ABCDE'[Math.max(0, options.indexOf(answer))],
     singleCorrect: 'true', dualAnswerRisk: 'false', secondBestOption: '',
     supported: 'true', distractorPlausible: 'true', qualityOk: 'true',
     qualityScore: '5', examPotential: '4',

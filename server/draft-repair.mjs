@@ -23,25 +23,25 @@ function tokens(s) {
  return normTr(s).split(' ').filter(w => w.length >= 3 && !STOP.has(w)).map(w => (w.length > 5 ? w.slice(0, 5) : w));
 }
 
-const OPTION_LABEL_RE = /^\s*(?:\(?([A-Da-d])\)|([A-Da-d])[.):\-]|\(?([1-4])\)|([1-4])[.):\-])\s+/;
+const OPTION_LABEL_RE = /^\s*(?:\(?([A-Ea-e])\)|([A-Ea-e])[.):\-]|\(?([1-5])\)|([1-5])[.):\-])\s+/;
 
-/** "A) metin" / "1. metin" biçimindeki şık etiketlerini (dört şıkta da varsa) temizler. */
+/** "A) metin" / "1. metin" biçimindeki şık etiketlerini (bütün şıklarda varsa) temizler. */
 export function stripOptionLabels(options) {
- if (!Array.isArray(options) || options.length !== 4 || options.some(o => typeof o !== 'string')) return options;
+ if (!Array.isArray(options) || options.length < 2 || options.length > 5 || options.some(o => typeof o !== 'string')) return options;
  if (!options.every(o => OPTION_LABEL_RE.test(o))) return options;
  const stripped = options.map(o => o.replace(OPTION_LABEL_RE, '').trim());
- // Etiketler A,B,C,D / 1,2,3,4 sırasında değilse dokunma (şıkların kendisi olabilir: "1 dakika").
+ // Etiketler A,B,C,D,E / 1,2,3,4,5 sırasında değilse dokunma (şıkların kendisi olabilir: "1 dakika").
  const labels = options.map(o => {
   const m = o.match(OPTION_LABEL_RE);
   return (m[1] || m[2] || m[3] || m[4] || '').toUpperCase();
  });
  const seq = labels.join('');
- if (seq !== 'ABCD' && seq !== '1234') return options;
+ if (seq !== 'ABCDE'.slice(0, options.length) && seq !== '12345'.slice(0, options.length)) return options;
  return stripped.every(o => o.length >= 1) ? stripped : options;
 }
 
 /**
- * Modelin "answer" alanını dört şıktan birine eşler.
+ * Modelin "answer" alanını şıklardan birine eşler.
  * Sırasıyla: birebir → normalleştirilmiş eşitlik → harf/sıra numarası → etiketli metin → tekil kapsama.
  * Eşlenemezse null.
  */
@@ -60,12 +60,12 @@ export function resolveOptionAnswer(answer, options) {
  let idx = normOpts.indexOf(n);
  if (idx !== -1) return options[idx];
  // "B", "b)", "(C)", "Seçenek D", "3"
- const letter = raw.match(/^(?:seçenek|şık|cevap|yanıt)?\s*\(?([A-Da-d])\)?[.):]?$/i);
+ const letter = raw.match(/^(?:seçenek|şık|cevap|yanıt)?\s*\(?([A-Ea-e])\)?[.):]?$/i);
  if (letter) {
   idx = letter[1].toUpperCase().charCodeAt(0) - 65;
   return idx < options.length ? options[idx] : null;
  }
- const digit = raw.match(/^\(?([1-4])\)?[.):]?$/);
+ const digit = raw.match(/^\(?([1-5])\)?[.):]?$/);
  if (digit) {
   // Şıkların kendisi sayıysa ("3") sayı bir şık metnidir; yukarıda yakalanmış olurdu.
   idx = Number(digit[1]) - 1;
@@ -152,7 +152,7 @@ export function normalizeDraft(raw, sourceText = '') {
  // options: nesne ({A:..,B:..}) ya da {text:..} dizisi gelirse düz metin dizisine çevir.
  if (d.options && !Array.isArray(d.options) && typeof d.options === 'object') {
   const keys = Object.keys(d.options);
-  if (keys.length === 4) { d.options = keys.sort().map(k => d.options[k]); fixes.push('options:object'); }
+  if (keys.length === 4 || keys.length === 5) { d.options = keys.sort().map(k => d.options[k]); fixes.push('options:object'); }
  }
  if (Array.isArray(d.options)) {
   d.options = d.options.map(o => (o && typeof o === 'object' ? (o.text ?? o.option ?? o.value ?? '') : o)).map(o => (typeof o === 'number' ? String(o) : o)).map(clean);
@@ -166,7 +166,7 @@ export function normalizeDraft(raw, sourceText = '') {
  if (typeof d.paragraph === 'string') d.paragraph = d.paragraph.trim();
 
  // answer → şıklardan biri
- if (Array.isArray(d.options) && d.options.length === 4) {
+ if (Array.isArray(d.options) && d.options.length >= 2) {
   const resolved = resolveOptionAnswer(d.answer, d.options);
   if (resolved && resolved !== d.answer) { d.answer = resolved; fixes.push('answer:mapped'); }
  }

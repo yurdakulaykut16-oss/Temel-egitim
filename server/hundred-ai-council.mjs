@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { isStoredOptionCount } from './option-count.mjs';
 /**
  * 100 Yapay Zekâ Ajanı Konseyi + Katmanlı 4-Aşamalı Üretim + Qwen Code İdiyomatik Evrim Motoru
  *
@@ -450,8 +451,8 @@ export class HundredAiCouncil {
   const highlights = [];
 
   for (const q of questions) {
-   const opts = Array.isArray(q?.options) && q.options.length === 4 ? q.options : (q?.answer && Array.isArray(q?.wrong) ? [q.answer, ...q.wrong] : null);
-   if (!q || q.status === 'rejected' || !q.question || !opts || opts.length !== 4) continue;
+   const opts = Array.isArray(q?.options) && isStoredOptionCount(q.options.length) ? q.options : (q?.answer && Array.isArray(q?.wrong) ? [q.answer, ...q.wrong] : null);
+   if (!q || q.status === 'rejected' || !q.question || !opts || !isStoredOptionCount(opts.length)) continue;
    const evalRes = this.solveQuestionWith100AIs({ ...q, options: opts });
    if (!evalRes) continue;
    tierCounts[evalRes.difficultyTier]++;

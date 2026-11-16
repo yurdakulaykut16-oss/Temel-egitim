@@ -26,7 +26,8 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
    `Doğru kavram ${tag}: ${pick(0)} ile ${pick(1)} birlikte uygulanması`,
    `Eksik yaklaşım ${tag}: ${pick(1)} olmadan yalnız ${pick(2)} uygulanması`,
    `Yanlış bağlam ${tag}: ${pick(2)} yerine ${pick(3)} ile sınırlandırılması`,
-   `Aşırı yorum ${tag}: ${pick(3)} ölçütünün tümden yok sayılması`
+   `Aşırı yorum ${tag}: ${pick(3)} ölçütünün tümden yok sayılması`,
+   `Ters sıralama ${tag}: ${pick(4)} adımının ${pick(0)} önüne alınması`
   ];
  };
  const hash=str=>{let h=0;for(const ch of String(str))h=(h*31+ch.charCodeAt(0))|0;return h};

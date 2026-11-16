@@ -1,3 +1,4 @@
+import { isLegacyOptions } from './option-count.mjs';
 // ÜRETİM PLANI
 // ---------------------------------------------------------------------------
 // Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Kitabın bölümlerine sırayla, TUR TUR
@@ -126,6 +127,8 @@ export function countApproved(items) {
  const counts = new Map();
  for (const it of items || []) {
   if (!it || it.status !== 'approved' || !PLAN_DIFFICULTIES.includes(it.difficulty)) continue;
+  // Eski 4 şıklı kayıtlar plana sayılmaz: plan 5 şıklı sorularla dolar.
+  if (isLegacyOptions(it)) continue;
   const key = stepKey(it.unitId, it.difficulty);
   counts.set(key, (counts.get(key) || 0) + 1);
  }

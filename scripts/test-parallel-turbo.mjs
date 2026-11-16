@@ -44,7 +44,8 @@ test('paralel yuvalar: 4 eşzamanlı üretim, tam çift-hakem doğrulaması, /co
     `Doğru yaklaşım ${tag}: kademeli planlı yüklenme ilkesidir`,
     `Yanlış yaklaşım ${tag}: yükün hiç artırılmadığı durağan plandır`,
     `Eksik yaklaşım ${tag}: yalnız toparlanma günlerinden oluşur`,
-    `Rastgele yaklaşım ${tag}: bireysel eşik ölçülmez`
+    `Rastgele yaklaşım ${tag}: bireysel eşik ölçülmez`,
+    `Sabit yaklaşım ${tag}: herkese aynı yük uygulanır`
    ];
    let result;
    if (prompt.includes('soru denetçisisin')) {

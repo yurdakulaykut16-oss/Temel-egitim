@@ -26,7 +26,7 @@ test('book-style-questions.json covers all 29 units cleanly without PDF noise', 
 
  for (const q of data.questions) {
   assert.ok(q.question && q.question.length >= 12);
-  assert.ok(Array.isArray(q.options) && q.options.length === 4);
+  assert.ok(Array.isArray(q.options) && q.options.length === 5);
   assert.ok(q.options.includes(q.answer), `Answer missing from options in ${q.id}`);
   assert.ok(!/yanıtınız\s+yanlış\s+ise|neler\s+öğrendik\??\s*$/i.test(q.question + ' ' + q.options.join(' ')), `Footer noise leaked into ${q.id}`);
  }
