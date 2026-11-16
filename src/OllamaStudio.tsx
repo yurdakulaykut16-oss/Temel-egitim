@@ -66,8 +66,8 @@ type Status = {
  difficultyCounts?: {kolay: number; orta: number; zor: number};
  curator?: CuratorReport;
  autoRunning: boolean; autoConcurrency: number; autoTimeoutMs: number;
- questionCapacity?: number; maxQuestionsStored?: number;
- optionFormat?: {optionCount: number; currentFormat: number; legacyFormat: number; legacySuperseded?: number; legacyUpgraded?: number};
+ questionCapacity?: number; maxQuestionsStored?: number; poolRevision?: string;
+ optionFormat?: {allowed: number[]; fourOption: number; fiveOption: number};
  questionIntervalMs?: number;
  modelInferenceConcurrency?: number;
  modelInferenceQueue?: {maxConcurrent: number; active: {label: string; startedAt: number} | null; queued: number};
@@ -127,13 +127,24 @@ const fmtTime = (iso?: string | null) => {
 
 const api = '/api/ollama';
 
-export async function getGenerated(): Promise<GeneratedQuestion[]> {
- const res = await fetch(`${api}/questions`);
+// Test merkezi için onaylı soruların sade listesi. Havuz on binlerce soruya ulaşabildiği için liste
+// yalnızca havuz değiştiyse indirilir: `knownRevision` sunucudaki sürümle aynıysa null döner.
+export async function getQuizPool(knownRevision?: string | null): Promise<{revision: string; items: GeneratedQuestion[]} | null> {
+ const res = await fetch(`${api}/questions?fields=quiz${knownRevision ? `&revision=${encodeURIComponent(knownRevision)}` : ''}`);
+ if (!res.ok) throw Error('Yerel soru servisine ulaşılamadı.');
+ const data = await res.json();
+ return data.unchanged ? null : {revision: data.revision, items: data.items};
+}
+
+// Stüdyodaki kart listesi: seçili sekmenin en yeni soruları (havuzun tamamı indirilmez).
+const STUDIO_LIST_LIMIT = 60;
+async function getLatest(view: 'approved' | 'rejected'): Promise<GeneratedQuestion[]> {
+ const res = await fetch(`${api}/questions?status=${view}&limit=${STUDIO_LIST_LIMIT}`);
  if (!res.ok) throw Error('Yerel soru servisine ulaşılamadı.');
  return (await res.json()).items;
 }
 
-export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items: GeneratedQuestion[]) => void}) {
+export function OllamaStudio({read}: {read: string[]}) {
  const [status, setStatus] = useState<Status | null>(null);
  const [chosenModel, setChosenModel] = useState('');
  const [chosenVerifier, setChosenVerifier] = useState('');
@@ -146,20 +157,30 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  const [timeoutInput, setTimeoutInput] = useState('');
  const [showCoverage, setShowCoverage] = useState(false);
  const mounted = useRef(true);
+ const viewRef = useRef(view);
+ const listKey = useRef('');
 
+ // Durum ve denetim özeti her seferinde; soru kartları yalnızca havuz ya da sekme değiştiğinde yenilenir.
  const refresh = async () => {
   try {
-   const [res, questions, auditResponse] = await Promise.all([
+   const [res, auditResponse] = await Promise.all([
     fetch(`${api}/status`),
-    getGenerated(),
     fetch(`${api}/audit`)
    ]);
    if (!res.ok || !auditResponse.ok) throw Error('Yerel servis yanıt vermedi.');
+   const nextStatus: Status = await res.json();
+   const nextAudit = await auditResponse.json();
    if (!mounted.current) return;
-   setStatus(await res.json());
-   setAudit(await auditResponse.json());
-   setItems(questions);
-   onChange(questions);
+   setStatus(nextStatus);
+   setAudit(nextAudit);
+   const wanted = viewRef.current;
+   const key = `${wanted}|${nextStatus.poolRevision ?? ''}`;
+   if (key !== listKey.current || !nextStatus.poolRevision) {
+    const latest = await getLatest(wanted);
+    if (!mounted.current || viewRef.current !== wanted) return;
+    listKey.current = key;
+    setItems(latest);
+   }
   } catch {
    if (mounted.current) setError('Yerel soru servisine ulaşılamadı. Uygulamayı Ollama ile aynı bilgisayarda npm run dev komutuyla başlat.');
   }
@@ -266,7 +287,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
  };
 
  const filtered = items.filter(q => q.status === view);
- const completedWithQuestions = new Set(items.filter(q => q.status === 'approved' && read.includes(q.unitId)).map(q => q.unitId)).size;
+ const completedWithQuestions = read.filter(id => (status?.coverage?.perUnit?.[id]?.questions ?? 0) > 0).length;
+ const viewCount = {approved: status?.approved ?? 0, rejected: status?.rejected ?? 0};
  const tel = status?.telemetry;
  const lineup = status?.lineup;
  const plan = status?.plan?.enabled ? status.plan : null;
@@ -306,8 +328,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </div>
     <div className="engine-num">
      <strong>{status?.approved ?? 0}</strong>
-     <small>onaylı soru · hedef çıta {status?.questionCapacity ?? 30000} soruluk havuz</small>
-     {(status?.optionFormat?.legacyFormat ?? 0) > 0 && <small title="Önceki sürümle üretilmiş 4 şıklı sorular silinmez ama üretim planına sayılmaz; kalite iyileştirme motoru bunları sırayla 5 şıkka tamamlar.">bunların {status?.optionFormat?.legacyFormat} tanesi eski 4 şıklı · plana sayılmaz, 5 şıkka tamamlanıyor</small>}
+     <small>onaylı soru · hedef çıta {status?.questionCapacity ?? 65000} soruluk havuz</small>
+     {status?.optionFormat && (status.optionFormat.fourOption + status.optionFormat.fiveOption) > 0 && <small>{status.optionFormat.fiveOption} soru 5 şıklı · {status.optionFormat.fourOption} soru 4 şıklı (ikisi de geçerli)</small>}
     </div>
     <div className="progress engine-pool-bar" aria-label={`Havuz doluluk: %${poolPct}`}><div style={{width: `${poolPct}%`, background: '#79bd48'}}/></div>
     <ul className="engine-meta">
@@ -557,7 +579,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
     </p>
     <p>
      Havuz: <b>{status?.count || 0}</b> üretildi ({status?.approved || 0} onaylı, {status?.rejected || 0} reddedilmiş) ·
-     Sınır: onaylı havuz {(status?.questionCapacity || 30000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 30000).toLocaleString('tr-TR')} ·
+     Sınır: onaylı havuz {(status?.questionCapacity || 65000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 65000).toLocaleString('tr-TR')} ·
      Soru başlatma aralığı: en az {(status?.questionIntervalMs || 2000) / 1000} sn ·
      Tamamlanan {read.length} ünitenin {completedWithQuestions} tanesinde hazır soru var.
     </p>
@@ -591,7 +613,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
   {curator && (
    <p className="manifest-line">
     🧹 <b>Havuz bakımı:</b> {curator.totalScans ? `${curator.totalScans} tarama` : 'Tarama bekleniyor'}{curator.avgCompositeScore !== undefined ? ` · ortalama skor ${curator.avgCompositeScore}/100` : ''} ·
-    {' '}{curator.nearDuplicatesFound ?? 0} yakın tekrar bulundu · bugüne kadar {curator.totalPrunedLifetime ?? 0} zayıf/tekrar soru temizlendi (havuz {(status?.questionCapacity || 30000).toLocaleString('tr-TR')} sınırında tutulur).
+    {' '}{curator.nearDuplicatesFound ?? 0} yakın tekrar bulundu · bugüne kadar {curator.totalPrunedLifetime ?? 0} zayıf/tekrar soru temizlendi (havuz {(status?.questionCapacity || 65000).toLocaleString('tr-TR')} sınırında tutulur).
    </p>
   )}
 
@@ -633,8 +655,8 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
 
   <div className="tabs studio-tabs">
    {([['approved', 'Hakemler Onayladı'], ['rejected', 'Hakemler Eledi']] as const).map(([v, label]) => (
-    <button key={v} className={view === v ? 'selected' : ''} onClick={() => setView(v)}>
-     {label} ({items.filter(x => x.status === v).length})
+    <button key={v} className={view === v ? 'selected' : ''} onClick={() => { viewRef.current = v; setView(v); setItems([]); listKey.current = ''; refresh(); }}>
+     {label} ({viewCount[v].toLocaleString('tr-TR')})
     </button>
    ))}
   </div>
@@ -643,7 +665,7 @@ export function OllamaStudio({read, onChange}: {read: string[]; onChange: (items
    <div className="empty"><p>Bu listede henüz soru yok.</p></div>
   ) : (
    <div className="generated-list">
-    {filtered.slice().reverse().slice(0, 60).map(q => (
+    {filtered.slice().reverse().slice(0, STUDIO_LIST_LIMIT).map(q => (
      <article className="generated-card" key={q.id}>
       <div className="eyebrow muted">
        {q.book} · {q.unit}

@@ -1,8 +1,22 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { isStoredOptionCount, isLegacyOptions } from './option-count.mjs';
-const norm = s => (typeof s === 'string' ? s : '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+import { isStoredOptionCount } from './option-count.mjs';
+const normRaw = s => (typeof s === 'string' ? s : '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+// Her taramada havuzdaki bütün şıklar normalleştirilir; büyük havuzda kısa metinlerin sonucu saklanır.
+const NORM_CACHE_LIMIT = 1_000_000;
+const normCache = new Map();
+const norm = s => {
+ if (typeof s !== 'string') return '';
+ if (s.length > 200) return normRaw(s);
+ let out = normCache.get(s);
+ if (out === undefined) {
+  if (normCache.size >= NORM_CACHE_LIMIT) normCache.clear();
+  out = normRaw(s);
+  normCache.set(s, out);
+ }
+ return out;
+};
 
 function tokenSet(text) {
  return new Set(norm(text).split(' ').filter(w => w.length >= 3));
@@ -10,8 +24,6 @@ function tokenSet(text) {
 
 // Yakın tekrar eşiği: bu oranın üzerindeki benzerlik "tıpatıp benzeri soru" sayılır.
 const DUP_LIMIT = 0.80;
-// Eski 4 şıklı kayıt 5 şıklı eşdeğerinin gerisinde kalsın: sınır aşılınca önce onlar elenir, iyileştirme önce onları ele alır.
-const LEGACY_OPTION_PENALTY = 12;
 
 function jaccardSim(aSet, bSet) {
  if (!aSet.size || !bSet.size) return 0;
@@ -129,13 +141,12 @@ export class PoolCuratorBot {
   if (evLen >= 30) score += 5;
   else if (evLen >= 18) score += 2;
 
-  // Güncel biçim 5 şıktır; eski 4 şıklı kayıtlar puan alır ama 5 şıklıların gerisinde kalır (bkz. aşağıdaki fark).
+  // 4 ve 5 şıklı sorular aynı ölçütle puanlanır.
   if (Array.isArray(q.options) && isStoredOptionCount(q.options.length)) {
    const lens = q.options.map(o => o.trim().length);
    const ratio = Math.max(...lens) / Math.max(1, Math.min(...lens));
    const meanL = lens.reduce((s, x) => s + x, 0) / lens.length;
    const stdL = Math.sqrt(lens.reduce((s, x) => s + ((x - meanL) ** 2), 0) / lens.length);
-   if (isLegacyOptions(q)) score -= LEGACY_OPTION_PENALTY;
    if (ratio <= 1.9 && stdL <= meanL * 0.25) score += 10;
    else if (ratio <= 2.3) score += 8;
    else if (ratio <= 3.0) score += 5;

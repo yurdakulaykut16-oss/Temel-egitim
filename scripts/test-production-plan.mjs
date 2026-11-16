@@ -12,7 +12,7 @@ const contexts = JSON.parse(readFileSync(new URL('../server/contexts.json', impo
 const q = (unitId, difficulty, extra = {}) => ({ unitId, difficulty, status: 'approved', ...extra });
 const many = (n, unitId, difficulty) => Array.from({ length: n }, () => q(unitId, difficulty));
 const DIFFS = ['kolay', 'orta', 'zor'];
-// Bütün turların sonunda bir bölümün her zorluğunda olması gereken soru sayısı (kota 50, 12 tur: 39 / 281 / 280).
+// Bütün turların sonunda bir bölümün her zorluğunda olması gereken soru sayısı (kota 50, 40 tur: 39 / 981 / 980).
 const CAP = d => bucketQuota(50, DEFAULT_PLAN_PASSES, DIFFS.indexOf(d));
 const everything = () => contexts.flatMap(c => DIFFS.flatMap(d => many(CAP(d), c.id, d)));
 
@@ -22,26 +22,30 @@ test('plan sırası: her bölüme uğrayışta 50 soru, zorluklar karışık; 1.
   for (let pass = 1; pass <= 14; pass++) assert.equal([0, 1, 2].reduce((n, d) => n + passShare(quota, pass, d), 0), quota, `kota ${quota}, ${pass}. tur`);
  }
  // 1. tur dengeli; sonra kolay gittikçe azalır ve 6. turdan itibaren hiç yazılmaz; kalan yarı yarıya orta + zor.
- assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 12].map(pass => [0, 1, 2].map(d => passShare(50, pass, d))),
-  [[17, 17, 16], [10, 20, 20], [6, 22, 22], [4, 23, 23], [2, 24, 24], [0, 25, 25], [0, 25, 25], [0, 25, 25]]);
- for (let pass = 2; pass <= 12; pass++) {
+ assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 12, 40].map(pass => [0, 1, 2].map(d => passShare(50, pass, d))),
+  [[17, 17, 16], [10, 20, 20], [6, 22, 22], [4, 23, 23], [2, 24, 24], [0, 25, 25], [0, 25, 25], [0, 25, 25], [0, 25, 25]]);
+ for (let pass = 2; pass <= DEFAULT_PLAN_PASSES; pass++) {
   assert.ok(passShare(50, pass, 0) < passShare(50, pass - 1, 0) || passShare(50, pass, 0) === 0, `${pass}. turda kolay azalmalı`);
   assert.ok(Math.abs(passShare(50, pass, 1) - passShare(50, pass, 2)) <= 1, `${pass}. turda orta ve zor yarı yarıya`);
  }
- assert.deepEqual(DIFFS.map(CAP), [39, 281, 280]);
- assert.equal(planConfigFromEnv({}).passes, 12);
+ assert.deepEqual(DIFFS.map(CAP), [39, 981, 980]);
+ // 12 turluk eski planın kovaları değişmedi: uzayan plan yalnızca yeni turlar ekler.
+ assert.deepEqual(DIFFS.map((_, d) => bucketQuota(50, 12, d)), [39, 281, 280]);
+ assert.equal(DEFAULT_PLAN_PASSES, 40);
+ assert.equal(planConfigFromEnv({}).passes, 40);
  assert.equal(planConfigFromEnv({ TEMPO_PLAN_PASSES: '3' }).passes, 3);
 
  const steps = buildPlanSteps(contexts, 50);
- // 1.-5. turlarda üç zorluk, 6.-12. turlarda iki zorluk (orta + zor).
- assert.equal(steps.length, contexts.length * (5 * 3 + 7 * 2));
- assert.equal(steps.reduce((n, s) => n + s.share, 0), contexts.length * 600, 'bölüm başına 600 soru');
+ // 1.-5. turlarda üç zorluk, 6.-40. turlarda iki zorluk (orta + zor).
+ assert.equal(steps.length, contexts.length * (5 * 3 + 35 * 2));
+ assert.equal(steps.reduce((n, s) => n + s.share, 0), contexts.length * 2000, 'bölüm başına 2.000 soru');
+ assert.equal(contexts.length * 2000, 58000);
  // 1. tur: bölüm sırası kitap sırasıdır ve HER bölümün kolay, orta ve zor hücresi vardır.
  const pass1 = steps.filter(s => s.pass === 1);
  assert.deepEqual(pass1.map(s => `${s.unitId}:${s.difficulty}`), contexts.flatMap(c => DIFFS.map(d => `${c.id}:${d}`)));
  assert.deepEqual(pass1.slice(0, 3).map(s => [s.from, s.share, s.quota]), [[0, 17, 17], [0, 17, 17], [0, 16, 16]]);
  assert.deepEqual(steps.filter(s => s.unitId === contexts[0].id && s.difficulty === 'kolay').map(s => [s.pass, s.from, s.quota]), [[1, 0, 17], [2, 17, 27], [3, 27, 33], [4, 33, 37], [5, 37, 39]]);
- assert.ok(steps.filter(s => s.pass === 12).every(s => s.quota === CAP(s.difficulty)), 'son turun sonunda her kova toplam kotasındadır');
+ assert.ok(steps.filter(s => s.pass === DEFAULT_PLAN_PASSES).every(s => s.quota === CAP(s.difficulty)), 'son turun sonunda her kova toplam kotasındadır');
  assert.equal(steps[0].bookNo, 1); assert.equal(steps[0].unitNo, 1);
  const firstOfBook2 = steps.find(s => s.book !== steps[0].book);
  assert.equal(firstOfBook2.bookNo, 2); assert.equal(firstOfBook2.unitNo, 1);
@@ -56,7 +60,7 @@ test('konu içi sıra: kolay → orta → zor → kolay …; konu 50 soruya ula�
  const [a, b] = contexts;
  let snap = planSnapshot({ contexts, items: [], quota: 50 });
  assert.equal(snap.current.key, stepKey(a.id, 'kolay'));
- assert.equal(snap.totalTarget, contexts.length * 600);
+ assert.equal(snap.totalTarget, contexts.length * 2000);
 
  // Tek hat: sorular sırayla onaylandıkça zorluk döner; ilk 50 sorunun tamamı 1. konudandır.
  const items = [];
@@ -316,7 +320,7 @@ test('özet penceresi: isteme özetin tamamı değil ilgili cümlenin çevresi k
 });
 
 test('ayarlar: varsayılan 50 soru; TEMPO_PLAN=0 kapatır; geçersiz değerler güvenli aralığa çekilir', () => {
- assert.deepEqual(planConfigFromEnv({}), { enabled: true, quota: 50, passes: 12, stuckLimit: 25 });
+ assert.deepEqual(planConfigFromEnv({}), { enabled: true, quota: 50, passes: 40, stuckLimit: 25 });
  assert.equal(planConfigFromEnv({ TEMPO_PLAN: '0' }).enabled, false);
  assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN_QUOTA: '20', TEMPO_PLAN_STUCK_LIMIT: '40', TEMPO_PLAN_PASSES: '5' }), { enabled: true, quota: 20, passes: 5, stuckLimit: 40 });
  assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN_QUOTA: 'abc', TEMPO_PLAN_STUCK_LIMIT: '0', TEMPO_PLAN_PASSES: '0' }), { enabled: true, quota: 50, passes: 1, stuckLimit: 2 });

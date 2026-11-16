@@ -1,10 +1,9 @@
-// Projenin tamamı 5 şıklıdır (A–E). Bu dosya şunları doğrular:
-//  1) Şık sayısı tek yerden yönetilir (server/option-count.mjs) ve yardımcılar tutarlıdır.
+// Bir soru 4 ya da 5 şıklı olabilir. Bu dosya şunları doğrular:
+//  1) Şık sayısı tek yerden yönetilir (server/option-count.mjs): 4 ve 5 geçerli, 3 ve 6 geçersiz.
 //  2) Hazır soru verileri (sabit banka, kitap soruları, paraleller, örnek sorular) 5 farklı şık taşır.
-//  3) Eski 4 şıklı havuz kayıtları üretim planına SAYILMAZ, ama silinmez.
-//  4) Üretim hattı: 4 ya da 6 şıklı taslak reddedilir; 5 şıklı taslak onaylanır ve aynı sorunun
-//     eski 4 şıklı sürümünün yerini alır.
-//  5) 4 şık için yazılmış kum havuzu kural kodları 5 şıklı adayla çalışmaya devam eder.
+//  3) 4 ve 5 şıklı onaylı sorular üretim planına birlikte sayılır.
+//  4) Üretim hattı: 3 ya da 6 şıklı taslak reddedilir; 4 şıklı da 5 şıklı da onaylanır.
+//  5) 4 şık için yazılmış kum havuzu kural kodları 5 şıklı adayla da çalışır.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -13,8 +12,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
- OPTION_COUNT, LEGACY_OPTION_COUNT, OPTION_LETTERS, DISTRACTOR_COUNT,
- isDraftOptionCount, isStoredOptionCount, isLegacyOptions, hasCurrentOptions, legacyProjections
+ OPTION_COUNT, MIN_OPTION_COUNT, OPTION_LETTERS, DISTRACTOR_COUNT, MIN_DISTRACTOR_COUNT,
+ isValidOptionCount, isDraftOptionCount, isStoredOptionCount, legacyProjections
 } from '../server/option-count.mjs';
 import { countApproved, stepKey } from '../server/production-plan.mjs';
 import { SandboxEvolver, GOLDEN_GOOD_CASES } from '../server/sandbox-evolver.mjs';
@@ -24,22 +23,19 @@ const norm = s => String(s || '').toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{
 const readJson = rel => JSON.parse(readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8'));
 const asList = j => (Array.isArray(j) ? j : (j.questions || j.samples || j.items || Object.values(j).find(Array.isArray)));
 
-test('şık sayısı tek kaynaktan gelir: 5 şık (A–E), eski kayıt 4 şık', () => {
+test('şık sayısı tek kaynaktan gelir: 4 ya da 5 şık geçerli, 3 ve 6 geçersiz', () => {
+ assert.equal(MIN_OPTION_COUNT, 4);
  assert.equal(OPTION_COUNT, 5);
- assert.equal(LEGACY_OPTION_COUNT, 4);
  assert.equal(OPTION_LETTERS, 'ABCDE');
+ assert.equal(MIN_DISTRACTOR_COUNT, 3);
  assert.equal(DISTRACTOR_COUNT, 4);
- assert.equal(isDraftOptionCount(5), true);
- assert.equal(isDraftOptionCount(4), false, 'Yeni taslakta 4 şık kabul edilmez');
- assert.equal(isDraftOptionCount(6), false);
- assert.equal(isStoredOptionCount(4), true, 'Kayıtlı eski soru 4 şıkla okunabilir');
- assert.equal(isStoredOptionCount(5), true);
- assert.equal(isStoredOptionCount(3), false);
- assert.equal(isStoredOptionCount(6), false);
- assert.equal(isLegacyOptions({ options: ['a', 'b', 'c', 'd'] }), true);
- assert.equal(isLegacyOptions({ options: ['a', 'b', 'c', 'd', 'e'] }), false);
- assert.equal(hasCurrentOptions({ options: ['a', 'b', 'c', 'd', 'e'] }), true);
- assert.equal(hasCurrentOptions({}), false);
+ for (const fn of [isValidOptionCount, isDraftOptionCount, isStoredOptionCount]) {
+  assert.equal(fn(4), true, '4 şık geçerli');
+  assert.equal(fn(5), true, '5 şık geçerli');
+  assert.equal(fn(3), false, '3 şık geçersiz');
+  assert.equal(fn(6), false, '6 şık geçersiz');
+  assert.equal(fn(undefined), false);
+ }
 
  // 5 şıklı aday, 4 şıklı iki görünüme ayrılır: ikisi de doğru cevabı taşır, birlikte tüm şıkları kapsar.
  const cand = { question: 'x', answer: 'c', options: ['a', 'b', 'c', 'd', 'e'] };
@@ -100,7 +96,7 @@ test('sabit soru kaynakları: her satır soru|doğru|4 yanlış|açıklama biçi
  assert.ok(lines >= 300, `En az 300 sabit soru satırı denetlenmeli, gelen ${lines}`);
 });
 
-test('eski 4 şıklı onaylı kayıtlar üretim planına sayılmaz', () => {
+test('4 ve 5 şıklı onaylı sorular üretim planına birlikte sayılır', () => {
  const five = ['a', 'b', 'c', 'd', 'e'];
  const four = ['a', 'b', 'c', 'd'];
  const items = [
@@ -111,9 +107,8 @@ test('eski 4 şıklı onaylı kayıtlar üretim planına sayılmaz', () => {
   { status: 'rejected', unitId: '0-0', difficulty: 'kolay', options: five, answer: 'a' }
  ];
  const counts = countApproved(items);
- const get = key => (counts instanceof Map ? counts.get(key) : counts[key]) || 0;
- assert.equal(get(stepKey('0-0', 'kolay')), 2, 'Yalnızca 5 şıklı onaylı sorular sayılmalı');
- assert.equal(get(stepKey('0-0', 'orta')), 0, 'Eski 4 şıklı soru plan hücresini doldurmamalı');
+ assert.equal(counts.get(stepKey('0-0', 'kolay')), 3, '4 ve 5 şıklı onaylı sorular birlikte sayılmalı');
+ assert.equal(counts.get(stepKey('0-0', 'orta')), 1, '4 şıklı soru plan hücresini doldurmalı');
 });
 
 test('4 şık için yazılmış kum havuzu kural kodu 5 şıklı adayla da çalışır', () => {
@@ -146,29 +141,34 @@ test('4 şık için yazılmış kum havuzu kural kodu 5 şıklı adayla da çal�
  }
 });
 
-test('üretim hattı: 4 ve 6 şıklı taslak reddedilir; 5 şıklı soru eski 4 şıklı sürümün yerini alır', async () => {
- const dir = mkdtempSync(join(tmpdir(), 'tempo-five-options-'));
+test('üretim hattı: 3 ve 6 şıklı taslak reddedilir; 4 şıklı da 5 şıklı da onaylanır ve plana sayılır', async () => {
+ const dir = mkdtempSync(join(tmpdir(), 'tempo-option-count-'));
  process.env.TEMPO_DATA_DIR = dir;
  process.env.TEMPO_DISABLE_AUTOLOOP = '1';
  process.env.TEMPO_OFFLINE_ONLY = '1';
  process.env.TEMPO_QUIET = '1';
 
- const answer = 'Planlı ve tekrarlı olması';
- const four = [answer, 'Tekrarlı fakat programsız olması', 'Yalnızca yüksek şiddette yapılması', 'Günlük yaşam akışında kendiliğinden oluşması'];
- const fifth = 'Kısa süreli ve tek seferlik olması';
- const stem = 'Fiziksel egzersizi günlük hareketten ayıran en temel iki nitelik nedir?';
- // Havuzda, önceki sürümle üretilmiş 4 şıklı onaylı bir soru ve başka bir üniteden ikinci bir eski kayıt var.
- const seed = (id, unitId, question) => ({
-  id, unitId, status: 'approved', difficulty: 'kolay', question, options: four, answer,
-  explanation: 'Egzersiz düzenli, planlı ve tekrarlı bir etkinliktir.', evidence: 'Egzersiz planlı ve tekrarlıdır',
-  topic: 'Egzersizin özellikleri', createdAt: new Date().toISOString()
- });
- writeFileSync(join(dir, 'questions.json'), JSON.stringify([
-  seed('legacy-same', '0-0', stem),
-  seed('legacy-other', '1-0', 'Düzenli egzersizin sağlık açısından ayırt edici iki niteliği hangi seçenekte verilmiştir?')
- ]));
+ const drafts = {
+  // 4 şıklı soru
+  four: {
+   question: 'Fiziksel egzersizi günlük hareketten ayıran en temel iki nitelik nedir?',
+   options: ['Planlı ve tekrarlı olması', 'Tekrarlı fakat programsız olması', 'Yalnızca yüksek şiddette yapılması', 'Günlük yaşam akışında kendiliğinden oluşması'],
+   answer: 'Planlı ve tekrarlı olması'
+  },
+  // 5 şıklı, başka bir kavramı soran soru
+  five: {
+   question: 'Sürantrenman riskini artıran temel yüklenme hatası aşağıdakilerden hangisidir?',
+   options: ['Yetersiz toparlanmayla yükü sürekli artırmak', 'Haftalık hacmi kademeli ve düzenli artırmak', 'Sezon içi dinlenme günlerini planlamak', 'Bireysel yanıta göre şiddeti ayarlamak', 'Yüklenme sonrası uykuyu düzenli tutmak'],
+   answer: 'Yetersiz toparlanmayla yükü sürekli artırmak'
+  }
+ };
+ // 4 şıklı sorunun bir çeldirici eklenmiş hâli: yeni soru değil, aynı sorunun tekrarıdır.
+ drafts.fourPlusOne = { ...drafts.four, options: [...drafts.four.options, 'Kısa süreli ve tek seferlik olması'] };
+ drafts.three = { ...drafts.four, options: drafts.four.options.slice(0, 3) };
+ drafts.six = { ...drafts.five, options: [...drafts.five.options, 'Isınma süresini her hafta uzatmak'] };
+ writeFileSync(join(dir, 'questions.json'), '[]');
 
- let mode = 'four';
+ let mode = 'three';
  const fake = http.createServer(async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   if (req.url === '/api/tags') return res.end(JSON.stringify({ models: [{ name: 'fake:1' }] }));
@@ -185,13 +185,14 @@ test('üretim hattı: 4 ve 6 şıklı taslak reddedilir; 5 şıklı soru eski 4 
     bloomLevel: 'Kavrama', evidence, reason: 'Anlatım bu bilgiyi doğrudan destekliyor.'
    }) }));
   }
-  const options = mode === 'four' ? four : mode === 'six' ? [...four, fifth, 'Uzun süreli ve düzensiz olması'] : [...four, fifth];
+  const draft = drafts[mode];
   return res.end(JSON.stringify({ response: JSON.stringify({
-   question: stem, options, answer,
+   ...draft,
    explanation: 'Konu anlatımında bu bilgi doğrudan geçer ve kalıcı öğrenme için püf noktasıdır.',
-   evidence, topic: 'Egzersizin özellikleri', questionType: 'kavram', questionAngle: 'dogrudan_tanim', bloomLevel: 'Kavrama'
+   evidence, topic: 'Egzersiz ve yüklenme', questionType: 'kavram', questionAngle: 'dogrudan_tanim', bloomLevel: 'Kavrama'
   }) }));
  });
+
  await new Promise(r => fake.listen(0, '127.0.0.1', r));
  process.env.OLLAMA_BASE_URL = `http://127.0.0.1:${fake.address().port}`;
  process.env.OLLAMA_MODEL = 'fake:1';
@@ -213,29 +214,30 @@ test('üretim hattı: 4 ve 6 şıklı taslak reddedilir; 5 şıklı soru eski 4 
  const approved = async () => (await (await fetch(`${base}/questions`)).json()).items.filter(x => x.status === 'approved');
 
  try {
-  // Başlangıç: iki eski kayıt da havuzda duruyor ve durum raporunda "eski biçim" olarak görünüyor.
-  let status = await (await fetch(`${base}/status`)).json();
-  assert.deepEqual(
-   { optionCount: status.optionFormat.optionCount, currentFormat: status.optionFormat.currentFormat, legacyFormat: status.optionFormat.legacyFormat },
-   { optionCount: 5, currentFormat: 0, legacyFormat: 2 }
-  );
-
-  // 1) 4 şıklı taslak: biçim hatası
-  mode = 'four';
-  const r4 = await generate();
-  const j4 = await r4.json();
-  assert.equal(r4.status, 502, JSON.stringify(j4));
-  assert.match(j4.error || '', /5 şıklı olmalı \(4 şık geldi\)/);
+  // 1) 3 şıklı taslak: biçim hatası
+  mode = 'three';
+  const r3 = await generate();
+  const j3 = await r3.json();
+  assert.equal(r3.status, 502, JSON.stringify(j3));
+  assert.match(j3.error || '', /4 ya da 5 şıklı olmalı \(3 şık geldi\)/);
 
   // 2) 6 şıklı taslak: biçim hatası
   mode = 'six';
   const r6 = await generate();
   const j6 = await r6.json();
   assert.equal(r6.status, 502, JSON.stringify(j6));
-  assert.match(j6.error || '', /5 şıklı olmalı \(6 şık geldi\)/);
-  assert.equal((await approved()).length, 2, 'Reddedilen taslaklar havuzu değiştirmemeli');
+  assert.match(j6.error || '', /4 ya da 5 şıklı olmalı \(6 şık geldi\)/);
+  assert.equal((await approved()).length, 0, 'Reddedilen taslaklar havuza girmemeli');
 
-  // 3) Aynı sorunun 5 şıklı sürümü: eski kayıt "tekrar" sayılıp engellemez, yerini yenisine bırakır.
+  // 3) 4 şıklı soru onaylanır
+  mode = 'four';
+  const r4 = await generate();
+  const j4 = await r4.json();
+  assert.equal(r4.status, 200, JSON.stringify(j4));
+  assert.equal(j4.item.status, 'approved');
+  assert.equal(j4.item.options.length, 4);
+
+  // 4) 5 şıklı soru da onaylanır
   mode = 'five';
   const r5 = await generate();
   const j5 = await r5.json();
@@ -243,24 +245,21 @@ test('üretim hattı: 4 ve 6 şıklı taslak reddedilir; 5 şıklı soru eski 4 
   assert.equal(j5.item.status, 'approved');
   assert.equal(j5.item.options.length, 5);
   assert.equal(new Set(j5.item.options).size, 5);
-  assert.ok(j5.item.options.includes(fifth));
-  assert.equal(j5.item.answer, answer);
 
+  // İkisi de havuzda ve ikisi de üretim planına sayılıyor.
   const pool = await approved();
-  assert.equal(pool.some(x => x.id === 'legacy-same'), false, 'Aynı sorunun eski 4 şıklı sürümü havuzdan çıkmalı');
-  assert.equal(pool.some(x => x.id === 'legacy-other'), true, 'Başka ünitedeki eski kayıt silinmemeli');
-  assert.equal(pool.filter(x => x.unitId === '0-0').length, 1);
+  assert.deepEqual(pool.map(x => x.options.length).sort(), [4, 5]);
+  const status = await (await fetch(`${base}/status`)).json();
+  assert.deepEqual(status.optionFormat, { allowed: [4, 5], fourOption: 1, fiveOption: 1 });
+  assert.equal(status.plan.totalDone, 2, '4 ve 5 şıklı sorular plana birlikte sayılmalı');
 
-  status = await (await fetch(`${base}/status`)).json();
-  assert.equal(status.optionFormat.currentFormat, 1);
-  assert.equal(status.optionFormat.legacyFormat, 1);
-  assert.equal(status.optionFormat.legacySuperseded, 1);
-
-  // 4) Aynı 5 şıklı soru ikinci kez gelirse artık tekrar sayılır.
+  // 5) 4 şıklı sorunun yalnızca bir şık eklenmiş hâli yeni soru sayılmaz (tekrar).
+  mode = 'fourPlusOne';
   const again = await generate();
   const againJson = await again.json();
   assert.equal(again.status, 502, JSON.stringify(againJson));
   assert.match(againJson.error || '', /kayıtlı|benzer/);
+  assert.equal((await approved()).length, 2);
  } finally {
   stopOllamaLoops?.();
   app.closeAllConnections?.();

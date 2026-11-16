@@ -256,7 +256,7 @@ export class IntelligenceTrainer {
    defects.push({
     unitId: lengthLeaks[0],
     category: 'distractor',
-    lesson: `Uzunluk sızıntısı yakalandı (${lengthLeaks.length} soruda doğru şık çeldiricilerden >3x uzun). Tüm 5 şıkkı eşit sözcük bandında kur.`
+    lesson: `Uzunluk sızıntısı yakalandı (${lengthLeaks.length} soruda doğru şık çeldiricilerden >3x uzun). Tüm şıkları eşit sözcük bandında kur.`
    });
   }
   if (weakEvidence.length) {
@@ -486,7 +486,7 @@ export class IntelligenceTrainer {
    researchAgent: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): ${state.globalConfusionTraps.length} global kavram tuzağını yerel sınav tahmini çeldiricisi olarak besle.`,
    kayseriCoach: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): ${topDu?.kayseriHook || 'Kayserili şivesi + anlık kitap kanıtı'} ile keskin komedi & doğrulama sun.`,
    qwenCodeSandbox: `Ultra-Singularity-705Mx+ (100x · +70,500,000,000%): 96 adversarial tuzak testi ve self-repair JS kurallarını sıfır regresyonla kilitle.`,
-   turboQualityGuard: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Milisaniye turbo hızda dahi en az 25 krk kitap kanıtı ve eşit uzunlukta 5 şık kuralını kilitle.`
+   turboQualityGuard: `Ultra-Singularity-705Mx+ (100x · %100 Yerel): Milisaniye turbo hızda dahi en az 25 krk kitap kanıtı ve eşit uzunlukta 4-5 şık kuralını kilitle.`
   };
   state.botEnrichmentDirectives = enrichedDirectives;
 

@@ -19,9 +19,8 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
  let failure = null;
  try {
   let calls = 0;
-  let legacyNoteSeen = 0;
-  // Havuzda bekleyen ZAYIF ve ESKİ BİÇİMLİ (4 şıklı) soru: Motor 2'nin ilk yeniden yazma hedefi.
-  // Yükseltilen sürüm 5 şıklı olmalıdır.
+  // Havuzda bekleyen ZAYIF (4 şıklı) soru: düşük kalite puanı → Motor 2'nin ilk yeniden yazma hedefi.
+  // Yeniden yazılan sürüm 5 şıklıdır: 4 ve 5 şıklı sorular havuzda birlikte geçerlidir.
   const weakSeed = {
    id: 'seed-weak-1', unitId: '0-0', book: 'Hareket Bilimleri', unit: 'Ünite 1',
    topic: 'Zayıf konu',
@@ -68,7 +67,6 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
      `Rastgele değişken yük yaklaşımı: bireysel eşik ölçülmeksizin uygulanan yüklemedir (${tag})`,
      `Tek tip sabit yük yaklaşımı: herkese aynı yükün değiştirilmeden uygulanmasıdır (${tag})`
     ];
-    if (prompt.includes('eski 4 şıklı biçimdedir')) legacyNoteSeen += 1;
     result = {
      topic: 'Aşırı yüklenme ilkesi',
      question: `${phrase} — bu anlatımda tanımlanan temel ilke hangisidir? (${tag})`,
@@ -170,13 +168,9 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
   assert.equal(lastQ.id, weakSeed.id, 'Soru kimliği korunmalı (aynı sorunun yükseltilmiş sürümü)');
   assert.ok(Array.isArray(lastQ.verification?.judges) && lastQ.verification.judges.length === 2, 'Yükseltme iki hakem onayından geçmeli');
   assert.ok(Number(lastQ.curatorScore) > 1, 'Havuz skoru yükselmeli');
-  assert.equal(lastQ.options.length, 5, 'Eski 4 şıklı soru 5 şıkka yükseltilmeli');
-  assert.equal(lastQ.upgradedFromLegacy, true, 'Kayıt eski biçimden yükseltildiğini taşımalı');
-  assert.ok(legacyNoteSeen >= 1, 'Editör istemi eski 4 şıklı soruyu 5 şıkka tamamlama talimatını içermeli');
-  assert.equal(status.optionFormat?.optionCount, 5);
-  assert.ok(status.optionFormat.legacyUpgraded >= 1, 'optionFormat.legacyUpgraded sayılmalı');
-  const qsAfter = await (await fetch(`${base}/api/ollama/questions`)).json();
-  assert.equal(qsAfter.items.filter(x => x.status === 'approved' && x.options.length !== 5).length, 0, 'Havuzda 4 şıklı onaylı soru kalmamalı');
+  assert.equal(lastQ.options.length, 5, 'Yeniden yazılan soru modelin verdiği 5 şıkla kaydedilmeli');
+  assert.deepEqual(status.optionFormat?.allowed, [4, 5], 'Durum raporu geçerli şık sayılarını bildirmeli');
+  assert.ok(status.optionFormat.fiveOption >= 1);
 
   // 3) Motor 2 dursa da havuz ve kayıt yapısı tutarlı kalmalı (kararlı bitiş)
   console.log(`\nMotor 2: iyileştirilen=${status.qualityLoop.improvedTotal}, taranan=${status.qualityLoop.scannedTotal}, avg=${status.qualityLoop.averageQuality}, pruned=${status.qualityLoop.prunedTotal}`);

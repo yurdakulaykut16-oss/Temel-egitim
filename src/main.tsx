@@ -16,7 +16,7 @@ import bookIndex from './bookIndex.json';
 import groundingIndex from './groundingIndex.json';
 import {bookNotes,bookQuestions} from './bookNotes';
 import {expanded} from './expanded';
-import {OllamaStudio,getGenerated,GeneratedQuestion} from './OllamaStudio';
+import {OllamaStudio,getQuizPool,GeneratedQuestion} from './OllamaStudio';
 import {MemoryPath} from './MemoryPath';
 import {VoiceStudio} from './VoiceStudio';
 import {speakWithVoiceStudio,stopVoiceStudio} from './tts/voiceStudio';
@@ -89,7 +89,7 @@ const days=Math.max(0,Math.ceil((new Date('2026-12-20T09:00:00').getTime()-Date.
 function App(){
  const [reviews,setReviews]=useState<Reviews>(()=>loadReviews(localStorage.getItem('tempo-reviews')));
  const saveReviews=(value:Reviews)=>{setReviews(value);localStorage.setItem('tempo-reviews',JSON.stringify(value))};
- const [generated,setGenerated]=useState<GeneratedQuestion[]>([]); useEffect(()=>{getGenerated().then(setGenerated).catch(()=>{});},[]);
+ const [generated,setGenerated]=useState<GeneratedQuestion[]>([]); const generatedRev=useRef<string|null>(null); const generatedAt=useRef(0);
  const [bookOfficialQs,setBookOfficialQs]=useState<BookOfficialQuestion[]>([]);
  const [bookParallelQs,setBookParallelQs]=useState<BookOfficialQuestion[]>([]);
  // Kaynak dışı (konu anlatım özetlerinde/kitapta karşılığı olmayan) sorular testlerden çıkarılsın mı?
@@ -156,6 +156,9 @@ function App(){
    .catch(()=>{});
  },[]);
  const [progress,setProgress]=useState<Progress>(readSaved); const [page,setPage]=useState('Genel bakış'); const [selected,setSelected]=useState<{bi:number;ui:number}|null>(null); const [quiz,setQuiz]=useState<typeof all>([]); const [qi,setQi]=useState(0); const [choice,setChoice]=useState<string|null>(null); const [score,setScore]=useState(0); const [menu,setMenu]=useState(false); const [speaking,setSpeaking]=useState(false); const [mode,setMode]=useState('Konu anlatımı');
+ // Üretilen soru havuzu on binlerce soruya ulaşabilir: liste açılışta, sayfa değiştiğinde (en çok dakikada bir)
+ // ve 5 dakikada bir sorulur; sunucu havuz değişmediyse listeyi yeniden göndermez.
+ useEffect(()=>{let alive=true;const pull=()=>{if(Date.now()-generatedAt.current<60000)return;generatedAt.current=Date.now();getQuizPool(generatedRev.current).then(r=>{if(alive&&r){generatedRev.current=r.revision;setGenerated(r.items);}}).catch(()=>{generatedAt.current=0});};pull();const t=setInterval(pull,300000);return()=>{alive=false;clearInterval(t)};},[page]);
  const [isFullExam,setIsFullExam]=useState(false);
  const [examRemainingSec,setExamRemainingSec]=useState(6000);
  const [inlinePdfUrl,setInlinePdfUrl]=useState<string>('');
@@ -744,7 +747,7 @@ function App(){
  </div>
  <div className="notice warning"><AlertCircle size={20}/><span>Bu bölümdeki rakamlar (20 soru/ders, 100 soru, 12 doğru/60 puan barajı, yanlışın doğruyu götürmediği, ~100 dakikalık süre) internet üzerinde genel olarak paylaşılan bilgilere dayanır; kademeye, yıla ve kuruma göre değişebilir. Sınava kaydolurken ve sınavdan önce mutlaka resmî duyuruyu (Gençlik ve Spor Bakanlığı Spor Bilgi Sistemi / Anadolu Üniversitesi) kontrol et. Bu metin resmî bir kaynak değildir.</span></div>
  </>}
- <div hidden={page!=='Soru stüdyosu'}><OllamaStudio read={progress.read} onChange={setGenerated}/></div>
+ <div hidden={page!=='Soru stüdyosu'}><OllamaStudio read={progress.read}/></div>
  {page==='Ayarlar'&&<><div className="page-title"><div className="eyebrow muted">ÇALIŞMA ALANIN</div><h1>Ayarlar<span className="accent">.</span></h1><p>İlerlemen bu tarayıcıda saklanır.</p></div><div className="settings-card"><h2>İlerlemeyi sıfırla</h2><p>Tamamlanan üniteler, test sonuçları, hata defteri ve tekrar planı bu tarayıcıdan silinir. Bu işlem geri alınamaz.</p><button className="outline" onClick={()=>{if(confirm('Tüm ilerlemeni, hata defterini ve tekrar planını sıfırlamak istiyor musun?')){save(initial);saveReviews({});saveMistakes([])}}}><RotateCcw size={16}/> İlerlemeyi sıfırla</button></div></>}
  <footer><span>✳ tempo. <i>Öğrenmenin kendi ritmi var.</i></span><span>Senin için, hedeflerine doğru. ♡</span></footer></div></main></div>
 }

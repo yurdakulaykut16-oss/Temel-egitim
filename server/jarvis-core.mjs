@@ -334,7 +334,7 @@ print(json.dumps(out))`;
    title = `Seviye 3 · Sınav Stratejisti (${apexMult}x)`;
    minQualityScore = approvalRate >= 40 ? 3.8 : 3.5;
    targetScenarioRatio = 'vaka_agirlikli';
-   directive = 'Sınav stratejisti standardı: karıştırılan kavram çiftlerini çeldirici yap, yüzeysel kelime tekrarından kaçın, tüm 5 şıkkı eşit güçte tut.';
+   directive = 'Sınav stratejisti standardı: karıştırılan kavram çiftlerini çeldirici yap, yüzeysel kelime tekrarından kaçın, tüm şıkları eşit güçte tut.';
   } else if (maturityScore >= 3) {
    level = 2;
    title = `Seviye 2 · Gelişen Öğretmen (${apexMult}x)`;
@@ -721,7 +721,7 @@ JSON döndür:
      orta: 'ORTA: İki yakın kavram arasındaki ince farkı karşılaştırmalı ölç.',
      zor: 'ZOR: Antrenörlük saha vakasında çok adımlı karar analizi kur.'
     },
-    generatorAddendum: 'Her soru kitap pasajından birebir kanıt ve eşit uzunluklu 5 şık içermeli.',
+    generatorAddendum: 'Her soru kitap pasajından birebir kanıt ve eşit uzunluklu 4-5 şık içermeli.',
     judgeAddendum: 'Çift doğru şık, hepsi/hiçbiri veya kök sızıntısı taşıyan tüm taslakları kesin reddet.'
    },
    engine: `${targetModel}:subsecond`
@@ -790,7 +790,7 @@ JSON döndür:
   const prompt = `Sen JARVIS Qwen-Code Baş Yazılım, Eğitim ve 100x Ultra-Singularity-705Mx+ (+70,500,000,000% · %100 Yerel) Kalite Mimarısın!
 Görevin: Projedeki TÜM 8 botu (Soru Üretici, Hakem, Küratör, Ders Motoru, Araştırmacı, Kayserili Koç, Qwen-Code Sandbox, Turbo Kalite Kilidi) aynı anda 100x daha zeki, kapsamlı ve hızlı kılmak.
 DEĞİŞMEZ KURAL 1: Sorulardaki "kolay", "orta", "zor" üçlü zorluk sistemi KESİNLİKLE SİLİNMEZ — tam tersine Turbo hızda dahi saçmalamayı engelleyecek biçimde keskinleştirilir!
-DEĞİŞMEZ KURAL 2: Turbo mod hız için aktifken dahi çift-cevap ("hepsi/hiçbiri"), uydurma istatistik/kanıt ve 5 şıktan sapma KESİNLİKLE YASAKTIR ("turboQualityLock: true").
+DEĞİŞMEZ KURAL 2: Turbo mod hız için aktifken dahi çift-cevap ("hepsi/hiçbiri"), uydurma istatistik/kanıt ve 4-5 şık kuralından sapma KESİNLİKLE YASAKTIR ("turboQualityLock: true").
 ${allowUiEvolution ? 'GÖREV KAPSAMI: Kullanıcı ARAYÜZÜ (src/, index.html, *.css, *.tsx) DAHİL tüm proje dosyaları (server/, training/, scripts/) geliştirme kapsamındadır!' : 'DEĞİŞMEZ KURAL 4: Kullanıcı ARAYÜZÜ (src/, index.html, public/, *.css, *.tsx, *.jsx) ASLA DEĞİŞTİRİLMEZ! Yalnız arka uç (server/), eğitim (training/), test (scripts/), parametreler, ses ve veri kalitesi geliştirilir.'}
 DEĞİŞMEZ KURAL 5: Harici Kimi API veya bulut anahtarı ASLA istenmez; tüm işlemler %100 yerel yürütülür.
 

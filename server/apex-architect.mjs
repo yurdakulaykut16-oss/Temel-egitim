@@ -144,7 +144,7 @@ export const ADVERSARIAL_TRAP_CASES = [
   question: 'Olimpik hareketin temel değeri nedir?',
   options: ['Fair play ve saygı', 'Hile yapmak'],
   answer: 'Fair play ve saygı',
-  explanation: 'Sınav sorusu 5 şıklı olmalıdır.',
+  explanation: 'Sınav sorusu 4 ya da 5 şıklı olmalıdır.',
   evidence: 'Olimpizm dostluk, mükemmellik ve saygıyı savunur.',
   difficulty: 'kolay',
   expectedReject: true
@@ -260,7 +260,7 @@ export const ADVERSARIAL_TRAP_CASES = [
   question: 'Dayanıklılık antrenmanlarında laktat eşiğinin yükselmesi sporcuya hangi avantajı sağlar?',
   options: ['Yüksek şiddette daha uzun süre yorulmadan koşabilme', 'Kas glikojenini sıfırlama', 'Nabzı dondurma', 'Esnekliği kaybetme', 'Kalp hacmini küçültme', 'Ekstra altıncı geçersiz şık'],
   answer: 'Yüksek şiddette daha uzun süre yorulmadan koşabilme',
-  explanation: 'Sınav sorusu kesinlikle 5 şıklı olmalıdır.',
+  explanation: 'Sınav sorusu 4 ya da 5 şıklı olmalıdır; 6 şık kabul edilmez.',
   evidence: 'Laktat eşiğinin yükselmesi yüksek şiddetli performans süresini uzatır.',
   difficulty: 'orta',
   expectedReject: true
@@ -1553,7 +1553,7 @@ ${matrix.getMetaArchitectPromptBlock(paramState)}
 
 ZORUNLU KURALLAR:
 - "kolay", "orta", "zor" üçlü zorluk kademesi ASLA SİLİNMEZ — tam tersine Turbo modda bile saçmalamadan keskinleşir!
-- "turboQualityLock": true kalmalı; hızlı üretim asla kitap kanıtından, çift-cevap blokajından veya 5 şık kuralından ödün vermez.
+- "turboQualityLock": true kalmalı; hızlı üretim asla kitap kanıtından, çift-cevap blokajından veya 4-5 şık kuralından ödün vermez.
 - Harici API anahtarı (Kimi API, OpenAI vb.) KESİNLİKLE İSTENMEZ; her şey %100 yerel yürütülür.
 - İsteğe bağlı "parameterPatches" ile 8 yapay zekânın (generator, judge, curator, lessonEngine, researchAgent, kayseriCoach, qwenCodeSandbox, turboQualityGuard) çok-milyarlı Kronecker-MoE & çıkarım parametrelerini (temperature, top_p, repeat_penalty, num_ctx, behavioralWeights) doğrudan geliştirebilirsin!
 - JS kurallarında process/require/fetch/while(true) YASAK.

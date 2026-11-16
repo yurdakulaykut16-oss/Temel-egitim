@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { isStoredOptionCount, DISTRACTOR_COUNT } from './option-count.mjs';
+import { isStoredOptionCount, DISTRACTOR_COUNT, MIN_DISTRACTOR_COUNT } from './option-count.mjs';
 export const LOCAL_TEAM_ROLES = [
  {
   id: 'osym_committee_chair',
@@ -57,7 +57,7 @@ export const OSYM_CONFUSION_PAIRS = [
 
 const OSYM_DIRECTIVE_FALLBACK = `ÖSYM SORU KOMİSYONU YAZIM PROTOKOLÜ (ZORUNLU):
 1. "Ben ÖSYM sınav komisyonunda olsaydım bu konuyu nasıl sorardım?" mantığıyla sor: ezber tanım yerine I-II-III öncüllü ("hangileri doğrudur?"), saha vakalı veya iki yakın kavram arasındaki ince ayrımı ölçen kök kur.
-2. Tüm 5 şık birbirine çok yakın uzunlukta (±%25), aynı sözcük türünde ve aynı cümle yapısında olsun; öğrenci asla şık uzunluğundan veya dilbilgisi ipucundan cevabı tahmin edemesin.
+2. Tüm şıklar (4 ya da 5) birbirine çok yakın uzunlukta (±%25), aynı sözcük türünde ve aynı cümle yapısında olsun; öğrenci asla şık uzunluğundan veya dilbilgisi ipucundan cevabı tahmin edemesin.
 3. Doğru cevabı soru kökünde kelime olarak sızdırma; çeldiricileri öğrencinin gerçekten karıştıracağı komşu terimlerden kur ("hepsi/hiçbiri" yasak).
 4. Olumsuz köklerde ("DEĞİLDİR", "YANLIŞTIR", "SÖYLENEMEZ", "BEKLENMEZ") vurgu kelimesini BÜYÜK HARFLE yaz ve diğer 3 şıkkın metne %100 uyduğunu doğrula.`;
 
@@ -497,7 +497,7 @@ export class LocalAiTeamHub {
    : [sourceText.slice(0, Math.min(sourceText.length, 160))].filter(s => s.length >= 16);
 
   const flatConfusion = OSYM_CONFUSION_PAIRS.flat();
-  // Çeldiriciler mümkün olduğunca ÜNİTENİN KENDİ metninden türetilir; böylece beş şık da
+  // Çeldiriciler mümkün olduğunca ÜNİTENİN KENDİ metninden türetilir; böylece bütün şıklar
   // aynı kavram ailesinden olur ve konu dışı/saçma şık oluşmaz.
   const normSourceText = normStr(sourceText);
   const confusionInUnit = flatConfusion.filter(term => {
@@ -576,7 +576,7 @@ export class LocalAiTeamHub {
    if (existingNorms.has(normStr(question))) continue;
    if (unitItems.some(u => jaccardLocal(u.question, question) >= 0.65)) continue;
 
-   // Uzunluk simetrisi korunmuş 4 çeldirici seç (soru 5 şıklıdır) (maxLenRatio <= 1.55)
+   // Uzunluk simetrisi korunmuş en çok 4 çeldirici seç (soru 4 ya da 5 şıklı olur) (maxLenRatio <= 1.55)
    const targetLen = answer.length;
    const picked = [];
    const usedNorms = new Set([normStr(answer)]);
@@ -602,7 +602,8 @@ export class LocalAiTeamHub {
     usedNorms.add(dn);
     picked.push(d);
    }
-   while (picked.length < DISTRACTOR_COUNT) {
+   // En az 3 çeldirici (4 şık) yeter; uygun dördüncü çeldirici bulunduysa soru 5 şıklı olur.
+   while (picked.length < MIN_DISTRACTOR_COUNT) {
     const pad = `Önerilen hatalı teknik yaklaşım #${picked.length + 1} (${attempt + 1})`.slice(0, Math.max(24, Math.min(72, Math.round(targetLen * 1.15))));
     if (!usedNorms.has(normStr(pad))) {
      usedNorms.add(normStr(pad));
@@ -799,7 +800,7 @@ export class LocalAiTeamHub {
     usedNorms.add(dn);
     picked.push(d);
    }
-   if (picked.length < DISTRACTOR_COUNT) continue;
+   if (picked.length < MIN_DISTRACTOR_COUNT) continue;
 
    const rawOpts = [answer, ...picked];
    const rot = (unitItems.length + attempt) % rawOpts.length;
@@ -843,7 +844,7 @@ export class LocalAiTeamHub {
        qualityScore: 4.7,
        examPotential: 4.8,
        bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
-       reason: 'Çeldirici Hijyen Denetçisi: Beş şık da aynı ünitenin ifadelerinden, benzer uzunlukta ve tek doğru.'
+       reason: 'Çeldirici Hijyen Denetçisi: Bütün şıklar aynı ünitenin ifadelerinden, benzer uzunlukta ve tek doğru.'
       }
      ],
      answer,

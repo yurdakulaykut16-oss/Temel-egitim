@@ -1,4 +1,3 @@
-import { isLegacyOptions } from './option-count.mjs';
 // ÜRETİM PLANI
 // ---------------------------------------------------------------------------
 // Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Kitabın bölümlerine sırayla, TUR TUR
@@ -11,7 +10,7 @@ import { isLegacyOptions } from './option-count.mjs';
 //
 // Yani ilk turdan itibaren her bölümün kolay, orta ve zor sorusu vardır; 1. turdan sonra kolay payı
 // gittikçe azalır, soruların yarısı orta yarısı zor olur. Tur sayısı TEMPO_PLAN_PASSES ile ayarlanır
-// (varsayılan 12 → bölüm başına 600 soru).
+// (varsayılan 40 → bölüm başına 2.000 soru; 29 bölümde toplam 58.000).
 //
 // Plan "hücre"lerden oluşur: (tur, konu, zorluk). Hücrenin `quota` alanı o konu + zorlukta o turun
 // SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 33); `from` turun başındaki
@@ -29,7 +28,7 @@ import { isLegacyOptions } from './option-count.mjs';
 
 export const PLAN_DIFFICULTIES = ['kolay', 'orta', 'zor'];
 export const DEFAULT_PLAN_QUOTA = 50;
-export const DEFAULT_PLAN_PASSES = 12;
+export const DEFAULT_PLAN_PASSES = 40;
 // 1. turdan sonra kolay soruların tur içindeki payı (2., 3., 4., 5. tur); 6. turdan itibaren 0.
 export const EASY_FRACTIONS = { 2: 0.20, 3: 0.12, 4: 0.08, 5: 0.04 };
 export const DEFAULT_PLAN_STUCK_LIMIT = 25;
@@ -127,8 +126,6 @@ export function countApproved(items) {
  const counts = new Map();
  for (const it of items || []) {
   if (!it || it.status !== 'approved' || !PLAN_DIFFICULTIES.includes(it.difficulty)) continue;
-  // Eski 4 şıklı kayıtlar plana sayılmaz: plan 5 şıklı sorularla dolar.
-  if (isLegacyOptions(it)) continue;
   const key = stepKey(it.unitId, it.difficulty);
   counts.set(key, (counts.get(key) || 0) + 1);
  }

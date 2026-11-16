@@ -295,14 +295,14 @@ test('ollamaPlugin uçtan uca 5-açı soru üretimi, timing-aware student-state,
   const scan = await call('POST', '/curator/scan', {});
   assert.equal(scan.status, 200);
   assert.ok(scan.json.report.totalScans >= 1);
-  assert.equal(scan.json.report.pruneThreshold, 30000);
+  assert.equal(scan.json.report.pruneThreshold, 65000);
   assert.ok(scan.json.report.avgCompositeScore > 0);
 
   const status = await call('GET', '/status');
   assert.equal(status.status, 200);
-  assert.equal(status.json.questionCapacity, 30000);
-  assert.equal(status.json.maxQuestionsStored, 30000);
-  assert.equal(status.json.curator.pruneThreshold, 30000);
+  assert.equal(status.json.questionCapacity, 65000);
+  assert.equal(status.json.maxQuestionsStored, 65000);
+  assert.equal(status.json.curator.pruneThreshold, 65000);
   assert.ok(status.json.curator);
   assert.ok(status.json.lessons);
   assert.ok(status.json.angleCounts);

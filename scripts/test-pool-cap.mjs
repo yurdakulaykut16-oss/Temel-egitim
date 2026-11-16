@@ -54,7 +54,7 @@ test('soru havuzu 20.000 sınırını aşmaz: yeni soru eklenirken en zayıf kay
  const prevDisable = process.env.TEMPO_DISABLE_AUTOLOOP;
  process.env.TEMPO_DATA_DIR = dir;
  process.env.TEMPO_DISABLE_AUTOLOOP = '1';
- // Varsayılan sınır 30.000'dir; sınır TEMPO_POOL_CAPACITY ile değişir. Test 20.000 ile sınar.
+ // Varsayılan sınır 65.000'dir; sınır TEMPO_POOL_CAPACITY ile değişir. Test 20.000 ile sınar.
  process.env.TEMPO_POOL_CAPACITY = String(CAPACITY);
 
  const fake = http.createServer(async (req, res) => {

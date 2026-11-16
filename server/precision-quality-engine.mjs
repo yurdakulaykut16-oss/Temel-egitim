@@ -468,7 +468,7 @@ export class PrecisionQualityEngine {
   let score = 100;
 
   if (!Array.isArray(options) || !isStoredOptionCount(options.length) || !options.includes(answer)) {
-   return { ok: false, score: 0, errors: ['Seçenekler 5 adet olmalı ve doğru cevap seçenekler arasında yer almalıdır.'], warnings, breakdown: {} };
+   return { ok: false, score: 0, errors: ['Seçenekler 4 ya da 5 adet olmalı ve doğru cevap seçenekler arasında yer almalıdır.'], warnings, breakdown: {} };
   }
 
   // 1. Yasaklı kolaycı kalıplar ("hepsi/hiçbiri")
@@ -482,7 +482,7 @@ export class PrecisionQualityEngine {
   const minOptLen = Math.min(...allLens);
   const maxOptLen = Math.max(...allLens);
   if (minOptLen >= 8 && maxOptLen / minOptLen >= 2.8) {
-   errors.push(`Seçenek uzunlukları birbirine çok uzak (en kısa ${minOptLen}, en uzun ${maxOptLen} karakter); beş şık aynı kavram ailesinden ve benzer uzunlukta olmalı.`);
+   errors.push(`Seçenek uzunlukları birbirine çok uzak (en kısa ${minOptLen}, en uzun ${maxOptLen} karakter); bütün şıklar aynı kavram ailesinden ve benzer uzunlukta olmalı.`);
    score -= 22;
   } else if (minOptLen >= 8 && maxOptLen / minOptLen >= 2.1) {
    warnings.push('Seçenek uzunlukları arasında belirgin fark var; şıkları aynı kalıpta dengele.');
