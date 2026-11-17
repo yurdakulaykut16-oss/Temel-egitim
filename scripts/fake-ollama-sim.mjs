@@ -68,6 +68,8 @@ export function createFakeOllama({
  charsPerToken = 2.6,
  // Hakem kararını değiştirmek için kanca: (karar, { prompt }) => karar. (Ör. belirli bir konuyu hep reddet.)
  judgeHook = null,
+ // Üretici taslağını değiştirmek için kanca: (taslak, { prompt, model }) => taslak. (Ör. eski bir kökü yinele.)
+ generatorHook = null,
  // true ise her isteğin tam istem metni stats.requests[i].prompt içinde saklanır (inceleme için).
  keepPrompts = false
 } = {}) {
@@ -240,6 +242,7 @@ export function createFakeOllama({
    inFlight++;
    counted = true;
    stats.peakConcurrent = Math.max(stats.peakConcurrent, inFlight);
+   entry.startedAt = Date.now();
    const loadedMs = await ensureLoaded(name, data.options);
    entry.loadMs = loadedMs;
    if (stall.has(name)) {
@@ -256,6 +259,7 @@ export function createFakeOllama({
    const isSloppy = sloppy > 0 && (hash(`${stats.requests.length}:${name}`) % 100) < sloppy * 100;
    let payload = isJudge ? buildJudge(prompt, isSloppy) : buildGenerator(prompt, isSloppy);
    if (isJudge && typeof judgeHook === 'function') payload = judgeHook(payload, { prompt, model: name }) || payload;
+   if (!isJudge && !isFix && typeof generatorHook === 'function') payload = generatorHook(payload, { prompt, model: name }) || payload;
    const text = JSON.stringify(payload);
    const duration = isJudge ? judgeMs : genMs;
    const pieces = 6;
@@ -277,6 +281,7 @@ export function createFakeOllama({
    else res.end(`${JSON.stringify({ ...final, response: '' })}\n`);
    if (data.keep_alive === 0 || data.keep_alive === '0') { loaded.delete(name); stats.unloads++; }
   } finally {
+   entry.endedAt = Date.now();
    if (counted) inFlight--;
    release();
   }

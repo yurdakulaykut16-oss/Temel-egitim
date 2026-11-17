@@ -131,19 +131,21 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   let approved=0;
   for(let i=0;i<600 && approved<4;i++){await sleep(100);status=await (await fetch(`${base}/api/ollama/status`)).json();approved=status.approved}
   assert.ok(approved>=4,`en az 4 soru onaylanmalıydı, görülen: ${approved}, tel: ${JSON.stringify(status.telemetry)}, err: ${status.autoLastError}`);
-  assert.equal(status.questionIntervalMs,2000,'iki soru başlatma arası en az 2 sn');
+  assert.equal(status.questionIntervalMs,0,'sağlıklı akışta sorular arasında bekleme yok');
+  assert.equal(status.questionIntervalAfterInstantFailMs,2000,'anında düşen denemelerden sonra 2 sn beklenir');
   assert.equal(status.autoBlock,null,'üretim sürerken engel bildirimi olmamalı');
   assert.equal(status.lineup.ok,true);
   assert.ok(status.telemetry.attemptsTotal>=approved,'deneme sayacı ilerlemeli');
   assert.ok(status.telemetry.lastApprovedAt,'son onay zamanı görünmeli');
   assert.ok(status.autoEvents.some(e=>e.ok===true),'son olaylar listesinde onaylanan soru görünmeli');
 
-  // Üretim temposu: sorular en az başlatma aralığı kadar arayla gelir, üst üste binmez
+  // Üretim temposu: biten sorunun ardından sıradaki beklemeden başlar (eski 2 sn'lik ara yok), modeller üst üste binmez
   const tempoQuestions=await (await fetch(`${base}/api/ollama/questions`)).json();
   const createdTimes=tempoQuestions.items.map(x=>Date.parse(x.createdAt)).sort((a,b)=>a-b);
   const gaps=createdTimes.slice(1).map((t,i)=>t-createdTimes[i]);
   assert.ok(gaps.length>=1,`tempo ölçümü için en az 2 soru gerekli, görülen: ${createdTimes.length}`);
-  assert.ok(Math.min(...gaps)>=1000,`sorular başlatma aralığından (2 sn) belirgin hızlı üst üste gelmemeli, görülen en kısa aralık: ${Math.min(...gaps)}ms`);
+  const medianGap=[...gaps].sort((a,b)=>a-b)[Math.floor(gaps.length/2)];
+  assert.ok(medianGap<1500,`sorular arasında sabit 2 sn'lik bekleme olmamalı, görülen ortanca aralık: ${medianGap}ms`);
   assert.ok(peak<=1,`modeller asla üst üste binmemeli; görülen eşzamanlı istek tepe değeri: ${peak}`);
   assert.ok(calls>=approved*3,`her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}, soru: ${approved}`);
   assert.ok(status.coverage.coveredPassages>=2,'birden fazla kitap pasajı taranmış olmalı');

@@ -537,10 +537,19 @@ const IDLE_TOKEN_TIMEOUT_MS = Number.isFinite(envIdleToken) && envIdleToken >= 1
 // Bir sorunun tüm adımları için güvenlik ağı (yuva sızıntısını önler; normalde hiç devreye girmez).
 const UNIT_SAFETY_TIMEOUT_MS = 25 * 60_000;
 
-// İki soru başlatma arasındaki en az süre. Üretim daha uzun sürerse sıradaki soru hemen
-// peşine gelir; bu değer yalnızca çok hızlı hata döngülerinin Ollama'yı dövmesini önler.
-const envInterval = Number(process.env.TEMPO_QUESTION_INTERVAL_MS);
-const QUESTION_INTERVAL_MS = Number.isFinite(envInterval) && envInterval >= 0 ? Math.round(envInterval) : 2_000;
+// İki soru başlatma arasındaki bekleme. Bu bekleme yalnızca "model çağrısı bile yapamadan anında
+// düşen" hata döngülerinin işlemciyi ve Ollama'yı dövmesini önlemek içindir. Sağlıklı akışta
+// (soru onaylandı ya da model çağrısından sonra elendi) BEKLENMEZ: boşalan hat aynı anda yeni soruya
+// başlar, ekran kartı sorular arasında boş durmaz. TEMPO_QUESTION_INTERVAL_MS elle verilmişse her
+// başlatmada o süre uygulanır (bilinçli yavaşlatma).
+const envIntervalRaw = process.env.TEMPO_QUESTION_INTERVAL_MS;
+const envInterval = Number(envIntervalRaw);
+const QUESTION_INTERVAL_PINNED = envIntervalRaw !== undefined && Number.isFinite(envInterval) && envInterval >= 0;
+const QUESTION_INTERVAL_MS = QUESTION_INTERVAL_PINNED ? Math.round(envInterval) : 2_000;
+// Kökü tekrar olan taslağın yazımını yarıda kesme (bkz. generateAndVerify). Kapatmak için TEMPO_EARLY_STOP=0.
+const EARLY_STOP_ENABLED = process.env.TEMPO_EARLY_STOP !== '0';
+/** Bir soru hattı bundan kısa sürede hatayla bittiyse hiçbir model çağrısı tamamlanmamıştır ("anında düşme"). */
+const INSTANT_FAIL_MS = 100;
 
 // --- MODELİ BELLEKTE TUT ----------------------------------------------------------
 // keep_alive=0 her çağrıdan sonra modeli boşaltıyordu (her çağrı = yeniden yükleme).
@@ -801,7 +810,7 @@ function expectMoreModelWork(model) {
 function applySwapMode() {
  const active = swapModeActive();
  modelInferenceQueue.setAffinity(active, {
-  graceMs: Math.max(3_000, QUESTION_INTERVAL_MS + 2_000),
+  graceMs: Math.max(3_000, (QUESTION_INTERVAL_PINNED ? QUESTION_INTERVAL_MS : 0) + 2_000),
   maxHoldMs: SWAP_MAX_HOLD_MS,
   expectMore: expectMoreModelWork
  });
@@ -1203,6 +1212,9 @@ const telemetry = {
  rejectedJudges: 0,
  dualAnswerBlocked: 0,
  refinedSucceeded: 0,
+ // Hız: kökü tekrar olduğu için yarıda kesilen üretici çağrısı / diğer hakem reddettiği için iptal edilen hakem çağrısı.
+ earlyStops: 0,
+ judgeCallsCancelled: 0,
  totalGenMs: 0,
  genCalls: 0,
  totalVerifyMs: 0,
@@ -1272,6 +1284,8 @@ function getTelemetrySnapshot() {
   rejectedJudges: telemetry.rejectedJudges,
   dualAnswerBlocked: telemetry.dualAnswerBlocked,
   refinedSucceeded: telemetry.refinedSucceeded,
+  earlyStops: telemetry.earlyStops,
+  judgeCallsCancelled: telemetry.judgeCallsCancelled,
   approvalRate,
   questionsPerMinute,
   secondsPerItem,
@@ -1563,6 +1577,32 @@ export function findDuplicateReason(draft, ctx, pool) {
   if (sameUnit && optSim >= 0.9) return 'Şıkları neredeyse aynı olan bir soru zaten kayıtlı.';
  }
  return null;
+}
+
+/**
+ * Yalnızca soru KÖKÜNE bakarak verilebilen tekrar kararları (findDuplicateReason'ın ilk iki kuralı, aynı
+ * eşiklerle): kök birebir aynıysa ya da aynı ünitede >= 0,78 benziyorsa şıklar ne olursa olsun soru
+ * elenir. Üretici kökü yazar yazmaz bu karar verilebilir; kalan şık/açıklama yazımı beklenmez.
+ */
+export function findStemDuplicateReason(question, ctx, pool) {
+ const qNorm = norm(question);
+ if (!qNorm) return null;
+ for (const x of pool) {
+  if (!x || typeof x.question !== 'string') continue;
+  if (norm(x.question) === qNorm) return 'Aynı soru zaten kayıtlı.';
+  if (x.unitId === ctx?.id && similarity(x.question, question) >= 0.78) return 'Bu ünite için çok benzer bir soru bulundu.';
+ }
+ return null;
+}
+
+/**
+ * Akış hâlindeki (henüz bitmemiş) JSON metninden, yazımı TAMAMLANMIŞ bir metin alanını okur.
+ * Alan henüz kapanmadıysa null döner. (Değer içindeki tırnaklar kaçışlı olduğundan `"alan":` yalnızca anahtar olabilir.)
+ */
+export function completedJsonField(text, key) {
+ const m = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"\\s*[,}]`).exec(String(text || ''));
+ if (!m) return null;
+ try { return JSON.parse(`"${m[1]}"`); } catch { return null; }
 }
 
 function checkDistractorHygiene(options, answer, meta = {}) {
@@ -2490,16 +2530,44 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  const temp = Math.max(0.4, Math.min(0.95, 0.7 + (policy?.temperatureOffset || 0)));
 
  let rawParsed, genElapsed;
+ let earlyStopReason = null, earlyStopStem = '';
  try {
   const genSig = subSecondEnabled
    ? AbortSignal.any([signal, AbortSignal.timeout(Math.max(250, Math.min(720, Math.round(subSecondBudgetMs * 0.55))))].filter(Boolean))
    : signal;
-  const r = await runModel(model, prompt, temp, genSig, numPredictGen, { fastThink, botRole: 'generator', schema: generatorSchema(targetType) });
+  // ERKEN DURDURMA: üretici soru kökünü yazar yazmaz kök, havuzdaki sorularla karşılaştırılır. Kök tek
+  // başına "tekrar" kararı için yeterliyse (birebir aynı ya da aynı ünitede >= 0,78 benzer) soru nasılsa
+  // elenecektir; şıkların ve açıklamanın yazılması beklenmeden çağrı kesilir. Karar kuralı aynıdır.
+  const dupPool = [...questionBank, ...bookStyleQuestions, ...items];
+  const earlyStop = new AbortController();
+  let stemSeen = false;
+  const watchStem = (_len, text) => {
+   if (stemSeen || earlyStopReason) return;
+   const stem = completedJsonField(text, 'question');
+   if (stem === null) return;
+   stemSeen = true;
+   const reason = stem.trim() ? findStemDuplicateReason(stem.trim(), ctx, dupPool) : null;
+   if (!reason) return;
+   earlyStopReason = reason;
+   earlyStopStem = stem.trim();
+   earlyStop.abort();
+  };
+  const r = await runModel(model, prompt, temp, AbortSignal.any([genSig, earlyStop.signal].filter(Boolean)), numPredictGen, {
+   fastThink, botRole: 'generator', schema: generatorSchema(targetType), onProgress: EARLY_STOP_ENABLED ? watchStem : null
+  });
   rawParsed = r.parsed;
   genElapsed = r.elapsed;
   telemetry.genCalls++;
   telemetry.totalGenMs += genElapsed;
  } catch (e) {
+  if (earlyStopReason && !signal?.aborted) {
+   telemetry.genCalls++;
+   telemetry.earlyStops = (telemetry.earlyStops || 0) + 1;
+   telemetry.rejectedPreflight++;
+   recordRejection(preflightRejectionKey(earlyStopReason));
+   await appendTrace({ type: 'rejected_preflight', unitId: ctx.id, passageId: passage?.id, draft: { question: earlyStopStem }, reason: earlyStopReason, earlyStop: true });
+   throw Error(earlyStopReason);
+  }
   if (subSecondEnabled && isTransportOrTimeoutError(e)) {
    return runInstantLocalFallback('offline-or-timeout-subsecond');
   }
@@ -2568,9 +2636,26 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   try {
    if (parallelJudges) {
     onPhase?.('verifying');
-    const raws = await Promise.all(judgeModels.map((jm, i) => runJudge(jm, promptText, sig, i)));
-    telemetry.verifyCalls += raws.length;
-    return raws.map((r, i) => parseJudgeVerdict(r.parsed, judgeModels[i], candidate, ctx, passage));
+    // İki hakem aynı anda çalışır; her biri bitince kararı hemen okunur. Soru ancak İKİ onayla alındığı
+    // için biri reddettiği anda diğerinin çağrısı beklenmez, iptal edilir (sırada bekliyorsa hiç
+    // başlamaz). Kural değişmez; yalnızca sonucu artık değiştiremeyecek model çağrısı harcanmaz.
+    const stopOthers = new AbortController();
+    const linked = sig ? AbortSignal.any([sig, stopOthers.signal]) : stopOthers.signal;
+    const pending = judgeModels.map((jm, i) => runJudge(jm, promptText, linked, i).then(r => {
+     telemetry.verifyCalls++;
+     return parseJudgeVerdict(r.parsed, jm, candidate, ctx, passage);
+    }));
+    try {
+     return await Promise.all(pending);
+    } catch (e) {
+     if (!stopOthers.signal.aborted) {
+      telemetry.judgeCallsCancelled = (telemetry.judgeCallsCancelled || 0) + 1;
+      stopOthers.abort();
+     }
+     for (const p of pending) p.catch(() => {});
+     modelInferenceQueue.poke();
+     throw e;
+    }
    }
    const verdicts = [];
    for (let i = 0; i < judgeModels.length; i++) {
@@ -3140,6 +3225,8 @@ const autoState = {
  blockCode: '',
  blockReason: '',
  lastLaunchAt: 0,
+ // Art arda "anında düşen" (model çağrısı yapamadan biten) soru sayısı; 0 ise başlatmalar arasında beklenmez.
+ instantFails: 0,
  consecutiveInfraErrors: 0,
  backoffUntil: 0,
  lastLoggedBlock: '',
@@ -3159,6 +3246,34 @@ const autoState = {
 function autoWantsMore() {
  return autoState.schedulerActive && !autoLoopStopping && !autoState.blockCode && !autoState.planSaturated
   && autoControllers.size < Math.max(1, autoState.effectiveConcurrency || 1);
+}
+
+/** Yeni bir soru başlatmadan önce son başlatmanın üzerinden geçmesi gereken süre (ms). */
+function launchGapMs() {
+ if (QUESTION_INTERVAL_PINNED) return QUESTION_INTERVAL_MS;
+ return autoState.instantFails > 0 ? QUESTION_INTERVAL_MS : 0;
+}
+
+// Her "durdur" isteğinde artar; zamanlayıcı turun başında okuduğu değer değiştiyse soru başlatmaz.
+let autoStopEpoch = 0;
+// "Durdur" isteği ayarı diske yazarken > 0'dır; bu sırada zamanlayıcı üretimi kapalı sayar.
+let autoStopPending = 0;
+
+// Zamanlayıcı uykusu: bir hat boşaldığında (ya da üretim açılıp kapandığında) süre dolmadan uyandırılır.
+let schedulerWake = null;
+function wakeScheduler() {
+ const wake = schedulerWake;
+ schedulerWake = null;
+ if (wake) wake();
+}
+function schedulerSleep(ms) {
+ return new Promise(resolve => {
+  let done = false;
+  const finish = () => { if (done) return; done = true; clearTimeout(timer); if (schedulerWake === finish) schedulerWake = null; resolve(); };
+  const timer = setTimeout(finish, Math.max(0, ms));
+  if (typeof timer.unref === 'function') timer.unref();
+  schedulerWake = finish;
+ });
 }
 
 function pushAutoEvent(event) {
@@ -3274,6 +3389,7 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
    const onTarget = planStep && record?.difficulty === planStep.difficulty;
    // İki hat aynı adımda çalışabildiği için ilerleme havuzdan yeniden sayılır.
    const done = planStep ? (countApproved(await load().catch(() => [])).get(planStep.key) || 0) : 0;
+   autoState.instantFails = 0;
    handleUnitSuccess(ctx, record, startedAt, planStep ? { step: planStep, done } : null);
    // Hedef kovaya giren soru ilerlemedir; başka zorlukla kaydedilen soru sayacı değiştirmez.
    await recordPlanOutcome(planStep, onTarget ? 'approved' : 'other', done);
@@ -3281,6 +3397,9 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
   .catch(async e => {
    const info = handleUnitFailure(ctx, e);
    if (!info.silent) autoLastError = info.message;
+   // Model çağrısından sonra elenen soru sağlıklı akıştır; yalnızca anında düşen denemeler yavaşlatılır.
+   if (!info.silent && Date.now() - startedAt < INSTANT_FAIL_MS) autoState.instantFails++;
+   else autoState.instantFails = 0;
    // Altyapı hataları (Ollama kapalı, zaman aşımı) ve durdurma, adımı "sonuçsuz" saymaz.
    if (!info.silent && !info.infra) await recordPlanOutcome(planStep, 'rejected', planStep?.done || 0);
   })
@@ -3290,6 +3409,8 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
    // Biten hat plan hücresinde yer açmış olabilir; kuyruk da bekleyen işleri yeniden değerlendirsin.
    autoState.planSaturated = false;
    modelInferenceQueue.poke();
+   // Hat boşaldı: zamanlayıcı bir sonraki yoklamayı beklemeden sıradaki soruyu başlatsın.
+   wakeScheduler();
   });
  return run;
 }
@@ -4179,6 +4300,7 @@ function describeLineup(lineup) {
 async function autoScheduler() {
  while (!autoLoopStopping) {
   let nextSleep = 500;
+  const stopEpoch = autoStopEpoch;
   try {
    if (autoLoopStopping) break;
 
@@ -4192,7 +4314,7 @@ async function autoScheduler() {
     }
    }
 
-   if (!(await autoRunningEnabled())) {
+   if (autoStopPending > 0 || !(await autoRunningEnabled())) {
     autoState.schedulerActive = false;
     setAutoBlock('', '');
     nextSleep = 1000;
@@ -4245,7 +4367,7 @@ async function autoScheduler() {
      } else if (Date.now() < autoState.backoffUntil) {
       setAutoBlock('backoff', `Son denemeler altyapı hatasıyla bitti; ${Math.ceil((autoState.backoffUntil - Date.now()) / 1000)} sn sonra yeniden denenecek. Son hata: ${autoLastError || '—'}`);
       nextSleep = 1000;
-     } else if (autoControllers.size < limit && Date.now() - autoState.lastLaunchAt >= QUESTION_INTERVAL_MS) {
+     } else if (autoControllers.size < limit && Date.now() - autoState.lastLaunchAt >= launchGapMs()) {
       let items = await load();
       let a = audit(items);
       if (a.invalid || a.duplicates) {
@@ -4263,7 +4385,10 @@ async function autoScheduler() {
        const inflight = {};
        for (const entry of autoControllers.values()) if (entry.planKey) inflight[entry.planKey] = (inflight[entry.planKey] || 0) + 1;
        const { step: planStep, planActive } = await nextPlanStep(items, inflight, autoState.planGroupSize);
-       if (planActive && !planStep) {
+       if (stopEpoch !== autoStopEpoch || autoStopPending > 0) {
+        // Bu tur sürerken üretim durduruldu: soru başlatılmaz, bir sonraki turda ayar yeniden okunur.
+        nextSleep = 100;
+       } else if (planActive && !planStep) {
         // Grubun kalan soruları zaten hazırlanıyor (kota aşılmasın diye yeni soru açılmaz); sonuç beklenir.
         autoState.planSaturated = true;
         modelInferenceQueue.poke();
@@ -4280,7 +4405,11 @@ async function autoScheduler() {
         });
         // Tek yuvada sıradaki soruya geçmeden önce bu sorunun bitmesi beklenir (asla üst üste binmez).
         if (limit <= 1) await run;
-        nextSleep = limit <= 1 ? Math.max(50, QUESTION_INTERVAL_MS - (Date.now() - autoState.lastLaunchAt)) : 200;
+        // Boş hat kaldıysa (ya da tek hat boşaldıysa) beklemeden sıradaki soru açılır; hatlar doluysa
+        // zamanlayıcı bir hat boşalınca uyandırılır (aşağıdaki süre yalnızca güvenlik yoklamasıdır).
+        const gap = launchGapMs();
+        const wait = Math.max(0, gap - (Date.now() - autoState.lastLaunchAt));
+        nextSleep = autoControllers.size < limit ? wait : Math.max(200, wait);
        }
       }
      } else {
@@ -4294,7 +4423,7 @@ async function autoScheduler() {
    tempoLog(`Zamanlayıcı hatası: ${autoLastError}`);
    nextSleep = 1500;
   }
-  await sleep(nextSleep);
+  await schedulerSleep(nextSleep);
  }
 }
 
@@ -5293,7 +5422,9 @@ export function ollamaPlugin() {
        modelSwap: { active: swapModeActive(), allowed: SWAP_MODE_ALLOWED, waveSize: swapWaveSize(autoConcurrency), queueSwitches: modelInferenceQueue.snapshot().switches || 0, ...modelSwap.snapshot() },
        modelCallTimeoutRange: { min: MODEL_CALL_TIMEOUT_MIN_MS, max: MODEL_CALL_TIMEOUT_MAX_MS, default: MODEL_CALL_TIMEOUT_DEFAULT_MS },
        firstTokenTimeoutMs: FIRST_TOKEN_TIMEOUT_MS,
-       questionIntervalMs: QUESTION_INTERVAL_MS,
+       // Sorular arası bekleme: elle ayarlanmadıysa sağlıklı akışta 0'dır (bkz. launchGapMs).
+       questionIntervalMs: QUESTION_INTERVAL_PINNED ? QUESTION_INTERVAL_MS : 0,
+       questionIntervalAfterInstantFailMs: QUESTION_INTERVAL_MS,
        modelInferenceConcurrency: modelInferenceQueue.snapshot().maxConcurrent,
        modelInferenceQueue: modelInferenceQueue.snapshot(),
        autoActive: autoPhases.length,
@@ -6876,11 +7007,19 @@ export function ollamaPlugin() {
      }
 
      if (req.method === 'POST' && path === '/stop') {
-      if (controller) controller.abort();
-      for (const c of autoControllers.keys()) c.abort();
-      autoControllers.clear();
-      pipelinePhase = 'idle';
-      await writeSettings({ autoRunning: false });
+      // Önce durdurma sayacı artar: o an tur atmakta olan zamanlayıcı, ayar dosyası yazılmadan önce
+      // (sorular arasında artık bekleme olmadığı için) yeni bir soru başlatamasın.
+      autoStopEpoch++;
+      autoStopPending++;
+      try {
+       if (controller) controller.abort();
+       for (const c of autoControllers.keys()) c.abort();
+       autoControllers.clear();
+       pipelinePhase = 'idle';
+       await writeSettings({ autoRunning: false });
+      } finally {
+       autoStopPending--;
+      }
       return respond(res, 200, { ok: true, autoRunning: false });
      }
 

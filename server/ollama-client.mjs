@@ -271,7 +271,8 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
     if (piece) text += piece;
     if ((piece || thinking) && !firstTokenAt) firstTokenAt = Date.now();
     if (obj.done || obj.done_reason || Number.isFinite(obj.eval_count)) final = obj;
-    if (onProgress && piece) { try { onProgress(text.length); } catch {} }
+    // 2. değişken: o ana kadar gelen ham metin (çağıran, tamamlanan alanları erkenden okuyabilir).
+    if (onProgress && piece) { try { onProgress(text.length, text); } catch {} }
    };
 
    const reader = res.body?.getReader?.();
