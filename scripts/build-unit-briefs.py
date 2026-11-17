@@ -38,7 +38,10 @@ _spec.loader.exec_module(bbs)
 
 MAX_POINT = 230          # bir ezber cümlesinin en fazla uzunluğu (karakter)
 MAX_ITEM = 150           # bir liste maddesinin en fazla uzunluğu
-MAX_ITEMS = 10           # başlık başına en fazla liste maddesi
+MAX_ITEMS = 10
+MAX_ITEMS_STORED = 80   # başlık başına saklanan en çok madde (arayüz ilk MAX_ITEMS'ı açık gösterir)
+# "Genel dayanıklılık: …" / "Koordinatif faktör; …" gibi terim + tanım cümlesi
+LABELLED = re.compile(r'^([A-ZÇĞİÖŞÜ][^:;.!?()]{2,45})[:;]\s+\S')           # başlık başına en fazla liste maddesi
 NOTE_FONT_SIZE = 10.0    # "dikkat" kutularının puntosu
 
 
@@ -216,11 +219,28 @@ def score(sentence, heading, kept, anaphoric, position=0):
     return value
 
 
+NOT_TERM_START = re.compile(
+    r'^(örneğin|örnek|yine|toplumlar|bundan|bu|bunlar|bunun|buna|bununla|böylece|ancak|kısaca|diğer|yani|ayrıca|not|kaynak|haber|çoğu|özetle|sonuç|şöyle|'
+    r'genel olarak|başka|ilk olarak|son olarak|dolayısıyla|çünkü|özellikle|aynı|her|tüm|bazı|birçok|burada|şekil|tablo|resim|'
+    r'ankara|istanbul|i̇stanbul|izmir|i̇zmir|london|new york|champaign|philadelphia|baltimore|boston|oxford|cambridge)\b')
+NOT_TERM_INSIDE = re.compile(r'\b(bir|da|de|ile|için|olarak|ise|gibi|kadar|göre|ya da|veya)\b|\d{4}|,')
+
+
+def is_term(label):
+    """'Terim: tanım' cümlesinin baş kısmı gerçekten bir kavram adı mı? (Bağlaç, örnek, kaynakça satırı değil.)"""
+    label = label.strip()
+    low = bbs.lower(label)
+    if re.search(r'(ken|arak|erek|likle|lıkla|ince|ınca)$', low):
+        return False   # "… uzanırken:", "… öncelikle:" kavram adı değildir
+    return 1 <= len(label.split()) <= 4 and not NOT_TERM_START.search(low) and not NOT_TERM_INSIDE.search(low)
+
+
 def build_section(paragraphs, heading, kept, has_children):
     """-> {points, list, listIntro}"""
     candidates = []   # (sıra, puan, cümle)
     fallback = []
     items = []
+    labels = []       # "Terim: tanım" biçimindeki cümlelerin terimleri (hiçbir tür/kavram adsız kalmasın)
     intro = ''
     order = 0
     for par in paragraphs:
@@ -236,6 +256,9 @@ def build_section(paragraphs, heading, kept, has_children):
                     items.append(shorten(raw.rstrip('.;,'), MAX_ITEM))
                 last_sentence = raw
                 continue
+            label = LABELLED.match(raw.strip())
+            if label and is_term(label.group(1)):
+                labels.append(label.group(1).strip())
             ok, text, anaphoric, _reason = bbs.assess_sentence(raw, 40)
             text = text.strip()
             if number:
@@ -282,11 +305,22 @@ def build_section(paragraphs, heading, kept, has_children):
             unique_items.append(item)
     out = {'points': points}
     if unique_items:
-        out['list'] = unique_items[:MAX_ITEMS]
-        if len(unique_items) > MAX_ITEMS:
-            out['listMore'] = len(unique_items) - MAX_ITEMS
+        # Kitaptaki maddelerin tamamı saklanır (en çok MAX_ITEMS_STORED); arayüz ilk MAX_ITEMS'ı gösterir,
+        # kalanı "tümünü göster" ile açılır. Böylece liste kısa görünür ama hiçbir madde atılmaz.
+        out['list'] = unique_items[:MAX_ITEMS_STORED]
+        if len(unique_items) > MAX_ITEMS_STORED:
+            out['listMore'] = len(unique_items) - MAX_ITEMS_STORED
         if intro:
             out['listIntro'] = intro
+    # Başlıkta "Terim: tanım" kalıbıyla sayılan kavramlar: seçilen cümlelerde ve listede adı geçmeyen
+    # varsa hepsi adlarıyla verilir (ör. dayanıklılık türlerinin dördü de).
+    shown = bbs.lower(' '.join(points + unique_items))
+    names = []
+    for name in labels:
+        if bbs.lower(name) not in [bbs.lower(n) for n in names]:
+            names.append(name)
+    if len(names) >= 2 and any(bbs.lower(n) not in shown for n in names):
+        out['terms'] = names[:16]
     return out
 
 
@@ -369,7 +403,7 @@ def main():
                 extra = [n for n in notes.get(i, []) if n not in brief['points']]
                 entry.update(brief)
                 if extra:
-                    entry['notes'] = extra[:2]
+                    entry['notes'] = extra
                 empty = not entry['points'] and not entry.get('list') and not entry.get('notes')
                 if empty and not children.get(i):
                     # Gövde paragrafı eşleşmedi (başlık iki satıra bölünmüş, altında yalnızca kısa bir cümle var vb.):
@@ -398,7 +432,9 @@ def main():
     print(f"Toplam: {totals['sections']} başlık, {totals['points']} ezber cümlesi, {totals['items']} liste maddesi, "
           f"{totals['notes']} dikkat notu, {totals['chars']} karakter; içeriksiz alt başlık: {totals['empty']}.")
     if not args.check:
-        OUT.write_text(json.dumps(result, ensure_ascii=False, indent=1) + '\n', encoding='utf8')
+        # Ünite başına tek satır: dosya küçük kalır (tarayıcıya gider), fark (diff) yine ünite ünite okunur.
+        lines = [f'{json.dumps(uid)}:{json.dumps(unit, ensure_ascii=False, separators=(",", ":"))}' for uid, unit in result.items()]
+        OUT.write_text('{\n' + ',\n'.join(lines) + '\n}\n', encoding='utf8')
         print(f'Yazıldı: {OUT.relative_to(ROOT)}')
 
 
