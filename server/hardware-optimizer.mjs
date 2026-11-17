@@ -435,11 +435,18 @@ export class HardwareTeamOptimizer {
  }
 
  // Modelleri Ollama VRAM'de önceden ısıtır (keep_alive: profil değeri, artık ~5dk; sığmayan model için istek beklemede kalmaz, boşalır)
- async warmupTeamModelsInVram({ ollamaBaseUrl, installedModels = [], profile = null } = {}) {
+ // `numCtx` / `keepAlive` verilirse üretim hattının kullandığı çalıştırıcı ayarlarıyla AYNI ayar
+ // gönderilir. Farklı bir num_ctx / num_gpu ile ısıtılan modeli Ollama ilk gerçek çağrıda baştan
+ // yükler; yani ısıtma boşa gider. `models` verilirse yalnızca o modeller ısıtılır.
+ async warmupTeamModelsInVram({ ollamaBaseUrl, installedModels = [], profile = null, numCtx = null, keepAlive = null, models = null } = {}) {
   if (!ollamaBaseUrl || !installedModels.length) return { warmed: [] };
   const active = profile || this.resolveActiveProfile(await this.loadState(), await this.detectLocalHardware());
-  const targets = active.recommendedModels.filter(m => installedModels.includes(m));
+  const wanted = Array.isArray(models) && models.length ? [...new Set(models.filter(Boolean))] : active.recommendedModels;
+  const targets = wanted.filter(m => installedModels.includes(m));
   if (!targets.length) return { warmed: [] };
+  const runnerOptions = Number.isFinite(numCtx) && numCtx > 0
+   ? { num_ctx: Math.round(numCtx) }
+   : { num_ctx: active.numCtx, num_gpu: active.numGpu, low_vram: false };
 
   const warmed = [];
   const t0 = performance.now();
@@ -452,8 +459,8 @@ export class HardwareTeamOptimizer {
      model: m,
      prompt: '',
      stream: false,
-     keep_alive: active.keepAlive,
-     options: { num_ctx: active.numCtx, num_gpu: active.numGpu, low_vram: false }
+     keep_alive: keepAlive ?? active.keepAlive,
+     options: runnerOptions
     }),
     signal: AbortSignal.timeout(15_000)
    });

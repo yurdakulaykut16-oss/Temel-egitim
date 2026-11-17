@@ -44,6 +44,7 @@ export function makeQuestion(tag, text = '') {
  * @param {object} cfg
  * @param {Array<{name:string,sizeGb?:number,parameterSize?:string,family?:string}>} cfg.models
  * @param {number} [cfg.vramGb]         simüle edilen ekran kartı belleği
+ * @param {number} [cfg.maxLoaded]      aynı anda bellekte tutulabilen model sayısı (OLLAMA_MAX_LOADED_MODELS); varsayılan sınırsız
  * @param {number} [cfg.loadMs]         model yükleme süresi
  * @param {number} [cfg.genMs]          üretici çağrısının üretim süresi
  * @param {number} [cfg.judgeMs]        hakem çağrısının üretim süresi
@@ -56,6 +57,7 @@ export function makeQuestion(tag, text = '') {
 export function createFakeOllama({
  models = [{ name: 'qwen3:8b', sizeGb: 5.2, parameterSize: '8.2B', family: 'qwen3' }, { name: 'gemma3:4b', sizeGb: 3.3, parameterSize: '4.3B', family: 'gemma3' }],
  vramGb = 12,
+ maxLoaded = Infinity,
  loadMs = 300,
  genMs = 120,
  judgeMs = 60,
@@ -87,7 +89,7 @@ export function createFakeOllama({
   if (cur) { loaded.delete(name); stats.unloads++; }
   const need = sizeOf(name) + 1;
   const used = () => [...loaded.values()].reduce((s, m) => s + m.sizeGb + 1, 0);
-  while (loaded.size && used() + need > vramGb) {
+  while (loaded.size && (used() + need > vramGb || loaded.size >= maxLoaded)) {
    const oldest = [...loaded.entries()].sort((a, b) => a[1].lastUsed - b[1].lastUsed)[0];
    loaded.delete(oldest[0]);
    stats.unloads++;
@@ -284,6 +286,11 @@ export function createFakeOllama({
   server,
   stats,
   loaded,
+  // Çalışırken sınırları değiştirir (ör. oyun kapandı, artık iki model birlikte sığıyor).
+  setLimits(next = {}) {
+   if (Number.isFinite(next.vramGb)) vramGb = next.vramGb;
+   if (next.maxLoaded !== undefined) maxLoaded = Number(next.maxLoaded) >= 1 ? Number(next.maxLoaded) : Infinity;
+  },
   listen: () => new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server.address().port))),
   close: () => new Promise(resolve => { server.closeAllConnections?.(); server.close(resolve); })
  };
