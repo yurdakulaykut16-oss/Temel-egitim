@@ -581,7 +581,7 @@ export function OllamaStudio({read}: {read: string[]}) {
     <p>
      Havuz: <b>{status?.count || 0}</b> üretildi ({status?.approved || 0} onaylı, {status?.rejected || 0} reddedilmiş) ·
      Sınır: onaylı havuz {(status?.questionCapacity || 65000).toLocaleString('tr-TR')} · toplam kayıt {(status?.maxQuestionsStored || 65000).toLocaleString('tr-TR')} ·
-     Soru başlatma aralığı: en az {(status?.questionIntervalMs || 2000) / 1000} sn ·
+     {status?.questionIntervalMs ? `Soru başlatma aralığı: en az ${status.questionIntervalMs / 1000} sn` : 'Sorular arasında bekleme yok'} ·
      Tamamlanan {read.length} ünitenin {completedWithQuestions} tanesinde hazır soru var.
     </p>
    </div>

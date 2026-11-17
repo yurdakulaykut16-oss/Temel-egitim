@@ -362,3 +362,86 @@
 .event-row{display:grid;grid-template-columns:64px 16px 1fr;gap:8px;padding:4px 0;border-top:1px solid #f1f4ef;line-height:1.5}
 .event-row.ok span:nth-child(2){color:#3f8f3a;font-weight:700}
 .event-row.fail span:nth-child(2){color:#b0563f;font-weight:700}
+
+/* ── Ezber özeti (ders sayfası): az renk, geniş satır aralığı, katlanır konular ── */
+.brief{display:grid;gap:12px}
+.brief-key{background:#f2f7ec;border-radius:12px;padding:16px 18px}
+.brief-key span{font-size:10px;font-weight:800;letter-spacing:1.2px;color:#6c8c5d}
+.brief-key p{margin:6px 0 0;font-size:15px;line-height:1.65;color:#2f4636;font-weight:600}
+.brief-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:6px 0 2px}
+.brief-meta{font-size:12px;color:#7d8d7f}.brief-meta b{color:#3f5f3a}
+.brief-toolbar>div{display:flex;gap:8px}
+.brief-toolbar button{display:inline-flex;align-items:center;gap:6px;border:1px solid #dfe7d9;background:#fff;color:#4b6645;border-radius:999px;padding:7px 13px;font-size:12px;font-weight:700}
+.brief-toolbar button.on{background:#2e6b3f;border-color:#2e6b3f;color:#fff}
+.brief-card{border:1px solid #e6ece1;border-radius:14px;background:#fff;overflow:hidden}
+.brief-card.open{border-color:#cfe0c6}
+.brief-card-head{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:15px 16px;text-align:left;color:#25352d}
+.brief-card-head:hover{background:#f8fbf5}
+.brief-no{flex:0 0 28px;height:28px;border-radius:50%;background:#eef6e8;color:#3f6b38;font:800 13px Manrope,Arial;display:grid;place-items:center}
+.brief-title{flex:1;min-width:0;font:700 16px/1.35 Manrope,Arial}
+.brief-title small{display:block;margin-top:3px;font:500 11.5px 'DM Sans',Arial;color:#8a998b}
+.brief-due{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#6f8a66;background:#f2f7ec;border-radius:999px;padding:4px 9px;white-space:nowrap}
+.brief-due.now{background:#fff3d6;color:#8a6212}
+.brief-chevron{flex:none;color:#93a393;transition:transform .15s}
+.brief-card.open .brief-chevron{transform:rotate(180deg)}
+.brief-card-body{padding:2px 18px 16px 56px}
+.brief-row{padding:9px 0}
+.brief-row+.brief-row{border-top:1px solid #f0f3ed}
+.brief-row.level-4{padding-left:16px}
+.brief-sub{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.brief-sub h4{margin:0;font:700 14px/1.4 Manrope,Arial;color:#2f4636}
+.brief-row.level-4 .brief-sub h4{font-size:13px;color:#4f6a4c}
+.brief-page{border:0;background:none;padding:0;font-size:11px;color:#9aa89a;font-weight:600}
+.brief-page:hover{color:#3f6b38;text-decoration:underline}
+.brief-points,.brief-list ol{margin:0;padding-left:18px}
+.brief-points li,.brief-list li{font-size:14.5px;line-height:1.65;color:#3d4f43;margin:3px 0}
+.brief-points li::marker{color:#9ec58e}
+.brief-list{margin-top:4px}
+.brief-list-intro{display:block;font-size:12.5px;font-weight:700;color:#6c8c5d;margin:4px 0 2px}
+.brief-list li::marker{color:#6c8c5d;font-weight:700}
+.brief-list small,.brief-next{font-size:12px;color:#8a998b}
+.brief-next{margin:0;font-style:italic}
+.brief-note{display:flex;gap:7px;align-items:flex-start;margin:8px 0 0;padding:9px 11px;background:#fff8e6;border-radius:9px;font-size:13px;line-height:1.55;color:#6d5413}
+.brief-note svg{flex:none;margin-top:3px}
+.brief-reveal{border:1px dashed #c8dfc0;background:#fafcf8;color:#56734c;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:700;width:100%;text-align:left}
+.brief-listen{display:inline-flex;align-items:center;gap:6px;margin-top:10px;border:0;background:none;color:#6c8c5d;font-size:12px;font-weight:700;padding:4px 0}
+.more-box{margin-top:12px;border:1px solid #e6ece1;border-radius:14px;background:#fff;padding:0 16px}
+.more-box>summary{display:flex;align-items:center;gap:8px;cursor:pointer;padding:14px 0;font-size:13.5px;font-weight:700;color:#4b6645;list-style:none}
+.more-box>summary::-webkit-details-marker{display:none}
+.more-box>summary::after{content:'+';margin-left:auto;font-size:18px;color:#93a393;font-weight:500}
+.more-box[open]>summary::after{content:'–'}
+.more-box[open]{padding-bottom:16px}
+.more-box .book-source,.more-box .tvgfbf-unit-intel,.more-box .expanded-notes{margin-top:0}
+.more-box .book-source{border:0;padding:0;background:none}
+.long-read .lesson-box-header{margin-bottom:12px}
+.lesson-box .brief+.more-box{margin-top:22px}
+.due-strip{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;border:1px solid #f1dfae;background:#fff8e6;color:#6d5413;border-radius:12px;padding:11px 14px;font-size:13px;text-align:left}
+.due-strip svg:last-child{margin-left:auto}
+.due-strip.home{margin:0 0 16px}
+.nav-count{margin-left:auto;min-width:20px;height:20px;border-radius:999px;background:#f3c24f;color:#3a2c05;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 6px}
+.lesson-main .lead{font-size:14px;color:#6f8071;line-height:1.6}
+.lesson-main .tabs{margin-top:20px}
+.lesson-main .tabs button{font-size:13px}
+.lesson-main .lesson-box{border:0;background:none;padding:0;margin-top:18px}
+.lesson-main .lesson-actions{flex-wrap:wrap}
+/* Tekrar yolu kartı */
+.memory-cues{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px}
+.memory-cues span{font-size:12px;color:#7d8d7f;font-weight:600;width:100%}
+.memory-cues i{font-style:normal;font-size:12px;background:#f2f7ec;color:#4b6645;border-radius:999px;padding:4px 10px}
+.memory-part{margin-top:12px}
+.memory-part>b{display:block;font:700 14px Manrope,Arial;color:#2f4636;margin-bottom:2px}
+.memory-answer .memory-part ul,.memory-answer .memory-part ol{margin:0;padding-left:18px}
+.memory-answer .memory-part li{font-size:14.5px;line-height:1.6;font-weight:500;color:#3d4f43;margin:3px 0}
+.memory-answer .brief-note{font-size:13px;font-weight:500;line-height:1.55}
+.memory-answer .brief-note span{font-size:13px;font-weight:500;letter-spacing:0}
+.memory-upcoming{margin-top:16px;background:#fff;border:2px solid #edf1e9;border-radius:16px;padding:16px 20px}
+.memory-upcoming b{font:700 14px Manrope,Arial;color:#2f4636}
+.memory-upcoming p{margin:8px 0 0;font-size:13px;color:#56665a;display:flex;gap:10px}
+.memory-upcoming p span{flex:0 0 130px;color:#82a86b;font-weight:700;font-size:12px}
+@media(max-width:600px){.brief-card-body{padding:2px 14px 14px 16px}.brief-title{font-size:15px}.brief-due{display:none}.memory-upcoming p{display:block}.memory-upcoming p span{display:block}}
+.plain-box{background:#fff;border:1px solid #e6ece1;border-radius:14px;padding:22px}
+.brief-more{border:0;background:none;color:#56734c;font-size:12.5px;font-weight:700;padding:4px 0 0 18px;text-decoration:underline}
+.brief-terms{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:7px}
+.brief-terms span{font-size:12px;color:#7d8d7f;font-weight:600;margin-right:2px}
+.brief-terms i{font-style:normal;font-size:12.5px;background:#f2f7ec;color:#3f5f3a;border-radius:999px;padding:3px 9px}
+.memory-answer .brief-terms span{font-size:12px;letter-spacing:0;font-weight:600}

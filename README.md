@@ -172,6 +172,15 @@ ollama pull gemma3:4b
 
 İkisi birlikte yaklaşık 10 GB VRAM kullanır ve hiç model takası yapılmaz. Daha büyük tek bir model (ör. 14B) üretimi yavaşlatır ve ikinci hakemle birlikte belleğe sığmaz; 12 GB'ta önerilmez.
 
+**Boşa giden işi kesen hız kuralları (kalite kuralları aynı).** Her soru yine iki bağımsız hakemden, kaynak ve tek doğru cevap denetimlerinden geçer; değişen yalnızca sonucu artık değiştiremeyecek işin yapılmamasıdır:
+
+- **Sorular arasında bekleme yok.** Bir soru bittiği anda sıradaki başlar (eskiden başlatmalar arasında 2 sn ve 0,2 sn'lik yoklama vardı).
+- **Boştaki model öne alınır.** Üretici model yazarken 2. hakemin küçük modeli boş durmaz; kendi işini hemen alır.
+- **Biri reddettiyse diğer hakem beklenmez.** Soru iki onay olmadan alınmadığı için bir hakem reddedince diğerinin çağrısı iptal edilir (sıradaysa hiç başlamaz).
+- **Tekrar soru yarıda kesilir.** Üretici soru kökünü yazar yazmaz kök havuzla karşılaştırılır; kök zaten kayıtlı bir soruyla aynıysa (ya da aynı ünitede %78 ve üzeri benziyorsa) şıkların ve açıklamanın yazılması beklenmez. Karar kuralı, tam taslağa uygulananla aynıdır.
+
+Ölçmek için: `npm run bench` (simülatörle; `BENCH_REJECT=0.3`, `BENCH_DUP=0.3`, `BENCH_VRAM=10` seçenekleri dosyanın başında anlatılır). Simülatör sayıları ekran kartı hızı değildir; düzenleyicinin ne kadar zaman kaybettirdiğini gösterir.
+
 **Modeller bellekte birlikte kalamıyorsa: dalga düzeni (ayar gerekmez).** Tarayıcı, oyun ya da başka bir program ekran kartı belleğini kullanıyorsa (veya Ollama aynı anda tek model tutacak şekilde ayarlıysa) üretici ile 2. hakem birbirini bellekten atar ve her model değişimi 5–10 sn'lik bir yeniden yükleme demektir. Uygulama bunu Ollama'nın bildirdiği yükleme sürelerinden **kendisi anlar** ve dalga düzenine geçer:
 
 - 4 soru birlikte hazırlanır (`TEMPO_SWAP_WAVE`): önce dördü de yazılır ve 1. hakemden geçer, sonra 2. hakem dördüne birlikte bakar.
@@ -219,7 +228,8 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_NUM_CTX` | `4096` | Sabit bağlam penceresi (token). Büyütmek VRAM kullanımını artırır |
 | `TEMPO_OLLAMA_KEEP_ALIVE` | `30m` | Modelin çağrılar arasında bellekte tutulma süresi |
 | `TEMPO_AUTO_CONCURRENCY` | `2` | Aynı anda hazırlanan soru sayısı (1–8) |
-| `TEMPO_QUESTION_INTERVAL_MS` | `2000` | İki soru başlatma arasındaki en kısa süre (ms) |
+| `TEMPO_QUESTION_INTERVAL_MS` | boş | Boşken: sağlıklı akışta sorular arasında beklenmez; yalnızca model çağrısı yapamadan anında düşen denemelerden sonra 2 sn beklenir. Sayı verilirse her soru başlatması arasında o kadar ms beklenir (bilinçli yavaşlatma) |
+| `TEMPO_EARLY_STOP` | `1` | `0`: kökü tekrar olan taslağın yazımını yarıda kesme özelliğini kapatır |
 | `TEMPO_SWAP_WAVE` | `4` | Dalga düzeninde birlikte hazırlanan soru sayısı (1–8). Modeller bellekte birlikte kalabiliyorsa kullanılmaz |
 | `TEMPO_SWAP_MODE` | açık | `0` yapılırsa dalga düzeni kapatılır (modeller sığmıyorsa tek hat, sırayla) |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
@@ -477,7 +487,7 @@ Bu sürümde yapay zekâlar 5 kitabın tamamından (824 sayfa, ~2 milyon karakte
    - `kolay`, `orta` ve `zor` seviyelerinin tamamı yüksek kaliteli ve sınavda çıkma potansiyeli (`examPotential: 1–5`) yüksek sorulardan oluşur.
    - Bir kavram 5 farklı açıdan sorulabiliyorsa (`1. Doğrudan Tanım`, `2. Ters Köşe / İstisna`, `3. Saha Vakası`, `4. Karşılaştırmalı Tuzak`, `5. Şaşırtıcı Bağlam`) yapay zekâ hepsini dengeli döndürerek öğrenciyi şaşırtıcı varyasyonlara da hazırlar.
 13. Süre ve Performansa Göre Şekillenen Uzun, Tekrarlı, Püf Noktalı & Kodlamalı Ünite Anlatımları (`server/lesson-engine.mjs`):**
-   - Derslerim ekranındaki konu anlatımları hızlıca biten kısa özetler değil; derin bölümler, zihin çıpaları, akılda kalıcı **kodlamalar/akrostişler**, klasik tuzak uyarıları, **"1 Kavram — 5 Farklı Soru Açısı" haritası**, yankılı tekrar kutuları ve anında kontrol soruları içerir.
+   - Derslerim ekranı önce kısa ezber özetini gösterir (bkz. 11. bölüm). Altındaki **Uzun anlatım** kutusunda derin bölümler, zihin çıpaları, akılda kalıcı **kodlamalar/akrostişler**, klasik tuzak uyarıları, **"1 Kavram — 5 Farklı Soru Açısı" haritası**, yankılı tekrar kutuları ve anında kontrol soruları içerir.
    - Test çözerken sistem her soruda harcadığın **süreyi (saniye ve dakika)** ve doğruluk/seri performansını otomatik kaydedip `/api/ollama/student-state` üzerinden kaydeder; `LessonEngine` bu verilere bakarak (örneğin yavaş kaldığın veya hata yaptığın ünitelere hızlandırıcı kodlama/tuzak uyarıları ekleyerek) ünite konu anlatımlarını bu sinyallerle güçlendirir.
 
 ## 10. Otonom Yapay Zekâ Kalite Kurulu (Senin Onaylaman veya Reddetmen Gerekmez)
@@ -489,15 +499,23 @@ Bu sürümde **havuzdaki soruları tek tek onaylaman ya da reddetmen gerekmez**;
 3. Çift cevap riski taşıyan, kanıtsız veya kalite çıtasının altında kalan sorular otomatik **`AI Otomatik Eledi`** sekmesine ayrılır ve DPO tercih çifti (`rejected-traces.jsonl`) olarak modelleri daha da güçlendirmek için kullanılır.
 4. **Soru stüdyosu** sayfasından dilediğin zaman AI Konseyi'nin onayladığı ve otomatik elediği soruları, hakem gerekçelerini, web araştırma tahminlerini ve JARVIS canlı günlüğünü izleyebilirsin.
 
-## 11. Tekrar yolunu kullan
+## 11. Dersi oku, yarın hatırla (ezber özeti ve Tekrar yolu)
 
-1. Sol menüden **Tekrar yolu**na gir. Yalnız tamamladığın üniteler için hatırlama kartları açılır.
-2. Karttaki konuyu nota bakmadan kendi cümlelerinle anlat; sonra **Notu göster** düğmesine bas.
-3. Notla karşılaştır. Hatırladıysan **Hatırladım**, eksikse **Tekrar etmeliyim** seç.
-4. Hatırlanan konular giderek büyüyen aralıklarla (1, 3, 7, 14, 30, 60, 120, 240, sonra yaklaşık her 365 günde bir) tekrar gösterilir; amaç bir kez öğrenilen bir şeyi kalıcı hâle getirip sessizce unutulmasını önlemektir. Eksik kalan konu 10 dakika sonra tekrar gösterilir. Testte yapılan yanlış, ilgili üniteyi hemen tekrar sırasına alır ve aralığı sıfırlar.
-5. **Derse dön** veya **Ünite testini çöz** ile konuyu pekiştirebilirsin. Tekrar tarihi uygulamayı açtığında kontrol edilir; otomatik bildirim gönderilmez.
+**Ders sayfası (Derslerim → bir ünite)** artık tek bir şey gösterir: kitaptaki **her başlığın** kısa, ezberlenecek özeti.
 
-Bu sistem her ünitenin önemli notunu hatırlatır; kitabın tüm konularını ayrı ayrı ölçmez ve kalıcı öğrenme garantisi vermez. Tekrar planı bu tarayıcıda saklanır.
+- Ünite 3–8 ana konuya ayrılır; konuya tıklayınca açılır. Her alt başlığın altında 1–3 kısa cümle, varsa kitaptaki madde listesi ve "Dikkat" kutuları vardır. `s.47` gibi sayfa numarasına basınca kitabın o sayfası açılır.
+- **Kendini sına** düğmesi içerikleri gizler; önce kendin hatırlarsın, sonra gösterirsin. **Bu konuyu dinle** konuyu seslendirir.
+- Uzun anlatım, kodlamalar, kitap soruları ve PDF kaybolmadı; sayfanın altında kapalı kutular hâlinde durur (istersen açarsın).
+- Özet doğrudan kitap PDF'lerinden çıkarılır (`npm run briefs`). Kitaptaki 712 başlığın tamamının özette bulunduğu her çalıştırmada otomatik sınanır (`scripts/test-unit-briefs.mjs`). Cümleler kitaptan aynen alınır; kitaptaki yazım hataları da aynen gelir.
+
+**Kalıcı ezber her zaman açıktır.** Ayrıca bir şeyi açman gerekmez:
+
+1. Derste bir konuyu açıp yaklaşık 20 saniye okuduğunda o konu kendiliğinden tekrar planına girer ve **ertesi gün** karşına çıkar. **Okudum, tamamla** dersen ünitenin bütün konuları plana girer.
+2. Tekrar zamanı gelen konu sayısı sol menüde **Tekrar yolu**nun yanında, ana sayfada ve ünite sayfasında görünür.
+3. **Tekrar yolu**nda kart sana ana konuyu ve alt başlıklarını ipucu olarak verir. Nota bakmadan anlat, sonra **Özeti göster** (Boşluk tuşu) de.
+4. Hatırladıysan **Hatırladım** (2), eksikse **Tekrar etmeliyim** (1) seç. Hatırlanan konu 3, 7, 14, 30, 60, 120, 240, sonra yaklaşık 365 gün arayla yeniden gelir. Eksik kalan konu 10 dakika sonra tekrar sorulur ve merdiven baştan başlar. Testte yapılan yanlış, o ünitenin planlı konularını hemen sıraya alır.
+
+Tekrar planı bu tarayıcıda saklanır; bildirim gönderilmez, tarih uygulamayı açtığında kontrol edilir. Plan bir öneridir, kalıcı öğrenme garantisi değildir. Eski sürümde "tamamlandı" işaretlediğin ünitelerin konuları da karta dönüşür ve ünitenin eski tekrar tarihini izler.
 
 Bir üniteyi önceden okuyup tamamladıysan ama baştan tekrar okumak/çözmek istersen, ünite sayfasında **Üniteyi sıfırla, en baştan başla** düğmesini kullanabilirsin (yalnız o ünite okundu/tamamlandı işaretini, o üniteye ait test sonuçlarını ve Tekrar yolu kaydını siler; diğer ünitelerin ilerlemesine ve yapay zekânın ürettiği soru havuzuna dokunmaz). Bu düğme, ünite daha önce okunmuş veya en az bir kez test edilmişse görünür.
 

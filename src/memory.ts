@@ -24,3 +24,16 @@ export function loadReviews(raw:string|null):Reviews {
     })) as Reviews;
   } catch {return {};}
 }
+
+/** Yeni öğrenilen bir kart: ilk tekrar ERTESİ GÜN gelir (bugün öğrenilen yarın yeniden sorulur);
+ * hatırlandıkça 3, 7, 14 … gün aralıklarıyla sürer. */
+export function firstReview(now:number):Review { return {stage:1,due:now+DAY,reviewed:now}; }
+/** Bir kartın vadesi. Kaydı olmayan kart (eski sürümde okunmuş ünite) ünitenin eski planını izler, o da yoksa hemen tekrar edilir. Ünite bir testte
+ * yanlış yapıldıysa (ünite kaydı karttan yeni ve vadesi gelmiş) o ünitenin kartları öne alınır. */
+export function cardDue(reviews:Reviews, id:string, unitId:string, now:number):number {
+  const card=reviews[id], unit=reviews[unitId];
+  if (!card) return unit ? unit.due : 0;
+  if (unit && unit.reviewed>card.reviewed && unit.due<=now) return unit.due;
+  return card.due;
+}
+export const startOfTomorrow=(now:number)=>{const d=new Date(now);d.setHours(24,0,0,0);return d.getTime()};

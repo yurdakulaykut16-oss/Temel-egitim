@@ -44,6 +44,8 @@ const DEFAULT_MAX_HOLD_MS = 5 * 60_000;
 export class SerialTaskQueue {
  #maxConcurrent;
  #running = 0;
+ // Model başına o an çalışan çağrı sayısı (boşta duran modele öncelik vermek için).
+ #runningByKey = new Map();
  #waiters = [];
  #active = new Set();
  #pending = 0;
@@ -123,7 +125,15 @@ export class SerialTaskQueue {
 
  /** Sıradaki işin dizini; şimdilik hiçbir iş başlatılmayacaksa -1. */
  #pickIndex() {
-  if (!this.#affinity) return 0;
+  if (!this.#affinity) {
+   // BOŞTAKİ MODELE ÖNCELİK: Ollama aynı modele gelen çağrıları sırayla işler; meşgul bir modele
+   // gönderilen çağrı yuvayı tutup yalnızca bekler. Sırada boşta duran bir modelin işi varsa önce o
+   // başlatılır (ör. üretici model yazarken küçük hakem modeli boş durmaz). Yoksa geliş sırası geçerlidir.
+   for (let i = 0; i < this.#waiters.length; i++) {
+    if (!(this.#runningByKey.get(this.#waiters[i].key) > 0)) return i;
+   }
+   return 0;
+  }
   const cur = this.#currentModel;
   if (cur === null) return 0;
   let same = -1;
@@ -157,7 +167,8 @@ export class SerialTaskQueue {
  }
 
  #drain() {
-  if (this.#affinity) this.#purgeAborted();
+  // Kuyrukta beklerken iptal edilen işler (ör. diğer hakem reddettiği için gereksizleşen çağrı) yuva tutmaz.
+  this.#purgeAborted();
   while (this.#running < this.#maxConcurrent && this.#waiters.length > 0) {
    const index = this.#pickIndex();
    if (index < 0) break;
@@ -182,9 +193,16 @@ export class SerialTaskQueue {
   this.#running += 1;
   this.#pending = Math.max(0, this.#pending - 1);
   const { label, task, signal, resolve, reject } = waiter;
+  const key = waiter.key;
+  this.#runningByKey.set(key, (this.#runningByKey.get(key) || 0) + 1);
+  const release = () => {
+   const left = (this.#runningByKey.get(key) || 1) - 1;
+   if (left > 0) this.#runningByKey.set(key, left); else this.#runningByKey.delete(key);
+  };
 
   const execute = async () => {
    if (signal?.aborted) {
+    release();
     this.#finish();
     reject(abortError(signal));
     return;
@@ -200,6 +218,7 @@ export class SerialTaskQueue {
     reject(err);
    } finally {
     this.#active.delete(active);
+    release();
     this.#finish();
    }
   };
@@ -221,11 +240,15 @@ export class SerialTaskQueue {
   return new Promise((resolve, reject) => {
    const waiter = { label, key: String(label ?? ''), task, signal, resolve, reject, enqueuedAt: Date.now() };
    this.#waiters.push(waiter);
-   if (this.#affinity && signal && typeof signal.addEventListener === 'function') {
+   if (signal && typeof signal.addEventListener === 'function') {
     signal.addEventListener('abort', () => { if (this.#waiters.includes(waiter)) this.#drain(); }, { once: true });
    }
-   // Hemen bir yuva varsa bekletme, anında başlat.
-   if (this.#running < this.#maxConcurrent) this.#drain();
+   // Yuva varsa bekletilmez. Model sırası (dalga) modu kapalıyken başlatma bir mikro görev sonraya
+   // bırakılır: aynı anda kuyruğa konan çağrılar (iki hakem) birlikte görülür ve boştaki modelinki öne alınır.
+   if (this.#running < this.#maxConcurrent) {
+    if (this.#affinity) this.#drain();
+    else queueMicrotask(() => this.#drain());
+   }
   });
  }
 
