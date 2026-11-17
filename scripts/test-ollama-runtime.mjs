@@ -16,7 +16,7 @@ test('ollama-client: model bir kez yüklenir, num_ctx sabit, keep_alive > 0, ak�
  const sim = createFakeOllama({ loadMs: 1600, genMs: 60, judgeMs: 30 });
  const port = await sim.listen();
  try {
-  const client = createOllamaClient({ base: `http://127.0.0.1:${port}`, keepAlive: '30m', numCtx: 4096 });
+  const client = createOllamaClient({ base: `http://127.0.0.1:${port}`, keepAlive: '30m', numCtx: 4096, numThread: 6 });
   const prompts = [
    'Kısa istek. KONU ANLATIMI: Antrenman planlı ve tekrarlı bir süreçtir.',
    `Çok daha uzun bir istek ${'x'.repeat(4000)} KONU ANLATIMI: Antrenman planlı ve tekrarlı bir süreçtir.`
@@ -29,6 +29,8 @@ test('ollama-client: model bir kez yüklenir, num_ctx sabit, keep_alive > 0, ak�
   }
   assert.equal(sim.stats.loadsByModel['qwen3:8b'], 1, 'prompt uzunluğu değişse de model yeniden yüklenmemeli');
   assert.deepEqual([...new Set(sim.stats.requests.map(r => r.options.num_ctx))], [4096]);
+  assert.deepEqual([...new Set(sim.stats.requests.map(r => r.options.num_thread))], [6], 'CPU thread sayısı sabit ve her çağrıda aynı olmalı');
+  assert.equal(client.snapshot().numThread, 6);
   assert.ok(sim.stats.requests.every(r => r.keep_alive === '30m'));
   assert.ok(sim.stats.requests.every(r => r.stream === true));
   assert.ok(sim.stats.requests.every(r => r.options.num_gpu === undefined && r.options.num_batch === undefined), 'yeniden yükleme tetikleyen çalıştırıcı seçenekleri gönderilmemeli');
@@ -126,6 +128,27 @@ test('model-lineup: tek model, sığmayan ikili, sabitleme ve boş liste', () =>
 
  const none = planLineup([], { vramGb: 12 });
  assert.equal(none.ok, false);
+});
+
+test('tek-model seçiminde hız için GPU-fit tercih edilir, RAM offload yalnızca son çaredir', () => {
+ const installed = [
+  model('qwen3:14b', 9.3, '14B', 'qwen3'),
+  model('qwen3:20b', 13.2, '20B', 'qwen3'),
+  model('qwen3:30b', 19.8, '30B', 'qwen3')
+ ];
+ const plan = planLineup(installed, { vramGb: 12, ramOffloadGb: 4, numCtx: 4096, profile: 'kalite', singleModel: true });
+ assert.equal(plan.model, 'qwen3:14b', 'GPU’ya sığan model hız için 20B’den önce seçilmeli');
+ assert.equal(plan.verifierModel, plan.model);
+ assert.equal(plan.judge2Model, plan.model);
+ assert.equal(plan.estimatedRamOffloadGb, 0);
+
+ const ramFallback = planLineup([installed[1]], { vramGb: 12, ramOffloadGb: 4, numCtx: 4096, profile: 'kalite', singleModel: true });
+ assert.equal(ramFallback.model, 'qwen3:20b', 'yalnızca GPU-fit model yoksa güvenli RAM offload devreye girer');
+ assert.ok(ramFallback.estimatedRamOffloadGb > 0 && ramFallback.estimatedRamOffloadGb <= 4);
+ assert.ok(ramFallback.warnings.some(w => /RAM\/CPU|token hızı düşebilir/.test(w)));
+
+ const gpuOnly = planLineup(installed, { vramGb: 12, ramOffloadGb: 0, numCtx: 4096, profile: 'kalite', singleModel: true });
+ assert.equal(gpuOnly.model, 'qwen3:14b', 'offload alanı yoksa tam GPU fit model tercih edilmeli');
 });
 
 test('draft-repair: biçim hataları onarılır, içerik değişmez', () => {

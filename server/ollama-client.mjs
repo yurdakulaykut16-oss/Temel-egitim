@@ -92,11 +92,13 @@ function classifyHttpError(status, text) {
  * @param {string} cfg.base           Ollama taban adresi
  * @param {string|number} [cfg.keepAlive]  Modelin bellekte tutulma süresi (varsayılan 30 dk)
  * @param {number} [cfg.numCtx]       Tüm modeller için sabit bağlam penceresi
+ * @param {number} [cfg.numThread]    CPU'da çalışacak sabit Ollama thread sayısı
  * @param {typeof fetch} [cfg.fetchFn]
  */
-export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_NUM_CTX, fetchFn = (...a) => fetch(...a) } = {}) {
+export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_NUM_CTX, numThread = null, fetchFn = (...a) => fetch(...a) } = {}) {
  const baseUrl = String(base || 'http://127.0.0.1:11434').replace(/\/$/, '');
  let fixedNumCtx = clampNumCtx(numCtx);
+ const fixedNumThread = Number.isFinite(Number(numThread)) && Number(numThread) > 0 ? Math.max(1, Math.min(32, Math.round(Number(numThread)))) : null;
  let keepAliveValue = keepAlive;
 
  const noThinkParam = new Set();     // think parametresini reddeden modeller
@@ -171,6 +173,7 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
   const options = {
    // ÇALIŞTIRICI SEÇENEĞİ — her çağrıda aynı: model asla yeniden yüklenmez.
    num_ctx: fixedNumCtx,
+   ...(fixedNumThread ? { num_thread: fixedNumThread } : {}),
    // Örnekleme seçenekleri — yeniden yükleme gerektirmez.
    temperature,
    num_predict: Math.max(16, Math.round(numPredict))
@@ -431,6 +434,7 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
   }
   return {
    numCtx: fixedNumCtx,
+   numThread: fixedNumThread,
    keepAlive: keepAliveValue,
    ...stats,
    loadMsTotal: Math.round(stats.loadMsTotal),

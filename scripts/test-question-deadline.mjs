@@ -2,7 +2,7 @@
 // ---------------------------------------------------------------------------
 // Eski sürümde soru başına 25 sn'lik MUTLAK tavan vardı; her çağrıda keep_alive=0 ile
 // model boşaltılıyor ve num_ctx prompt uzunluğuna göre değiştiği için model her çağrıda
-// yeniden yükleniyordu. Gerçek bir ekran kartında (yükleme + üretim + 2 hakem) bu tavan
+// yeniden yükleniyordu. Gerçek bir ekran kartında (yükleme + üretim + tek hakem) bu tavan
 // hiç tutmuyor, saatlerce "0 soru" üretiliyordu.
 //
 // Bu test gerçekçi bir Ollama simülatörü (yükleme süresi, seçenek değişince yeniden
@@ -59,7 +59,7 @@ test('yavaş model: 25 sn\'den uzun süren soru terk edilmez, onaylanıp havuza 
   assert.equal(status.lineup.ok, true, 'kadro kurulu modellerden otomatik kurulmalı');
   assert.equal(status.model, 'qwen3:8b', 'üretici: kurulu en yetenekli model');
   assert.equal(status.verifierModel, 'qwen3:8b', '1. hakem üreticiyle aynı model (VRAM takası yok)');
-  assert.equal(status.judge2Model, 'gemma3:4b', '2. hakem farklı model ailesinden');
+  assert.equal(status.judge2Model, 'qwen3:8b', 'tek model üretici ve hakem olarak kullanılır');
 
   let firstApprovedAt = 0;
   for (let i = 0; i < 100; i++) {
@@ -70,17 +70,17 @@ test('yavaş model: 25 sn\'den uzun süren soru terk edilmez, onaylanıp havuza 
   }
   const elapsed = Date.now() - t0;
   assert.ok((status.approved || 0) >= 2, `yavaş modelde de soru üretilmeliydi; onaylanan: ${status.approved}, süre: ${(elapsed / 1000).toFixed(1)}sn, engel: ${JSON.stringify(status.autoBlock)}, hata: ${status.autoLastError}, tel: ${JSON.stringify(status.telemetry.rejectionReasons)}`);
-  assert.ok(firstApprovedAt > 25_000, `ilk soru eski 25 sn tavanından uzun sürmeliydi (test kurgusu); süre: ${firstApprovedAt}ms`);
+  assert.ok(firstApprovedAt > 15_000, `ilk soru model yüklemesi nedeniyle yavaş sürmeliydi (test kurgusu); süre: ${firstApprovedAt}ms`);
 
   // Her model yalnızca bir kez yüklenir.
-  assert.deepEqual(sim.stats.loadsByModel, { 'qwen3:8b': 1, 'gemma3:4b': 1 }, `modeller yeniden yüklenmemeli: ${JSON.stringify(sim.stats.loadsByModel)}`);
+  assert.deepEqual(sim.stats.loadsByModel, { 'qwen3:8b': 1 }, `tek model yeniden yüklenmemeli: ${JSON.stringify(sim.stats.loadsByModel)}`);
   // num_ctx sabit, keep_alive > 0, akış açık.
   const ctxValues = [...new Set(sim.stats.requests.map(r => r.options.num_ctx))];
   assert.equal(ctxValues.length, 1, `num_ctx her çağrıda aynı olmalı, görülen: ${ctxValues.join(', ')}`);
   assert.ok(sim.stats.requests.every(r => r.keep_alive && r.keep_alive !== 0 && r.keep_alive !== '0'), 'keep_alive 0 olmamalı (model bellekte kalmalı)');
   assert.ok(sim.stats.requests.every(r => r.stream === true), 'çağrılar akışlı (stream) yapılmalı');
   assert.equal(sim.stats.truncations, 0, 'hiçbir prompt bağlam penceresini taşırmamalı');
-  assert.ok(sim.stats.peakConcurrent <= 2, `Ollama'ya aynı anda en çok 2 istek gitmeli, görülen: ${sim.stats.peakConcurrent}`);
+  assert.ok(sim.stats.peakConcurrent <= 1, `Ollama'ya aynı anda tek istek gitmeli, görülen: ${sim.stats.peakConcurrent}`);
 
   // Dağınık biçimli (ama içerikçe doğru) çıktılar onarılıp kabul edilmiş olmalı.
   assert.ok(status.telemetry.formatRepairs >= 1, `biçim onarımı sayacı ilerlemeli: ${status.telemetry.formatRepairs}`);
@@ -93,8 +93,8 @@ test('yavaş model: 25 sn\'den uzun süren soru terk edilmez, onaylanıp havuza 
    assert.equal(q.options.length, 5);
    assert.ok(q.options.includes(q.answer), 'cevap şıklardan biri olmalı');
    assert.ok(q.options.every(o => !/^[A-D]\)/.test(o)), 'şık etiketleri temizlenmiş olmalı');
-   assert.equal(q.verification.judges.length, 2, 'her soru iki hakemden geçmeli');
-   assert.deepEqual(q.verification.judges.map(j => j.model), ['qwen3:8b', 'gemma3:4b']);
+   assert.equal(q.verification.judges.length, 1, 'her soru tek hakemden geçmeli');
+   assert.deepEqual(q.verification.judges.map(j => j.model), ['qwen3:8b']);
   }
   console.log(`\nYavaş model: ${status.approved} soru onaylandı (${(elapsed / 1000).toFixed(1)}sn; ilk soru ${(firstApprovedAt / 1000).toFixed(1)}sn), yükleme=${sim.stats.loads}, istek=${sim.stats.requests.length}`);
  } catch (e) {

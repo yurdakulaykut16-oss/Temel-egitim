@@ -1,0 +1,806 @@
+{
+  "description": "Kullanıcının güvenilir ve sağlam olduğunu belirttiği 100 antrenman bilimi sınav soru kökü-cevap örneği. Aynı konu için soru üretiminde içerik referansı ve tüm zorluk düzeylerinde biçim örneği olarak kullanılır.",
+  "answerStatus": "user_confirmed_trusted",
+  "samples": [
+    {
+      "id": "user-antrenman-001",
+      "unitId": "0-0",
+      "question": "Dünyadaki ilk genel antrenman araştırması kabul edilen ‘Spor Antrenmanların Periyotlanması’ adlı eserin yazarı hangisidir?",
+      "answer": "Matbeev (Matveyev)",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-002",
+      "unitId": "0-0",
+      "question": "Türkiye'de antrenman bilimindeki ilk bilimsel çalışmalar 1973 yılında hangi kurum bünyesinde antropometrik ölçümlerle başlamıştır?",
+      "answer": "Ege Üniversitesi Spor Hekimliği Enstitüsü",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-003",
+      "unitId": "0-0",
+      "question": "1982 yılında Beden Terbiyesi Kanunu çerçevesinde antrenör eğitimi ve sporcu sağlığı hizmetleri için kurulan merkez aşağıdakilerden hangisidir?",
+      "answer": "Ankara Sporcu Eğitim Sağlık ve Araştırma Merkezi",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-004",
+      "unitId": "0-0",
+      "question": "Yeni başlayanlardan elit sporculara, çocuklardan yaşlılara kadar herkesin kendi verimliliğini geliştirmesine ve fiziksel uygunluk elde etmesine açık olması durumu hangi kavramla tanımlanır?",
+      "answer": "Açıklık",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-005",
+      "unitId": "0-0",
+      "question": "Türk Dil Kurumuna göre bedeni veya zihni geliştirmek amacıyla kişisel veya toplu olarak gerçekleştirilen, bazı kurallara göre uygulanan hareketlerin tümü nedir?",
+      "answer": "Spor",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-006",
+      "unitId": "0-0",
+      "question": "Fiziksel aktivitenin en temel bilimsel tanımı aşağıdakilerden hangisidir?",
+      "answer": "İskelet kasları vasıtasıyla vücudun hareketi sonucunda oluşan enerji harcamasıdır.",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-007",
+      "unitId": "0-0",
+      "question": "Sportif performansı etkileyen içsel faktörler arasında aşağıdakilerden hangisi yer almaz?",
+      "answer": "Ekipman kalitesi ve tesis imkanları",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-008",
+      "unitId": "0-0",
+      "question": "Aşağıdakilerden hangisi sportif performansı etkileyen dışsal faktörler kategorisinde değerlendirilir?",
+      "answer": "Çevre koşulları ve antrenör müdahale imkanı",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-009",
+      "unitId": "0-0",
+      "question": "Fiziksel uygunluğun bir veya daha fazla öğesini geliştirmeye veya korumaya yönelik yapılan planlı, programlı ve tekrarlayıcı vücut hareketlerine ne ad verilir?",
+      "answer": "Egzersiz",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-010",
+      "unitId": "0-0",
+      "question": "Geniş anlamda antrenman tanımı aşağıdakilerden hangisini öncelikle kapsar?",
+      "answer": "Sporsal verime ulaşmak için kullanılan tüm sistematik hazırlık ve öğrenme yöntemleri",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-011",
+      "unitId": "0-1",
+      "question": "Antrenörün eğitsel görevi kapsamında sporcuyu ulaştırması gereken temel hedef nedir?",
+      "answer": "Basamaklı olarak üst düzey verimliliğe ulaştırmak",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-012",
+      "unitId": "0-1",
+      "question": "Aşağıdakilerden hangisi bir antrenörün yetki ve sorumlulukları arasında gösterilemez?",
+      "answer": "Sporcuların tıbbi ilaç ve cerrahi tedavi süreçlerini tek başına yönetmek",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-013",
+      "unitId": "0-0",
+      "question": "Performans kavramı fizik bilimindeki karşılığına göre nasıl ifade edilir?",
+      "answer": "Birim zamana düşen iş",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-014",
+      "unitId": "0-0",
+      "question": "Türkiye'de spor bilimleri tarihinde 1975 yılının temel önemi aşağıdakilerden hangisidir?",
+      "answer": "Spor akademilerinin kurulması ile antrenör eğitimi ve antrenman biliminin ön plana çıkması",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-015",
+      "unitId": "0-0",
+      "question": "Sportif performansın içsel faktörlerini objektifleştirmek neden çok zordur?",
+      "answer": "Dışarıdan müdahale imkanı sınırlı ve kalıtsal bileşenleri yüksek olduğu için",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-016",
+      "unitId": "0-7",
+      "question": "Baly (Bari) tarafından gerçekleştirilen uzun vadeli sporcu gelişim modeli toplam kaç aşamadan oluşmaktadır?",
+      "answer": "7 aşamadan oluşur",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-017",
+      "unitId": "0-7",
+      "question": "Uzun vadeli sporcu gelişim modelinde doğumdan 6 yaşa kadar olan, oyun ve temel hareket becerilerinin beyin işlevi/koordinasyon gelişimine odaklanan evre hangisidir?",
+      "answer": "Aktif başlangıç",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-018",
+      "unitId": "0-7",
+      "question": "Uzun vadeli sporcu gelişim modelinde aşamalar arasında geçiş planlanırken temel alınması gereken en güvenilir gösterge nedir?",
+      "answer": "Biyolojik yaş",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-019",
+      "unitId": "3-3",
+      "question": "Vücudun bir yerden bir yere hareket ettirilmesini ifade eden beceri türü hangisidir?",
+      "answer": "Lokomotor beceriler",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-020",
+      "unitId": "3-3",
+      "question": "Bir nesnenin kullanımını içeren (fırlatma, yakalama, nesneyi bırakma vb.) hareket becerilerine ne ad verilir?",
+      "answer": "Manipülatif beceriler",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-021",
+      "unitId": "3-3",
+      "question": "Uzun vadeli sporcu gelişiminin temel eğitim evresinde hareketin ABC'si olarak nitelendirilen ve geliştirilmesi gereken özellikler nelerdir?",
+      "answer": "Çeviklik, denge, koordinasyon ve sürat",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-022",
+      "unitId": "0-7",
+      "question": "Geç özelleşilen sporlarda ‘antrenman yapmayı öğrenme’ evresi erkekler için hangi yaş aralığını kapsamaktadır?",
+      "answer": "9-12 yaş arası",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-023",
+      "unitId": "0-7",
+      "question": "Uzun vadeli sporcu gelişim modeline göre erken özelleşme gerektiren spor branşlarına en uygun örnek aşağıdakilerden hangisidir?",
+      "answer": "Jimnastik",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-024",
+      "unitId": "0-7",
+      "question": "Geç özelleşme gerektiren branşlarda (örneğin futbol gibi) erken uzmanlaşmaya zorlanmanın çocuk üzerindeki olası negatif etkisi nedir?",
+      "answer": "Sakatlanma, erken form tutma ve spordan kopma riskini arttırır",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-025",
+      "unitId": "1-1",
+      "question": "Aerobik dayanıklılığın antrene edilebilirliği için en uygun dönem ne zaman başlar?",
+      "answer": "Boy uzama hızındaki artışın başlangıcıyla",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-026",
+      "unitId": "0-3",
+      "question": "Erkeklerde kuvvet antrenmanına yoğunlaşmak için en uygun, en hassas dönem hangisidir?",
+      "answer": "Boy uzama hızındaki zirve noktadan 12-18 ay sonra",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-027",
+      "unitId": "0-7",
+      "question": "Côté tarafından geliştirilen ‘spora katılım gelişimsel modeli’nin temel yaklaşım odağı nedir?",
+      "answer": "Psikolojik bir çevrede farklı spor katılım yollarını ve katılım kalitesini anlamak",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-028",
+      "unitId": "0-7",
+      "question": "Spora katılımı gelişimsel modeline göre çocukların çoklu spor aktivitelerine eğlenceli ve keyifli bir ortamda katıldığı örnekleme aşaması hangi yaşları kapsar?",
+      "answer": "6-12 yaş arası",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-029",
+      "unitId": "0-7",
+      "question": "Spora katılımın gelişimsel modelinin üç ana aşaması kronolojik olarak hangi seçenekte doğru sıralanmıştır?",
+      "answer": "Örnekleme - Uzmanlaşma - Yatırım",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-030",
+      "unitId": "0-7",
+      "question": "Spora katılımın gelişimsel modeline göre uzmanlık derecesi ve katılım yoğunluğunun arttığı, branş sayısının azaldığı uzmanlaşma yılları hangi yaş aralığıdır?",
+      "answer": "13-15 yaş arası",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-031",
+      "unitId": "0-7",
+      "question": "Hangisi spora katılım gelişim modelinin 7 önermesinden biridir?",
+      "answer": "Erken dönemdeki çoklu uygulamalar seçilen sporda en yüksek performansa ulaşmaya engel değildir.",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-032",
+      "unitId": "0-7",
+      "question": "Uzun vadeli sporcu gelişim modelinde ‘kazanmak için antrenman’ evresi (17-18 yaş ve sonrası) öncelikle neyi hedefler?",
+      "answer": "Uluslararası başarı, madalya ve doruk performansı",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-033",
+      "unitId": "0-7",
+      "question": "Baly'nin uzun vadeli sporcu gelişim modeli ile Côté'nin spora katılım gelişimsel modeli arasındaki temel fark nedir?",
+      "answer": "Uzun vadeli sporcu gelişim daha çok biyolojik/fizyolojik odaklı, spora katılım gelişimsel modeli ise daha çok psikolojik katılım odaklıdır.",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-034",
+      "unitId": "0-7",
+      "question": "Geç özelleşilen sporlarda (atletizm, futbol vb.) temel eğitim evresi kızlar için hangi yaşları kapsar?",
+      "answer": "6-8 yaş arası",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-035",
+      "unitId": "0-7",
+      "question": "Uzun vadeli sporcu gelişim modelinde ‘aktif yaşam’ aşamasının temel felsefesi nedir?",
+      "answer": "Yarışmacı kariyerinden yaşam boyu fiziksel aktiviteye sağlıklı bir geçiş sağlamak",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-036",
+      "unitId": "0-2",
+      "question": "Antrenman sırasında vücudun yüklenmeye verdiği anlık solunum, kalp atım hızı ve kan basıncı tepkilerine ne ad verilir?",
+      "answer": "Akut uyum",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-037",
+      "unitId": "0-2",
+      "question": "Antrenmanların şiddeti, sıklığı ve süresiyle zamanla oluşan kalıcı fizyolojik ve morfolojik değişikliklere ne ad verilir?",
+      "answer": "Kronik uyum",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-038",
+      "unitId": "0-2",
+      "question": "Fiziksel aktivite sonrası eksilen enerji maddelerinin başlangıç seviyesinin üzerine çıkacak şekilde tamamlanması sürecine ne denir?",
+      "answer": "Süperkompensasyon",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-039",
+      "unitId": "0-2",
+      "question": "Süperkompensasyon sürecinin yorgunluk ile karakterize edilen başlangıç evresi aşağıdakilerden hangisidir?",
+      "answer": "1. evre",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-040",
+      "unitId": "0-2",
+      "question": "Bir antrenman biriminde fazla tamlama evresi (3. evre) tam olarak ne zaman görülür?",
+      "answer": "Yenilenme aşamasından sonra biyokimyasal depolar başlangıç düzeyini aştığında",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-041",
+      "unitId": "0-2",
+      "question": "Dayanıklılık odaklı bir antrenman sonrası fazla tamlama süreci genellikle ne zaman gerçekleşmeye başlamaktadır?",
+      "answer": "6 saatten sonra",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-042",
+      "unitId": "0-2",
+      "question": "Merkezi sinir sistemine ağır yük getiren maksimal şiddetli antrenmanlarda fazla tamlama süresi ne kadardır?",
+      "answer": "24-48 saat arası",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-043",
+      "unitId": "0-2",
+      "question": "Eğer dinlenme evresi gereğinden fazla tutulursa ve bir sonraki uyaran geç verilirse süperkompensasyon sürecinde ne gerçekleşir?",
+      "answer": "Fazla tamlama etkisi kaybolur ve verim düzeyi başlangıç seviyesine veya altına döner",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-044",
+      "unitId": "0-2",
+      "question": "Antrenman uyumunun gerçekleştiği temel sistemler arasında aşağıdakilerden hangisi yer almaz?",
+      "answer": "Aktif sindirim sistemi",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-045",
+      "unitId": "0-2",
+      "question": "Üst düzey sporcuların daha sık ve yoğun antrenman yapabilmesinin temel fizyolojik gerekçesi nedir?",
+      "answer": "Fazla tamlama evresinin yararları yok olmadan ikinci bir uyaranı alabilme kapasiteleri",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-046",
+      "unitId": "0-2",
+      "question": "Organizmanın antrenmana uyum sağlaması için dışsal yüklenmenin sistematik olarak arttırılması ilkesine ne ad verilir?",
+      "answer": "Artan yüklenme ilkesi",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-047",
+      "unitId": "0-2",
+      "question": "Maksimal şiddetteki uyaranların çok sık ve dinlenme verilmeden uygulanması sonucunda organizmada ne oluşur?",
+      "answer": "Genel yıpranma, sürantrenman ve verim düşüşü",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-048",
+      "unitId": "0-2",
+      "question": "Adaptasyonun kalıcı olması için antrenman etkileri haftada en az kaç kez yüklenme ile korunabilir?",
+      "answer": "Haftada 1-2 kez",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-049",
+      "unitId": "0-2",
+      "question": "Süperkompensasyon ilişkisinde dalgasal gelişim neyi ifade eder?",
+      "answer": "Yüksek şiddetli uyaranların düşük şiddetli uyaranlarla dönüşümlü planlanmasını",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-050",
+      "unitId": "0-2",
+      "question": "Antrenmanın organizmada yarattığı en belirgin morfolojik ve fizyolojik değişiklikler öncelikle hangi yapılarda görülür?",
+      "answer": "İskelet, kalp ve solunum sistemleri",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-051",
+      "unitId": "0-2",
+      "question": "Antrenmana ara verilmesi sonucu sportif verim ve fizyolojik uyumlarda meydana gelen kayıplar sürecine ne ad verilir?",
+      "answer": "Antrenmansızlaşma",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-052",
+      "unitId": "0-2",
+      "question": "Antrenmansızlaşma sonucunda kalp-solunum işlevinde meydana gelen değişimlerden hangisi yanlıştır?",
+      "answer": "Maksimum oksijen kapasitesi artar",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-053",
+      "unitId": "0-3",
+      "question": "Antrenmansızlık döneminde kasta meydana gelen hacim azalmasına ne ad verilir?",
+      "answer": "Atrofi",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-054",
+      "unitId": "0-2",
+      "question": "Antrenmansızlaşma sonrası dayanıklılık özelliklerinde kazanılan form ne kadar sürede tamamen kaybedilir?",
+      "answer": "4-8 hafta içerisinde",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-055",
+      "unitId": "0-3",
+      "question": "Kas kuvvetinde antrenmansızlaşma nedeniyle oluşan atrofi hızı kaynak metne göre yaklaşık ne kadardır?",
+      "answer": "Haftada %1",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-056",
+      "unitId": "1-1",
+      "question": "Antrenman bırakıldıktan 12 hafta sonra aerobik enzimlerin yüzde kaçı kaybedilir?",
+      "answer": "%75",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-057",
+      "unitId": "0-3",
+      "question": "Sürat özelliğinin antrenmansızlaşma süreci için aşağıdakilerden hangisi doğrudur?",
+      "answer": "Genetik faktörlere bağlılığı yüksek olduğundan kayıplar daha az ve yavaştır.",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-058",
+      "unitId": "0-2",
+      "question": "Aşırı antrenman ve yetersiz dinlenme dengesizliği sonucu oluşan kronik yorgunluk ve düşük performans sendromu nedir?",
+      "answer": "Sürantrenman",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-059",
+      "unitId": "0-2",
+      "question": "Aşağıdakilerden hangisi sürantrenmanın fizyolojik belirtilerinden biridir?",
+      "answer": "Dinlenme kalp atım hızında (istirahat nabzı) artış (taşikardi)",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-060",
+      "unitId": "0-2",
+      "question": "Sürantrenmanın psikolojik belirtileri arasında hangisi yer almaktadır?",
+      "answer": "Karakter değişimleri, devamlı aksilik ve duygu durumunda depresyon",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-061",
+      "unitId": "1-1",
+      "question": "Sürantrenman durumunda kanda kas hasarı göstergesi olarak hangi enzimin miktarında artış görülür?",
+      "answer": "Kreatin kinaz",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-062",
+      "unitId": "0-2",
+      "question": "Sürantrenmanın nedenleri arasında yer alan antrenman sürecindeki hatalar kapsamında hangisi değerlendirilir?",
+      "answer": "Tek taraflı ve monoton antrenman programları",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-063",
+      "unitId": "0-2",
+      "question": "Sürantrenmandan korunmak için mikro döngülerde önerilen yüklenme-dinlenme oranları nedir?",
+      "answer": "1/2 veya 1/3",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-064",
+      "unitId": "1-2",
+      "question": "Sürantrenman tedavisinde beslenme rejiminde hangi vitaminlerin desteği kaynak metinde önerilmektedir?",
+      "answer": "B, C ve A vitaminleri",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-065",
+      "unitId": "1-3",
+      "question": "Sürantrenman dönemindeki bir sporcu için fizik tedavi önlemleri kapsamında aşağıdakilerden hangisi yasaktır?",
+      "answer": "Sıcak sauna uygulaması",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-066",
+      "unitId": "0-3",
+      "question": "Organizmanın uzun süre devam eden yüklenmelere karşı yorgunluğa direnç gösterebilme yeteneği nedir?",
+      "answer": "Dayanıklılık",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-067",
+      "unitId": "0-3",
+      "question": "Bir kasın veya kas grubunun bir dirence karşı koyabilme, onu yenme veya ona karşı durma yeteneğine ne denir?",
+      "answer": "Kuvvet",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-068",
+      "unitId": "0-3",
+      "question": "Hareketlerin mümkün olan en kısa süre içerisinde gerçekleştirilmesi yeteneği hangisidir?",
+      "answer": "Sürat",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-069",
+      "unitId": "0-3",
+      "question": "Esneklik kavramının en doğru tanımı aşağıdakilerden hangisidir?",
+      "answer": "Hareketleri eklemlerin müsaade ettiği en geniş açıda yapabilmek",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-070",
+      "unitId": "0-4",
+      "question": "Karmaşık hareketleri kısa sürede doğru ve ekonomik şekilde yapabilme, değişen durumlara uyum sağlama yeteneği nedir?",
+      "answer": "Koordinasyon",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-071",
+      "unitId": "0-4",
+      "question": "Vücudun tümünü bir bütün olarak hız kaybı yaşamadan bir yönden diğer yöne en kısa sürede yönlendirebilme yeteneği hangisidir?",
+      "answer": "Çeviklik",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-072",
+      "unitId": "0-4",
+      "question": "Vücudun istenilen bir pozisyonu koruyabilmesi veya hareket sırasında bu pozisyonu stabilize etmesi yeteneğine ne denir?",
+      "answer": "Denge",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-073",
+      "unitId": "0-3",
+      "question": "Kas liflerinin hacimce artması ve buna bağlı olarak kasın enine kesit alanının büyümesine ne denir?",
+      "answer": "Hipertrofi",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-074",
+      "unitId": "0-4",
+      "question": "Koordinasyonu etkileyen temel merkezi faktör aşağıdakilerden hangisidir?",
+      "answer": "Merkezi sinir sistemi ve duyu organlarının işbirliği",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-075",
+      "unitId": "0-4",
+      "question": "Hareketlilik antrenmanlarının bırakılması durumunda gerileme süreci nasıldır?",
+      "answer": "Antrenmana ara verildiğinde diğer özelliklere göre çok çabuk geriler",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-076",
+      "unitId": "0-4",
+      "question": "Koordinasyonun sınıflandırılmasında spor dalına özgü olmayan ve geniş bir hareket temelini kapsayan türe ne denir?",
+      "answer": "Genel koordinasyon",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-077",
+      "unitId": "0-4",
+      "question": "Çeviklik çalışmalarında antrenman verimi için dikkat edilecek en kritik nokta hangisidir?",
+      "answer": "Hareketlerin tam bir dinlenilmişlik halinde maksimal hız ve kalitede yapılması",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-078",
+      "unitId": "3-3",
+      "question": "Koordinasyon antrenmanlarının geliştirilmesi için en uygun hassas yaş aralığı hangisidir?",
+      "answer": "Çocukluk dönemi, özellikle 7-12 yaş arası",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-079",
+      "unitId": "0-4",
+      "question": "Dengeyi etkileyen fizyolojik ve mekanik faktörler arasında hangisi yer almaz?",
+      "answer": "Saç rengi ve keratin miktarı",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-080",
+      "unitId": "0-4",
+      "question": "Beceri kavramı sportif anlamda aşağıdakilerden hangisini ifade eder?",
+      "answer": "Öğrenilmiş hareketlerin amaca uygun, ekonomik ve estetik sergilenmesini",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-081",
+      "unitId": "0-3",
+      "question": "Esnekliği etkileyen içsel faktörler arasında hangisi gösterilebilir?",
+      "answer": "Eklem yapısı, bağların elastikiyeti ve kasın gerilme kapasitesi",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-082",
+      "unitId": "0-4",
+      "question": "Vücudun sabit bir noktada dururken dengeyi koruması yeteneğine ne ad verilir?",
+      "answer": "Statik denge",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-083",
+      "unitId": "0-4",
+      "question": "Hareket veya yer değiştirme (koşma, sıçrama vb.) sırasında dengeyi koruma yeteneği nedir?",
+      "answer": "Dinamik denge",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-084",
+      "unitId": "0-3",
+      "question": "Hareketliliğin sınıflandırılmasına göre dış bir yardım (partner, ağırlık) ile ulaşılan en geniş eklem açısı nedir?",
+      "answer": "Pasif hareketlilik",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-085",
+      "unitId": "0-3",
+      "question": "Kuvvette devamlılık motorik özelliği hangi iki temel özelliğin bileşkesidir?",
+      "answer": "Kuvvet - Dayanıklılık",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-086",
+      "unitId": "0-5",
+      "question": "Bir birim antrenman kaç ana bölümden oluşur?",
+      "answer": "Üç bölümden (Isınma, ana bölüm, bitiriş)",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-087",
+      "unitId": "0-5",
+      "question": "Birim antrenmanın ısınma bölümünün öncelikli temel amacı nedir?",
+      "answer": "Organizmayı ana bölümdeki yüke hazırlamak ve sakatlık riskini minimize etmek",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-088",
+      "unitId": "0-5",
+      "question": "Antrenmanın ana görevlerinin (teknik, taktik, motorik) gerçekleştirildiği en yoğun bölüm hangisidir?",
+      "answer": "Temel (ana) bölüm",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-089",
+      "unitId": "0-5",
+      "question": "Birim antrenmanın bitiriş (soğuma) bölümünde temel olarak ne amaçlanır?",
+      "answer": "Organizmanın normale dönmesini hızlandıracak hafif aktiviteler ve esnetmeler yapmak",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-090",
+      "unitId": "0-5",
+      "question": "Antrenman planlanmasında genellikle bir haftalık süreci kapsayan en küçük döngüye ne ad verilir?",
+      "answer": "Mikro döngü",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-091",
+      "unitId": "0-5",
+      "question": "Kaynak metindeki terminolojiye göre genellikle bir aylık süreyi kapsayan döngü aşağıdakilerden hangisidir?",
+      "answer": "Makro döngü",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-092",
+      "unitId": "0-5",
+      "question": "4 yıllık süreci kapsayan olimpiyatlar arası antrenman planlama döngüsüne ne ad verilir?",
+      "answer": "Olimpik döngü",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-093",
+      "unitId": "0-5",
+      "question": "Bir yıllık antrenman sürecinin hazırlık, müsabaka ve geçiş dönemlerine ayrılması işlemine ne ad verilir?",
+      "answer": "Periyotlama",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-094",
+      "unitId": "0-5",
+      "question": "Antrenman planlamasında geçiş döneminin temel amacı nedir?",
+      "answer": "Aktif dinlenme ile sporcuyu bir sonraki sezona fiziksel ve zihinsel olarak hazırlamak",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-095",
+      "unitId": "0-6",
+      "question": "Çocuklarda büyüme ve gelişimi takip etmek amacıyla yapılan boy, kilo, çevre ve çap ölçümlerine ne ad verilir?",
+      "answer": "Antropometrik ölçümler",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-096",
+      "unitId": "0-6",
+      "question": "Antrenman sürecinde yapılan fiziksel performans testlerinin temel amacı nedir?",
+      "answer": "Antrenman programının etkinliğini ölçmek ve gelişimi takip etmek",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-097",
+      "unitId": "0-6",
+      "question": "Ölçme ve değerlendirmede kullanılan bir testin güvenilirliği neyi ifade eder?",
+      "answer": "Ölçümün istikrarlı, tutarlı ve tesadüfi hatalardan arınmış olması durumunu",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-098",
+      "unitId": "0-5",
+      "question": "Birim antrenmanda ısınma süresi, antrenmanın toplam süresine ve içeriğine göre genel olarak ne kadardır?",
+      "answer": "15-30 dakika arası",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-099",
+      "unitId": "0-5",
+      "question": "Antrenman planlanması hiyerarşisinde en küçük parça aşağıdakilerden hangisidir?",
+      "answer": "Birim antrenman",
+      "answerVerified": true,
+      "userTrusted": true
+    },
+    {
+      "id": "user-antrenman-100",
+      "unitId": "0-6",
+      "question": "Ölçme-değerlendirme sonuçları antrenör tarafından profesyonel olarak nasıl kullanılmalıdır?",
+      "answer": "Antrenman programını sporcunun gelişimine ve ihtiyaçlarına göre revize etmek için kullanılmalıdır",
+      "answerVerified": true,
+      "userTrusted": true
+    }
+  ]
+}

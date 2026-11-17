@@ -1,10 +1,9 @@
-// HIZ İYİLEŞTİRMELERİ: kalite kuralları aynı kalırken boşa giden iş kesilir
+// HIZ İYİLEŞTİRMELERİ: tek model + tek hakem hattında boşa giden iş kesilir
 // ---------------------------------------------------------------------------
 //  1) Soru kökü tek başına "tekrar" kararı için yeterliyse üretici çağrısı yarıda kesilir; karar,
 //     tam taslakla verilen kararla aynıdır (findDuplicateReason'ın ilk iki kuralı).
 //  2) Kuyruk boştaki modelin işini öne alır; kuyrukta beklerken iptal edilen iş hiç başlamaz.
-//  3) Uçtan uca (simülatör): iki hakem kuralı sürer (onaylanan her soruda iki ayrı hakem kararı vardır),
-//     2. hakemin reddettiği taslakta 1. hakem çağrısı boşa harcanmaz, tekrar kökler yarıda kesilir ve
+//  3) Uçtan uca (simülatör): tek hakemli akışta üretim + tek inceleme yapılır, tekrar kökler yarıda kesilir ve
 //     sağlıklı akışta sorular arasında bekleme yoktur.
 // Uçtan uca test dosyanın SONUNDA kalmalıdır (süreci kapatır).
 import test from 'node:test';
@@ -56,13 +55,13 @@ test('aynı model için birden çok yuva varken sıra bozulmaz (boşta model yok
  assert.deepEqual(order, ['a', 'b', 'c']);
 });
 
-test('uçtan uca: iki hakem kuralı sürer; reddedilen taslakta 1. hakem ve tekrar kökte üretici boşa çalışmaz', async () => {
+test('uçtan uca: tek hakem kuralı sürer; reddedilen taslakta üretici tekrar kökte boşa çalışmaz', async () => {
  let app, sim, dir, base, mod;
  let failure = null;
  try {
   const hash = text => { let h = 2166136261; for (const ch of String(text)) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) % 100; };
   const stems = [];
-  let drafts = 0, repeated = 0, rejectedByJudge2 = 0;
+  let drafts = 0, repeated = 0, rejectedByJudge = 0;
   const rejectedStems = new Set();
   sim = createFakeOllama({
    loadMs: 30, genMs: 240, judgeMs: 120,
@@ -73,12 +72,11 @@ test('uçtan uca: iki hakem kuralı sürer; reddedilen taslakta 1. hakem ve tekr
     stems.push(draft.question);
     return draft;
    },
-   // 2. hakem (küçük model) soruların yaklaşık üçte birini reddeder.
+   // Tek hakem soruların yaklaşık üçte birini kaynak desteği yoksa reddeder.
    judgeHook(verdict, { prompt, model }) {
-    if (!/gemma/.test(model)) return verdict;
     const stem = (prompt.match(/\nSORU: ([\s\S]*?)\nSEÇENEKLER:/) || [])[1] || '';
     if (hash(stem) >= 34) return verdict;
-    if (!rejectedStems.has(stem)) { rejectedStems.add(stem); rejectedByJudge2++; }
+    if (!rejectedStems.has(stem)) { rejectedStems.add(stem); rejectedByJudge++; }
     return { ...verdict, supported: false, qualityOk: false };
    }
   });
@@ -134,25 +132,22 @@ test('uçtan uca: iki hakem kuralı sürer; reddedilen taslakta 1. hakem ve tekr
   const status = await get('/status');
   assert.ok(items.length >= TARGET, `yeterli soru üretilmeliydi (${items.length}); engel: ${JSON.stringify(status.autoBlock)}`);
 
-  // KALİTE KURALI DEĞİŞMEDİ: onaylanan her soruda iki ayrı hakemin kararı var ve ikisi de aynı cevabı onaylıyor.
+  // Her onaylı soruda yalnızca bir hakem kararı bulunur; aynı model üretici ve denetçidir.
   for (const q of items) {
    const judges = q.verification?.judges || [];
-   assert.equal(judges.length, 2, `${q.id}: iki hakem kararı olmalı`);
-   assert.notEqual(judges[0].model, judges[1].model, 'hakemler farklı modeller');
+   assert.equal(judges.length, 1, `${q.id}: tek hakem kararı olmalı`);
    for (const j of judges) assert.equal(j.answer, q.answer, 'her hakem aynı doğru cevabı bulmuş olmalı');
    assert.ok(q.evidence && q.evidence.length >= 15, 'kaynak alıntısı kayıtlı');
   }
-  // Havuzda tekrar kök yok ve 2. hakemin reddettiği hiçbir kök havuza girmedi.
+  // Havuzda tekrar kök yok ve hakemin reddettiği hiçbir kök havuza girmedi.
   assert.equal(new Set(items.map(q => q.question)).size, items.length);
   for (const q of items) assert.ok(!rejectedStems.has(q.question), 'reddedilen taslak olduğu gibi havuza giremez');
 
   // BOŞA GİDEN İŞ KESİLDİ
-  assert.ok(repeated >= 2 && rejectedByJudge2 >= 2, `senaryo hem tekrar hem ret içermeli (${repeated}, ${rejectedByJudge2})`);
+  assert.ok(repeated >= 2 && rejectedByJudge >= 2, `senaryo hem tekrar hem ret içermeli (${repeated}, ${rejectedByJudge})`);
   assert.ok(status.telemetry.earlyStops >= 2, `tekrar kökler yarıda kesilmeli (kesilen: ${status.telemetry.earlyStops}, tekrar taslak: ${repeated})`);
-  assert.ok(status.telemetry.judgeCallsCancelled >= 1, 'reddedilen taslakta diğer hakem çağrısı iptal edilmeli');
-  const done = sim.stats.requests.filter(r => r.role === 'judge' && r.endedAt && r.startedAt && r.endedAt - r.startedAt >= 110);
-  const fullQwen = done.filter(r => /qwen/.test(r.model)).length, fullGemma = done.filter(r => /gemma/.test(r.model)).length;
-  assert.ok(fullQwen < fullGemma, `1. hakem (büyük model) reddedilen taslaklar için sonuna kadar çalışmamalı (qwen ${fullQwen}, gemma ${fullGemma})`);
+  assert.equal(status.telemetry.judgeCallsCancelled || 0, 0, 'tek hakem hattında iptal edilecek ikinci çağrı olmamalı');
+  assert.ok(sim.stats.requests.filter(r => r.role === 'judge').every(r => r.model === status.model), 'tek model üretici ve hakem olarak kullanılmalı');
 
   // SORULAR ARASINDA BEKLEME YOK: üretici model ilk sorudan sonra neredeyse hiç boş kalmaz.
   const lane = sim.stats.requests.filter(r => /qwen/.test(r.model) && r.startedAt && r.endedAt).sort((a, b) => a.startedAt - b.startedAt);
@@ -160,7 +155,7 @@ test('uçtan uca: iki hakem kuralı sürer; reddedilen taslakta 1. hakem ve tekr
   for (let i = 1; i < lane.length; i++) idle += Math.max(0, lane[i].startedAt - lane[i - 1].endedAt);
   const span = lane.at(-1).endedAt - lane[0].startedAt;
   assert.ok(idle / span < 0.25, `üretici model boş beklememeli (boş kalma oranı ${(idle / span).toFixed(2)})`);
-  console.log(`\n${items.length} soru · ${(elapsed / 1000 / Math.max(1, items.length - 1)).toFixed(2)} sn/soru · yarıda kesilen üretim ${status.telemetry.earlyStops} · iptal edilen hakem ${status.telemetry.judgeCallsCancelled} · üretici boş kalma ${(idle / span * 100).toFixed(0)}%`);
+  console.log(`\n${items.length} soru · ${(elapsed / 1000 / Math.max(1, items.length - 1)).toFixed(2)} sn/soru · yarıda kesilen üretim ${status.telemetry.earlyStops} · hakem iptali ${status.telemetry.judgeCallsCancelled} · üretici boş kalma ${(idle / span * 100).toFixed(0)}%`);
  } catch (e) {
   failure = e;
  }

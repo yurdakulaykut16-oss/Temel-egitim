@@ -174,7 +174,7 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
    'Taktik ve zihinsel hazırlık'
   ], 'Kaydedilen soru düzeltilmiş, birbirine yakın şıkları içermeli');
   assert.equal(goodJson.item.answer, 'Kondisyonel ve teknik hazırlık');
-  assert.equal(goodJson.item.verification.judges.length, 2, 'İki hakem denetimi korunmalı');
+  assert.equal(goodJson.item.verification.judges.length, 1, 'Tek hakem denetimi korunmalı');
 
   // 2) Hakem çeldiricileri alakasız bulursa soru kaydedilmez.
   rejectDistractor = true;

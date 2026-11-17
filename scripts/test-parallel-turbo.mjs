@@ -1,5 +1,5 @@
 // Paralel doğrulama: varsayılan 2 soru hattı, model çağrıları üst üste biner,
-// her soru YİNE iki bağımsız hakemle tam onaydan geçer; /concurrency ayarı 1-8 aralığında çalışır.
+// her soru yine tek hakem denetiminden geçer; /concurrency ayarı 1-8 aralığında çalışır.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -12,7 +12,7 @@ const close = server => new Promise(resolve => server.close(resolve));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const hash = str => { let h = 0; for (const ch of String(str)) h = (h * 31 + ch.charCodeAt(0)) | 0; return h; };
 
-test('paralel yuvalar: 4 eşzamanlı üretim, tam çift-hakem doğrulaması, /concurrency 1-8 sınırı', async () => {
+test('paralel yuvalar: 4 eşzamanlı üretim, tek hakem doğrulaması, /concurrency 1-8 sınırı', async () => {
  let app, fake, dir, base, stopOllamaLoops;
  let failure = null;
  const difficultyByQuestion = new Map();
@@ -107,22 +107,22 @@ test('paralel yuvalar: 4 eşzamanlı üretim, tam çift-hakem doğrulaması, /co
   // Varsayılan 2: tek ekran kartında 4 paralel hat, Ollama'nın model başına tek istek
   // işlemesi yüzünden yalnızca kuyruk süresini (ve zaman aşımlarını) artırıyordu.
   assert.equal(status.autoConcurrency, 2, 'varsayılan paralel soru hattı 2 olmalı');
-  assert.equal(status.modelInferenceConcurrency, 2, 'model kuyruğu 2 yuva ile açılmalı');
+  assert.equal(status.modelInferenceConcurrency, 1, 'tek model kuyruğu aynı anda tek çağrı çalıştırmalı');
   assert.ok((status.approved || 0) >= 4, `en az 4 soru onaylanmalıydı; görülen: ${status?.approved}, err: ${status?.autoLastError}`);
-  assert.ok(peak >= 2, `model çağrıları üst üste binebilmeli; görülen eşzamanlı tepe: ${peak}`);
-  assert.ok(calls >= (status.approved || 0) * 3, `her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}`);
+  assert.equal(peak, 1, `Ollama'ya aynı anda yalnızca bir çağrı gitmeli; tepe: ${peak}`);
+  assert.ok(calls >= (status.approved || 0) * 2, `her soru için üretici + tek hakem çağrısı yapılmalı; çağrı: ${calls}`);
 
   const qs = await (await fetch(`${base}/api/ollama/questions`)).json();
   const approved = qs.items.filter(x => x.status === 'approved');
-  assert.ok(approved.length >= 4 && approved.every(x => Array.isArray(x.verification?.judges) && x.verification.judges.length === 2),
-   'paralel modda da her soru iki hakemle tam onaydan geçmeli');
+  assert.ok(approved.length >= 4 && approved.every(x => Array.isArray(x.verification?.judges) && x.verification.judges.length === 1),
+   'paralel modda da her soru tek hakemle onaylanmalı');
 
   // /concurrency ayarı: 1-8 aralığı kabul edilir, sınır dışı reddedilir
   let r = await fetch(`${base}/api/ollama/concurrency`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: JSON.stringify({ value: 2 }) });
   assert.equal(r.status, 200);
   const c2 = await r.json();
   assert.equal(c2.autoConcurrency, 2);
-  assert.equal(c2.modelInferenceConcurrency, 2);
+  assert.equal(c2.modelInferenceConcurrency, 1);
   for (const bad of [0, 9, 1000, 1.5, -1]) {
    r = await fetch(`${base}/api/ollama/concurrency`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: JSON.stringify({ value: bad }) });
    assert.equal(r.status, 400, `${bad} reddedilmeliydi`);
@@ -131,7 +131,7 @@ test('paralel yuvalar: 4 eşzamanlı üretim, tam çift-hakem doğrulaması, /co
   assert.equal(r.status, 200);
   status = await (await fetch(`${base}/api/ollama/status`)).json();
   assert.equal(status.autoConcurrency, 4);
-  assert.equal(status.modelInferenceConcurrency, 4);
+  assert.equal(status.modelInferenceConcurrency, 1);
 
   console.log(`\nParalel turbo: ${status.approved} soru onaylandı (~${(elapsed / 1000).toFixed(1)}sn), eşzamanlı istek tepesi=${peak}`);
  } catch (e) {

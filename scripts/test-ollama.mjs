@@ -10,7 +10,7 @@ const listen=server=>new Promise(resolve=>server.listen(0,'127.0.0.1',()=>resolv
 const close=server=>new Promise(resolve=>server.close(resolve));
 
 test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, çalışma paketi, think fallback, uzman model ve evrim API uçları',async()=>{
- let calls=[], mismatch=false, wrongDifficulty=false, judge2DisagreesAnswer=false, judge2Difficulty='kolay', dualAnswerRisk=false, overlapOptions=false, numericOptions=false;
+ let calls=[], mismatch=false, wrongDifficulty=false, singleJudgeDifficulty='kolay', dualAnswerRisk=false, overlapOptions=false, numericOptions=false;
  let rejectThinkOnce=true, sendBannedOption=false, createdModels=[];
  const fake=http.createServer(async(req,res)=>{
   res.setHeader('Content-Type','application/json');
@@ -39,9 +39,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   }else if(data.prompt.includes('soru denetçisisin')){
    if(isUnit01)result={answer:'Kondisyonel ve teknik hazırlık',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:wrongDifficulty?'zor':'kolay',evidence,reason:'Anlatım kondisyonel ve teknik hazırlığı birlikte sayar.'};
    else if(isUnit02){
-    const isJudge2=data.model==='fake:2';
-    const answer=(isJudge2&&judge2DisagreesAnswer)?'Süreklilik ve aşırı yüklenme ilkeleri':'Bireysel ve sürekli ilkeler';
-    const difficulty=isJudge2?judge2Difficulty:'kolay';
+    const answer='Bireysel ve sürekli ilkeler';
+    const difficulty=singleJudgeDifficulty;
     result={answer,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:4,distractorPlausible:true,difficulty,evidence,reason:`${data.model} bağımsız değerlendirmesi.`};
    }
    else result={answer:numericOptions?'20 dakika egzersiz':mismatch?'Tekrarlı fakat programsız olması':'Planlı ve tekrarlı olması',singleCorrect:!dualAnswerRisk,dualAnswerRisk,secondBestOption:dualAnswerRisk?'Tekrarlı fakat programsız olması':'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:numericOptions?'orta':'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
@@ -66,13 +65,14 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
  try{
   const status=await (await fetch(`${base}/api/ollama/status`)).json();assert.equal(status.verifierInstalled,true);
   assert.equal(status.verifierModel,'fake:1');
-  // 2. hakem elle seçilmedi: kurulu OLMAYAN varsayılan (gemma3:4b) yerine kurulu modellerden
-  // üreticiden farklı olanı otomatik atanır; üretim "model kurulu değil" diye asla beklemez.
-  assert.equal(status.judge2Model,'fake:2');
+  // Üretici ve tek hakem aynı yerel modeli kullanmalı; ikinci model kadrosu yok.
+  assert.equal(status.judge2Model,'fake:1');
   assert.equal(status.judge2Installed,true);
   assert.equal(status.lineup.ok,true);
   assert.equal(status.lineup.pinned.model,true,'OLLAMA_MODEL ortam değişkeni sabit seçim sayılır');
-  assert.equal(status.lineup.pinned.judge2Model,false);
+  assert.equal(status.lineup.pinned.judge2Model,true);
+  assert.equal(status.verifierModel,status.model);
+  assert.equal(status.judge2Model,status.model);
   assert.equal(status.autoBlock,null);
   assert.ok(status.coverage.totalPassages>=500,'tam kitap pasajları yüklenmiş olmalı');
   assert.equal(status.settings.preset,'balanced');
@@ -124,7 +124,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal((await (await fetch(`${base}/api/ollama/questions`)).json()).items.length,0);
   mismatch=false;response=await post();assert.equal(response.status,200);const result=await response.json();assert.equal(result.item.status,'approved');assert.equal(result.item.verification.answer,result.item.answer);
   assert.equal(result.item.difficulty,'kolay');assert.equal(result.item.verification.difficulty,'kolay');
-  assert.equal(result.item.verification.judges.length,2);
+  assert.equal(result.item.verification.judges.length,1,'soru yalnızca tek hakemden geçmeli');
   for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlı ve tekrarlı olması');assert.equal(j.difficulty,'kolay');assert.ok(j.reason);assert.ok(j.qualityScore>=1)}
   assert.ok(calls.some(c=>c.prompt.includes('SORU:')));
   assert.ok(!calls.some(c=>c.prompt.includes('Egzersiz düzenli ve planlı etkinliktir.')));
@@ -162,26 +162,16 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   roleSel=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({model:'fake:2',role:'judge2'})});
   assert.equal(roleSel.status,200);
   const statusAfterRoles=await (await fetch(`${base}/api/ollama/status`)).json();
-  assert.equal(statusAfterRoles.verifierModel,'fake:1');assert.equal(statusAfterRoles.judge2Model,'fake:2');
+  assert.equal(statusAfterRoles.model,'fake:2');assert.equal(statusAfterRoles.verifierModel,'fake:2');assert.equal(statusAfterRoles.judge2Model,'fake:2');
 
   const post02=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-2']})});
-  judge2DisagreesAnswer=true;judge2Difficulty='kolay';
-  let disagreeResponse=await post02();assert.equal(disagreeResponse.status,502);
-  assert.match((await disagreeResponse.json()).error,/birleşmedi/);
-
-  // Hakemler "kolay" ile "zor" diyorsa bu gerçek bir görüş ayrılığıdır: soru reddedilir.
-  judge2DisagreesAnswer=false;judge2Difficulty='zor';
-  let difficultySplit=await post02();assert.equal(difficultySplit.status,502);
-  assert.match((await difficultySplit.json()).error,/görüş birliğine varamadı/);
-
-  // Komşu etiketler ("kolay" / "orta") sınır sorusudur: doğru cevapta anlaşılmış soru çöpe
-  // atılmaz; hedef zorluk iki etiketten biriyse o etiketle kaydedilir.
-  judge2DisagreesAnswer=false;judge2Difficulty='orta';
-  let agreedOk=await post02();assert.equal(agreedOk.status,200);
-  const item02=(await agreedOk.json()).item;assert.equal(item02.difficulty,'kolay');
-  assert.deepEqual(item02.verification.judges.map(j=>j.difficulty),['kolay','orta']);
-  assert.equal(item02.verification.difficultyAgreement,'adjacent');
-  assert.deepEqual(item02.verification.judges.map(j=>j.model).sort(),['fake:1','fake:2']);
+  // Tek hakem zorluğu doğrudan belirler; ikinci hakem/oylama çağrısı yoktur.
+  singleJudgeDifficulty='orta';
+  let judgedMedium=await post02();assert.equal(judgedMedium.status,200);
+  const item02=(await judgedMedium.json()).item;assert.equal(item02.difficulty,'orta');
+  assert.equal(item02.verification.judges.length,1);
+  assert.equal(item02.verification.judges[0].difficulty,'orta');
+  singleJudgeDifficulty='kolay';
 
   // Sayısal düşündürücü çeldiriciler ("20 dakika" vs "30 dakika") ASLA yanlışlıkla elenmemeli!
   // 0-0'da ilk soru kolay idi, sonraki 0-0 sorusu orta zorluk hedefleyecek; mock orta döndürsün
@@ -249,7 +239,8 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   const lineupBody=(await lineupRes.json()).lineup;
   assert.equal(lineupBody.profile,'kalite');
   assert.equal(lineupBody.model,'fake:1','elle seçim kaldırılınca OLLAMA_MODEL ortam değişkenine dönülür');
-  assert.notEqual(lineupBody.judge2Model,lineupBody.model,'2. hakem üreticiden farklı model olmalı');
+  assert.equal(lineupBody.verifierModel,lineupBody.model,'tek model üretici ve hakem rollerinde kullanılmalı');
+  assert.equal(lineupBody.judge2Model,lineupBody.model,'ikinci bir hakem modeli bulunmamalı');
 
  }finally{await close(app);await close(fake);await rm(dir,{recursive:true,force:true})}
 });

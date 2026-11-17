@@ -13,6 +13,7 @@ import { classifyStemStyle, buildStyleLibrary, pickStyleExample, buildExamStyleB
 const read = p => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
 const contexts = read('../server/contexts.json');
 const samples = read('../src/examSamples.json').samples;
+const userExamples = read('../server/user-exam-examples.json').samples;
 const bank = read('../server/question-bank.json');
 const bookQuestions = read('../server/book-style-questions.json').questions;
 
@@ -59,9 +60,10 @@ test('gönderilen örnek sorular: doğru bölümde, tutarlı ve sabit soru banka
 });
 
 test('örnek seçimi: uygun kalıp, önce aynı bölüm ve kullanıcı örneği; döndükçe değişir', () => {
- const library = buildStyleLibrary({ samples, bookQuestions });
+ const library = buildStyleLibrary({ samples: [...samples, ...userExamples], bookQuestions });
  const stats = styleLibraryStats(library);
- assert.equal(stats.priority, samples.length);
+ assert.equal(stats.priority, samples.length + userExamples.length);
+ assert.ok(library.some(e => e.userTrusted && e.answerVerified && e.question === userExamples[0].question));
  assert.equal(stats.units, contexts.length, 'her bölümün en az bir örneği olmalı');
  assert.ok(stats.total >= 290);
  for (const family of ['tanim_terim', 'durum_kavram', 'olumsuz', 'sayisal', 'bosluk', 'kisa_net']) assert.ok(stats.families[family] > 0, `${family} ailesinden örnek olmalı`);
@@ -103,6 +105,12 @@ test('istem bloğu: kısa, biçim için olduğunu söyler, kopyalamayı yasaklar
   assert.match(block, /başka bir konudandır/);
  }
  assert.doesNotMatch(buildExamStyleBlock(library[0], { sameUnit: true }), /başka bir konudandır/);
+ const unverified = buildExamStyleBlock({ question: userExamples[0].question, answer: userExamples[0].answer, answerVerified: false, family: 'kisa_net' });
+ assert.match(unverified, /Cevap doğrulanmamış/);
+ assert.match(unverified, /bilgiyi alma/);
+ const trusted = buildExamStyleBlock({ question: userExamples[0].question, answer: userExamples[0].answer, answerVerified: true, userTrusted: true, family: 'kisa_net' }, { sameUnit: true });
+ assert.match(trusted, /güvenilir içerik referansıdır/);
+ assert.match(trusted, /hedeflenen zorluk düzeyinde/);
  assert.equal(buildExamStyleBlock(null), '');
 });
 
@@ -117,7 +125,9 @@ test('sunucu: örnek kitaplığı yüklenir; yeni soru tipleri kullanılır; TEM
  let off;
  try {
   const { stats, library } = mod.loadedExamStyle();
-  assert.equal(stats.priority, samples.length);
+  assert.equal(stats.priority, samples.length + userExamples.length);
+  assert.equal(library.filter(e => e.origin === 'kullanıcının güvenilir örneği').length, 100);
+  assert.ok(library.some(e => e.question === userExamples[0].question && e.answerVerified === true && e.userTrusted === true));
   assert.ok(library.some(e => e.origin === '2024 1. Kademe çıkmış soru'));
   // Aynı cümleden art arda yazılan sorularda yeni tipler de sıraya girer.
   const asked = [];
