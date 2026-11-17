@@ -59,7 +59,7 @@ test('Tüm botlar + soru üretimi (<1 sn) uçtan uca doğrulama: çevrimdışı 
    assert.equal(g.json.withinOneSecond, true, `Soru #${i + 1} <1sn olmalı (${g.json.durationMs}ms)`);
    assert.ok(g.wallMs < 1000, `Soru #${i + 1} HTTP duvar süresi ${g.wallMs}ms < 1000ms olmalı`);
    assert.equal(g.json.item.status, 'approved');
-   assert.equal(g.json.item.verification.judges.length, 2);
+   assert.equal(g.json.item.verification.judges.length, 1);
    genIds.add(g.json.item.id);
   }
   assert.equal(genIds.size, 4);

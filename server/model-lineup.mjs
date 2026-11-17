@@ -134,7 +134,7 @@ export const LINEUP_PROFILES = {
  * @param {'hizli'|'dengeli'|'kalite'} [opts.profile]
  * @param {{model?:string, verifierModel?:string, judge2Model?:string}} [opts.pinned]  Kullanıcının elle sabitlediği roller
  */
-export function planLineup(installed = [], { vramGb = 12, numCtx = 6144, profile = 'dengeli', pinned = {} } = {}) {
+export function planLineup(installed = [], { vramGb = 12, numCtx = 6144, profile = 'dengeli', pinned = {}, singleModel = false, ramOffloadGb = 0 } = {}) {
  const list = (Array.isArray(installed) ? installed : [])
   .map(m => (typeof m === 'string' ? { name: m } : m))
   .filter(m => m && typeof m.name === 'string' && m.name);
@@ -163,6 +163,37 @@ export function planLineup(installed = [], { vramGb = 12, numCtx = 6144, profile
  }
 
  const rank = (a, b) => b.quality - a.quality || a.sizeGb - b.sizeGb || a.name.localeCompare(b.name);
+
+ // Tek-model soru hattı: VRAM'e tam sığanları tercih et; küçük bir CPU/RAM offload'ı kalite
+ // farkı buna değiyorsa kullan. Büyük modelleri disk takasına bırakma; o, 6 çekirdekli CPU'da
+ // pratikte çok yavaş ve kararsız olur. ramOffloadGb çağıran tarafından güvenli payla sınırlandırılır.
+ if (singleModel) {
+  const spillBudget = Math.max(0, Number(ramOffloadGb) || 0);
+  const pinnedInfo = pinned.model && byName.get(pinned.model);
+  const gpuFitting = pool.filter(i => estimateVramGb(i, numCtx) <= budget);
+  // Hız önceliği: tam VRAM'e sığan model varsa RAM'e taşacak daha büyük modeli seçme.
+  // RAM offload yalnızca kurulu modellerin hiçbiri GPU bütçesine sığmıyorsa son çare olur.
+  const eligible = gpuFitting.length ? gpuFitting : pool.filter(i => estimateVramGb(i, numCtx) <= budget + spillBudget);
+  const modelScore = i => i.quality - Math.max(0, estimateVramGb(i, numCtx) - budget) * 0.35;
+  let selected = pinnedInfo || eligible.slice().sort((a, b) => modelScore(b) - modelScore(a) || rank(a, b))[0];
+  if (!selected && pool.length) selected = pool.slice().sort((a, b) => a.sizeGb - b.sizeGb || rank(a, b))[0];
+  if (!selected) return { ok: false, profile: prof, model: null, verifierModel: null, judge2Model: null, warnings, notes, candidates: [] };
+  const requiredGb = estimateVramGb(selected, numCtx);
+  const spillGb = Math.max(0, +(requiredGb - budget).toFixed(1));
+  if (spillGb > 0) warnings.push(`${selected.name} tam olarak VRAM'e sığmıyor; tahminen ${spillGb.toFixed(1)} GB model ağırlığı RAM/CPU'ya taşınır. Disk takası kullanılmaz; CPU'da token hızı düşebilir.`);
+  if (requiredGb > budget + spillBudget) warnings.push(`${selected.name} güvenli RAM sınırını aşıyor; daha küçük bir model seç veya VRAM/RAM kullanımını kontrol et.`);
+  const roleInfo = { ...selected, vramGb: requiredGb };
+  return {
+   ok: true, profile: prof, vramGb: vram, numCtx, model: selected.name, verifierModel: selected.name, judge2Model: selected.name,
+   pinned: { model: Boolean(pinnedInfo), verifierModel: Boolean(pinnedInfo), judge2Model: Boolean(pinnedInfo) },
+   coResident: true, estimatedVramGb: requiredGb, independentJudge: false, crossFamilyJudge: false,
+   ramOffloadGb: spillBudget, estimatedRamOffloadGb: spillGb,
+   roles: { generator: roleInfo, verifier: roleInfo, judge2: roleInfo },
+   candidates: infos.slice().sort((a, b) => Number(b.suitable) - Number(a.suitable) || modelScore(b) - modelScore(a) || rank(a, b))
+    .map(i => ({ name: i.name, family: i.family, paramsB: i.paramsB, sizeGb: i.sizeGb, quality: i.quality, suitable: i.suitable, fits: fitsAlone(i), fitsWithRam: estimateVramGb(i, numCtx) <= budget + spillBudget, estimatedRamOffloadGb: Math.max(0, +(estimateVramGb(i, numCtx) - budget).toFixed(1)), reason: i.embedding ? 'gömme modeli' : i.cloud ? 'bulut modeli' : i.coder ? 'kod modeli' : i.reasoningOnly ? 'muhakeme modeli (yavaş)' : i.visionOnly ? 'görüntü modeli' : i.tempoAlias ? 'tempo takma adı' : '' })),
+   warnings, notes
+  };
+ }
 
  // --- ÜRETİCİ + 2. HAKEM: ikili birlikte seçilir ---
  // Tek tek "en iyi üretici, sonra en iyi hakem" seçmek kötü sonuç verir (ör. 12 GB'ta 12B

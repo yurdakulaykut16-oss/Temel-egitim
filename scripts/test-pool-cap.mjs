@@ -120,7 +120,7 @@ test('soru havuzu 20.000 sınırını aşmaz: yeni soru eklenirken en zayıf kay
   const genBody = await gen.json();
   assert.equal(gen.status, 200, JSON.stringify(genBody));
   assert.equal(genBody.item.status, 'approved');
-  assert.equal(genBody.item.verification.judges.length, 2);
+  assert.equal(genBody.item.verification.judges.length, 1);
 
   const after = await (await fetch(`${base}/api/ollama/questions`)).json();
   assert.ok(after.items.length <= MAX_QUESTIONS, `Havuz ${MAX_QUESTIONS} kaydı geçmemeli, gelen: ${after.items.length}`);

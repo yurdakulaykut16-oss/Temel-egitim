@@ -2,6 +2,7 @@ import { readFile, mkdir, writeFile, rename, readdir, lstat, stat, appendFile } 
 import { createReadStream } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { SandboxEvolver } from './sandbox-evolver.mjs';
@@ -46,11 +47,11 @@ import { OPTION_COUNT, MIN_OPTION_COUNT, isStoredOptionCount, isDraftOptionCount
 import { buildStyleLibrary, pickStyleExample, buildExamStyleBlock, styleLibraryStats } from './exam-style.mjs';
 
 const execFileAsync = promisify(execFile);
+// Soru hatları durum hazırlayabilir, ancak tek modelin etkin inference yuvası daima birdir.
 const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
-// Varsayılan 2 yuva: bir soru hakemdeyken sıradaki sorunun üretimi başlar (boru hattı).
-// Tek ekran kartında daha fazla yuva hız kazandırmaz; yalnızca Ollama kuyruğunu şişirir.
 const DEFAULT_AUTO_CONCURRENCY = Number.isFinite(envConcurrency) && envConcurrency >= 1 ? Math.min(8, Math.round(envConcurrency)) : 2;
-const modelInferenceQueue = new SerialTaskQueue(DEFAULT_AUTO_CONCURRENCY);
+const MODEL_INFERENCE_CONCURRENCY = 1;
+const modelInferenceQueue = new SerialTaskQueue(MODEL_INFERENCE_CONCURRENCY);
 
 // --- MODEL TAKASI (DALGA) MODU -----------------------------------------------------
 // Üretici ile 2. hakem ekran kartı belleğinde aynı anda kalamıyorsa Ollama her model
@@ -94,7 +95,13 @@ const bookStyleQuestions = Array.isArray(bookStyleQuestionsRaw?.questions) ? boo
 // Sınav tarzı örnek kitaplığı: kullanıcı örnekleri (öncelikli) + kitapların kendi soruları.
 // TEMPO_EXAM_STYLE=0 ile kapatılır.
 const EXAM_STYLE_ENABLED = process.env.TEMPO_EXAM_STYLE !== '0';
-const examStyleLibrary = EXAM_STYLE_ENABLED ? buildStyleLibrary({ samples: examSamples, bookQuestions: bookStyleQuestions }) : [];
+let userExamSamples = [];
+try {
+ const raw = JSON.parse(await readFile(new URL('./user-exam-examples.json', import.meta.url), 'utf8'));
+ userExamSamples = Array.isArray(raw?.samples) ? raw.samples.map(s => ({ ...s, origin: 'kullanıcının güvenilir örneği', answerVerified: true, userTrusted: true })) : [];
+} catch {}
+// Güvenilir kullanıcı cevapları aynı bölümde hem içerik referansı, hem de tüm zorluk düzeyleri için soru biçimi örneği olur.
+const examStyleLibrary = EXAM_STYLE_ENABLED ? buildStyleLibrary({ samples: [...examSamples, ...userExamSamples], bookQuestions: bookStyleQuestions }) : [];
 
 let bookParallelRaw = null;
 try {
@@ -514,7 +521,7 @@ const defaultModel = process.env.OLLAMA_MODEL || RECOMMENDED_GENERATOR_MODEL;
 const defaultJudge2Model = process.env.OLLAMA_JUDGE2_MODEL || RECOMMENDED_JUDGE2_MODEL;
 
 // --- ZAMAN AŞIMLARI ---------------------------------------------------------------
-// Eski sürümde bir sorunun TAMAMI (model yükleme + üretim + iki hakem + düzeltme) için
+// Eski sürümde bir sorunun TAMAMI (model yükleme + üretim + tek hakem + düzeltme) için
 // 25 saniyelik mutlak bir tavan vardı ve sayaç istek daha kuyruktayken başlıyordu. Model
 // yüklemesi tek başına bu süreyi aşabildiği için hiçbir soru tamamlanamıyordu.
 // Artık süre MODEL ÇAĞRISI başına ve üç ayrı bekçiyle ölçülür:
@@ -668,7 +675,11 @@ function writeSettings(patch) {
  return run;
 }
 // --- OLLAMA İSTEMCİSİ + MODEL KADROSU ---------------------------------------------
-const ollama = createOllamaClient({ base, keepAlive: defaultKeepAlive, numCtx: DEFAULT_NUM_CTX });
+const cpuLogical = os.availableParallelism?.() || os.cpus()?.length || 12;
+const OLLAMA_CPU_THREADS = Number.isFinite(Number(process.env.TEMPO_OLLAMA_NUM_THREADS)) && Number(process.env.TEMPO_OLLAMA_NUM_THREADS) > 0
+ ? Math.max(1, Math.min(32, Math.round(Number(process.env.TEMPO_OLLAMA_NUM_THREADS))))
+ : Math.max(2, Math.min(8, Math.floor(cpuLogical / 2))); // i5-10400F: 12 logical / 6 physical threads
+const ollama = createOllamaClient({ base, keepAlive: defaultKeepAlive, numCtx: DEFAULT_NUM_CTX, numThread: OLLAMA_CPU_THREADS });
 
 const validModelName = v => typeof v === 'string' && v.length <= 200 && Boolean(v.trim());
 
@@ -729,10 +740,16 @@ async function writePinnedModels(patch) {
  await writeSettings({ ...patch, lineupPins: pins });
 }
 
-function lineupProfileOf(settings) {
- if (LINEUP_PROFILES[settings?.lineupProfile]) return settings.lineupProfile;
- if (LINEUP_PROFILES[process.env.TEMPO_LINEUP_PROFILE]) return process.env.TEMPO_LINEUP_PROFILE;
- return 'dengeli';
+function lineupProfileOf(_settings) {
+ // Tek-model hattında en yüksek kalite; küçük CPU offload'ı uygunsa RAM payı da değerlendirilecek.
+ return 'kalite';
+}
+
+function safeRamOffloadGb() {
+ const total = os.totalmem() / (1024 ** 3);
+ // Model seçimini anlık boş RAM dalgalanmasına göre değiştirme; 16 GB sistemde en çok 4 GB
+ // CPU offload bütçesi tanı, kalan belleği işletim sistemi/uygulamalar için bırak.
+ return +Math.max(0, Math.min(4, total * 0.25)).toFixed(1);
 }
 
 let lineupMemo = { key: '', plan: null };
@@ -745,6 +762,8 @@ async function currentLineup({ maxAgeMs = 4000 } = {}) {
  const [settings, inst, vram] = await Promise.all([readSettings(), installedModelsDetailed(maxAgeMs), detectedVram()]);
  const pinned = pinnedRoles(settings);
  const profile = lineupProfileOf(settings);
+ const ramOffloadGb = safeRamOffloadGb();
+ const systemRamGb = +(os.totalmem() / (1024 ** 3)).toFixed(1);
  if (!inst.list.length) {
   const model = pinned.model || defaultModel;
   return {
@@ -754,17 +773,19 @@ async function currentLineup({ maxAgeMs = 4000 } = {}) {
    installedNames: [],
    profile,
    model,
-   verifierModel: pinned.verifierModel || model,
-   judge2Model: pinned.judge2Model || defaultJudge2Model,
-   pinned: { model: Boolean(pinned.model), verifierModel: Boolean(pinned.verifierModel), judge2Model: Boolean(pinned.judge2Model) },
-   coResident: true, independentJudge: true, crossFamilyJudge: true,
+   verifierModel: model,
+   judge2Model: model,
+   pinned: { model: Boolean(pinned.model), verifierModel: Boolean(pinned.model), judge2Model: Boolean(pinned.model) },
+   coResident: true, independentJudge: false, crossFamilyJudge: false,
    vramGb: vram.gb, vramDetected: vram.detected, gpuName: vram.name,
+   systemRamGb, ramOffloadGb, estimatedRamOffloadGb: 0,
    warnings: [], notes: [], candidates: []
   };
  }
- const key = JSON.stringify([inst.list.map(m => `${m.name}:${m.size}`), pinned, profile, vram.gb, ollama.numCtx]);
+ const key = JSON.stringify([inst.list.map(m => `${m.name}:${m.size}`), pinned.model, profile, vram.gb, ramOffloadGb, ollama.numCtx]);
  if (lineupMemo.key !== key) {
-  lineupMemo = { key, plan: planLineup(inst.list, { vramGb: vram.gb, numCtx: ollama.numCtx, profile, pinned }) };
+  // Eski sürümlerdeki ayrı hakem sabitlemelerini yok say: artık yalnızca üretici model sabitlenebilir.
+  lineupMemo = { key, plan: planLineup(inst.list, { vramGb: vram.gb, numCtx: ollama.numCtx, profile, pinned: { model: pinned.model }, singleModel: true, ramOffloadGb }) };
  }
  const plan = lineupMemo.plan;
  return {
@@ -776,8 +797,18 @@ async function currentLineup({ maxAgeMs = 4000 } = {}) {
   gpuName: vram.name,
   // Kullanılabilir model bulunamadıysa (yalnızca gömme modelleri kurulu vb.) adlar yine de dolu kalsın.
   model: plan.model || pinned.model || defaultModel,
-  verifierModel: plan.verifierModel || plan.model || pinned.verifierModel || defaultModel,
-  judge2Model: plan.judge2Model || plan.model || pinned.judge2Model || defaultJudge2Model
+  verifierModel: plan.model || pinned.model || defaultModel,
+  judge2Model: plan.model || pinned.model || defaultModel,
+  pinned: { model: Boolean(plan.pinned?.model || pinned.model), verifierModel: Boolean(plan.pinned?.model || pinned.model), judge2Model: Boolean(plan.pinned?.model || pinned.model) },
+  coResident: true,
+  independentJudge: false,
+  crossFamilyJudge: false,
+  estimatedVramGb: plan.roles?.generator?.vramGb ?? plan.estimatedVramGb,
+  systemRamGb,
+  ramOffloadGb: plan.ramOffloadGb ?? ramOffloadGb,
+  estimatedRamOffloadGb: plan.estimatedRamOffloadGb ?? 0,
+  warnings: (plan.warnings || []).filter(x => !/hakem|ikinci görüş|ikinci hakem/i.test(x)),
+  notes: (plan.notes || []).filter(x => !/hakem|model takas|birlikte sığ/i.test(x))
  };
 }
 
@@ -834,7 +865,7 @@ function noteModelLoad(model, metrics) {
 
 /** Dalga modu açıkken arayüzde gösterilen bilgi satırı (uyarı değil: yapılacak bir şey yok). */
 function swapNotes(lineup) {
- if (!swapModeActive()) return [];
+ if (!swapModeActive() || new Set([lineup?.model, lineup?.verifierModel, lineup?.judge2Model].filter(Boolean)).size <= 1) return [];
  const names = [...new Set([lineup?.model, lineup?.verifierModel, lineup?.judge2Model].filter(Boolean))];
  const snap = modelSwap.snapshot();
  const cost = snap.avgLoadMs ? ` (model değişimi ortalama ${(snap.avgLoadMs / 1000).toFixed(1)} sn)` : '';
@@ -869,6 +900,9 @@ function publicLineup(lineup) {
   independentJudge: lineup.independentJudge !== false,
   crossFamilyJudge: lineup.crossFamilyJudge !== false,
   estimatedVramGb: lineup.estimatedVramGb ?? null,
+  systemRamGb: lineup.systemRamGb ?? null,
+  ramOffloadGb: lineup.ramOffloadGb ?? 0,
+  estimatedRamOffloadGb: lineup.estimatedRamOffloadGb ?? 0,
   vramGb: lineup.vramGb ?? null,
   vramDetected: Boolean(lineup.vramDetected),
   gpuName: lineup.gpuName || null,
@@ -879,11 +913,11 @@ function publicLineup(lineup) {
   swapNote: swapNotes(lineup)[0] || null,
   candidates: (lineup.candidates || []).slice(0, 40),
   recommended: (() => {
-   const wanted = [RECOMMENDED_GENERATOR_MODEL, RECOMMENDED_JUDGE2_MODEL];
+   const best = lineup.model || RECOMMENDED_GENERATOR_MODEL;
    const have = new Set((lineup.installedNames || []).map(n => String(n).replace(/:latest$/, '')));
-   const missing = lineup.connected === false ? [] : wanted.filter(m => !have.has(m));
-   const toPull = missing.length ? missing : wanted;
-   return { generator: RECOMMENDED_GENERATOR_MODEL, judge2: RECOMMENDED_JUDGE2_MODEL, missing, pullCommand: toPull.map(m => `ollama pull ${m}`).join(' ; ') };
+   const missing = lineup.connected === false ? [] : (have.has(best.replace(/:latest$/, '')) ? [] : [best]);
+   const toPull = missing.length ? missing : [best];
+   return { generator: best, judge2: best, missing, pullCommand: toPull.map(m => `ollama pull ${m}`).join(' ; ') };
   })()
  };
 }
@@ -908,13 +942,11 @@ async function autoRunningEnabled() {
  return v.autoRunning !== false;
 }
 async function autoConcurrencyLimit() {
- // Paralel soru yuvası: ayar (kalıcı) yoksa ortam değişkeni, o da yoksa 2.
- // Not: eski sürümün "autoConcurrency" anahtarı (varsayılan 4) bilerek okunmaz; yeni anahtar
- // "parallelUnits"tir. Böylece eski ayar dosyası yeni hattı yavaşlatamaz.
+ // Bu ayar soru hatlarının sayısıdır; tek model inference kuyruğu her koşulda seri kalır.
  const v = await readSettings();
  const n = Number(v.parallelUnits);
  const limit = Number.isFinite(n) && n >= 1 ? Math.min(8, Math.round(n)) : DEFAULT_AUTO_CONCURRENCY;
- if (modelInferenceQueue.maxConcurrent !== limit) modelInferenceQueue.setMaxConcurrent(limit);
+ if (modelInferenceQueue.maxConcurrent !== MODEL_INFERENCE_CONCURRENCY) modelInferenceQueue.setMaxConcurrent(MODEL_INFERENCE_CONCURRENCY);
  return limit;
 }
 /** Tek bir model çağrısının (ilk tokendan sonraki) üretim süresi tavanı. */
@@ -925,8 +957,7 @@ async function autoTimeoutMs() {
  return Math.max(MODEL_CALL_TIMEOUT_MIN_MS, Math.min(MODEL_CALL_TIMEOUT_MAX_MS, n));
 }
 async function getPipelineConfig() {
- // Hafif ama kaliteyi koruyan varsayılan: tek soru, kitap pasajı, self-correction
- // ve iki hakem. Model çağrıları ayrıca ortak kuyruktan sırayla geçirilir.
+ // Tek soru, kitap pasajı, self-correction ve tek hakem; kalite kapıları çağrı başına korunur.
  const v = await readSettings();
  const preset = 'balanced';
  const turboQualityLock = false;
@@ -2222,8 +2253,9 @@ function buildGeneratorPrompt(ctx, items, passage, targetDifficulties, targetTyp
    ? `\nODAK CÜMLE (soruyu bu cümledeki bilgiden kur, \"evidence\" alanına bu cümleyi kopyala): \"${focus.sentence}\"${diff === 'kolay' ? '' : ' Zorluk için metindeki başka bir bilgiyle ilişkilendirebilirsin.'}${focusAskedHint(focus)}`
    : '';
   const focusSection = focus?.sentence ? summarySectionOf(ctx, focus.sentence) : null;
-  // Sınav tarzı örneği: bu soru tipine yakışan gerçek bir sınav / kitap sorusu (yalnızca BİÇİM için).
+  // Aynı bölümdeki güvenilir kullanıcı örneği içerik + biçim referansı; diğer örnekler biçim referansıdır.
   const styleExample = isParagraph ? null : pickStyleExample(examStyleLibrary, { unitId: ctx.id, questionType: qType, rotation: existingQuestions.length });
+  const trustedSameUnitExample = Boolean(styleExample?.userTrusted && styleExample.unitId === ctx.id);
   const examStyleHint = buildExamStyleBlock(styleExample, { sameUnit: styleExample?.unitId === ctx.id });
 
   // 1) ZORUNLU BAŞLIK: görev + hedefler + kurallar + çıktı biçimi (her çağrıda aynı iskelet).
@@ -2233,12 +2265,12 @@ Soru tipi: ${typeHint}
 5 Farklı Soru Açısından Seçilen Açı: ${angleHint}
 
 YAZIM SIRASI:
-1) KONU ANLATIMI'ndan sınavda sorulmaya değer TEK bir bilgi seç; o bilgiyi içeren cümleyi "evidence" alanına HARFİ HARFİNE kopyala (kısaltma, birleştirme, yeniden yazma yok).
+1) ${trustedSameUnitExample ? 'Aynı bölümdeki güvenilir örneğin cevap bilgisini, KONU ANLATIMI ile birlikte içerik referansı olarak değerlendir; hedef KOLAY ise doğrudan, ORTA ise ilişkili/karşılaştırmalı, ZOR ise uygulamalı veya çok adımlı özgün soru kur.' : 'KONU ANLATIMI\'ndan sınavda sorulmaya değer TEK bir bilgi seç.'} Seçtiğin bilgiyi içeren cümleyi "evidence" alanına KONU ANLATIMI'ndan HARFİ HARFİNE kopyala (kısaltma, birleştirme, yeniden yazma yok).
 2) Yalnızca o bilgiyi ölçen, açık ve tek yargılı bir soru kökü yaz.
 3) Doğru cevabı yaz; ardından aynı kavram ailesinden, metne göre KESİN YANLIŞ 3-4 çeldirici yaz.
 
 ÖSYM SORU KOMİSYONU KURALLARI (uymayan soru otomatik reddedilir):
-- KAYNAK SINIRI: Soru, doğru cevap ve çeldiriciler yalnızca KONU ANLATIMI'nda geçen kavramlarla kurulur. Metinde olmayan bilgi, terim, sayı veya isim uydurma.${isParagraph ? '' : ' Soru kökünde "metne göre", "parçaya göre", "yukarıdaki metinde" gibi ifadeler kullanma; aday metni görmez.'}
+- KAYNAK SINIRI: Soru, doğru cevap ve çeldiriciler KONU ANLATIMI'na dayanır${trustedSameUnitExample ? ' ve aynı bölüm için kullanıcı tarafından güvenilir olarak verilen örnek cevap kullanılabilir' : ''}. Başka bölüm örneklerinden olgusal bilgi taşıma; kaynakla ilgisiz bilgi, terim, sayı veya isim uydurma.${isParagraph ? '' : ' Soru kökünde "metne göre", "parçaya göre", "yukarıdaki metinde" gibi ifadeler kullanma; aday metni görmez.'}
 - TEK DOĞRU: Yalnızca bir şık doğru olmalı; diğer üçü metne göre açıkça yanlış olmalı. İki şık aynı anlama gelmemeli, bir şık diğerini kapsamamalı.
 - ÇELDİRİCİLER: Şıklar aynı türden (hepsi kavram adı ya da hepsi aynı kalıpta ifade) ve benzer uzunlukta olmalı; en uzun şık en kısanın 2 katını geçmesin, doğru şık diğerlerinden belirgin uzun olmasın. Çeldiricileri adayın gerçekten karıştıracağı komşu kavramlardan seç; konuyla ilgisiz dolgu şık yazma.
 - YASAK: "Hepsi", "Hiçbiri", "Yukarıdakilerin hepsi", "A ve B" türü şıklar; şıkların başına A) B) gibi harf koymak; doğru cevabın ayırt edici kelimesini soru kökünde kullanmak.
@@ -2622,10 +2654,9 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   }
  }
 
- // --- İKİ BAĞIMSIZ HAKEM ---
- // Kadro VRAM'e birlikte sığıyorsa iki hakem aynı anda çalışır (hız). Sığmıyorsa (dalga modu)
- // sırayla çalışır ve 1. hakem reddederse 2. hakem modeli hiç yüklenmez (boşuna model takası yok).
- const judgeModels = [verifierModel, judge2Model];
+ // --- TEK HAKEM ---
+ // Üreticiyle aynı model, ek yükleme/takas olmadan tek bir kez soruyu ve zorluk düzeyini doğrular.
+ const judgeModels = [...new Set([verifierModel])];
  const sameJudgeModel = verifierModel === judge2Model;
  const parallelJudges = opts.parallelJudges ?? (!sameJudgeModel && !modelSwap.swapping && (await currentLineup()).coResident !== false);
  const judgeNumPredict = subSecondEnabled ? 140 : JUDGE_NUM_PREDICT;
@@ -2680,7 +2711,7 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
   judges = await judgeDraft(draft, judgeSig);
  } catch (judgeErr) {
   if (subSecondEnabled && isTransportOrTimeoutError(judgeErr)) {
-   const jFallback = [verifierModel, judge2Model].map(jm => ({
+   const jFallback = [verifierModel].map(jm => ({
     model: `${jm}:subsecond-local-judge`,
     answer: draft.answer,
     difficulty: targetDifficulty,
@@ -3039,10 +3070,19 @@ async function runBatchedCycle(model, verifierModel, judge2Model, limit, timeout
   await runPool(j1Tasks, limit, masterController.signal);
   if (!j1Passed.length || masterController.signal.aborted) return;
 
-  // Aşama 3: 2. Hakem Süpürmesi (yalnız 1. hakemden geçmiş sağlam soruları topluca denetler!)
+  // Aynı model yapılandırmasında ilk tarama tek hakemdir; ikinci model/çağrı yok.
+  const j2Ready = [];
+  if (judge2Model === verifierModel) {
+   for (const item of j1Passed) {
+    item.j2 = item.j1;
+    const verdict = item.j1;
+    const verification = { judges: [verdict], answer: item.draft.answer, difficulty: verdict.difficulty, qualityScore: verdict.qualityScore || 4, examPotential: verdict.examPotential || verdict.qualityScore || 4, ...(verdict.bloomLevel ? { bloomLevel: verdict.bloomLevel } : {}) };
+    j2Ready.push({ item, agreedDifficulty: verdict.difficulty, verification, order: drafts.indexOf(item) });
+   }
+  } else {
+  // Eski/özel ayarlarda farklı model seçilmişse mevcut ikinci doğrulama adımı korunur.
   pipelinePhase = 'verifying_j2';
   const j2Groups = groupByPassage(j1Passed);
-  const j2Ready = [];
 
   const j2Tasks = j2Groups.map(grp => async () => {
    if (masterController.signal.aborted) return;
@@ -3107,6 +3147,7 @@ async function runBatchedCycle(model, verifierModel, judge2Model, limit, timeout
    }
   });
   await runPool(j2Tasks, limit, masterController.signal);
+  }
 
   // Orijinal batch sırasıyla (kolay -> orta -> zor sırasını bozmadan) kaydet
   j2Ready.sort((a, b) => a.order - b.order);
@@ -4290,7 +4331,7 @@ function setAutoBlock(code, reason) {
 
 function describeLineup(lineup) {
  const pin = k => (lineup.pinned?.[k] ? ' (elle seçildi)' : '');
- return `üretici=${lineup.model}${pin('model')} · 1. hakem=${lineup.verifierModel}${pin('verifierModel')} · 2. hakem=${lineup.judge2Model}${pin('judge2Model')}`;
+ return `tek model=${lineup.model}${pin('model')} (üretici + tek hakem)`;
 }
 
 // KESİNTİSİZ ÜRETİM DÖNGÜSÜ
@@ -4766,10 +4807,9 @@ async function qualityImprovementPass() {
   } catch {}
   if (!models.length) return;
 
-  const model = await selectedModel();
-  const verifierModel = await selectedVerifierModel(model);
-  const judge2Model = await selectedJudgeModel('judge2Model', defaultJudge2Model);
-  if (!models.includes(model) || !models.includes(verifierModel) || !models.includes(judge2Model)) return;
+  const lineup = await currentLineup();
+  const { model, verifierModel } = lineup;
+  if (!models.includes(model)) return;
 
   const candidates = scored
    .filter(x => qualityImprovementEligible(x.q))
@@ -4810,13 +4850,12 @@ async function qualityImprovementPass() {
    if (q.questionType && !record.questionType) record.questionType = q.questionType;
    if (q.bloomLevel && !record.bloomLevel) record.bloomLevel = q.bloomLevel;
 
-   // Üretim hattıyla aynı çıta: iki bağımsız hakem cevapla birebir anlaşmalı.
+   // Üretimle aynı modelin tek denetimi: doğru cevap, kaynak dayanağı ve zorluk tek çağrıda doğrulanır.
    const verifyItem = { ctx, draft: record, passage, parsed: record };
    await verifySingleWithJudge(verifyItem, verifierModel, true, AbortSignal.timeout(150_000), policy, false);
-   await verifySingleWithJudge(verifyItem, judge2Model, true, AbortSignal.timeout(150_000), policy, true);
-   const judges = [verifyItem.j1, verifyItem.j2].filter(Boolean);
+   const judges = [verifyItem.j1].filter(Boolean);
    const agreedAnswers = new Set(judges.map(j => j.answer));
-   if (judges.length !== 2 || agreedAnswers.size !== 1 || [...agreedAnswers][0] !== record.answer) {
+   if (judges.length !== 1 || agreedAnswers.size !== 1 || [...agreedAnswers][0] !== record.answer) {
     qualityTelemetry.rejectedRewriteTotal += 1;
     await appendTrace({ type: 'quality_rewrite_rejected', unitId: ctx.id, question: record.question, reason: 'judge_disagree' }).catch(() => {});
     return;
@@ -6467,11 +6506,12 @@ export function ollamaPlugin() {
       if (!tagNames.includes(chosen)) {
        return respond(res, 400, { error: 'Model yerel Ollama listesinde bulunamadı.' });
       }
-      const patch = { [roleKey]: chosen };
+      const patch = roleKey === 'evolverModel'
+       ? { evolverModel: chosen }
+       : { model: chosen, verifierModel: chosen, judge2Model: chosen };
       if (roleKey !== 'evolverModel') {
-       // Kullanıcının elle seçtiği rol sabitlenir; otomatik kadro bu role dokunmaz.
-       const curPins = (await readSettings()).lineupPins;
-       patch.lineupPins = { ...(curPins && typeof curPins === 'object' ? curPins : {}), [roleKey]: true };
+       // Tek model: üretim ve tek hakem aynı ağırlıkları kullanır; seçim bütün rollere uygulanır.
+       patch.lineupPins = { model: true, verifierModel: true, judge2Model: true };
       }
       await writeSettings(patch);
       installedCache.at = 0;
@@ -6486,8 +6526,8 @@ export function ollamaPlugin() {
        return respond(res, 400, { error: 'Eşzamanlı üretim yuvası 1 ile 8 arasında bir tam sayı olmalı.' });
       }
       await writeSettings({ parallelUnits: n });
-      const slots = modelInferenceQueue.setMaxConcurrent(n);
-      return respond(res, 200, { autoConcurrency: n, modelInferenceConcurrency: slots });
+      modelInferenceQueue.setMaxConcurrent(MODEL_INFERENCE_CONCURRENCY);
+      return respond(res, 200, { autoConcurrency: n, modelInferenceConcurrency: MODEL_INFERENCE_CONCURRENCY });
      }
 
      if (req.method === 'POST' && path === '/timeout') {

@@ -166,7 +166,7 @@ test('iki sürekli motor: üretim + kalite iyileştirme (kart sistemi yok)', asy
   assert.ok(status.qualityLoop.scannedTotal >= 1, 'Havuz 0-API skorlanmalı');
   assert.notEqual(lastQ.question, weakSeed.question, 'Soru metni yeniden yazılmalıydı');
   assert.equal(lastQ.id, weakSeed.id, 'Soru kimliği korunmalı (aynı sorunun yükseltilmiş sürümü)');
-  assert.ok(Array.isArray(lastQ.verification?.judges) && lastQ.verification.judges.length === 2, 'Yükseltme iki hakem onayından geçmeli');
+  assert.ok(Array.isArray(lastQ.verification?.judges) && lastQ.verification.judges.length === 1, 'Yükseltme tek hakem onayından geçmeli');
   assert.ok(Number(lastQ.curatorScore) > 1, 'Havuz skoru yükselmeli');
   assert.equal(lastQ.options.length, 5, 'Yeniden yazılan soru modelin verdiği 5 şıkla kaydedilmeli');
   assert.deepEqual(status.optionFormat?.allowed, [4, 5], 'Durum raporu geçerli şık sayılarını bildirmeli');

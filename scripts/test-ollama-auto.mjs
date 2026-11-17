@@ -147,7 +147,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   const medianGap=[...gaps].sort((a,b)=>a-b)[Math.floor(gaps.length/2)];
   assert.ok(medianGap<1500,`sorular arasında sabit 2 sn'lik bekleme olmamalı, görülen ortanca aralık: ${medianGap}ms`);
   assert.ok(peak<=1,`modeller asla üst üste binmemeli; görülen eşzamanlı istek tepe değeri: ${peak}`);
-  assert.ok(calls>=approved*3,`her soru için üretici + 2 hakem çağrısı yapılmalı; çağrı: ${calls}, soru: ${approved}`);
+  assert.ok(calls>=approved*2,`her soru için üretici + tek hakem çağrısı yapılmalı; çağrı: ${calls}, soru: ${approved}`);
   assert.ok(status.coverage.coveredPassages>=2,'birden fazla kitap pasajı taranmış olmalı');
   assert.ok(status.telemetry.questionsPerMinute>0,'soru/dk hız metriği ölçülmüş olmalı');
 
@@ -156,7 +156,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   assert.ok(units.size>=2,`en az 2 farklı ünite üretilmeliydi, görülen: ${units.size}`);
   assert.ok(questions.items.every(x=>x.status==='approved'));
   assert.ok(questions.items.every(x=>['kolay','orta','zor'].includes(x.difficulty)));
-  assert.ok(questions.items.every(x=>Array.isArray(x.verification?.judges)&&x.verification.judges.length===2));
+  assert.ok(questions.items.every(x=>Array.isArray(x.verification?.judges)&&x.verification.judges.length===1));
   assert.ok(questions.items.every(x=>typeof x.passageId==='string' && x.passageId.includes('#')));
 
   // Her ünitenin soruları sırayla kolay -> orta -> zor kalıbıyla eklenmiş olmalı

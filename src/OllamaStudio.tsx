@@ -30,6 +30,7 @@ type Lineup = {
  model: string; verifierModel: string; judge2Model: string;
  pinned: {model: boolean; verifierModel: boolean; judge2Model: boolean}; auto: boolean;
  coResident: boolean; estimatedVramGb?: number | null; vramGb?: number | null; vramDetected?: boolean; gpuName?: string | null;
+ systemRamGb?: number | null; ramOffloadGb?: number; estimatedRamOffloadGb?: number;
  warnings: string[]; swapMode?: boolean; swapNote?: string | null; candidates?: LineupCandidate[];
  recommended?: {generator: string; judge2: string; pullCommand: string; missing: string[]};
 };
@@ -78,12 +79,12 @@ type Status = {
  autoEvents?: AutoEvent[];
  lineup?: Lineup;
  plan?: ProductionPlan;
- ollamaRuntime?: {numCtx?: number; keepAlive?: string | number};
+ ollamaRuntime?: {numCtx?: number; numThread?: number | null; keepAlive?: string | number};
  settings?: {passageMode?: 'full-book' | 'summary-only'};
  telemetry?: Telemetry; coverage?: Coverage; qualityLoop?: QualityLoop;
 };
 
-const judgeLabel = (i: number) => (i === 0 ? 'Denetçi (1. hakem)' : '2. hakem');
+const judgeLabel = (_i: number) => 'Tek hakem';
 const difficultyLabel: Record<string, string> = {kolay: 'Kolay', orta: 'Orta', zor: 'Zor'};
 const typeLabel: Record<string, string> = {
  kavram: 'Kavram', vaka: 'Vaka Analizi', karsilastirma: 'Karşılaştırma',
@@ -105,9 +106,9 @@ const pipelinePhaseLabel: Record<string, string> = {
  loading: 'Model belleğe yükleniyor',
  producing: 'Üretici soru yazıyor',
  generating: 'Üretici soru yazıyor',
- verifying: 'Hakemler denetliyor',
+ verifying: 'Tek hakem denetliyor',
  verifying_j1: '1. hakem denetliyor',
- verifying_j2: '2. hakem son onayı veriyor',
+ verifying_j2: 'Son denetim',
  fixing: 'Öz-düzeltme yapılıyor',
  saving: 'Soru havuza kaydediliyor'
 };
@@ -147,9 +148,7 @@ async function getLatest(view: 'approved' | 'rejected'): Promise<GeneratedQuesti
 export function OllamaStudio({read}: {read: string[]}) {
  const [status, setStatus] = useState<Status | null>(null);
  const [chosenModel, setChosenModel] = useState('');
- const [chosenVerifier, setChosenVerifier] = useState('');
- const [chosenJudge2, setChosenJudge2] = useState('');
- const [items, setItems] = useState<GeneratedQuestion[]>([]);
+  const [items, setItems] = useState<GeneratedQuestion[]>([]);
  const [audit, setAudit] = useState<Audit | null>(null);
  const [error, setError] = useState('');
  const [infoMsg, setInfoMsg] = useState('');
@@ -231,7 +230,7 @@ export function OllamaStudio({read}: {read: string[]}) {
    const data = await r.json();
    if (!r.ok) throw Error(data.error || 'Model kadrosu güncellenemedi.');
    setError('');
-   setChosenModel(''); setChosenVerifier(''); setChosenJudge2('');
+   setChosenModel('');
    await refresh();
   } catch (e) {
    setError(e instanceof Error ? e.message : 'Model kadrosu güncellenemedi.');
@@ -271,20 +270,6 @@ export function OllamaStudio({read}: {read: string[]}) {
   }
  };
 
- const setConcurrency = async (n: number) => {
-  try {
-   const r = await fetch(`${api}/concurrency`, {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({value: n})
-   });
-   const data = await r.json();
-   if (!r.ok) throw Error(data.error || 'Yuva sayısı ayarlanamadı.');
-   setError('');
-   await refresh();
-  } catch (e) {
-   setError(e instanceof Error ? e.message : 'Yuva sayısı ayarlanamadı.');
-  }
- };
 
  const filtered = items.filter(q => q.status === view);
  const completedWithQuestions = read.filter(id => (status?.coverage?.perUnit?.[id]?.questions ?? 0) > 0).length;
@@ -308,7 +293,7 @@ export function OllamaStudio({read}: {read: string[]}) {
   <div className="notice">
    <ShieldCheck size={20}/>
    <span>
-    <b>Her zaman açık iki motor:</b> Üretici ve iki hakemin Ollama çağrıları tek kuyruktan sırayla geçer; her soru kitap kaynağı, tek-doğru ön kontrolü, iki bağımsız hakem ve gerekirse düzeltme süzgecinden geçer (Motor 1). Kalite motoru (Motor 2) ise onaylı havuzdaki her soruyu 0-100 puanlar; en zayıf olanları <u>üretim boştayken</u> yeniden yazdırır, iki hakemden geçirir ve skoru artmayanı eski haliyle bırakır. Üretim her zaman önceliklidir.
+    <b>Her zaman açık iki motor:</b> Tek modelin üretim ve tek hakem çağrıları kuyruktan geçer; her soru kitap kaynağı, tek-doğru ön kontrolü, hakemin kolay/orta/zor sınıflandırması ve gerekirse düzeltme süzgecinden geçer (Motor 1). Kalite motoru (Motor 2) ise onaylı havuzdaki her soruyu 0-100 puanlar; en zayıf olanları <u>üretim boştayken</u> yeniden yazdırır, aynı tek hakemden geçirir ve skoru artmayanı eski haliyle bırakır. Üretim her zaman önceliklidir.
    </span>
   </div>
 
@@ -349,7 +334,7 @@ export function OllamaStudio({read}: {read: string[]}) {
       ))}
      </p>
     )}
-    <p className="engine-foot">Her soru: kitap pasajından kanıt → tek-doğru ön kontrolü → 1. hakem → 2. hakem → gerekirse öz-düzeltme. Kolay/orta/zor dengesi korunur.</p>
+    <p className="engine-foot">Her soru: kitap pasajından kanıt → tek-doğru ön kontrolü → tek hakem (zorluk sınıflandırması) → gerekirse öz-düzeltme. Kolay/orta/zor dengesi korunur.</p>
    </section>
 
    {/* MOTOR 2 — SÜREKLİ KALİTE İYİLEŞTİRME */}
@@ -388,7 +373,7 @@ export function OllamaStudio({read}: {read: string[]}) {
       ))}
      </div>
     ) : (
-     <p className="engine-foot">Havuz taranıyor; zayıf sorular puan düşüklüğüne göre sıraya alınır, üretim boşta olduğunda modele yeniden yazdırılır ve iki hakemden geçer.</p>
+     <p className="engine-foot">Havuz taranıyor; zayıf sorular puan düşüklüğüne göre sıraya alınır, üretim boşta olduğunda modele yeniden yazdırılır ve tek hakemden geçer.</p>
     )}
    </section>
   </div>
@@ -405,7 +390,7 @@ export function OllamaStudio({read}: {read: string[]}) {
 
     <div className="preset-bar">
      <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
-     <span className="preset-btn active" title="Tek soru üretimi; kaynak ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
+     <span className="preset-btn active" title="Aynı model soru üretir, tek hakem olarak doğrular ve zorluğu sınıflandırır.">⚖️ Tek model · tek hakem · zorluk sınıflandırması</span>
      <span className="jarvis-badge ok" style={{marginLeft: 8}} title={lineup?.swapMode ? 'Modeller ekran kartı belleğinde aynı anda kalamıyor; sorular gruplar hâlinde hazırlanır ve model grup başına bir kez değişir. Ayar gerekmez.' : undefined}>
       {lineup?.swapMode ? `🌊 Dalga düzeni: ${status?.autoConcurrencyEffective ?? 4} soru birlikte, model dalga başına bir kez değişir` : `🔒 Aynı anda en çok ${status?.modelInferenceConcurrency ?? 1} model çağrısı`}
      </span>
@@ -474,54 +459,35 @@ export function OllamaStudio({read}: {read: string[]}) {
 
     <div className="lineup-box">
      <div className="lineup-head">
-      <b>Model kadrosu</b>
-      <span className={`jarvis-badge ${lineup?.auto ? 'ok' : 'neutral'}`}>{lineup?.auto ? 'Otomatik seçim' : 'Elle sabitlenmiş roller var'}</span>
-      <label htmlFor="lineup-profile">Profil</label>
-      <select id="lineup-profile" value={lineup?.profile || 'dengeli'} onChange={e => updateLineup({profile: e.target.value})}>
-       {(lineup?.profiles || [{id: 'dengeli', label: 'Dengeli', description: ''}]).map(p => <option key={p.id} value={p.id} title={p.description}>{p.label}</option>)}
-      </select>
+      <b>Tek model ayarı</b>
+      <span className={`jarvis-badge ${lineup?.auto ? 'ok' : 'neutral'}`}>{lineup?.auto ? 'Otomatik seçim' : 'Tek model sabitlendi'}</span>
+      <span className="jarvis-badge ok">VRAM'e sığan en güçlü model</span>
       {!lineup?.auto && <button className="outline" onClick={() => updateLineup({auto: true})}>Otomatik seçime dön</button>}
      </div>
      <p className="lineup-line">
-      Üretici <b>{lineup?.model || '—'}</b>{lineup?.pinned?.model ? ' 📌' : ''} · 1. hakem <b>{lineup?.verifierModel || '—'}</b>{lineup?.pinned?.verifierModel ? ' 📌' : ''} · 2. hakem <b>{lineup?.judge2Model || '—'}</b>{lineup?.pinned?.judge2Model ? ' 📌' : ''}
-      {typeof lineup?.estimatedVramGb === 'number' && typeof lineup?.vramGb === 'number' ? ` · tahmini VRAM ${lineup.estimatedVramGb.toFixed(1)} / ${lineup.vramGb} GB${lineup.vramDetected ? '' : ' (kart algılanamadı, varsayım)'}` : ''}
+      Tek model <b>{lineup?.model || '—'}</b>{lineup?.pinned?.model ? ' 📌' : ''} · üretici + tek hakem
+      {typeof lineup?.estimatedVramGb === 'number' && typeof lineup?.vramGb === 'number' ? ` · model belleği ~${lineup.estimatedVramGb.toFixed(1)} GB (VRAM ${lineup.vramGb} GB${lineup.vramDetected ? '' : ', varsayım'}${lineup.estimatedRamOffloadGb ? ` + RAM/CPU ${lineup.estimatedRamOffloadGb.toFixed(1)} GB` : ''})` : ''}
       {status?.ollamaRuntime?.numCtx ? ` · bağlam ${status.ollamaRuntime.numCtx} token` : ''}
      </p>
      {lineup?.warnings?.map((w, i) => <p className="lineup-warn" key={i}>⚠ {w}</p>)}
      {lineup?.swapNote && <p className="lineup-note">🌊 {lineup.swapNote}</p>}
      {lineup?.recommended?.missing && lineup.recommended.missing.length > 0 && (
-      <p className="lineup-line">Önerilen kadro için eksik model: <code>{lineup.recommended.pullCommand}</code></p>
+      <p className="lineup-line">Önerilen soru modeli için eksik model: <code>{lineup.recommended.pullCommand}</code></p>
      )}
     </div>
 
     <div className="model-select">
-     <label htmlFor="model-choice">Üretici model</label>
+     <label htmlFor="model-choice">Soru üretimi + tek hakem modeli</label>
      <select id="model-choice" value={chosenModel || status?.model || ''} onChange={e => setChosenModel(e.target.value)} disabled={!status?.models.length || status.busy}>
       <option value="" disabled>Model seç</option>
       {status?.models.map(m => <option key={m} value={m}>{m}</option>)}
      </select>
      <button className="outline" onClick={() => selectModel('model', chosenModel)} disabled={!chosenModel || !!status?.busy}>Modeli kullan</button>
+     <span>{status?.connected ? (status.installed ? 'hazır' : 'kurulu değil') : 'bekleniyor'}</span>
     </div>
-
-    <div className="model-select">
-     <label htmlFor="verifier-choice">Denetçi (1. hakem)</label>
-     <select id="verifier-choice" value={chosenVerifier || status?.verifierModel || ''} onChange={e => setChosenVerifier(e.target.value)} disabled={!status?.models.length || status.busy}>
-      <option value="" disabled>Model seç</option>
-      {status?.models.map(m => <option key={m} value={m}>{m}</option>)}
-     </select>
-     <button className="outline" onClick={() => selectModel('verifier', chosenVerifier)} disabled={!chosenVerifier || !!status?.busy}>Modeli kullan</button>
-     <span>{status?.connected ? (status.verifierInstalled ? 'hazır' : 'kurulu değil') : 'bekleniyor'}</span>
-    </div>
-
-    <div className="model-select">
-     <label htmlFor="judge2-choice">2. hakem (bağımsız)</label>
-     <select id="judge2-choice" value={chosenJudge2 || status?.judge2Model || ''} onChange={e => setChosenJudge2(e.target.value)} disabled={!status?.models.length || status.busy}>
-      <option value="" disabled>Model seç</option>
-      {status?.models.map(m => <option key={m} value={m}>{m}</option>)}
-     </select>
-     <button className="outline" onClick={() => selectModel('judge2', chosenJudge2)} disabled={!chosenJudge2 || !!status?.busy}>Modeli kullan</button>
-     <span>{status?.connected ? (status.judge2Installed ? 'hazır' : 'kurulu değil') : 'bekleniyor'}</span>
-    </div>
+    <p className="lineup-line">
+     Tek model hattı: <b>{lineup?.model || '—'}</b> soru üretir ve tek hakem olarak doğrular; kolay / orta / zor düzeyini de belirler. Model bellekte tutulur. {lineup?.ramOffloadGb ? `Model seçiminde en çok ${lineup.ramOffloadGb} GB RAM/CPU offload payı hesaba katılır; disk takası yapılmaz.` : 'Öncelik tam GPU hızıdır; güvenli RAM offload alanı oluşursa otomatik değerlendirilir.'}
+    </p>
 
     {/* KAYNAK AYARI — hız/kalite her zaman korunan çıtada */}
     <div className="config-grid">
@@ -535,16 +501,19 @@ export function OllamaStudio({read}: {read: string[]}) {
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · iki ardışık hakem · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
+     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · tek hakem (kolay/orta/zor sınıflandırması) · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">
      <label>Model kuyruğu</label>
      <span>{status?.modelInferenceQueue?.active
       ? `Çalışıyor: ${status.modelInferenceQueue.active.label}`
-      : 'Boşta'} · {status?.modelInferenceQueue?.queued ?? 0} bekleyen · aynı anda {status?.modelInferenceConcurrency ?? 1} çağrı</span>
-     <label htmlFor="concurrency-choice" style={{marginLeft: 10}}>Aynı anda hazırlanan soru (1-8)</label>
-     <select id="concurrency-choice" value={status?.autoConcurrency ?? 2} onChange={e => setConcurrency(Number(e.target.value))}>
+      : 'Boşta'} · {status?.modelInferenceQueue?.queued ?? 0} bekleyen · aynı anda en çok {status?.modelInferenceConcurrency ?? 1} çağrı · CPU {status?.ollamaRuntime?.numThread ?? '—'} thread</span>
+     <label htmlFor="concurrency-choice" style={{marginLeft: 10}}>Hazırlık hatları (1-8; model çağrısı aynı anda 1)</label>
+     <select id="concurrency-choice" value={status?.autoConcurrency ?? 2} onChange={async e => {
+      const r = await fetch(`${api}/concurrency`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: Number(e.target.value)})});
+      if (r.ok) await refresh(); else setError((await r.json()).error || 'Hat sayısı ayarlanamadı.');
+     }}>
       {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>{n}</option>)}
      </select>
      {typeof status?.autoConcurrencyEffective === 'number' && status.autoConcurrencyEffective !== status.autoConcurrency && (
@@ -557,7 +526,7 @@ export function OllamaStudio({read}: {read: string[]}) {
      <button className="outline" onClick={setTimeoutBudget} disabled={!timeoutInput}>Uygula</button>
     </div>
     <p className="lineup-line" style={{marginTop: -4}}>
-     Süre tavanı <b>tek bir model çağrısı</b> içindir (şu an {Math.round((status?.autoTimeoutMs || timeoutRange.default) / 1000)} sn); bir soru üretici + iki hakem çağrısından oluşur ve toplamı bu süreden uzun olabilir. Modelin ilk yüklenmesi bu süreye sayılmaz.
+     Süre tavanı <b>tek bir model çağrısı</b> içindir (şu an {Math.round((status?.autoTimeoutMs || timeoutRange.default) / 1000)} sn); bir soru üretici + bir hakem çağrısından oluşur ve toplamı bu süreden uzun olabilir. Modelin ilk yüklenmesi bu süreye sayılmaz.
     </p>
 
     {status?.autoEvents && status.autoEvents.length > 0 && (
@@ -650,7 +619,7 @@ export function OllamaStudio({read}: {read: string[]}) {
    <div>
     <div className="eyebrow muted">MOTORLARIN ÜRETTİĞİ HAVUZ</div>
     <h2>Soru havuzunu canlı izle</h2>
-    <p>Soruları iki bağımsız hakem kendi kendine onaylar veya eler; senin tek bir onay/red vermene gerek yoktur. Motor 2, daha zayıf soruları sürekli yükseltir.</p>
+    <p>Soruları tek hakem onaylar veya eler; senin tek bir onay/red vermene gerek yoktur. Motor 2, daha zayıf soruları sürekli yükseltir.</p>
    </div>
   </div>
 
@@ -721,7 +690,7 @@ export function OllamaStudio({read}: {read: string[]}) {
         <p><b>Denetçi dayanağı:</b> &quot;{q.verification.evidence}&quot;</p>
        </>
       ) : null}
-      <small>Ollama · {q.model} · {q.status === 'approved' ? 'İki bağımsız hakem tarafından otonom onaylandı (müdahale gerekmez)' : 'İki bağımsız hakem tarafından otonom elendi (DPO eğitim izi)'}; uzman doğrulaması değildir.</small>
+      <small>Ollama · {q.model} · {q.status === 'approved' ? 'Tek hakem tarafından otonom onaylandı (müdahale gerekmez)' : 'Tek hakem tarafından otonom elendi (DPO eğitim izi)'}; uzman doğrulaması değildir.</small>
      </article>
     ))}
    </div>

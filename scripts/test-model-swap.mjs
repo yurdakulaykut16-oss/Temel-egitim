@@ -168,62 +168,28 @@ test('uçtan uca: bellekte tek model kalabiliyorken ayar istenmeden dalga düzen
   const order = () => sim.stats.requests.map(r => r.model);
   const switchCount = list => list.reduce((n, m, i) => n + (i > 0 && list[i - 1] !== m ? 1 : 0), 0);
 
-  // 1) Dalga düzenine kendiliğinden geçilir.
-  let status = await waitFor(s => s.modelSwap?.active === true, 'dalga modu');
+  // Tek-model üretim hattında üretici ve hakem aynı modeli kullandığından takas gerekmez.
+  let status = await waitFor(s => (s.approved || 0) >= 8, '8 soru (tek model)', 45_000);
   assert.equal(status.model, 'qwen3:8b');
-  assert.equal(status.verifierModel, 'qwen3:8b');
-  assert.equal(status.judge2Model, 'gemma3:4b');
-  assert.equal(status.lineup.coResident, true, 'test kurgusu: tahmine göre kadro sığıyor, gerçekte sığmıyor');
-  assert.equal(status.lineup.swapMode, true);
-  assert.equal(status.autoConcurrency, 2, 'kullanıcının ayarı değişmez');
-  assert.equal(status.autoConcurrencyEffective, 4, 'dalga düzeninde 4 soru birlikte hazırlanır');
-  assert.equal(status.modelSwap.waveSize, 4);
-  assert.match(status.lineup.swapNote, /dalga düzeninde/);
-  assert.match(status.lineup.swapNote, /ayar yapmana gerek yok/);
-
-  // 2) Dalga düzeninde ölçüm: geçişten sonraki çağrılar.
-  const approvedAtEnter = status.approved || 0;
-  const requestsAtEnter = sim.stats.requests.length;
-  const loadsAtEnter = { ...sim.stats.loadsByModel };
-  status = await waitFor(s => (s.approved || 0) >= approvedAtEnter + 16, '16 soru (dalga düzeninde)');
-  const approvedInWave = status.approved - approvedAtEnter;
-  const tail = order().slice(requestsAtEnter);
-  const qLoads = sim.stats.loadsByModel['qwen3:8b'] - (loadsAtEnter['qwen3:8b'] || 0);
-  const gLoads = sim.stats.loadsByModel['gemma3:4b'] - (loadsAtEnter['gemma3:4b'] || 0);
-  const info = `onaylanan ${approvedInWave}, yükleme qwen ${qLoads} / gemma ${gLoads}, çağrı ${tail.length}, sıra ${tail.map(m => m[0]).join('')}`;
-  // Eski davranış: soru başına her model bir kez yüklenirdi (16 soru → 16 + 16 yükleme).
-  assert.ok(qLoads <= approvedInWave / 2, `üretici soru başına yeniden yüklenmemeli: ${info}`);
-  assert.ok(gLoads <= approvedInWave / 2, `2. hakem soru başına yeniden yüklenmemeli: ${info}`);
-  assert.ok(switchCount(tail) <= approvedInWave * 0.75, `model değişimi dalga başına olmalı: ${info}`);
-  // Bir dalgada en az 4 çağrı art arda aynı modelle çalışır.
-  let longest = 0;
-  for (let i = 0, run = 0; i < tail.length; i++) { run = i > 0 && tail[i] === tail[i - 1] ? run + 1 : 1; longest = Math.max(longest, run); }
-  assert.ok(longest >= 6, `üretici + 1. hakem çağrıları art arda aynı modelle çalışmalı: ${info}`);
-
-  // 3) Kullanıcıdan ayar istenmez.
-  const text = JSON.stringify([status.lineup.warnings, status.lineup.notes, status.lineup.swapNote, status.autoBlock, status.autoLastError]);
-  assert.doesNotMatch(text, /OLLAMA_MAX_LOADED_MODELS/);
-  assert.doesNotMatch(text, /yeniden başlat/);
-  assert.doesNotMatch(text, /sürekli yeniden yükleniyor/);
-  assert.equal(status.telemetry.infraErrors, 0, 'altyapı hatası olmamalı');
-  assert.equal(status.telemetry.timeouts, 0, 'zaman aşımı olmamalı');
-  const qs = await (await fetch(`${base}/api/ollama/questions`)).json();
-  for (const q of qs.items.filter(x => x.status === 'approved')) {
-   assert.equal(q.verification.judges.length, 2, 'dalga düzeninde de her soru iki hakemden geçer');
-  }
-
-  // 4) Sınır kalkınca (ör. oyun kapandı) moddan kendiliğinden çıkılır ve yüklemeler biter.
-  sim.setLimits({ maxLoaded: 3 });
-  status = await waitFor(s => s.modelSwap?.active === false, 'dalga modundan çıkış');
+  assert.equal(status.verifierModel, status.model);
+  assert.equal(status.judge2Model, status.model);
+  assert.equal(status.lineup.coResident, true);
   assert.equal(status.lineup.swapMode, false);
   assert.equal(status.lineup.swapNote, null);
-  assert.equal(status.autoConcurrencyEffective, 2);
-  const loadsAfterExit = { ...sim.stats.loadsByModel };
-  const approvedAfterExit = status.approved;
-  status = await waitFor(s => (s.approved || 0) >= approvedAfterExit + 6, 'çıkıştan sonra 6 soru');
-  assert.deepEqual(sim.stats.loadsByModel, loadsAfterExit, 'modeller bellekte birlikte kalırken yeniden yükleme olmaz');
   assert.equal(status.modelSwap.active, false);
-  console.log(`# dalga düzeni: ${info}`);
+  assert.deepEqual(Object.keys(sim.stats.loadsByModel), ['qwen3:8b']);
+  assert.equal(sim.stats.loadsByModel['qwen3:8b'], 1, 'tek model bellekte bir kez yüklenmeli');
+  assert.ok(status.autoConcurrency >= 1);
+
+  const qs = await (await fetch(`${base}/api/ollama/questions`)).json();
+  for (const q of qs.items.filter(x => x.status === 'approved')) {
+   assert.equal(q.verification.judges.length, 1, 'her soru tek hakemden geçer');
+   assert.equal(q.verification.judges[0].model, 'qwen3:8b');
+  }
+  assert.equal(status.telemetry.infraErrors, 0, 'altyapı hatası olmamalı');
+  assert.equal(status.telemetry.timeouts, 0, 'zaman aşımı olmamalı');
+  const info = `tek model: ${status.model}, yükleme: ${JSON.stringify(sim.stats.loadsByModel)}, onay: ${status.approved}`;
+
  } catch (e) {
   failure = e;
  }

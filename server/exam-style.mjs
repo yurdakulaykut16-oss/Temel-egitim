@@ -2,11 +2,12 @@
  * Sınav tarzı örnek kitaplığı.
  *
  * Soru yazan modele "bu sınavda sorular NASIL soruluyor" bilgisini verir. Kaynakları:
- *  1) src/examSamples.json  -> kullanıcının gönderdiği örnek / çıkmış sorular,
+ *  1) src/examSamples.json ve server/user-exam-examples.json -> kullanıcı örnekleri,
  *  2) server/book-style-questions.json -> kitapların kendi "Neler Öğrendik?" soruları.
  *
  * Örnekten yalnızca BİÇİM alınır (kök kalıbı, şık türü, uzunluk); bilgi her zaman o anki
- * ODAK CÜMLE'den / KONU ANLATIMI'ndan gelir. Bu yüzden örnek başka bölümden de olabilir.
+ * ODAK CÜMLE'den / KONU ANLATIMI'ndan gelir. Kullanıcının güvenilir olarak işaretlediği aynı-bölüm
+ * cevapları içerik referansı olarak da kullanılabilir; farklı bölümdeki örnekler yalnızca biçim verir.
  */
 
 /** Kök kalıbı aileleri (istemde okunacak kısa açıklamalarıyla). */
@@ -74,7 +75,7 @@ export function buildStyleLibrary({ samples = [], bookQuestions = [] } = {}) {
   if (seen.has(key)) return;
   seen.add(key);
   const options = Array.isArray(q.options5) && q.options5.length ? q.options5 : (Array.isArray(q.options) ? q.options : []);
-  out.push({ unitId: q.unitId, question, answer, family: q.style && STYLE_FAMILIES[q.style] ? q.style : classifyStemStyle(question, options), ...extra });
+  out.push({ unitId: q.unitId, question, answer, family: q.style && STYLE_FAMILIES[q.style] ? q.style : classifyStemStyle(question, options), answerVerified: q.answerVerified === true, userTrusted: q.userTrusted === true, ...extra });
  };
  for (const s of samples) push(s, { priority: true, origin: s.origin || 'kullanıcı örneği' });
  for (const b of bookQuestions) push(b, { priority: false, origin: 'kitap sorusu' });
@@ -115,7 +116,12 @@ export function buildExamStyleBlock(example, { sameUnit = false } = {}) {
  if (!example?.question) return '';
  const family = STYLE_FAMILIES[example.family] ? ` Kalıp: ${STYLE_FAMILIES[example.family]}.` : '';
  const scope = sameUnit ? '' : ' Örnek başka bir konudandır;';
- return `\nSINAV TARZI ÖRNEĞİ (${example.origin || 'örnek'}; yalnızca soru kurma BİÇİMİNİ örnek al.${scope} bilgiyi ODAK CÜMLE'den / KONU ANLATIMI'ndan al, bu soruyu ve cevabını KOPYALAMA.${family}): Soru="${clip(example.question, 230)}" | Doğru="${clip(example.answer, 50)}"`;
+ const trustedSameUnit = example.userTrusted === true && sameUnit;
+ const guidance = trustedSameUnit
+  ? ' Aynı bölümdeki bu cevap güvenilir içerik referansıdır; bu bilgiyi hedeflenen zorluk düzeyinde yeni ve özgün biçimde ölç, örnek soruyu kopyalama.'
+  : ` yalnızca soru kurma BİÇİMİNİ örnek al.${scope} bilgiyi ODAK CÜMLE'den / KONU ANLATIMI'ndan al, bu soruyu ve cevabını KOPYALAMA.`;
+ const verification = example.answerVerified === false ? ' Cevap doğrulanmamış; bilgiyi alma.' : '';
+ return `\nSINAV TARZI ÖRNEĞİ (${example.origin || 'örnek'};${guidance}${verification}${family}): Soru="${clip(example.question, 230)}" | Doğru="${clip(example.answer, 50)}"`;
 }
 
 /** Kitaplığın aile dağılımı (rapor ve testler için). */
