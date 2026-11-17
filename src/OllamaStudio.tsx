@@ -30,7 +30,7 @@ type Lineup = {
  model: string; verifierModel: string; judge2Model: string;
  pinned: {model: boolean; verifierModel: boolean; judge2Model: boolean}; auto: boolean;
  coResident: boolean; estimatedVramGb?: number | null; vramGb?: number | null; vramDetected?: boolean; gpuName?: string | null;
- warnings: string[]; candidates?: LineupCandidate[];
+ warnings: string[]; swapMode?: boolean; swapNote?: string | null; candidates?: LineupCandidate[];
  recommended?: {generator: string; judge2: string; pullCommand: string; missing: string[]};
 };
 type AutoEvent = {at: string; ok: boolean; unit?: string; message: string; seconds?: number; code?: string};
@@ -406,8 +406,8 @@ export function OllamaStudio({read}: {read: string[]}) {
     <div className="preset-bar">
      <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
      <span className="preset-btn active" title="Tek soru üretimi; kaynak ve iki hakem denetimi korunur.">⚖️ Dengeli kalite — 1 soru/çağrı · ardışık iki hakem · gerekirse düzeltme</span>
-     <span className={`jarvis-badge ${lineup?.coResident === false ? 'warn' : 'ok'}`} style={{marginLeft: 8}}>
-      {lineup?.coResident === false ? '⚠ Modeller VRAM\'e birlikte sığmıyor: tek hat, sırayla' : `🔒 Aynı anda en çok ${status?.modelInferenceConcurrency ?? 1} model çağrısı`}
+     <span className="jarvis-badge ok" style={{marginLeft: 8}} title={lineup?.swapMode ? 'Modeller ekran kartı belleğinde aynı anda kalamıyor; sorular gruplar hâlinde hazırlanır ve model grup başına bir kez değişir. Ayar gerekmez.' : undefined}>
+      {lineup?.swapMode ? `🌊 Dalga düzeni: ${status?.autoConcurrencyEffective ?? 4} soru birlikte, model dalga başına bir kez değişir` : `🔒 Aynı anda en çok ${status?.modelInferenceConcurrency ?? 1} model çağrısı`}
      </span>
     </div>
 
@@ -488,6 +488,7 @@ export function OllamaStudio({read}: {read: string[]}) {
       {status?.ollamaRuntime?.numCtx ? ` · bağlam ${status.ollamaRuntime.numCtx} token` : ''}
      </p>
      {lineup?.warnings?.map((w, i) => <p className="lineup-warn" key={i}>⚠ {w}</p>)}
+     {lineup?.swapNote && <p className="lineup-note">🌊 {lineup.swapNote}</p>}
      {lineup?.recommended?.missing && lineup.recommended.missing.length > 0 && (
       <p className="lineup-line">Önerilen kadro için eksik model: <code>{lineup.recommended.pullCommand}</code></p>
      )}
@@ -547,7 +548,7 @@ export function OllamaStudio({read}: {read: string[]}) {
       {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>{n}</option>)}
      </select>
      {typeof status?.autoConcurrencyEffective === 'number' && status.autoConcurrencyEffective !== status.autoConcurrency && (
-      <span>(şu an etkin: {status.autoConcurrencyEffective})</span>
+      <span>(şu an etkin: {status.autoConcurrencyEffective}{lineup?.swapMode ? ', dalga düzeni' : ''})</span>
      )}
      <label htmlFor="timeout-choice" style={{marginLeft: 10}}>
       Model çağrısı süre tavanı, saniye ({Math.round(timeoutRange.min / 1000)}–{Math.round(timeoutRange.max / 1000)})

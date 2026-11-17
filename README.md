@@ -157,7 +157,7 @@ Listede indirdiğin modeller görünmeli. Uygulama açılışında **Durumu yeni
 | `keep_alive=0` | Model **her çağrıdan sonra** VRAM'den atılıp yeniden yükleniyordu | Model 30 dk bellekte kalır (`TEMPO_OLLAMA_KEEP_ALIVE`) |
 | `num_ctx` her çağrıda prompt uzunluğuna göre değişiyordu | Ollama bağlam boyutu değişince modeli **yeniden yükler** | `num_ctx` sabittir (4096, `TEMPO_NUM_CTX`); model bir kez yüklenir |
 | 13.000 karakterlik üretici promptu | Bağlam penceresine sığmayan kısım sessizce kesiliyordu | Prompt bağlam bütçesine göre kurulur; kaynak metin her zaman tam ve en sonda yer alır |
-| 4 paralel hat + iki hakem aynı anda | Ollama model başına tek istek işlediği için yalnızca kuyruk uzuyordu | Varsayılan 2 hat; modeller VRAM'e birlikte sığmıyorsa otomatik tek hat |
+| 4 paralel hat + iki hakem aynı anda | Ollama model başına tek istek işlediği için yalnızca kuyruk uzuyordu | Varsayılan 2 hat; modeller VRAM'e birlikte sığmıyorsa otomatik **dalga düzeni** (aşağıda) |
 | Rol modeli kurulu değilse üretim **sessizce** bekliyordu | Ekranda hiçbir açıklama yoktu | Kadro kurulu modellerden otomatik seçilir; engel varsa stüdyoda ve terminalde nedeni yazar |
 | Küçük biçim hataları (cevap "B", şık "A) …", kanıtta bir kelime farkı) | Doğru soru reddediliyordu | Model çağrısı yapmadan onarılır; içerik kontrolleri aynen korunur |
 
@@ -171,6 +171,15 @@ ollama pull gemma3:4b
 ```
 
 İkisi birlikte yaklaşık 10 GB VRAM kullanır ve hiç model takası yapılmaz. Daha büyük tek bir model (ör. 14B) üretimi yavaşlatır ve ikinci hakemle birlikte belleğe sığmaz; 12 GB'ta önerilmez.
+
+**Modeller bellekte birlikte kalamıyorsa: dalga düzeni (ayar gerekmez).** Tarayıcı, oyun ya da başka bir program ekran kartı belleğini kullanıyorsa (veya Ollama aynı anda tek model tutacak şekilde ayarlıysa) üretici ile 2. hakem birbirini bellekten atar ve her model değişimi 5–10 sn'lik bir yeniden yükleme demektir. Uygulama bunu Ollama'nın bildirdiği yükleme sürelerinden **kendisi anlar** ve dalga düzenine geçer:
+
+- 4 soru birlikte hazırlanır (`TEMPO_SWAP_WAVE`): önce dördü de yazılır ve 1. hakemden geçer, sonra 2. hakem dördüne birlikte bakar.
+- Model soru başına iki kez değil, **dalga başına bir kez** değişir; iki farklı model aynı anda Ollama'ya gönderilmez.
+- Her soru yine iki hakemden geçer; kalite kuralları aynıdır.
+- Bellek boşalıp modeller yeniden birlikte kalabildiğinde uygulama kendiliğinden normal düzene döner.
+
+Stüdyoda bu durum uyarı olarak değil, “🌊 Dalga düzeni” bilgisi olarak görünür; yapman gereken bir şey yoktur.
 
 **Ollama ayarları kendiliğinden yapılır.** `npm run dev` (ve `baslat.bat`) her açılışta `scripts/ensure-ollama.mjs` betiğini çalıştırır; elle `setx` yazman ya da Ollama'yı yeniden başlatman gerekmez:
 
@@ -211,6 +220,8 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_OLLAMA_KEEP_ALIVE` | `30m` | Modelin çağrılar arasında bellekte tutulma süresi |
 | `TEMPO_AUTO_CONCURRENCY` | `2` | Aynı anda hazırlanan soru sayısı (1–8) |
 | `TEMPO_QUESTION_INTERVAL_MS` | `2000` | İki soru başlatma arasındaki en kısa süre (ms) |
+| `TEMPO_SWAP_WAVE` | `4` | Dalga düzeninde birlikte hazırlanan soru sayısı (1–8). Modeller bellekte birlikte kalabiliyorsa kullanılmaz |
+| `TEMPO_SWAP_MODE` | açık | `0` yapılırsa dalga düzeni kapatılır (modeller sığmıyorsa tek hat, sırayla) |
 | `TEMPO_DISABLE_AUTOLOOP` | `0` | `1` yapılınca arka plan soru üretimi hiç başlamaz |
 | `TEMPO_PARAGRAPH_QUESTION_RATIO` | `0.12` | Paragraf (parçaya dayalı) soruların sıklığı; `0` yapılınca hiç üretilmez |
 | `TEMPO_VERBOSE` / `TEMPO_QUIET` | `0` | Terminal günlüğünü ayrıntılandırır / kapatır |
@@ -232,7 +243,7 @@ Ortam değişkenleriyle ince ayar:
 | "Ollama'ya ulaşılamıyor" | Ollama çalışmıyor. `ollama serve` ya da Ollama uygulamasını aç; uygulama kendiliğinden yeniden bağlanır |
 | "Ollama'da kurulu model yok" | Yukarıdaki iki `ollama pull` komutunu çalıştır |
 | `model_timeout` sık tekrarlanıyor | Model ekran kartına sığmayıp işlemciye taşıyor olabilir: `ollama ps` çıktısında `100% GPU` yazmalı. Yazmıyorsa daha küçük kadro seç (`Hızlı` profil) ya da süre tavanını yükselt |
-| "model sürekli yeniden yükleniyor" | Uygulamayı kapatıp yeniden aç (açılış betiği Ollama ayarını düzeltir). Sürüyorsa ekran kartı belleği iki modele yetmiyordur: **Hızlı** profile geç |
+| “🌊 Dalga düzeni” yazıyor | Modeller ekran kartı belleğinde birlikte kalamıyor; uygulama soruları gruplar hâlinde hazırlayıp modeli dalga başına bir kez değiştiriyor. Yapılacak bir şey yok. Daha hızlı üretim için belleği kullanan diğer programları (oyun, tarayıcıdaki video) kapatabilir ya da **Hızlı** profile (tek model) geçebilirsin |
 | Onay oranı çok düşük | Terminalde `TEMPO_VERBOSE=1` ile ret gerekçelerine bak; stüdyodaki **Reddedilenler** sekmesi hakem gerekçelerini gösterir |
 
 ### 4.1.1 Üretim planı: sorular hangi sırayla gelir?

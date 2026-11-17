@@ -32,6 +32,7 @@ import { PrecisionQualityEngine } from './precision-quality-engine.mjs';
 import { TvgfbfScoutSwarm, TVGFBF_VERIFIED_PATTERNS } from './tvgfbf-scout-swarm.mjs';
 import { HundredAiCouncil, DIFFICULTY_TIERS_4 } from './hundred-ai-council.mjs';
 import { SerialTaskQueue } from './model-inference-queue.mjs';
+import { createSwapMonitor } from './model-swap-monitor.mjs';
 import { createSummaryGrounding, SUMMARY_GROUNDING_DEFAULT_MIN } from './summary-grounding.mjs';
 import { rephraseStem, buildParallel } from './book-parallel-engine.mjs';
 import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './ollama-client.mjs';
@@ -50,6 +51,20 @@ const envConcurrency = Number(process.env.TEMPO_AUTO_CONCURRENCY);
 // Tek ekran kartında daha fazla yuva hız kazandırmaz; yalnızca Ollama kuyruğunu şişirir.
 const DEFAULT_AUTO_CONCURRENCY = Number.isFinite(envConcurrency) && envConcurrency >= 1 ? Math.min(8, Math.round(envConcurrency)) : 2;
 const modelInferenceQueue = new SerialTaskQueue(DEFAULT_AUTO_CONCURRENCY);
+
+// --- MODEL TAKASI (DALGA) MODU -----------------------------------------------------
+// Üretici ile 2. hakem ekran kartı belleğinde aynı anda kalamıyorsa Ollama her model
+// değişiminde birini atıp diğerini yeniden yükler (model başına 5-10 sn). Bu durum
+// kullanıcıdan ayar istenmeden, ölçülen yükleme sürelerinden anlaşılır ve üretim "dalga"
+// düzenine geçer: SWAP_WAVE_SIZE soru birlikte hazırlanır; önce hepsi yazılıp 1. hakemden
+// geçer, sonra 2. hakem hepsine birlikte bakar. Model soru başına değil dalga başına değişir.
+const envSwapWave = Number(process.env.TEMPO_SWAP_WAVE);
+const SWAP_WAVE_SIZE = Number.isFinite(envSwapWave) && envSwapWave >= 1 ? Math.min(8, Math.round(envSwapWave)) : 4;
+const envSwapHold = Number(process.env.TEMPO_SWAP_MAX_HOLD_MS);
+const SWAP_MAX_HOLD_MS = Number.isFinite(envSwapHold) && envSwapHold >= 1_000 ? Math.round(envSwapHold) : 5 * 60_000;
+// TEMPO_SWAP_MODE=0: dalga düzeni hiç kullanılmaz (eski davranış: tek hat, sırayla).
+const SWAP_MODE_ALLOWED = process.env.TEMPO_SWAP_MODE !== '0';
+const modelSwap = createSwapMonitor();
 
 const contexts = JSON.parse(await readFile(new URL('./contexts.json', import.meta.url), 'utf8'));
 // TEMPO_WEB_SUMMARY=0: internetten derlenen ek anlatım kullanılmaz (sorular yalnızca kitaptan kurulur).
@@ -757,25 +772,79 @@ async function currentLineup({ maxAgeMs = 4000 } = {}) {
  };
 }
 
-/** Arayüze/duruma verilecek kadro özeti. */
+/** Dalga modunda o an birlikte hazırlanan soru sayısı (kullanıcının ayarından küçük olamaz). */
+const swapWaveSize = setting => Math.max(Math.max(1, Number(setting) || 1), SWAP_WAVE_SIZE);
+const swapModeActive = () => SWAP_MODE_ALLOWED && modelSwap.swapping;
+/** O an birlikte hazırlanan soru sayısı: dalga modunda dalga büyüklüğü; değilse kullanıcının ayarı. */
+function effectiveAutoLimit(setting, lineup) {
+ if (swapModeActive()) return swapWaveSize(setting);
+ // Dalga modu kapatılmışsa (TEMPO_SWAP_MODE=0) eski davranış: modeller birlikte sığmıyorsa tek hat.
+ if (!SWAP_MODE_ALLOWED && (modelSwap.swapping || lineup?.coResident === false)) return 1;
+ return Math.max(1, Number(setting) || 1);
+}
+/** İki hakem aynı anda çalışabilir mi? (Farklı modeller ve bellekte birlikte kalabiliyorlarsa.) */
+const judgesMayRunTogether = lineup => !modelSwap.swapping && (SWAP_MODE_ALLOWED || lineup?.coResident !== false) && lineup?.verifierModel !== lineup?.judge2Model;
+
 /**
- * Model her çağrıda yeniden yükleniyorsa (ör. OLLAMA_MAX_LOADED_MODELS=1 iken iki farklı
- * model kullanılıyor ya da VRAM yetmiyor) bunu Ollama'nın bildirdiği yükleme sürelerinden
- * anlar ve kullanıcıya somut çözümle birlikte gösterir.
+ * Model sırası kuyruğu için ipucu: `model`e birazdan yeni bir çağrı gelebilir mi?
+ * (Bir soru hattı iki çağrı arasında sonucu işliyorsa ya da zamanlayıcı yeni bir soru açmak
+ * üzereyse evet.) Evet ise kuyruk başka modele geçmeden önce kısa bir süre bekler.
  */
-function reloadWarnings() {
- const out = [];
- try {
-  const perModel = ollama.snapshot().perModel || {};
-  for (const [name, m] of Object.entries(perModel)) {
-   if (m.calls >= 6 && m.loads >= 4 && m.loads / m.calls >= 0.4 && m.avgLoadMs >= 1500) {
-    out.push(`${name} sürekli yeniden yükleniyor (${m.calls} çağrının ${m.loads} tanesinde, ortalama ${(m.avgLoadMs / 1000).toFixed(1)} sn). Ollama'da OLLAMA_MAX_LOADED_MODELS değerini 2 yapıp Ollama'yı yeniden başlat; sorun sürerse "Hızlı" profile geç.`);
-   }
-  }
- } catch {}
- return out;
+function expectMoreModelWork(model) {
+ const snap = modelInferenceQueue.snapshot();
+ const inFlight = autoControllers.size + (busy ? 1 : 0);
+ if (inFlight - snap.queued - snap.activeCount > 0) return true;
+ // Yeni açılan soru önce üretici modeli çağırır.
+ return autoWantsMore() && model === autoState.generatorModel;
 }
 
+function applySwapMode() {
+ const active = swapModeActive();
+ modelInferenceQueue.setAffinity(active, {
+  graceMs: Math.max(3_000, QUESTION_INTERVAL_MS + 2_000),
+  maxHoldMs: SWAP_MAX_HOLD_MS,
+  expectMore: expectMoreModelWork
+ });
+ return active;
+}
+
+/** Her tamamlanan model çağrısının yükleme süresi gözcüye bildirilir; mod değişirse kuyruk ayarlanır. */
+function noteModelLoad(model, metrics) {
+ if (!metrics) return;
+ const change = modelSwap.note({ model, loadMs: (Number(metrics.loadNs) || 0) / 1e6 });
+ if (!change) return;
+ applySwapMode();
+ if (!SWAP_MODE_ALLOWED) return;
+ if (change === 'entered') {
+  const snap = modelSwap.snapshot();
+  tempoLog(`Modeller ekran kartı belleğinde aynı anda kalamıyor (${model} yeniden yüklendi, ortalama ${(snap.avgLoadMs / 1000).toFixed(1)} sn). Dalga düzenine geçildi: sorular ${swapWaveSize(autoState.concurrencySetting)}'lü gruplar hâlinde hazırlanır, model grup başına bir kez değişir. Ayar yapmana gerek yok.`);
+ } else {
+  tempoLog('Modeller artık bellekte birlikte kalabiliyor; dalga düzeninden çıkıldı, sorular yeniden paralel hazırlanıyor.');
+ }
+}
+
+/** Dalga modu açıkken arayüzde gösterilen bilgi satırı (uyarı değil: yapılacak bir şey yok). */
+function swapNotes(lineup) {
+ if (!swapModeActive()) return [];
+ const names = [...new Set([lineup?.model, lineup?.verifierModel, lineup?.judge2Model].filter(Boolean))];
+ const snap = modelSwap.snapshot();
+ const cost = snap.avgLoadMs ? ` (model değişimi ortalama ${(snap.avgLoadMs / 1000).toFixed(1)} sn)` : '';
+ return [`${names.join(' ile ')} ekran kartı belleğinde aynı anda kalamıyor${cost}. Üretim dalga düzeninde: ${swapWaveSize(autoState.concurrencySetting)} soru birlikte hazırlanır; önce hepsi yazılıp 1. hakemden geçer, sonra 2. hakem hepsine birlikte bakar. Model soru başına değil dalga başına bir kez değişir; ayar yapmana gerek yok.`];
+}
+
+/**
+ * Ön ısıtma için çalıştırıcı ayarları: üretim çağrılarıyla aynı bağlam ve bellekte tutma süresi,
+ * yalnızca kadrodaki modeller. Modeller birlikte sığmıyorsa yalnızca üretici ısıtılır (ikisini
+ * birden ısıtmak birini hemen bellekten attırır).
+ */
+async function warmupRunnerArgs() {
+ const lineup = await currentLineup().catch(() => null);
+ const names = lineup?.ok ? [...new Set([lineup.model, lineup.verifierModel, lineup.judge2Model].filter(Boolean))] : [];
+ const models = modelSwap.swapping || lineup?.coResident === false ? names.slice(0, 1) : names;
+ return { numCtx: ollama.numCtx, keepAlive: ollama.keepAlive, ...(models.length ? { models } : {}) };
+}
+
+/** Arayüze/duruma verilecek kadro özeti. */
 function publicLineup(lineup) {
  return {
   ok: lineup.ok,
@@ -794,8 +863,11 @@ function publicLineup(lineup) {
   vramGb: lineup.vramGb ?? null,
   vramDetected: Boolean(lineup.vramDetected),
   gpuName: lineup.gpuName || null,
-  warnings: [...(lineup.warnings || []), ...reloadWarnings()],
+  warnings: lineup.warnings || [],
   notes: lineup.notes || [],
+  // Dalga modu açıksa arayüzde gösterilen bilgi (uyarı değil; kullanıcının yapacağı bir şey yok).
+  swapMode: swapModeActive(),
+  swapNote: swapNotes(lineup)[0] || null,
   candidates: (lineup.candidates || []).slice(0, 40),
   recommended: (() => {
    const wanted = [RECOMMENDED_GENERATOR_MODEL, RECOMMENDED_JUDGE2_MODEL];
@@ -975,7 +1047,7 @@ async function publicPlan(items) {
   done: contexts.reduce((sum, c) => sum + Math.min(planCap(difficulty), snap.counts.get(stepKey(c.id, difficulty)) || 0), 0),
   target: contexts.length * planCap(difficulty)
  }));
- const size = Math.max(1, autoState.effectiveConcurrency || 1);
+ const size = Math.max(1, autoState.planGroupSize || 1);
  const batch = planBatch(snap.all, size);
  // Şu an üzerinde çalışılan konular: her konunun bu turdaki kolay / orta / zor ilerlemesi.
  const workingUnits = [...new Set(batch.map(x => `${x.pass}|${x.unitId}`))].map(id => {
@@ -1710,9 +1782,10 @@ async function runModelRequest(which, input, temperature, signal, numPredict = 9
    onProgress
   });
   recordClientMetrics(r.metrics);
+  noteModelLoad(which, r.metrics);
   return { parsed: r.parsed, elapsed: r.elapsed, metrics: r.metrics };
  } catch (e) {
-  if (e?.metrics) recordClientMetrics(e.metrics);
+  if (e?.metrics) { recordClientMetrics(e.metrics); noteModelLoad(which, e.metrics); }
   throw e;
  }
 }
@@ -2482,11 +2555,11 @@ async function generateAndVerify(ctx, model, verifierModel, judge2Model, signal,
  }
 
  // --- İKİ BAĞIMSIZ HAKEM ---
- // Kadro VRAM'e birlikte sığıyorsa iki hakem aynı anda çalışır (hız). Sığmıyorsa sırayla
- // çalışır ve 1. hakem reddederse 2. hakem modeli hiç yüklenmez (boşuna model takası yok).
+ // Kadro VRAM'e birlikte sığıyorsa iki hakem aynı anda çalışır (hız). Sığmıyorsa (dalga modu)
+ // sırayla çalışır ve 1. hakem reddederse 2. hakem modeli hiç yüklenmez (boşuna model takası yok).
  const judgeModels = [verifierModel, judge2Model];
  const sameJudgeModel = verifierModel === judge2Model;
- const parallelJudges = opts.parallelJudges ?? (!sameJudgeModel && (await currentLineup()).coResident !== false);
+ const parallelJudges = opts.parallelJudges ?? (!sameJudgeModel && !modelSwap.swapping && (await currentLineup()).coResident !== false);
  const judgeNumPredict = subSecondEnabled ? 140 : JUDGE_NUM_PREDICT;
  const runJudge = (jm, promptText, sig, index) => runModel(jm, promptText, sameJudgeModel && index === 1 ? 0.45 : 0.15, sig, judgeNumPredict, { fastThink, botRole: 'judge', schema: JUDGE_SCHEMA });
  const judgeDraft = async (candidate, sig) => {
@@ -3072,8 +3145,21 @@ const autoState = {
  lastLoggedBlock: '',
  lastLineupSig: '',
  effectiveConcurrency: DEFAULT_AUTO_CONCURRENCY,
+ // Plan grubunun büyüklüğü (aynı anda işlenen bölüm sayısı): kullanıcının ayarıdır; dalga modunda
+ // aynı bölümlerde daha çok soru birlikte hazırlanır ama grup büyümez.
+ planGroupSize: DEFAULT_AUTO_CONCURRENCY,
+ concurrencySetting: DEFAULT_AUTO_CONCURRENCY,
+ schedulerActive: false,
+ planSaturated: false,
+ generatorModel: '',
  recentEvents: []
 };
+
+/** Zamanlayıcı birazdan yeni bir soru açacak mı? (Model sırası kuyruğunun bekleme ipucu.) */
+function autoWantsMore() {
+ return autoState.schedulerActive && !autoLoopStopping && !autoState.blockCode && !autoState.planSaturated
+  && autoControllers.size < Math.max(1, autoState.effectiveConcurrency || 1);
+}
 
 function pushAutoEvent(event) {
  autoState.recentEvents.unshift({ at: new Date().toISOString(), ...event });
@@ -3198,7 +3284,13 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
    // Altyapı hataları (Ollama kapalı, zaman aşımı) ve durdurma, adımı "sonuçsuz" saymaz.
    if (!info.silent && !info.infra) await recordPlanOutcome(planStep, 'rejected', planStep?.done || 0);
   })
-  .finally(() => { clearTimeout(timeout); autoControllers.delete(ctrl); });
+  .finally(() => {
+   clearTimeout(timeout);
+   autoControllers.delete(ctrl);
+   // Biten hat plan hücresinde yer açmış olabilir; kuyruk da bekleyen işleri yeniden değerlendirsin.
+   autoState.planSaturated = false;
+   modelInferenceQueue.poke();
+  });
  return run;
 }
 
@@ -3978,7 +4070,9 @@ async function triggerLocalTeamFastCycle(installedModels = [], { withLiveTeam = 
    selectedModel(),
    selectedJudgeModel('judge2Model', defaultJudge2Model)
   ]);
-  const liveModels = withLiveTeam && installedModels.length
+  // Dalga modunda (modeller bellekte birlikte kalamıyor) ikincil takım canlı model çağırmaz: üç ayrı
+  // modele giden bu çağrılar üretim dalgasını böler ve her biri bir model takası demektir.
+  const liveModels = withLiveTeam && installedModels.length && !modelSwap.swapping
    ? {
       primary: installedModels.includes(mGen) ? mGen : installedModels[0],
       judge: installedModels.includes(mJudge) ? mJudge : (installedModels[1] || installedModels[0]),
@@ -4099,13 +4193,17 @@ async function autoScheduler() {
    }
 
    if (!(await autoRunningEnabled())) {
+    autoState.schedulerActive = false;
     setAutoBlock('', '');
     nextSleep = 1000;
    } else {
     const limitSetting = await autoConcurrencyLimit();
+    autoState.concurrencySetting = limitSetting;
     const cfg = await getPipelineConfig();
     const lineup = await currentLineup();
 
+    autoState.schedulerActive = Boolean(lineup.connected && lineup.ok);
+    autoState.generatorModel = lineup.model || '';
     if (!lineup.connected) {
      setAutoBlock('offline', `Ollama'ya ulaşılamıyor (${base}). Ollama uygulamasını aç; bağlanınca üretim kendiliğinden başlar.`);
      nextSleep = 3000;
@@ -4116,18 +4214,22 @@ async function autoScheduler() {
      const sig = `${lineup.model}|${lineup.verifierModel}|${lineup.judge2Model}`;
      if (sig !== autoState.lastLineupSig) {
       autoState.lastLineupSig = sig;
-      tempoLog(`Model kadrosu: ${describeLineup(lineup)} · bağlam=${ollama.numCtx} · bellekte tutma=${ollama.keepAlive}${lineup.coResident ? '' : ' · modeller VRAM\'e birlikte sığmıyor (sıralı hakem modu)'}`);
+      // Yeni kadro: ölçümler sıfırlanır. Planlayıcı "birlikte sığmaz" diyorsa dalga düzeniyle başlanır;
+      // ölçümler modellerin birlikte kalabildiğini gösterirse kendiliğinden çıkılır.
+      const distinctModels = new Set([lineup.model, lineup.verifierModel, lineup.judge2Model]).size;
+      modelSwap.reset({ swapping: lineup.coResident === false && distinctModels > 1 });
+      applySwapMode();
+      tempoLog(`Model kadrosu: ${describeLineup(lineup)} · bağlam=${ollama.numCtx} · bellekte tutma=${ollama.keepAlive}${swapModeActive() ? ` · modeller VRAM'e birlikte sığmıyor (dalga düzeni: ${swapWaveSize(limitSetting)} soru birlikte)` : ''}`);
       for (const w of lineup.warnings || []) tempoLog(`Uyarı: ${w}`);
      }
-     // Kadro VRAM'e birlikte sığmıyorsa paralel yuva model takasını çoğaltır; tek yuvaya inilir.
-     // Aynısı, Ollama modelleri fiilen takas ediyorsa da geçerlidir (ölçülen yükleme sürelerinden anlaşılır).
-     const thrashing = reloadWarnings().length > 0;
-     if (thrashing && !autoState.thrashLogged) {
-      autoState.thrashLogged = true;
-      for (const w of reloadWarnings()) tempoLog(`Uyarı: ${w}`);
-     }
-     const limit = lineup.coResident && !thrashing ? limitSetting : 1;
+     // DALGA MODU: modeller bellekte birlikte kalamıyorsa (ölçülen yükleme sürelerinden anlaşılır)
+     // tek hatta inmek yerine DAHA ÇOK soru birlikte hazırlanır; model sırası kuyruğu çağrıları modele
+     // göre gruplar. Böylece model soru başına iki kez değil, dalga başına bir kez değişir.
+     const swapMode = applySwapMode();
+     const limit = effectiveAutoLimit(limitSetting, lineup);
      autoState.effectiveConcurrency = limit;
+     autoState.planGroupSize = swapMode ? limitSetting : limit;
+     modelInferenceQueue.poke();
 
      if (cfg.pipelineMode === 'batched') {
       setAutoBlock('', '');
@@ -4160,9 +4262,11 @@ async function autoScheduler() {
        // eksik kalan konuya yardım eder, grup bitmeden sıradaki konulara geçilmez.
        const inflight = {};
        for (const entry of autoControllers.values()) if (entry.planKey) inflight[entry.planKey] = (inflight[entry.planKey] || 0) + 1;
-       const { step: planStep, planActive } = await nextPlanStep(items, inflight, limit);
+       const { step: planStep, planActive } = await nextPlanStep(items, inflight, autoState.planGroupSize);
        if (planActive && !planStep) {
         // Grubun kalan soruları zaten hazırlanıyor (kota aşılmasın diye yeni soru açılmaz); sonuç beklenir.
+        autoState.planSaturated = true;
+        modelInferenceQueue.poke();
         nextSleep = 200;
        } else {
         const ctx = (planStep && contexts.find(c => c.id === planStep.unitId)) || contexts[autoCursor++ % contexts.length];
@@ -4170,7 +4274,7 @@ async function autoScheduler() {
         // Aynı konuda o an hazırlanan soru sayısı: ikinci hat farklı soru tipi/açısıyla yazar.
         const sameUnitBusy = [...autoControllers.values()].filter(entry => entry.unit === ctx.id).length;
         const run = launchAutoUnit(ctx, lineup.model, lineup.verifierModel, lineup.judge2Model, 0, cfg, {
-         parallelJudges: lineup.coResident && !thrashing && lineup.verifierModel !== lineup.judge2Model,
+         parallelJudges: judgesMayRunTogether(lineup),
          planStep,
          variantOffset: sameUnitBusy
         });
@@ -4210,7 +4314,7 @@ async function triggerOllamaConnectedFullUpgrade(installedModels = [], { force =
  try {
   if (liveOllama) {
    await ensureRolesAutoAssigned(models, true).catch(() => {});
-   await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: models, profile: cachedHardwareProfile }).catch(() => {});
+   await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: models, profile: cachedHardwareProfile, ...(await warmupRunnerArgs()) }).catch(() => {});
   }
   const [model, evolverModel, verifierModel, judge2Model, jCfg, items, studentProfile, policy, lessonsSummary] = await Promise.all([
    selectedModel(),
@@ -5184,7 +5288,9 @@ export function ollamaPlugin() {
        subSecondAllBots: pipelineConfig.subSecondAllBots,
        subSecondBudgetMs: pipelineConfig.subSecondBudgetMs,
        autoRunning, autoConcurrency, autoTimeoutMs: autoTimeout,
-       autoConcurrencyEffective: lineup.coResident === false || reloadWarnings().length > 0 ? 1 : autoConcurrency,
+       autoConcurrencyEffective: effectiveAutoLimit(autoConcurrency, lineup),
+       // Dalga modu: modeller bellekte birlikte kalamadığında sorular gruplar hâlinde hazırlanır.
+       modelSwap: { active: swapModeActive(), allowed: SWAP_MODE_ALLOWED, waveSize: swapWaveSize(autoConcurrency), queueSwitches: modelInferenceQueue.snapshot().switches || 0, ...modelSwap.snapshot() },
        modelCallTimeoutRange: { min: MODEL_CALL_TIMEOUT_MIN_MS, max: MODEL_CALL_TIMEOUT_MAX_MS, default: MODEL_CALL_TIMEOUT_DEFAULT_MS },
        firstTokenTimeoutMs: FIRST_TOKEN_TIMEOUT_MS,
        questionIntervalMs: QUESTION_INTERVAL_MS,
@@ -5700,7 +5806,7 @@ export function ollamaPlugin() {
 
       let warmup = null;
       if (tagsList.length && input?.warmup !== false) {
-       warmup = await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: tagsList, profile: activeProfile });
+       warmup = await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: tagsList, profile: activeProfile, ...(await warmupRunnerArgs()) });
       }
       return respond(res, 200, {
        ok: true,
@@ -5733,7 +5839,7 @@ export function ollamaPlugin() {
       const updatedTags = rTagsAfter?.ok ? ((await rTagsAfter.json()).models || []).map(x => x.name) : tagsList;
       specialistsBootstrapAttempted = false;
       await ensureRolesAutoAssigned(updatedTags, true).catch(() => {});
-      const warmup = await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: updatedTags, profile: cachedHardwareProfile }).catch(() => null);
+      const warmup = await hardwareOpt.warmupTeamModelsInVram({ ollamaBaseUrl: base, installedModels: updatedTags, profile: cachedHardwareProfile, ...(await warmupRunnerArgs()) }).catch(() => null);
       return respond(res, 200, {
        ok: true,
        pullRes,
