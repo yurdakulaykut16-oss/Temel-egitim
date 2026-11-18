@@ -1,24 +1,15 @@
 // ÜRETİM PLANI
 // ---------------------------------------------------------------------------
-// Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Kitabın bölümlerine sırayla, TUR TUR
-// uğranır ve her uğrayışta o bölüme 50 soru yazılır; zorluklar KARIŞIKTIR (kolay → orta → zor → …):
+// Soru üretimi rastgele ünite dolaşmaz; önce sıradaki ünitenin tüm hedefi tamamlanır, sonra sonraki üniteye geçilir.
+// Her turda o üniteye 50 soru yazılır; üretim yalnızca kolay ve orta düzeydedir.
+// İki seviye eşit pay alır (tek kalan soru turlar arasında dönüşümlü paylaştırılır).
+// Varsayılan 4 tur → bölüm başına 200 soru.
 //
-//   1. tur: her bölüme 17 kolay + 17 orta + 16 zor (dengeli)
-//   2. tur: 10 kolay + 20 orta + 20 zor      3. tur: 6 kolay + 22 orta + 22 zor
-//   4. tur: 4 kolay + 23 orta + 23 zor       5. tur: 2 kolay + 24 orta + 24 zor
-//   6. tur ve sonrası: 25 orta + 25 zor (kolay soru yazılmaz)
+// Plan "hücre"lerden oluşur: (ünite, tur, kolay/orta). Hücrenin `quota` alanı o kovanın turun
+// SONUNDA ulaşması gereken toplam soru sayısıdır; `from` turun başındaki toplam, `share` tur payıdır.
 //
-// Yani ilk turdan itibaren her bölümün kolay, orta ve zor sorusu vardır; 1. turdan sonra kolay payı
-// gittikçe azalır, soruların yarısı orta yarısı zor olur. Tur sayısı TEMPO_PLAN_PASSES ile ayarlanır
-// (varsayılan 4 → bölüm başına 200 soru; 29 bölümde toplam 5.800).
-//
-// Plan "hücre"lerden oluşur: (tur, konu, zorluk). Hücrenin `quota` alanı o konu + zorlukta o turun
-// SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 33); `from` turun başındaki
-// sayıdır, `share` o tura düşen paydır.
-//
-// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) konular N'li GRUPLAR hâlinde işlenir:
-// ör. 1. ve 2. konu birlikte başlar; biri 50'ye ulaşınca boşalan hat 3. konuya GEÇMEZ, eksik kalan
-// konuya yardım eder. Gruptaki bütün konular dolunca (ya da atlanınca) sıradaki grup başlar.
+// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2), bütün hatlar aynı ünitede çalışır.
+// Ünite 200 soruluk hedefine ulaşınca sıradaki üniteye geçilir.
 //
 // Konu özeti bir zorlukta yeni soru için yetmeyebilir: o konu + zorlukta üst üste çok sayıda deneme
 // sonuç vermezse hücre "atlanır" (park edilir), konunun diğer zorlukları ve sıradaki konular sürer;
@@ -29,8 +20,6 @@
 export const PLAN_DIFFICULTIES = ['kolay', 'orta', 'zor'];
 export const DEFAULT_PLAN_QUOTA = 50;
 export const DEFAULT_PLAN_PASSES = 4;
-// 1. turdan sonra kolay soruların tur içindeki payı (2., 3., 4., 5. tur); 6. turdan itibaren 0.
-export const EASY_FRACTIONS = { 2: 0.20, 3: 0.12, 4: 0.08, 5: 0.04 };
 export const DEFAULT_PLAN_STUCK_LIMIT = 25;
 
 export const stepKey = (unitId, difficulty) => `${unitId}|${difficulty}`;
@@ -51,20 +40,14 @@ export function planConfigFromEnv(env = process.env) {
 }
 
 /**
- * `pass`. turda bir bölümün `difficultyIndex` zorluğuna (0 kolay, 1 orta, 2 zor) düşen soru payı.
- * Her turun toplamı `quota`dır. 1. tur dengelidir (50 → 17+17+16); sonraki turlarda kolay payı
- * azalır (EASY_FRACTIONS), kalan sorular yarı yarıya orta ve zor olur (tek kalan soru çift turlarda
- * ortaya, tek turlarda zora yazılır).
+ * `pass`. turda bir bölümün kolay / orta kovasına düşen pay. Zor kovası planlanmaz;
+ * tek kalan soru turlar arasında kolay ve orta için dönüşümlü verilir.
  */
 export function passShare(quota, pass, difficultyIndex) {
- if (pass <= 1) {
-  const base = Math.floor(quota / 3);
-  return base + (difficultyIndex < quota % 3 ? 1 : 0);
- }
- const easy = Math.min(quota, Math.round(quota * (EASY_FRACTIONS[pass] || 0)));
- const rest = quota - easy;
- const orta = Math.floor(rest / 2) + (rest % 2 && pass % 2 === 0 ? 1 : 0);
- return [easy, orta, rest - orta][difficultyIndex];
+ if (difficultyIndex === 2) return 0;
+ const base = Math.floor(quota / 2);
+ const extra = quota % 2 && (difficultyIndex === 0 ? pass % 2 === 1 : pass % 2 === 0) ? 1 : 0;
+ return base + extra;
 }
 
 /** Bütün turların sonunda bir bölümün `difficultyIndex` zorluğunda olması gereken toplam soru sayısı. */
@@ -76,7 +59,7 @@ export function bucketQuota(quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PA
 
 const stepCache = new WeakMap();
 
-/** Sıralı hücre listesi: tur → bölüm (contexts sırası: kitap → bölüm) → zorluk. Payı 0 olan hücre yoktur. */
+/** Sıralı hücre listesi: bölüm → tur → zorluk. Payı 0 olan hücre yoktur. */
 export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES) {
  const cacheKey = `${quota}|${passes}`;
  const cached = stepCache.get(contexts);
@@ -91,10 +74,10 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA, passes = DE
   unitNoInBook.set(c.id, n);
  }
  const steps = [];
- const sofar = PLAN_DIFFICULTIES.map(() => 0);
- for (let pass = 1; pass <= passes; pass++) {
-  const shares = PLAN_DIFFICULTIES.map((_, di) => passShare(quota, pass, di));
-  contexts.forEach((c, unitIndex) => {
+ contexts.forEach((c, unitIndex) => {
+  const sofar = PLAN_DIFFICULTIES.map(() => 0);
+  for (let pass = 1; pass <= passes; pass++) {
+   const shares = PLAN_DIFFICULTIES.map((_, di) => passShare(quota, pass, di));
    PLAN_DIFFICULTIES.forEach((difficulty, di) => {
     const share = shares[di];
     if (share <= 0) return;
@@ -102,7 +85,7 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA, passes = DE
      index: steps.length,
      key: stepKey(c.id, difficulty),
      pass,
-     visit: (pass - 1) * contexts.length + unitIndex,
+     visit: unitIndex,
      unitId: c.id,
      difficulty,
      from: sofar[di],
@@ -114,9 +97,9 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA, passes = DE
      unitNo: unitNoInBook.get(c.id)
     });
    });
-  });
-  shares.forEach((share, di) => { sofar[di] += share; });
- }
+   shares.forEach((share, di) => { sofar[di] += share; });
+  }
+ });
  if (contexts && typeof contexts === 'object') stepCache.set(contexts, { key: cacheKey, steps });
  return steps;
 }
@@ -182,31 +165,22 @@ export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, pass
 }
 
 /**
- * Şu an üzerinde çalışılan grup: konu uğrayışları `size`'lı gruplara bölünür (1.-2. konu, 3.-4. konu, …);
- * içinde açık (hedefine ulaşmamış ve atlanmamış) hücre bulunan İLK grubun açık hücreleri döner.
- * Grup bitmeden sıradaki gruba geçilmez.
+ * O anki üniteden ve turdan açık zorluk hücrelerini döndürür.
+ * Tur sıralaması ünite içinde tutulduğu için, ünitenin tüm turları tamamlanmadan sonraki ünite başlamaz.
+ * `size`, aynı ünitede paralel çalışabilecek hat sayısını belirtir; ünite seçimini değiştirmez.
  * @param all  planSnapshot().all
  */
 export function planBatch(all, size = 1) {
- const n = Math.max(1, Math.floor(size) || 1);
- let group = null;
- let open = [];
- for (const step of all || []) {
-  const g = Math.floor((step.visit ?? step.index ?? 0) / n);
-  if (g !== group) {
-   if (open.length) return open;
-   group = g;
-  }
-  if (step.done < step.quota && !step.parked) open.push(step);
- }
- return open;
+ const open = (all || []).filter(step => step.done < step.quota && !step.parked);
+ if (!open.length) return [];
+ const first = open[0];
+ return open.filter(step => step.unitId === first.unitId && step.pass === first.pass);
 }
 
 /**
  * Boşalan hat için iş seçer.
- *  1) Gruptaki konulardan, üzerinde en az hat çalışanı (iki konu aynı anda ilerler; biri bitince
- *     bütün hatlar eksik kalan konuya yardım eder).
- *  2) O konunun zorluklarından, bu turdaki payında en geride olanı (kolay → orta → zor → kolay … sırası).
+ *  1) Sıradaki ünitenin açık turundaki zorluklardan, üzerinde en az hat çalışanı.
+ *  2) O ünitenin bu turdaki en geride kalan kolay / orta kovası.
  * Bir hücrede "tamamlanan + hazırlanmakta olan" soru sayısı hedefe ulaştıysa o hücreye yeni hat
  * verilmez (kota aşılmasın). Uygun hücre yoksa null (hat kısa süre bekler).
  * @param inflight  { [stepKey]: o konu + zorlukta şu an hazırlanan soru sayısı }
@@ -227,7 +201,7 @@ export function pickPlanWork(all, size = 1, inflight = {}) {
 
 /**
  * Bir bölüm için sıradaki zorluk: toplam kotası dolmamış kovalardan doluluk oranı en düşük olan
- * (eşitlikte kolay → orta → zor). Hepsi doluysa null.
+ * (eşitlikte kolay → orta). Hepsi doluysa null.
  */
 export function planDifficultyForUnit(unitId, items, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES) {
  const counts = countApproved(items);

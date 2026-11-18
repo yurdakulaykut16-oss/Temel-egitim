@@ -11,40 +11,34 @@ import {
 const contexts = JSON.parse(readFileSync(new URL('../server/contexts.json', import.meta.url), 'utf8'));
 const q = (unitId, difficulty, extra = {}) => ({ unitId, difficulty, status: 'approved', ...extra });
 const many = (n, unitId, difficulty) => Array.from({ length: n }, () => q(unitId, difficulty));
-const DIFFS = ['kolay', 'orta', 'zor'];
-// Bütün turların sonunda bir bölümün her zorluğunda olması gereken soru sayısı (kota 50, 4 tur: 37 / 82 / 81).
+const DIFFS = ['kolay', 'orta'];
+// Bütün turların sonunda kolay / orta kovalarında hedeflenen sayı (kota 50, 4 tur: 100 / 100).
 const CAP = d => bucketQuota(50, DEFAULT_PLAN_PASSES, DIFFS.indexOf(d));
 const everything = () => contexts.flatMap(c => DIFFS.flatMap(d => many(CAP(d), c.id, d)));
 
-test('plan sırası: her bölüme uğrayışta 50 soru, zorluklar karışık; 1. turdan sonra kolay azalır, yarısı orta yarısı zor', () => {
+test('plan sırası: her üniteye 200 soru, yalnızca kolay ve orta düzeyde eşit dağılım', () => {
  // Her turun toplamı kotadır.
  for (const quota of [50, 1, 2, 3, 10, 7]) {
   for (let pass = 1; pass <= 14; pass++) assert.equal([0, 1, 2].reduce((n, d) => n + passShare(quota, pass, d), 0), quota, `kota ${quota}, ${pass}. tur`);
  }
- // 1. tur dengeli; sonra kolay gittikçe azalır ve 6. turdan itibaren hiç yazılmaz; kalan yarı yarıya orta + zor.
- assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 12, 40].map(pass => [0, 1, 2].map(d => passShare(50, pass, d))),
-  [[17, 17, 16], [10, 20, 20], [6, 22, 22], [4, 23, 23], [2, 24, 24], [0, 25, 25], [0, 25, 25], [0, 25, 25], [0, 25, 25]]);
- for (let pass = 2; pass <= DEFAULT_PLAN_PASSES; pass++) {
-  assert.ok(passShare(50, pass, 0) < passShare(50, pass - 1, 0) || passShare(50, pass, 0) === 0, `${pass}. turda kolay azalmalı`);
-  assert.ok(Math.abs(passShare(50, pass, 1) - passShare(50, pass, 2)) <= 1, `${pass}. turda orta ve zor yarı yarıya`);
- }
- assert.deepEqual(DIFFS.map(CAP), [37, 82, 81]);
- // 12 turluk eski planın kovaları değişmedi: uzayan plan yalnızca yeni turlar ekler.
- assert.deepEqual(DIFFS.map((_, d) => bucketQuota(50, 12, d)), [39, 281, 280]);
+ // Her turda yalnızca kolay ve orta; kota 50 ikiye eşit bölünür.
+ assert.deepEqual([1, 2, 3, 4].map(pass => [0, 1, 2].map(d => passShare(50, pass, d))), Array(4).fill([25, 25, 0]));
+ assert.deepEqual(DIFFS.map(CAP), [100, 100]);
+ assert.deepEqual(DIFFS.map((_, d) => bucketQuota(50, 12, d)), [300, 300]);
  assert.equal(DEFAULT_PLAN_PASSES, 4);
  assert.equal(planConfigFromEnv({}).passes, 4);
  assert.equal(planConfigFromEnv({ TEMPO_PLAN_PASSES: '3' }).passes, 3);
 
  const steps = buildPlanSteps(contexts, 50);
- // İlk dört turda da üç zorluk bulunur.
- assert.equal(steps.length, contexts.length * 4 * 3);
+ // İlk dört turda da iki zorluk bulunur.
+ assert.equal(steps.length, contexts.length * 4 * 2);
  assert.equal(steps.reduce((n, s) => n + s.share, 0), contexts.length * 200, 'bölüm başına 200 soru');
  assert.equal(contexts.length * 200, 5800);
- // 1. tur: bölüm sırası kitap sırasıdır ve HER bölümün kolay, orta ve zor hücresi vardır.
+ // 1. tur: bölüm sırası kitap sırasıdır ve HER bölümün kolay ve orta hücresi vardır.
  const pass1 = steps.filter(s => s.pass === 1);
- assert.deepEqual(pass1.map(s => `${s.unitId}:${s.difficulty}`), contexts.flatMap(c => DIFFS.map(d => `${c.id}:${d}`)));
- assert.deepEqual(pass1.slice(0, 3).map(s => [s.from, s.share, s.quota]), [[0, 17, 17], [0, 17, 17], [0, 16, 16]]);
- assert.deepEqual(steps.filter(s => s.unitId === contexts[0].id && s.difficulty === 'kolay').map(s => [s.pass, s.from, s.quota]), [[1, 0, 17], [2, 17, 27], [3, 27, 33], [4, 33, 37]]);
+ assert.deepEqual(pass1.map(s => `${s.unitId}:${s.difficulty}`), contexts.flatMap(c => ['kolay', 'orta'].map(d => `${c.id}:${d}`)));
+ assert.deepEqual(pass1.slice(0, 2).map(s => [s.from, s.share, s.quota]), [[0, 25, 25], [0, 25, 25]]);
+ assert.deepEqual(steps.filter(s => s.unitId === contexts[0].id && s.difficulty === 'kolay').map(s => [s.pass, s.from, s.quota]), [[1, 0, 25], [2, 25, 50], [3, 50, 75], [4, 75, 100]]);
  assert.ok(steps.filter(s => s.pass === DEFAULT_PLAN_PASSES).every(s => s.quota === CAP(s.difficulty)), 'son turun sonunda her kova toplam kotasındadır');
  assert.equal(steps[0].bookNo, 1); assert.equal(steps[0].unitNo, 1);
  const firstOfBook2 = steps.find(s => s.book !== steps[0].book);
@@ -52,11 +46,11 @@ test('plan sırası: her bölüme uğrayışta 50 soru, zorluklar karışık; 1.
  assert.match(describeStep(steps[0]), /^1\. tur · 1\. kitap 1\. bölüm — .* · kolay$/);
  // Tur sayısı ayarlanabilir.
  assert.equal(Math.max(...buildPlanSteps(contexts, 50, 3).map(s => s.pass)), 3);
- // Kota 1 (testlerde): tur başına tek zorluk düşer → 1. tur kolay, 2. tur orta, 3. tur zor.
- assert.deepEqual([1, 2, 3].map(pass => [...new Set(buildPlanSteps(contexts, 1, 3).filter(s => s.pass === pass).map(s => s.difficulty))]), [['kolay'], ['orta'], ['zor']]);
+ // Kota 1: tek kalan pay turlar arasında kolay / orta dönüşümlüdür.
+ assert.deepEqual([1, 2, 3].map(pass => [...new Set(buildPlanSteps(contexts, 1, 3).filter(s => s.pass === pass).map(s => s.difficulty))]), [['kolay'], ['orta'], ['kolay']]);
 });
 
-test('konu içi sıra: kolay → orta → zor → kolay …; konu 50 soruya ulaşmadan sıradaki konuya geçilmez', () => {
+test('konu içi sıra: kolay / orta dengesi; ünite 200 soruya ulaşmadan sıradaki üniteye geçilmez', () => {
  const [a, b] = contexts;
  let snap = planSnapshot({ contexts, items: [], quota: 50 });
  assert.equal(snap.current.key, stepKey(a.id, 'kolay'));
@@ -71,30 +65,30 @@ test('konu içi sıra: kolay → orta → zor → kolay …; konu 50 soruya ula�
   order.push(`${step.unitId}:${step.difficulty}`);
   items.push(q(step.unitId, step.difficulty));
  }
- assert.deepEqual(order.slice(0, 7), ['kolay', 'orta', 'zor', 'kolay', 'orta', 'zor', 'kolay'].map(d => `${a.id}:${d}`));
+ assert.deepEqual(order.slice(0, 7), ['kolay', 'orta', 'kolay', 'orta', 'kolay', 'orta', 'kolay'].map(d => `${a.id}:${d}`));
  assert.ok(order.slice(0, 50).every(x => x.startsWith(`${a.id}:`)), 'ilk 50 soru 1. konudan');
  const count = d => order.slice(0, 50).filter(x => x === `${a.id}:${d}`).length;
- assert.deepEqual([count('kolay'), count('orta'), count('zor')], [17, 17, 16], '1. turda konuya 17 kolay + 17 orta + 16 zor');
- assert.deepEqual(order.slice(50), ['kolay', 'orta', 'zor'].map(d => `${b.id}:${d}`), '51. sorudan itibaren 2. konu');
+ assert.deepEqual([count('kolay'), count('orta')], [25, 25], '1. turda konuya 25 kolay + 25 orta');
+ assert.deepEqual(order.slice(50), ['kolay', 'orta', 'kolay'].map(d => `${a.id}:${d}`), 'ikinci tur tamamlanana kadar ilk ünitede kalınır');
 
  // Onaylanmamış ya da zorluğu olmayan kayıtlar sayılmaz; fazlası kotayı aşmaz.
  snap = planSnapshot({ contexts, items: [...many(60, a.id, 'kolay'), { unitId: b.id, difficulty: 'kolay', status: 'rejected' }, { unitId: b.id, status: 'approved' }], quota: 50 });
- assert.equal(snap.totalDone, CAP('kolay'), 'kolay kovası toplam kotasını (37) aşamaz');
- assert.equal(snap.current.key, stepKey(a.id, 'orta'), 'kolayı dolan konunun ortası ve zoru sürer');
+ assert.equal(snap.totalDone, 60, 'onaylı kolay sorular toplam sayıya yansır');
+ assert.equal(snap.current.key, stepKey(a.id, 'orta'), 'kolayı dolan konunun orta kovası sürer');
 
  // Hakemler bir zorluğu fazla verdiyse (kolay 30) o turda kalan zorluklara çalışılır.
  snap = planSnapshot({ contexts, items: [...many(30, a.id, 'kolay'), ...many(17, a.id, 'orta')], quota: 50 });
- assert.equal(pickPlanWork(snap.all, 1, {}).key, stepKey(a.id, 'zor'));
+ assert.equal(pickPlanWork(snap.all, 1, {}).key, stepKey(a.id, 'orta'));
 
  // 1. tur bitti → 2. tur ilk konu. Önceden yazılmış sorular sayılır.
- const pass1 = contexts.flatMap(c => [...many(17, c.id, 'kolay'), ...many(17, c.id, 'orta'), ...many(16, c.id, 'zor')]);
+ const pass1 = contexts.flatMap(c => [...many(25, c.id, 'kolay'), ...many(25, c.id, 'orta')]);
  snap = planSnapshot({ contexts, items: pass1, quota: 50 });
  assert.equal(snap.current.pass, 2);
  assert.equal(snap.current.unitId, a.id);
  assert.equal(snap.totalDone, contexts.length * 50);
- // 2. turda bölüme 10 kolay + 20 orta + 20 zor düşer (kolay azaldı).
+ // İkinci tur da kolay / orta arasında eşit paylaşılır.
  snap = planSnapshot({ contexts, items: [...pass1, ...many(10, a.id, 'kolay')], quota: 50 });
- assert.deepEqual([snap.current.key, snap.current.done, snap.current.quota], [stepKey(a.id, 'orta'), 17, 37]);
+ assert.deepEqual([snap.current.key, snap.current.done, snap.current.quota], [stepKey(a.id, 'kolay'), 35, 50]);
 
  snap = planSnapshot({ contexts, items: everything(), quota: 50 });
  assert.equal(snap.complete, true);
@@ -106,8 +100,8 @@ test('atlanan (konu, zorluk) geçilir, konunun diğer zorlukları sürer; geriye
  let snap = planSnapshot({ contexts, items: many(5, a.id, 'kolay'), quota: 50, parked: { [stepKey(a.id, 'kolay')]: {} } });
  assert.equal(snap.current.key, stepKey(a.id, 'orta'), 'kolayı atlanan konunun ortasına ve zoruna devam edilir');
  assert.deepEqual(snap.parkedSteps.map(s => [s.key, s.done]), [[stepKey(a.id, 'kolay'), 5]], 'atlanan çift listede bir kez görünür');
- snap = planSnapshot({ contexts, items: [...many(5, a.id, 'kolay'), ...many(17, a.id, 'orta'), ...many(16, a.id, 'zor')], quota: 50, parked: { [stepKey(a.id, 'kolay')]: {} } });
- assert.equal(snap.current.unitId, b.id, 'kalan zorluklar dolunca sıradaki konuya geçilir');
+ snap = planSnapshot({ contexts, items: [...many(5, a.id, 'kolay'), ...many(100, a.id, 'orta')], quota: 50, parked: { [stepKey(a.id, 'kolay')]: {} } });
+ assert.equal(snap.current.unitId, b.id, 'ünitenin diğer tüm turları dolunca sıradaki üniteye geçilir');
 
  const allButOne = contexts.flatMap(c => DIFFS.flatMap(d => (c.id === a.id && d === 'kolay' ? many(CAP('kolay') - 1, c.id, d) : many(CAP(d), c.id, d))));
  snap = planSnapshot({ contexts, items: allButOne, quota: 50, parked: { [stepKey(a.id, 'kolay')]: {} } });
@@ -116,55 +110,48 @@ test('atlanan (konu, zorluk) geçilir, konunun diğer zorlukları sürer; geriye
  assert.equal(snap.allParked, true);
 });
 
-test('ikili grup: iki konu aynı anda; biri dolunca boşalan hat eksik kalan konuya yardım eder; grup bitmeden sıradaki konuya geçilmez', () => {
- const [a, b, c, d] = contexts;
+test('aynı ünite bitene kadar üretilir; paralel hatlar aynı ünitede çalışır', () => {
+ const [a, b, c] = contexts;
  const K = (x, z = 'kolay') => stepKey(x.id, z);
- const snapOf = (items, parked = {}) => planSnapshot({ contexts, items, quota: 50, parked });
+ const snapOf = (items, parked = {}) => planSnapshot({ contexts, items, quota: 50, passes: 4, parked });
  const units = steps => [...new Set(steps.map(s => s.unitId))];
- const full1 = x => [...many(17, x.id, 'kolay'), ...many(17, x.id, 'orta'), ...many(16, x.id, 'zor')]; // 1. tur payı
+ const pass1 = x => [...many(25, x.id, 'kolay'), ...many(25, x.id, 'orta')];
 
- // Başlangıç: 1. ve 2. konu birlikte; iki hat ayrı konulara dağılır.
+ // Başlangıçta birinci ünitenin yalnızca ilk turu açıktır; iki üretim hattı da o üniteden iş alır.
  let snap = snapOf([]);
- assert.deepEqual(units(planBatch(snap.all, 2)), [a.id, b.id]);
- assert.equal(planBatch(snap.all, 2).length, 6, 'iki konunun kolay + orta + zor hücreleri');
- assert.equal(pickPlanWork(snap.all, 2, {}).key, K(a));
- assert.equal(pickPlanWork(snap.all, 2, { [K(a)]: 1 }).key, K(b), 'ikinci hat boş olan konuya gider');
- assert.equal(pickPlanWork(snap.all, 2, { [K(a)]: 1, [K(b)]: 1 }).key, K(a, 'orta'), 'üçüncü bir hat olsaydı konunun sıradaki zorluğunu alırdı');
+ assert.deepEqual(units(planBatch(snap.all, 2)), [a.id]);
+ assert.deepEqual(planBatch(snap.all, 2).map(s => `${s.pass}:${s.unitId}`), [`1:${a.id}`, `1:${a.id}`]);
+ assert.equal(pickPlanWork(snap.all, 2, {}).unitId, a.id);
+ assert.equal(pickPlanWork(snap.all, 2, { [K(a)]: 1 }).unitId, a.id, 'ikinci hat da aynı üniteden başka zorluk alır');
+ assert.equal(pickPlanWork(snap.all, 2, { [K(a)]: 1 }).difficulty, 'orta');
+ assert.equal(pickPlanWork(snap.all, 2, { [K(a)]: 1, [K(a, 'orta')]: 1 }).unitId, a.id);
 
- // 1. konu doldu, 2. konu eksik: boşalan hat 3. konuya GEÇMEZ, 2. konuya (başka bir zorlukla) yardım eder.
- snap = snapOf([...full1(a), ...many(10, b.id, 'kolay'), ...many(10, b.id, 'orta'), ...many(9, b.id, 'zor')]);
+ // İlk turun 50 sorusu bitince sonraki ünitenin değil, aynı ünitenin ikinci turunun işi gelir.
+ snap = snapOf(pass1(a));
+ assert.deepEqual(units(planBatch(snap.all, 2)), [a.id]);
+ assert.ok(planBatch(snap.all, 2).every(s => s.pass === 2));
+
+ // Bir ünitenin bütün turları dolduktan sonra sıradaki ünitenin ilk turu başlar.
+ const fullA = snapOf([]).all.filter(s => s.unitId === a.id).flatMap(s => many(s.share, a.id, s.difficulty));
+ snap = snapOf(fullA);
  assert.deepEqual(units(planBatch(snap.all, 2)), [b.id]);
- assert.equal(pickPlanWork(snap.all, 2, {}).key, K(b, 'zor'), 'payında en geride olan zorluk');
- assert.equal(pickPlanWork(snap.all, 2, { [K(b, 'zor')]: 1 }).key, K(b), 'ikinci hat aynı konunun başka zorluğunu yazar');
+ assert.ok(planBatch(snap.all, 2).every(s => s.pass === 1));
+ assert.deepEqual(units(planBatch(snap.all, 1)), [b.id]);
+ assert.deepEqual(units(planBatch(snap.all, 8)), [b.id], 'hat sayısı, eşzamanlı çalışılan üniteyi değiştirmez');
 
- // Kota aşılmaz: konunun son sorusu hazırlanıyorsa ikinci hat beklemeye alınır (3. konuya da geçmez).
- snap = snapOf([...full1(a), ...many(17, b.id, 'kolay'), ...many(17, b.id, 'orta'), ...many(15, b.id, 'zor')]);
- assert.equal(pickPlanWork(snap.all, 2, { [K(b, 'zor')]: 1 }), null);
- assert.equal(pickPlanWork(snap.all, 2, {}).key, K(b, 'zor'));
+ // Ünite içindeki son soru hazırlanıyorsa ikinci hat kotayı aşmaz ve başka üniteye geçmez.
+ snap = snapOf([...many(25, a.id, 'kolay'), ...many(24, a.id, 'orta')]);
+ assert.equal(pickPlanWork(snap.all, 2, { [K(a, 'orta')]: 1 }), null);
+ assert.deepEqual(units(planBatch(snap.all, 2)), [a.id]);
 
- // Grup tamamlanınca sıradaki grup (3. ve 4. konu) birlikte başlar.
- snap = snapOf([...full1(a), ...full1(b)]);
- assert.deepEqual(units(planBatch(snap.all, 2)), [c.id, d.id]);
+ // Atlanan zorluk aynı ünitenin diğer açık hücrelerini engellemez; tamamen atlanan ünite geçilir.
+ snap = snapOf([], { [K(a)]: {} });
+ assert.deepEqual(units(planBatch(snap.all, 2)), [a.id]);
+ const fullB = snapOf([]).all.filter(s => s.unitId === b.id).flatMap(s => many(s.share, b.id, s.difficulty));
+ snap = snapOf([...fullA, ...fullB], { [K(c)]: {}, [K(c, 'orta')]: {}, [K(c, 'zor')]: {} });
+ assert.deepEqual(units(planBatch(snap.all, 2)), [contexts[3].id]);
 
- // Gruptaki konunun bütün açık zorlukları atlandıysa grup bitmiş sayılır; atlanan zorluğa hat verilmez.
- snap = snapOf([...full1(a), ...many(17, b.id, 'kolay'), ...many(17, b.id, 'orta'), ...many(3, b.id, 'zor')], { [K(b, 'zor')]: {} });
- assert.deepEqual(units(planBatch(snap.all, 2)), [c.id, d.id]);
- snap = snapOf(many(10, a.id, 'kolay'), { [K(b)]: {}, [K(b, 'orta')]: {}, [K(b, 'zor')]: {} });
- assert.deepEqual(units(planBatch(snap.all, 2)), [a.id], 'atlanan konunun eşi tek başına tamamlanır');
- snap = snapOf([], { [K(b, 'zor')]: {} });
- assert.deepEqual(planBatch(snap.all, 2).map(s => s.key), [K(a), K(a, 'orta'), K(a, 'zor'), K(b), K(b, 'orta')], 'yalnızca atlanan zorluk dışarıda kalır');
-
- // Tek hat: konular teker teker; üç hat: üçlü gruplar.
- snap = snapOf([]);
- assert.deepEqual(units(planBatch(snap.all, 1)), [a.id]);
- assert.deepEqual(units(planBatch(snap.all, 3)), [a.id, b.id, c.id]);
-
- // Tur sınırı (29 konu tek sayı): 1. turun son konusu ile 2. turun ilk konusu aynı grupta.
- const last = contexts[contexts.length - 1];
- snap = snapOf(contexts.slice(0, -1).flatMap(full1));
- assert.deepEqual(planBatch(snap.all, 2).map(s => `${s.pass}:${s.unitId}`).filter((x, i, arr) => arr.indexOf(x) === i), [`1:${last.id}`, `2:${a.id}`]);
-
- // Plan bitti: grup boş.
+ // Tüm ünitelerin hedefi dolunca iş kalmaz.
  snap = snapOf(everything());
  assert.deepEqual(planBatch(snap.all, 2), []);
  assert.equal(pickPlanWork(snap.all, 2, {}), null);
@@ -200,20 +187,20 @@ test('takılma sayacı: adım başına üst üste retler sayılır; sınırda ad
 
 test('konu içi zorluk ve kabul kuralı: kova doluysa o zorluk kabul edilmez', () => {
  const a = contexts[0].id;
- // Varsayılan dört turun kova kotaları kolay 37, orta 82, zor 81; sıradaki zorluk doluluk oranı en düşük olandır.
+ // Varsayılan dört turun kotaları kolay 100, orta 100; sıradaki zorluk doluluk oranı en düşük olandır.
  assert.equal(planDifficultyForUnit(a, [], 50), 'kolay');
- assert.equal(planDifficultyForUnit(a, many(37, a, 'kolay'), 50), 'orta');
- assert.equal(planDifficultyForUnit(a, [...many(37, a, 'kolay'), ...many(82, a, 'orta')], 50), 'zor');
- assert.equal(planDifficultyForUnit(a, [...many(20, a, 'kolay'), ...many(20, a, 'orta')], 50), 'zor');
+ assert.equal(planDifficultyForUnit(a, many(100, a, 'kolay'), 50), 'orta');
+ assert.equal(planDifficultyForUnit(a, [...many(40, a, 'kolay'), ...many(80, a, 'orta')], 50), 'kolay');
+ assert.equal(planDifficultyForUnit(a, [...many(20, a, 'kolay'), ...many(20, a, 'orta')], 50), 'kolay');
  assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(CAP(d), a, d)), 50), null);
- assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(50, a, d)), 50, 3), 'orta', 'üç turluk planda kovalar 33 / 59 / 58');
- assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(60, a, d)), 50, 3), null);
- assert.equal(planBucketHasRoom(a, 'kolay', many(36, a, 'kolay'), 50), true);
- assert.equal(planBucketHasRoom(a, 'kolay', many(37, a, 'kolay'), 50), false);
+ assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(50, a, d)), 50, 3), 'kolay', 'üç turluk planda kovalar 75 / 75');
+ assert.equal(planDifficultyForUnit(a, DIFFS.flatMap(d => many(75, a, d)), 50, 3), null);
+ assert.equal(planBucketHasRoom(a, 'kolay', many(99, a, 'kolay'), 50), true);
+ assert.equal(planBucketHasRoom(a, 'kolay', many(100, a, 'kolay'), 50), false);
 
  assert.equal(planAcceptsDifficulty(a, 'kolay', 'kolay', many(50, a, 'kolay'), 50), true, 'hedefle aynı zorluk kabul edilir');
- assert.equal(planAcceptsDifficulty(a, 'orta', 'kolay', many(36, a, 'orta'), 50), true, 'kotası dolmamış başka zorluk kendi kovasına yazılır');
- assert.equal(planAcceptsDifficulty(a, 'kolay', 'orta', many(37, a, 'kolay'), 50), false, 'kolay kotası doluyken "kolay" çıkan soru alınmaz');
+ assert.equal(planAcceptsDifficulty(a, 'orta', 'kolay', many(99, a, 'orta'), 50), true, 'kotası dolmamış başka zorluk kendi kovasına yazılır');
+ assert.equal(planAcceptsDifficulty(a, 'kolay', 'orta', many(100, a, 'kolay'), 50), false, 'kolay kotası doluyken "kolay" çıkan soru alınmaz');
  assert.equal(planAcceptsDifficulty(a, 'bilinmiyor', 'kolay', [], 50), false);
 });
 
@@ -269,15 +256,15 @@ test('odak cümlesi: uzun (kitapla büyütülmüş) özette seçimler özetin ta
  }
 });
 
-test('kitapla büyütülmüş özet: her konuda 50 kolay + 50 orta + 50 zor soruya yetecek cümle var', () => {
+test('kitapla büyütülmüş özet: her konuda 200 kolay / orta soru üretimine yetecek cümle var', () => {
  assert.equal(contexts.length, 29);
  let total = 0;
  for (const ctx of contexts) {
   const sentences = splitSummarySentences(ctx.text);
   total += sentences.length;
   assert.ok(Number.isInteger(ctx.baseChars) && ctx.baseChars > 500 && ctx.baseChars < ctx.text.length, `${ctx.id}: baseChars elle yazılmış özeti göstermeli`);
-  // 150 soru için cümle başına en çok 3 soru (kolay / orta / zor) düşmeli → en az 50 cümle.
-  assert.ok(sentences.length >= 50, `${ctx.id}: ${sentences.length} cümle 150 soruya yetmez`);
+  // Ünite kotası 200; kısa özetin tekrara düşmeden farklı soru açıları kurmaya yetecek kadar geniş olması gerekir.
+  assert.ok(sentences.length >= 50, `${ctx.id}: ${sentences.length} cümle çok az konu çeşitliliği sağlar`);
   assert.ok(ctx.text.length >= 3 * ctx.baseChars, `${ctx.id}: özet kitapla en az üç katına çıkmalı`);
   // Her cümle kanıt kapısından geçebilmeli (model cümleyi birebir kopyaladığında).
   for (const sentence of sentences) assert.equal(evidenceWithinSummary(sentence, ctx.text).ok, true, `${ctx.id}: ${sentence}`);
