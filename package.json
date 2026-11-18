@@ -12,6 +12,7 @@
     "summary": "python3 scripts/build-book-summary.py && npm run contexts",
     "briefs": "python3 scripts/build-unit-briefs.py && node --test scripts/test-unit-briefs.mjs",
     "bench": "node scripts/bench-generation.mjs",
+    "bench:live": "node scripts/bench-live.mjs",
     "books:questions": "python3 scripts/extract-book-questions.py",
     "parallels": "node scripts/build-book-parallels.mjs",
     "all:questions": "npm run contexts && npm run books:questions && npm run parallels && npm run contexts"

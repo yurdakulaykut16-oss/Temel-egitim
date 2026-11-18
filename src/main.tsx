@@ -46,6 +46,8 @@ type KayseriReaction={speakerLabel:string;mode:string;headline:string;roastOrPra
 type MistakeEntry={key:string;unitId:string;bi:number;ui:number;unitTitle:string;question:string;answer:string;wrongOptions:string[];explanation:string;chosenWrong:string;source?:string;wrongCount:number;mastered:boolean;updatedAt:string};
 type BookSearchHit={id:string;kind:string;unitId:string;book:string;unit:string;heading:string;pages:number[];snippet:string;score:number};
 type BookOfficialQuestion={id:string;unitId:string;book:string;unit:string;topic?:string;question:string;options:string[];answer:string;testPage?:number;answerPage?:number;source?:string;sourceQuestionId?:string;sourceQuestion?:string;explanation?:string};
+type DifficultyTier4='kolay'|'orta'|'zor'|'imkansiz';
+type CalibratedBankMeta={id?:string;unitId:string;question:string;aiDifficultyTier:DifficultyTier4;aiDifficultyLabel:string;predictedEliminationPct:number;solvedBy100AiPct:number;aiDifficultyComments:string[];misconceptionTraps:string[]};
 type UnitTvgfbfIntel={unitId:string;preferredTypes:string[];stemTemplates:string[];highFrequencyTopics:string[];forumTraps:string[];bookQuestionsCount:number;bookQuestions:BookOfficialQuestion[]};
 type ExamBookForecast={bookIndex:number;book:string;totalUnits:number;studiedUnits:number;coveragePct:number;answered:number;accuracyPct:number;avgSecPerQ:number;estimatedOutOf20:number;barajMet:boolean;passRisk:'yuksek_risk'|'sinirda'|'guvenli';weakUnits:{unitId:string;unit:string;wrong:number;right:number}[]};
 type ExamPrediction={totalEstimated100:number;booksPassingBaraj:number;totalBooks:number;allBarajMet:boolean;books:ExamBookForecast[];priorityActions:{kind:string;bookIndex?:number;unitId?:string;title:string;reason:string}[]};
@@ -101,12 +103,38 @@ function App(){
   return !Number.isFinite(score)||Number(score)>=0.55;
  };
  const toggleOnlyInSource=()=>setOnlyInSource(v=>{const next=!v;try{localStorage.setItem('tempo-only-insource',next?'1':'0')}catch{}return next;});
+ const [calibratedMap,setCalibratedMap]=useState<Record<string,CalibratedBankMeta>>({});
+ const [tierCounts,setTierCounts]=useState<Record<DifficultyTier4,number>>({kolay:0,orta:0,zor:0,imkansiz:0});
+ const [selectedTier,setSelectedTier]=useState<'all'|DifficultyTier4>('all');
  const [combo,setCombo]=useState(0);
  const [xpEarned,setXpEarned]=useState(0);
  const [lastXpGain,setLastXpGain]=useState(0);
  const [eliminatedOpts,setEliminatedOpts]=useState<Record<number,string[]>>({});
  const [hintRevealed,setHintRevealed]=useState<Record<number,boolean>>({});
  const normStem=(s:string)=>s.toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu,' ').trim().slice(0,95);
+ const getQuestionMeta=(item:{id:string;u:Unit}):CalibratedBankMeta=>{
+  const hit=calibratedMap[`${item.id}::${normStem(item.u.question)}`];
+  if(hit)return hit;
+  const src=String(item.u.source||'');
+  const text=`${item.u.question} ${item.u.wrong.join(' ')}`;
+  const hardScore=/I\..*II\.|değildir|yanlıştır|hangisi söylenemez|sıralaması/i.test(text)?64:(/imk[aâ]ns[ıi]z/i.test(src)?84:(text.length>190?58:32));
+  const tier:DifficultyTier4=hardScore>=75?'imkansiz':hardScore>=55?'zor':hardScore>=34?'orta':'kolay';
+  return {
+   unitId:item.id,
+   question:item.u.question,
+   aiDifficultyTier:tier,
+   aiDifficultyLabel:tier==='imkansiz'?'İmkânsız (Çok Eleyici)':tier==='zor'?'Zor':tier==='orta'?'Orta':'Kolay',
+   predictedEliminationPct:hardScore,
+   solvedBy100AiPct:Math.max(5,100-hardScore),
+   aiDifficultyComments:[
+    tier==='imkansiz'?'🤖 Çözen-07: "Bu imkânsız gibi aşırı zormuş; kavram ve öncül tuzağı adayların büyük kısmını eler!"':
+    tier==='zor'?'🤖 Çözen-12: "Bu soru gerçekten zorlayıcı! İnce ayrımı yakalayamayan hemen çeldiriciye düşer."':
+    tier==='orta'?'🤖 Çözen-04: "Orta düzey seçici soru; yakın kavramlar arasındaki sınırı yokluyor."':
+    '🤖 Çözen-01: "Temel kavramı net ölçen kolay-ısınma sorusu."'
+   ],
+   misconceptionTraps:['Öğrenciler yakın kavramları ve ters/olumsuz kökü aceleyle karıştırabiliyor.']
+  };
+ };
  useEffect(()=>{
   fetch('/api/ollama/book-questions')
    .then(r=>r.ok?r.json():null)
@@ -115,6 +143,19 @@ function App(){
   fetch('/api/ollama/book-parallels')
    .then(r=>r.ok?r.json():null)
    .then(d=>{if(Array.isArray(d?.questions))setBookParallelQs(d.questions);})
+   .catch(()=>{});
+  fetch('/api/ollama/calibrated-bank')
+   .then(r=>r.ok?r.json():null)
+   .then(d=>{
+    if(d?.tierCounts)setTierCounts(d.tierCounts);
+    if(Array.isArray(d?.items)){
+     const nextMap:Record<string,CalibratedBankMeta>={};
+     for(const it of d.items){
+      if(it?.unitId&&it?.question)nextMap[`${it.unitId}::${normStem(it.question)}`]=it;
+     }
+     setCalibratedMap(nextMap);
+    }
+   })
    .catch(()=>{});
  },[]);
  const [progress,setProgress]=useState<Progress>(readSaved); const [page,setPage]=useState('Genel bakış'); const [selected,setSelected]=useState<{bi:number;ui:number}|null>(null); const [quiz,setQuiz]=useState<typeof all>([]); const [qi,setQi]=useState(0); const [choice,setChoice]=useState<string|null>(null); const [score,setScore]=useState(0); const [menu,setMenu]=useState(false); const [speaking,setSpeaking]=useState(false); const [mode,setMode]=useState('Konu anlatımı');
@@ -325,8 +366,8 @@ function App(){
   }
   return out;
  };
- const startQuiz=(filter?:number,onlyId?:string,hard=false,full=false,weak=false,uncovered=false,bookOfficial=false)=>{
-  const sourceUnits=(full||bookOfficial)?all:studied;
+ const startQuiz=(filter?:number,onlyId?:string,hard=false,full=false,weak=false,uncovered=false,bookOfficial=false,tierFilter:('all'|DifficultyTier4)=selectedTier)=>{
+  const sourceUnits=(full||bookOfficial||tierFilter==='imkansiz')?all:studied;
   const seenStems=new Set<string>();
   const rawPool=sourceUnits.filter(x=>(filter===undefined||x.bi===filter)&&(!onlyId||x.id===onlyId)&&(!weak||((progress.results[x.id]?.wrong||0)>0&&(progress.results[x.id]?.streak||0)<MASTERY_STREAK))).flatMap(x=>{
    const officialRows=bookOfficialQs.filter(bq=>bq.unitId===x.id).map(bq=>({...x,u:{...x.u,question:bq.question,answer:bq.answer,wrong:bq.options.filter(o=>o!==bq.answer),key:`${bq.book} · ${bq.unit} ünitesi "neler öğrendik?" değerlendirme sorusu (Sayfa ${bq.testPage||'-'}).`,topic:bq.topic||x.u.title,source:`Resmî Kitap "Neler Öğrendik?" · s.${bq.testPage||'-'}`}}));
@@ -343,7 +384,7 @@ function App(){
     ...parallelRows,
     ...[...(hard||uncovered?[]:(extra[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(scenarios[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:(practice[x.bi]?.[x.ui]||[])),...(hard||uncovered?[]:[reinforcement[x.bi][x.ui],...(unique[x.id]?.questions||[]),...(advanced[x.id]?.questions||[]),...(newQuestions[x.id]?.questions||[]),...(bookQuestions[x.id]||[]),...(examSampleLines[x.id]||[])]),...(hard?(challenge[x.id]||[]):[])].map(line=>{const [question,answer,...rest]=line.split('|'); const explanation=rest.pop()!; return {...x,u:{...x.u,question,answer,wrong:rest,key:explanation}}}),
     ...(!hard&&!uncovered&&x.id==='3-4'?calculated.map(u=>({...x,u})):[]),
-    ...(!hard?generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(!uncovered||Boolean(q.passageId)||q.questionAngle==='surpriz_baglam')).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,paragraph:q.paragraph,source:`Ollama · ${q.model}${q.questionAngle?` · ${q.questionAngle.replace('_',' ')}`:''}${q.examPotential?` · Sınav ★${q.examPotential}/5`:''}${q.pages?.length?` · s.${q.pages.join(',')}`:''}`}})):[])
+    ...(!hard?generated.filter(q=>q.status==='approved'&&q.unitId===x.id&&(!uncovered||Boolean(q.passageId)||q.questionAngle==='surpriz_baglam')).map(q=>({...x,u:{...x.u,question:q.question,answer:q.answer,wrong:q.options.filter(o=>o!==q.answer),key:q.explanation,topic:q.topic,paragraph:q.paragraph,source:`Ollama · ${q.model}${q.difficulty?` · ${q.difficulty.toUpperCase()}`:''}${q.questionAngle?` · ${q.questionAngle.replace('_',' ')}`:''}${q.examPotential?` · Sınav ★${q.examPotential}/5`:''}${q.pages?.length?` · s.${q.pages.join(',')}`:''}`}})):[])
    ];
   }).filter(x=>{
    if(x.id==='0-5'&&/mezo döngü|makro döngü/i.test(x.u.question+' '+x.u.answer))return false;
@@ -354,7 +395,16 @@ function App(){
    seenStems.add(stemKey);
    return true;
   });
-  let pool:QuizItem[]=rawPool.map(x=>{const r=progress.results[x.id]; const w=r?.wrong||0, streak=r?.streak||0, mastered=streak>=MASTERY_STREAK; const bookBonus=/Neler Öğrendik|TVGFBF/i.test(x.u.source||'')?1.35:1; return {...x, weight:Math.random()*bookBonus*(mastered?0.35:(1+w*4))}}).sort((a,b)=>b.weight-a.weight);
+  let filteredByTier=rawPool;
+  if(!full&&tierFilter!=='all'){
+   const exact=rawPool.filter(x=>getQuestionMeta(x).aiDifficultyTier===tierFilter);
+   filteredByTier=exact.length>=3?exact:rawPool.slice().sort((a,b)=>{
+    const ea=getQuestionMeta(a).predictedEliminationPct;
+    const eb=getQuestionMeta(b).predictedEliminationPct;
+    return tierFilter==='imkansiz'||tierFilter==='zor'?(eb-ea):(ea-eb);
+   });
+  }
+  let pool:QuizItem[]=filteredByTier.map(x=>{const r=progress.results[x.id]; const w=r?.wrong||0, streak=r?.streak||0, mastered=streak>=MASTERY_STREAK; const bookBonus=/Neler Öğrendik|TVGFBF/i.test(x.u.source||'')?1.35:1; return {...x, weight:Math.random()*bookBonus*(mastered?0.35:(1+w*4))}}).sort((a,b)=>b.weight-a.weight);
   if (full) { const bookPools:typeof pool=[]; for(let b=0;b<5;b++){const bItems=pool.filter(x=>x.bi===b); const perU:Record<string,number>={}; const picked:typeof pool=[]; for(const item of bItems){if(picked.length>=20)break; if((perU[item.id]||0)<5){perU[item.id]=(perU[item.id]||0)+1;picked.push(item);}} for(const item of bItems){if(picked.length>=20)break; if(!picked.includes(item))picked.push(item);} bookPools.push(...picked);} pool=bookPools; }else{if(!onlyId){const perUnit:Record<string,number>={};pool=pool.filter(x=>{const cap=((progress.results[x.id]?.wrong||0)>0&&(progress.results[x.id]?.streak||0)<MASTERY_STREAK)?5:3;perUnit[x.id]=(perUnit[x.id]||0)+1;return perUnit[x.id]<=cap;});}pool=pool.slice(0,20);}
   // Aynı testte hem kitabın kendi sorusu hem onun paraleli çıkmasın: paralel, kaynak
  // sorunun aynı bilgisini ölçer; ikisi bir arada gereksiz tekrar olur.
@@ -408,7 +458,7 @@ function App(){
    .then(d=>{if(d?.reaction)setKayseriReaction(d.reaction);})
    .catch(()=>{});
  };
- const answer=(ans:string)=>{if(choice||quizAnswers[qi])return;setChoice(ans);setKayseriReaction(null);const item=quiz[qi], correct=ans===item.u.answer; const nextCombo=correct?combo+1:0; setCombo(nextCombo); if(correct){const gain=20*Math.min(4,Math.max(1,nextCombo)); setXpEarned(x=>x+gain); setLastXpGain(gain);} else { setLastXpGain(0); } setQuizAnswers(prev=>({...prev,[qi]:{choice:ans,correct}})); const elapsedSec=Math.max(1,Math.min(600,Math.round((Date.now()-qStartRef.current)/1000))); if(correct)setScore(s=>s+1); else saveReviews({...reviews,[item.id]:prioritize(Date.now())}); const mKey=String(item.retryOf||'')||`${item.id}::${item.u.question.slice(0,90)}`; const existingIdx=mistakes.findIndex(m=>m.key===mKey); if(correct){ if(existingIdx>=0){ const upd=[...mistakes]; upd[existingIdx]={...upd[existingIdx],mastered:true,updatedAt:new Date().toISOString()}; saveMistakes(upd); } }else{ const entry:MistakeEntry={key:mKey,unitId:item.id,bi:item.bi,ui:item.ui,unitTitle:books[item.bi]?.units?.[item.ui]?.title||item.u.title,question:item.u.question,answer:item.u.answer,wrongOptions:item.u.wrong,explanation:item.u.key,chosenWrong:ans,source:item.u.source,wrongCount:(existingIdx>=0?mistakes[existingIdx].wrongCount:0)+1,mastered:false,updatedAt:new Date().toISOString()}; const upd=existingIdx>=0?mistakes.map((m,idx)=>idx===existingIdx?entry:m):[...mistakes,entry]; saveMistakes(upd); } setQuizBookScores(prev=>{const cur=prev[item.bi]||{right:0,total:0};return {...prev,[item.bi]:{right:cur.right+(correct?1:0),total:cur.total+1}};}); const old=progress.results[item.id]||{right:0,wrong:0,streak:0,totalSec:0};const nextStreak=correct?(old.streak||0)+1:0;const nextWrong=old.wrong+(correct?0:1);const nextResults={...progress.results,[item.id]:{right:old.right+(correct?1:0),wrong:nextWrong,streak:nextStreak,totalSec:+((old.totalSec||0)+elapsedSec).toFixed(1),lastSec:elapsedSec}};const nextStudySec=+((progress.totalStudySec||0)+elapsedSec).toFixed(1);save({...progress,results:nextResults,totalStudySec:nextStudySec});syncStudentSignal(item.id,correct,nextResults,nextStudySec);fetchKayseriReaction(item,ans,correct,kayseriMode,{elapsedSec,streak:nextStreak,wrongCount:old.wrong||0});};
+ const answer=(ans:string)=>{if(choice||quizAnswers[qi])return;setChoice(ans);setKayseriReaction(null);const item=quiz[qi], correct=ans===item.u.answer; const qMeta=getQuestionMeta(item); const nextCombo=correct?combo+1:0; setCombo(nextCombo); if(correct){const tierXp=qMeta.aiDifficultyTier==='imkansiz'?60:qMeta.aiDifficultyTier==='zor'?40:qMeta.aiDifficultyTier==='orta'?25:15; const gain=tierXp*Math.min(4,Math.max(1,nextCombo)); setXpEarned(x=>x+gain); setLastXpGain(gain);} else { setLastXpGain(0); } setQuizAnswers(prev=>({...prev,[qi]:{choice:ans,correct}})); const elapsedSec=Math.max(1,Math.min(600,Math.round((Date.now()-qStartRef.current)/1000))); if(correct)setScore(s=>s+1); else saveReviews({...reviews,[item.id]:prioritize(Date.now())}); const mKey=String(item.retryOf||'')||`${item.id}::${item.u.question.slice(0,90)}`; const existingIdx=mistakes.findIndex(m=>m.key===mKey); if(correct){ if(existingIdx>=0){ const upd=[...mistakes]; upd[existingIdx]={...upd[existingIdx],mastered:true,updatedAt:new Date().toISOString()}; saveMistakes(upd); } }else{ const entry:MistakeEntry={key:mKey,unitId:item.id,bi:item.bi,ui:item.ui,unitTitle:books[item.bi]?.units?.[item.ui]?.title||item.u.title,question:item.u.question,answer:item.u.answer,wrongOptions:item.u.wrong,explanation:item.u.key,chosenWrong:ans,source:item.u.source,wrongCount:(existingIdx>=0?mistakes[existingIdx].wrongCount:0)+1,mastered:false,updatedAt:new Date().toISOString()}; const upd=existingIdx>=0?mistakes.map((m,idx)=>idx===existingIdx?entry:m):[...mistakes,entry]; saveMistakes(upd); } setQuizBookScores(prev=>{const cur=prev[item.bi]||{right:0,total:0};return {...prev,[item.bi]:{right:cur.right+(correct?1:0),total:cur.total+1}};}); const old=progress.results[item.id]||{right:0,wrong:0,streak:0,totalSec:0};const nextStreak=correct?(old.streak||0)+1:0;const nextWrong=old.wrong+(correct?0:1);const nextResults={...progress.results,[item.id]:{right:old.right+(correct?1:0),wrong:nextWrong,streak:nextStreak,totalSec:+((old.totalSec||0)+elapsedSec).toFixed(1),lastSec:elapsedSec}};const nextStudySec=+((progress.totalStudySec||0)+elapsedSec).toFixed(1);save({...progress,results:nextResults,totalStudySec:nextStudySec});syncStudentSignal(item.id,correct,nextResults,nextStudySec);fetchKayseriReaction(item,ans,correct,kayseriMode,{elapsedSec,streak:nextStreak,wrongCount:old.wrong||0});};
  const triggerFiftyFifty=()=>{
   if(choice||eliminatedOpts[qi]?.length||!quiz[qi])return;
   const wrongs=quiz[qi].u.wrong.slice(0,2);
@@ -635,7 +685,24 @@ function App(){
    </div>)}
   </div>}
  </div>}
- <div className="test-grid"><div className="test-card featured"><span className="book-icon green"><ClipboardList size={21}/></span><h2>5 × 20 = 100 Soru Tam Sınav</h2><p>Gerçek TVGFBF/AÖF sınav simülasyonu: 100 dakika geri sayım, her kitaptan 20 soru (toplam 100) ve canlı 12/20 baraj takibi.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,true)}>100 Soruluk Denemeyi Başlat <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon peach"><Award size={21}/></span><h2>Özgün Meydan Okuma</h2><p>Kitap anlatımı, gerçek sınav örnekleri ve farklı soru biçimlerinden oluşturulan seçili bir çalışma turu.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,true)}>Meydan Okumaya Başla <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon yellow"><BookOpen size={21}/></span><h2>Kitaptan "Neler Öğrendik?" + TVGFBF</h2><p>5 resmî ders kitabındaki {bookOfficialQs.length || 268} gerçek bölüm sonu sorusu ve TVGFBF sınav kalıbına uyumlu seçkin sorular.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,false,false,true)}>Kitap Stili Teste Başla <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon purple"><RefreshCw size={21}/></span><h2>Kitap Paraleli (Aynı Soru, Farklı Lafız)</h2><p>{bookParallelQs.length || 260} paralel soru: kitabın kendi sorusuyla AYNI bilgiyi ölçer ama kökü yeniden yazılmıştır; ezberi değil gerçek öğrenmeyi sınar.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,false,false,true)}>Paralelleri Çöz <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon purple"><Sparkles size={21}/></span><h2>"Ya Çıkarsa?" Kör Nokta Testi</h2><p>Yapay zekânın tahmin etmediği alt başlıklar ve her kitabın dipnot/satır arası pasajlarından üretilen sürpriz detaylar.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,false,true)}>Kör Noktaları Tara <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon peach"><RotateCcw size={21}/></span><h2>Eksik konularım</h2><p>Daha önce yanlış yaptığın, henüz ustalaşmadığın tamamlanmış ünitelerden tekrar soruları çöz.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,true)}>Tekrar testine geç <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon yellow"><Target size={21}/></span><h2>Karışık tekrar</h2><p>Okuduğun ünitelerden karşılaştırma, uygulama ve kavram sorularıyla tekrar yap.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,true) }>Tekrarı başlat <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon green"><Sparkles size={21}/></span><h2>Akıllı karma test</h2><p>Öğrendiklerin, kitap soruları ve önceki hataların üzerinden kişisel tekrar.</p><button className="dark-button" onClick={()=>startQuiz()}>Teste başla <ArrowUpRight size={16}/></button></div>{books.map((b,bi)=><div className="test-card" key={b.title}><span className="book-icon" style={{background:b.color}}><ClipboardList size={21}/></span><h3>{b.short}</h3><p>{b.units.filter((_,ui)=>progress.read.includes(`${bi}-${ui}`)).length} ünite test için açık</p><button className="outline" onClick={()=>startQuiz(bi)}>Bölüm testine başla <ArrowUpRight size={15}/></button></div>)}</div></>}
+ <div className="tier-arena-bar">
+  <div className="tier-arena-head">
+   <div>
+    <strong>🧠 100 Yapay Zekâ Konseyi Zorluk &amp; İstatistiksel Elenme Filtresi</strong>
+    <p>100 farklı AI ajanı tüm soruları çözerek zorluğa göre etiketledi ve tahmini sınav eleme oranını çıkardı.</p>
+   </div>
+   <div className="tier-chips">
+    {([
+     ['all','Tümü','🎯',Object.values(tierCounts).reduce((a,b)=>a+b,0)],
+     ['kolay','Kolay','🟢',tierCounts.kolay],
+     ['orta','Orta','🟡',tierCounts.orta],
+     ['zor','Zor','🔴',tierCounts.zor],
+     ['imkansiz','İmkânsız','💀',tierCounts.imkansiz]
+    ] as const).map(([key,label,icon,cnt])=><button type="button" key={key} className={`tier-chip ${selectedTier===key?'active':''} tier-${key}`} onClick={()=>setSelectedTier(key)}><span>{icon} {label}</span>{cnt>0&&<small>{cnt}</small>}</button>)}
+   </div>
+  </div>
+ </div>
+ <div className="test-grid"><div className="test-card featured"><span className="book-icon green"><ClipboardList size={21}/></span><h2>5 × 20 = 100 Soru Tam Sınav</h2><p>Gerçek TVGFBF/AÖF sınav simülasyonu: 100 dakika geri sayım, her kitaptan 20 soru (toplam 100) ve canlı 12/20 baraj takibi.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,true)}>100 Soruluk Denemeyi Başlat <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon peach"><Award size={21}/></span><h2>💀 İmkânsız &amp; Eleyici Meydan Okuma</h2><p>100 AI konseyinin yalnız %5–25’inin çözebildiği, en yüksek elenme yüzdeli çeldirici tuzaklı süper zor sorular.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,false,false,false,'imkansiz')}>İmkânsız Teste Başla <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon yellow"><BookOpen size={21}/></span><h2>Kitaptan "Neler Öğrendik?" + TVGFBF</h2><p>5 resmî ders kitabındaki {bookOfficialQs.length || 268} gerçek bölüm sonu sorusu ve TVGFBF sınav kalıbına uyumlu seçkin sorular.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,false,false,true)}>Kitap Stili Teste Başla <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon purple"><RefreshCw size={21}/></span><h2>Kitap Paraleli (Aynı Soru, Farklı Lafız)</h2><p>{bookParallelQs.length || 260} paralel soru: kitabın kendi sorusuyla AYNI bilgiyi ölçer ama kökü yeniden yazılmıştır; ezberi değil gerçek öğrenmeyi sınar.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,false,false,true)}>Paralelleri Çöz <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon purple"><Sparkles size={21}/></span><h2>"Ya Çıkarsa?" Kör Nokta Testi</h2><p>Yapay zekânın tahmin etmediği alt başlıklar ve her kitabın dipnot/satır arası pasajlarından üretilen sürpriz detaylar.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,false,true)}>Kör Noktaları Tara <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon peach"><RotateCcw size={21}/></span><h2>Eksik konularım</h2><p>Daha önce yanlış yaptığın, henüz ustalaşmadığın tamamlanmış ünitelerden tekrar soruları çöz.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,false,false,true)}>Tekrar testine geç <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon yellow"><Target size={21}/></span><h2>Zorlayıcı karma deneme</h2><p>Okuduğun ünitelerden karşılaştırma ve uygulama soruları. Seçili seviye filtresi uygulanır.</p><button className="dark-button" onClick={()=>startQuiz(undefined,undefined,true)}>Zor denemeye başla <ArrowUpRight size={16}/></button></div><div className="test-card featured"><span className="book-icon green"><Sparkles size={21}/></span><h2>Akıllı karma test</h2><p>Seçili zorluk filtresi ({selectedTier==='all'?'Tümü':selectedTier.toLocaleUpperCase('tr-TR')}) ile kişisel tekrar.</p><button className="dark-button" onClick={()=>startQuiz()}>Teste başla <ArrowUpRight size={16}/></button></div>{books.map((b,bi)=><div className="test-card" key={b.title}><span className="book-icon" style={{background:b.color}}><ClipboardList size={21}/></span><h3>{b.short}</h3><p>{b.units.filter((_,ui)=>progress.read.includes(`${bi}-${ui}`)).length} ünite test için açık</p><button className="outline" onClick={()=>startQuiz(bi)}>Bölüm testine başla <ArrowUpRight size={15}/></button></div>)}</div></>}
  {page==='Test'&&<div className="quiz-wrap"><button className="back" onClick={()=>{setIsFullExam(false);nav('Test merkezi')}}><ArrowLeft size={16}/> Test merkezine dön</button>{quiz.length===0?<div className="empty"><BookOpen size={34}/><h2>Önce biraz öğrenelim.</h2><p>Bu testte henüz tamamlanmış ünite veya seçilen modda onaylı soru yok. Derslerden bir üniteyi oku veya Soru stüdyosunun soru üretmesini bekle.</p><button className="primary" onClick={()=>nav('Derslerim')}>Derslere git <ArrowUpRight size={16}/></button></div>:qi>=quiz.length?<div className="empty"><Sparkles size={34}/><h2>{score===quiz.length?'100/100 FULL DOĞRU! Kusursuz!':'Güzel iş çıkardın! Hedefimiz 100/100!'}</h2><p>{quiz.length} sorudan {score} doğru (%{Math.round((score/Math.max(1,quiz.length))*100)}) yaptın. Toplam çalışma süren: {totalStudyMin} dk.</p>{Object.keys(quizBookScores).length>1&&<div className="exam-breakdown">{books.map((b,bi)=>{const bs=quizBookScores[bi];if(!bs)return null;const barajPass=bs.right>=Math.ceil(bs.total*0.6);return <div className="exam-mod-box" key={b.title}><span>{b.short}</span><b>{bs.right}/{bs.total}</b><small>{barajPass?'✓ 12/20 Baraj Üstü':'⚠️ Baraj Altı · Tekrar Gerekir'}</small>{!barajPass&&<button type="button" className="text-link" style={{marginTop:4}} onClick={()=>startQuiz(bi,undefined,false,false,false,false,true)}>20 Soru Telafi Çöz ↗</button>}</div>})}</div>}<button className="primary" onClick={()=>{setIsFullExam(false);nav('Test merkezi')}}>Test merkezine dön <ArrowUpRight size={16}/></button></div>:<><div className="eyebrow muted">{books[quiz[qi].bi].short.toLocaleUpperCase('tr-TR')} · ÜNİTE {quiz[qi].ui+1}</div><h1>Birlikte deneyelim<span className="accent">.</span></h1><div className="quiz-progress"><span>SORU {qi+1} / {quiz.length}</span>{isFullExam&&<span className={`quiz-timer-pill ${examRemainingSec<600?'exam-timer-urgent':''}`}><Clock size={12}/> Sınav Süresi: {String(Math.floor(examRemainingSec/60)).padStart(2,'0')}:{String(examRemainingSec%60).padStart(2,'0')}</span>}<span className="quiz-timer-pill"><Clock size={12}/> {qElapsedSec} sn · Hedef ~60 sn</span><button type="button" className={`quiz-flag-btn ${quizFlags[qi]?'flagged':''}`} onClick={()=>toggleQuizFlag(qi)}><Flag size={12}/> {quizFlags[qi]?'İşaretli (İncele)':'Bayrakla'}</button><span>{score} doğru · {Object.values(quizFlags).filter(Boolean).length} işaretli</span></div>
  {isFullExam&&<div className="tvgfbf-baraj-strip" aria-label="Canlı 5 Modül 12/20 Baraj Durumu">
   {books.map((b,bi)=>{
@@ -654,8 +721,12 @@ function App(){
   })}
  </div>
  <div className="progress"><div style={{width:`${(Object.keys(quizAnswers).length/Math.max(1,quiz.length))*100}%`,background:'#a7c66e'}}/></div>
- {(()=>{const curElim=eliminatedOpts[qi]||[];const isHint=Boolean(hintRevealed[qi]);return <div className="question-card">
-  <div className="quiz-gamify-hud"><span className="xp-combo-pill">⚡ <b>{xpEarned} XP</b>{combo>=2?` · 🔥 x${combo} Seri`:''}</span></div>
+ {(()=>{const meta=getQuestionMeta(quiz[qi]);const curElim=eliminatedOpts[qi]||[];const isHint=Boolean(hintRevealed[qi]);return <div className="question-card">
+  <div className="quiz-gamify-hud">
+   <span className={`diff-tier-badge tier-${meta.aiDifficultyTier}`}>{meta.aiDifficultyTier==='imkansiz'?'💀':meta.aiDifficultyTier==='zor'?'🔴':meta.aiDifficultyTier==='orta'?'🟡':'🟢'} {meta.aiDifficultyLabel}</span>
+   <span className="elim-stat-pill">📊 Tahmini Eleyici: <b>%{meta.predictedEliminationPct}</b> · 100 AI’dan <b>{meta.solvedBy100AiPct}</b>’i çözdü</span>
+   <span className="xp-combo-pill">⚡ <b>{xpEarned} XP</b>{combo>=2?` · 🔥 x${combo} Seri`:''}</span>
+  </div>
   <div className="eyebrow muted">KONU: {quiz[qi].u.topic || quiz[qi].u.title} · {quiz[qi].u.source || 'ÖZGÜN ÇALIŞMA SORUSU'}</div>
   {quiz[qi].u.paragraph && <blockquote className="quiz-paragraph">{quiz[qi].u.paragraph}</blockquote>}
   <h2>{quiz[qi].u.question}</h2>
@@ -666,6 +737,11 @@ function App(){
   {isHint&&!choice&&<div className="quiz-hint-box">💡 <b>İpucu:</b> {quiz[qi].u.key.slice(0,110)}...</div>}
   <div className="answers">{options(quiz[qi].u).map((a,i)=>{const isElim=curElim.includes(a);return <button key={a} disabled={isElim} onClick={()=>answer(a)} className={isElim?'eliminated':choice?(a===quiz[qi].u.answer?'correct':a===choice?'incorrect':''):''}><span>{'ABCDE'[i]}</span>{a}</button>;})}</div>
   {choice&&<div className={choice===quiz[qi].u.answer?'feedback good':'feedback bad'}><b>{choice===quiz[qi].u.answer?`Doğru cevap! ${lastXpGain>0?`(+${lastXpGain} XP)`:''}`:'Birlikte tekrar edelim.'}</b><p>{quiz[qi].u.key}</p><button onClick={()=>openUnit(quiz[qi].bi,quiz[qi].ui)}>Konuya dön <ArrowUpRight size={14}/></button></div>}
+  {choice&&<div className="ai-council-verdict">
+   <div className="acv-head"><b>🤖 100 Yapay Zekâ Konseyi Analizi</b><span>%{(100-meta.solvedBy100AiPct)} Aday Elenmesi · {meta.aiDifficultyLabel}</span></div>
+   <div className="acv-quotes">{meta.aiDifficultyComments.slice(0,2).map((c,idx)=><p key={idx}>{c}</p>)}</div>
+   {meta.misconceptionTraps?.length>0&&<div className="acv-traps"><b>⚠️ Çeldirici Mühendisliği (Yanlış Şık Tuzakları):</b> {meta.misconceptionTraps.slice(0,2).join(' · ')}</div>}
+  </div>}
   {choice&&kayseriReaction&&<div className={`kayseri-reaction-box ${kayseriReaction.isCorrect?'good':'bad'}`}>
  <div className="kr-head">
   <span className="kr-badge">{kayseriReaction.speakerLabel}</span>
