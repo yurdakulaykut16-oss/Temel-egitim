@@ -10,7 +10,7 @@
 //
 // Yani ilk turdan itibaren her bölümün kolay, orta ve zor sorusu vardır; 1. turdan sonra kolay payı
 // gittikçe azalır, soruların yarısı orta yarısı zor olur. Tur sayısı TEMPO_PLAN_PASSES ile ayarlanır
-// (varsayılan 2 → bölüm başına 100 soru; 29 bölümde toplam 2.900).
+// (varsayılan 4 → bölüm başına 200 soru; 29 bölümde toplam 5.800).
 //
 // Plan "hücre"lerden oluşur: (tur, konu, zorluk). Hücrenin `quota` alanı o konu + zorlukta o turun
 // SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 33); `from` turun başındaki
@@ -28,7 +28,7 @@
 
 export const PLAN_DIFFICULTIES = ['kolay', 'orta', 'zor'];
 export const DEFAULT_PLAN_QUOTA = 50;
-export const DEFAULT_PLAN_PASSES = 2;
+export const DEFAULT_PLAN_PASSES = 4;
 // 1. turdan sonra kolay soruların tur içindeki payı (2., 3., 4., 5. tur); 6. turdan itibaren 0.
 export const EASY_FRACTIONS = { 2: 0.20, 3: 0.12, 4: 0.08, 5: 0.04 };
 export const DEFAULT_PLAN_STUCK_LIMIT = 25;

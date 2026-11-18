@@ -3,7 +3,7 @@
 //  - /questions?status=…&limit=N yalnızca o listedeki en yeni N kaydı verir
 //  - /questions?fields=quiz yalnızca onaylı soruların Test merkezi alanlarını verir;
 //    revision aynıysa liste yeniden gönderilmez
-//  - varsayılan plan 2 tur × 50 = bölüm başına 100, toplam 2.900 sorudur ve havuz sınırına sığar
+//  - varsayılan plan 4 tur × 50 = bölüm başına 200, toplam 5.800 sorudur ve havuz sınırına sığar
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -36,7 +36,7 @@ function seed(count) {
  return items;
 }
 
-test('büyük havuz görünümleri: sürüm numarası, son N kayıt, sade test listesi ve 2.900 soruluk varsayılan plan', async () => {
+test('büyük havuz görünümleri: sürüm numarası, son N kayıt, sade test listesi ve 5.800 soruluk varsayılan plan', async () => {
  const dir = await mkdtemp(join(tmpdir(), 'tempo-poolviews-'));
  const saved = {};
  const env = { TEMPO_DATA_DIR: dir, TEMPO_DISABLE_AUTOLOOP: '1', TEMPO_QUIET: '1', TEMPO_OFFLINE_ONLY: '1', OLLAMA_MODEL: 'fake:1', OLLAMA_VERIFIER_MODEL: 'fake:1', OLLAMA_JUDGE2_MODEL: 'fake:1' };
@@ -74,14 +74,14 @@ test('büyük havuz görünümleri: sürüm numarası, son N kayıt, sade test l
  const json = async path => JSON.parse((await get(path)).text);
 
  try {
-  // Varsayılan plan: 2 tur × 50 soru = bölüm başına 100; havuz sınırı planı kısmıyor.
+  // Varsayılan plan: 4 tur × 50 soru = bölüm başına 200; havuz sınırı planı kısmıyor.
   const status = await json('/status');
   assert.equal(status.questionCapacity, 65000);
   assert.equal(status.plan.quota, 50);
-  assert.equal(status.plan.passCount, 2);
-  assert.equal(status.plan.perUnitTarget, 100);
-  assert.equal(status.plan.totalTarget, contexts.length * 100);
-  assert.equal(status.plan.totalTarget, 2900);
+  assert.equal(status.plan.passCount, 4);
+  assert.equal(status.plan.perUnitTarget, 200);
+  assert.equal(status.plan.totalTarget, contexts.length * 200);
+  assert.equal(status.plan.totalTarget, 5800);
   assert.ok(status.plan.totalTarget <= status.questionCapacity * 0.95, 'plan toplamı havuz sınırının %95\'ine sığmalı');
   // 4 ve 5 şıklı kayıtlar birlikte sayılır.
   assert.equal(status.approved, approvedSeed);
