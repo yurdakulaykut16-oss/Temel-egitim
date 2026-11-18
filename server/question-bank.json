@@ -9,9 +9,7 @@
       "Sürantrenman",
       "Özelleşme",
       "Akut yorgunluk"
-    ],
-    "explanation": "Egzersiz planlıdır; süperkompansasyon toparlanmayla performans kapasitesinin başlangıcı aşmasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -23,9 +21,7 @@
       "İhmal",
       "Tahkim",
       "Oyun"
-    ],
-    "explanation": "Egzersiz planlı ve tekrarlı bir fiziksel aktivitedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -37,9 +33,7 @@
       "Bürokratik",
       "Yalnız cezalandırıcı",
       "Baskıcı"
-    ],
-    "explanation": "Demokratik liderlik katılımı ve paylaşımı destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -51,9 +45,7 @@
       "Denge",
       "Esneklik",
       "Akut uyum"
-    ],
-    "explanation": "Sürantrenman, aşırı yüklenme ve yetersiz toparlanmayla ilişkili olabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -65,9 +57,7 @@
       "Sadece esneklik gelişmiştir",
       "Bu durum yönetim denetimidir",
       "Sporcu detraining sürecine girmiştir"
-    ],
-    "explanation": "Uzun süren performans düşüşü ve yetersiz toparlanma sürantrenman riskine işaret eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -79,9 +69,7 @@
       "Her zaman istem dışı olduğu için",
       "Enerji harcatmadığı için",
       "Yalnızca hızlı koşulduğu için"
-    ],
-    "explanation": "Egzersiz planlı ve tekrarlı bir fiziksel aktivitedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -93,9 +81,7 @@
       "Enerji harcaması gerektirmemesi",
       "Yalnız yarışmada yapılması",
       "Yalnız çocuklarda görülmesi"
-    ],
-    "explanation": "Egzersiz, fiziksel aktivitenin planlı ve tekrarlı bir türüdür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -107,9 +93,7 @@
       "Tahkim",
       "Sosyalleşme",
       "Sürantrenman"
-    ],
-    "explanation": "Süperkompansasyon, uygun yüklenme ve toparlanmadan sonra başlangıç düzeyinin üzerine çıkma modelidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -121,9 +105,7 @@
       "Hiç enerji harcatmaması",
       "İstem dışı gerçekleşmesi",
       "Yalnızca kapalı alanda yapılması"
-    ],
-    "explanation": "Egzersiz planlı ve tekrarlı bir fiziksel aktivite türüdür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -135,9 +117,7 @@
       "Emeklilik",
       "Tahkim",
       "Uzmanlaşma (specializing)"
-    ],
-    "explanation": "DMSP modelinde örnekleme dönemi farklı sporları denemeyle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -149,9 +129,7 @@
       "Örgütleme",
       "Fleksiyon",
       "Sürantrenman"
-    ],
-    "explanation": "Detraining, antrenmanın azalması veya kesilmesiyle kazanılmış uyumların gerilemesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -163,9 +141,7 @@
       "Hizmetkâr",
       "Dönüşümcü",
       "Serbest bırakıcı"
-    ],
-    "explanation": "Otoriter tarzda karar ve yönlendirme antrenörde yoğunlaşır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -177,9 +153,7 @@
       "Bürokratik ölçme",
       "Mutlak değerlendirme",
       "Baskıcı"
-    ],
-    "explanation": "Liberal liderlik serbest bırakıcı yaklaşımla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -191,9 +165,7 @@
       "Emeklilik",
       "Fazla tamamlama",
       "Örnekleme"
-    ],
-    "explanation": "DMSP modelinde uzmanlaşma evresi örnekleme dönemini izler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-0",
@@ -205,9 +177,7 @@
       "Sürantrenman ve özelleşme",
       "Örnekleme ve detraining",
       "Süperkompansasyon ve detraining"
-    ],
-    "explanation": "Toparlanma sonrası kapasite artışı süperkompansasyon; aşırı yüklenmeyle süren düşüş sürantrenmanla ilişkilidir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "0-0",
@@ -219,9 +189,7 @@
       "Statik ve dinamik denge",
       "Şiddet ve hacim",
       "Hacim ve sıklık"
-    ],
-    "explanation": "Tek seansta gözlenen yanıt akut; tekrarlanan çalışmalar sonucu zamanla gelişen değişim kronik uyumdur.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "0-1",
@@ -233,9 +201,7 @@
       "Kondisyonel hazırlık",
       "Antropometrik hazırlık",
       "Psikolojik hazırlık"
-    ],
-    "explanation": "Teknik nasıl yapılır; taktik ne zaman ve neden uygulanır sorusunu yanıtlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -247,9 +213,7 @@
       "Zihinsel antrenman",
       "Birim antrenman",
       "Teknik antrenman"
-    ],
-    "explanation": "Antrenman faktörleri piramidinin tabanı fiziksel antrenmandır; fiziksel temel yetersizse teknik ve taktik gelişim de yetersiz kalır.",
-    "kind": "sample"
+    ]
   },
   {
     "unitId": "0-1",
@@ -261,9 +225,7 @@
       "Finansal hazırlık",
       "Hukuki hazırlık",
       "Psikolojik hazırlık"
-    ],
-    "explanation": "Teknik hazırlık hareketin uygulanışını geliştirir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -275,9 +237,7 @@
       "Antropometrik ölçüm",
       "Örgütleme",
       "Kondisyonel hazırlık"
-    ],
-    "explanation": "Psikolojik hazırlık duygu ve dikkat yönetimini kapsar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -289,9 +249,7 @@
       "Muhasebe hazırlığı",
       "Antropometrik hazırlık",
       "Kondisyonel hazırlık"
-    ],
-    "explanation": "Doğru anda uygun seçimi yapmak taktik hazırlıkla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -303,9 +261,7 @@
       "Finansal hazırlık",
       "Hukuki hazırlık",
       "Kondisyonel hazırlık"
-    ],
-    "explanation": "Kaygı ve odaklanma psikolojik hazırlığın kapsamındadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -317,9 +273,7 @@
       "Yalnız finans",
       "Halkla ilişkiler",
       "Psikolojik hazırlık"
-    ],
-    "explanation": "Teknik hazırlık hareketin uygulanış kalitesine odaklanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -331,9 +285,7 @@
       "Statik denge",
       "Doping kontrolü",
       "Kondisyonel hazırlık"
-    ],
-    "explanation": "Kural ve strateji bilgisi kuramsal hazırlığın parçasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -345,9 +297,7 @@
       "Yalnız esneklik",
       "Muhasebe hazırlığı",
       "Teknik hazırlık"
-    ],
-    "explanation": "Rakibe ve duruma göre karar verip plan uygulamak taktiktir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -359,9 +309,7 @@
       "Fizyolojik test",
       "Sadece pasif dinlenme",
       "Kondisyonel hazırlık"
-    ],
-    "explanation": "Kural ve strateji bilgisi kuramsal hazırlığın parçasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -373,9 +321,7 @@
       "Halkla ilişkiler",
       "Spor tahkimi",
       "Taktik hazırlık"
-    ],
-    "explanation": "Kuvvet ve dayanıklılık kondisyonel hazırlığın fiziksel özelliklerindendir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-1",
@@ -387,9 +333,7 @@
       "Yalnız antropometrik ölçüm eksiktir",
       "Sorun sadece kurumsal iletişimdir",
       "Kondisyon yetersiz, yalnız dayanıklılık geliştirilmelidir"
-    ],
-    "explanation": "Pasın uygulanışı teknik, değişen durumda kime pas verileceği taktik karardır.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "0-2",
@@ -401,9 +345,7 @@
       "Teknik",
       "Özelleşme",
       "Sıklık"
-    ],
-    "explanation": "Şiddet = ne kadar yoğun; hacim = ne kadar toplam iş.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -415,9 +357,7 @@
       "Liderlik",
       "Teknik",
       "Sıklık"
-    ],
-    "explanation": "Toplam mesafe yüklenme hacminin göstergesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -429,9 +369,7 @@
       "Tek tipleştirme",
       "Pasif dinleme",
       "Aşırı yüklenme"
-    ],
-    "explanation": "Bireyselleştirme, farklı ihtiyaç ve özelliklere uyum sağlamaktır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -443,9 +381,7 @@
       "Kültürel aktarım",
       "Örgütleme",
       "Sıklık"
-    ],
-    "explanation": "Hız yoğunlukla, yani şiddetle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -457,9 +393,7 @@
       "Tek tipleştirme",
       "Pasif dinleme",
       "Çeşitlilik"
-    ],
-    "explanation": "Yükün sporcuya göre ayarlanması bireyselleştirmedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -471,9 +405,7 @@
       "Sürat azalması zorunluluğu",
       "Taktik değişimi",
       "Sıklık artışı"
-    ],
-    "explanation": "Toplam mesafenin artması hacmin artmasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -485,9 +417,7 @@
       "Tekrar sayısı",
       "Antrenman sıklığı",
       "Dinlenme süresi"
-    ],
-    "explanation": "Hızın artışı işin yoğunluğuyla, yani şiddetle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -499,9 +429,7 @@
       "Kuvvet türü",
       "Kültürel aktarım",
       "Şiddet"
-    ],
-    "explanation": "Sıklık yüklenmelerin tekrar aralığıyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -513,9 +441,7 @@
       "Vücut boyu",
       "Yasal statü",
       "Yüklenme şiddeti"
-    ],
-    "explanation": "Çalışmaların ne sıklıkla yapıldığı yüklenme sıklığıyla ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -527,9 +453,7 @@
       "Makro döngü",
       "Ölçüt dayanaklı değerlendirme",
       "Tam dinlenme"
-    ],
-    "explanation": "Hafif hareketle toparlanma aktif dinlenmedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -541,9 +465,7 @@
       "Somatotip",
       "Liderlik tarzı",
       "Yüklenme şiddeti"
-    ],
-    "explanation": "Yüklenme süresi tek bir uyaranın zamanını anlatır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -555,9 +477,7 @@
       "İhmal",
       "Bağıl değerlendirme",
       "Çeşitlilik"
-    ],
-    "explanation": "Özelleşme, antrenmanın branş ve hedefe özgü olmasını vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -569,9 +489,7 @@
       "Sabit değerlendirme",
       "Gürültü",
       "Özelleşme"
-    ],
-    "explanation": "Çeşitlilik antrenmanda uyaran ve çalışma biçimlerinin değiştirilmesini vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-2",
@@ -583,9 +501,7 @@
       "Sıklık artmıştır",
       "Tek tekrar süresi kesin olarak uzamıştır",
       "Dinlenme aralığı kesin olarak kısalmıştır"
-    ],
-    "explanation": "Mesafe ve tekrar sayısı aynıyken hızın artması yoğunluğun yani şiddetin artmasına işaret eder.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "0-3",
@@ -597,9 +513,7 @@
       "Sürat",
       "Denge",
       "Kuvvet"
-    ],
-    "explanation": "Kuvvet dirençle, dayanıklılık yorgunlukla, sürat zamanla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -611,9 +525,7 @@
       "Sosyalleşme",
       "Tahkim",
       "Sürat"
-    ],
-    "explanation": "Kuvvet bir dirence karşı koyma veya onu yenme yeteneğidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -625,9 +537,7 @@
       "Denetim",
       "İhmal",
       "Dayanıklılık"
-    ],
-    "explanation": "Sürat hareketin zaman boyutuyla ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -639,9 +549,7 @@
       "Tahkim",
       "İhmal",
       "Sürat"
-    ],
-    "explanation": "Dayanıklılık yorgunluğa dirençle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -653,9 +561,7 @@
       "Sosyalleşme",
       "Dinamik denge",
       "Çabuk kuvvet"
-    ],
-    "explanation": "Yüksek bir dirence karşı üretilen kuvvet maksimal kuvvetle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -667,9 +573,7 @@
       "Sosyalleşme",
       "Örgütleme",
       "Esneklik"
-    ],
-    "explanation": "Sürat hareketin kısa sürede yapılmasıyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -681,9 +585,7 @@
       "Yalnız statik denge",
       "İletişim becerisi",
       "Maksimal kuvvet"
-    ],
-    "explanation": "Çabuk kuvvet kısa sürede kuvvet üretme kapasitesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -695,9 +597,7 @@
       "Yalnız eklem hareket açıklığı",
       "Sosyalleşme",
       "Çabuk kuvvet"
-    ],
-    "explanation": "Kuvvette devamlılık kuvvet uygulamasını tekrarlayabilme ile ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -709,9 +609,7 @@
       "Spor tahkimi",
       "Durumluk kaygı",
       "Kuvvet"
-    ],
-    "explanation": "Esneklik eklem hareket açıklığıyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -723,9 +621,7 @@
       "Statik denge",
       "İletişim dayanıklılığı",
       "Çabuk kuvvet"
-    ],
-    "explanation": "Aerobik dayanıklılık oksijen kullanımına dayalı enerji üretimiyle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -737,9 +633,7 @@
       "Eklem hareket açıklığı",
       "Kültürel aktarım",
       "Sürat devamlılığı"
-    ],
-    "explanation": "Reaksiyon sürati bir uyarana yanıtın başlamasıyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-3",
@@ -751,9 +645,7 @@
       "Dayanıklılık ve statik denge",
       "Sürat ve koordinasyon",
       "Kuvvette devamlılık ve maksimal kuvvet"
-    ],
-    "explanation": "Tek seferde yüksek dirence karşı kuvvet maksimal kuvvet; tekrarlanan kuvvet uygulaması kuvvette devamlılıktır.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "0-4",
@@ -765,9 +657,7 @@
       "Maksimal kuvvet",
       "Esneklik",
       "Reaksiyon sürati"
-    ],
-    "explanation": "Statik denge sabit, dinamik denge hareket hâlindedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -779,9 +669,7 @@
       "Çeviklik",
       "Reaksiyon süresi",
       "Esneklik"
-    ],
-    "explanation": "Ağırlık merkezini kontrol ederek pozisyonu sürdürme ve postüral stabiliteyi koruma dengenin tanımıdır.",
-    "kind": "sample"
+    ]
   },
   {
     "unitId": "0-4",
@@ -793,9 +681,7 @@
       "Taktik hazırlık",
       "Aerobik güç",
       "Çeviklik"
-    ],
-    "explanation": "Statik denge sabit duruşta kontrolü ifade eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -807,9 +693,7 @@
       "Denetim",
       "Sosyalleşme",
       "Esneklik"
-    ],
-    "explanation": "Koordinasyon hareketin uyumlu ve doğru gerçekleşmesine katkı sağlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -821,9 +705,7 @@
       "Mutlak değerlendirme",
       "Doping kontrolü",
       "Esneklik"
-    ],
-    "explanation": "Hareket sırasında kontrolü sürdürmek dinamik dengedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -835,9 +717,7 @@
       "Hukuki tahkimi",
       "Besinlerin depolanmasını",
       "Maksimal kuvvetin artışını"
-    ],
-    "explanation": "Basitten birleşik hareketlere ilerleme koordinasyon öğretiminde kullanılabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -849,9 +729,7 @@
       "Bağıl değerlendirme",
       "Antrenman hacmi",
       "Çeviklik"
-    ],
-    "explanation": "Sabit duruşun kontrolü statik dengeye örnektir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -863,9 +741,7 @@
       "Tahkim",
       "İhmal",
       "Dayanıklılık"
-    ],
-    "explanation": "Koordinasyon sinir-kas sistemlerinin uyumlu çalışmasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -877,9 +753,7 @@
       "Mutlak değerlendirme",
       "Kültürel aktarım",
       "Esneklik"
-    ],
-    "explanation": "Çeviklik hızlı ve kontrollü yön veya pozisyon değiştirmeyi içerir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -891,9 +765,7 @@
       "Sürat ve kuvvet",
       "Hacim ve şiddet",
       "Çeviklik ve esneklik"
-    ],
-    "explanation": "Sabit durumda statik, hareket sırasında dinamik denge öne çıkar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-4",
@@ -905,9 +777,7 @@
       "Yalnız maksimal kuvvet",
       "Yalnız esneklik",
       "Yalnız aerobik dayanıklılık"
-    ],
-    "explanation": "Hareket sırasında beden kontrolü dinamik dengeyle ilişkilidir; sabit duruş statik dengeyi gösterir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "0-5",
@@ -919,9 +789,7 @@
       "Mezo döngü",
       "Birim hareket",
       "Birim antrenman"
-    ],
-    "explanation": "Kitaptaki terminolojiye dikkat et: haftalık mikro plan, aylık döngü ve yıllık plan.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -933,9 +801,7 @@
       "Olimpik döngü",
       "Spor hukuku",
       "Mezo döngü"
-    ],
-    "explanation": "Mikro döngü kısa dönemli, çoğunlukla haftalık planı ifade eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -947,9 +813,7 @@
       "Tahkim",
       "Değerlendirme",
       "Soğuma"
-    ],
-    "explanation": "Isınma ana çalışmaya hazırlık sağlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -961,9 +825,7 @@
       "Tek tekrar",
       "Tek hareket",
       "Makro döngü"
-    ],
-    "explanation": "Mezo döngü birkaç haftalık antrenman bloğudur.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -975,9 +837,7 @@
       "Tek ısınma hareketi",
       "Tek test sorusu",
       "Mezo döngü"
-    ],
-    "explanation": "Sezonluk plan makro döngü kapsamındadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -989,9 +849,7 @@
       "Tek tekrar",
       "Tek ısınma hareketi",
       "Makro döngü"
-    ],
-    "explanation": "Mezo döngü birkaç haftayı kapsayan orta ölçekli plandır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -1003,9 +861,7 @@
       "Sosyal karşılaştırma",
       "Kültürel aktarım",
       "Soğuma"
-    ],
-    "explanation": "Isınma sporcuyu ana çalışmaya hazırlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -1017,9 +873,7 @@
       "Sadece yoklama",
       "Hukuki denetim",
       "Bitiriş bölümü"
-    ],
-    "explanation": "Teknik, kuvvet veya dayanıklılık gibi asıl çalışmalar ana bölümde yapılabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -1031,9 +885,7 @@
       "Üç hafta",
       "Altı ay",
       "İki yıl"
-    ],
-    "explanation": "Olimpik döngü dört yıllık planlama örneğidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -1045,9 +897,7 @@
       "Taktik karar",
       "Makro döngü",
       "Ana bölüm"
-    ],
-    "explanation": "Bitiriş bölümü ana çalışmadan sonra toparlanmaya geçişi destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-5",
@@ -1059,9 +909,7 @@
       "Mikro, mezo, makro",
       "Makro, mikro, mezo",
       "Mikro, makro, mezo"
-    ],
-    "explanation": "Sezon makro, birkaç haftalık blok mezo, haftalık program mikro döngüdür.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1073,9 +921,7 @@
       "Statik esneklik",
       "Spor hukuku bilgisi",
       "Aerobik dayanıklılık"
-    ],
-    "explanation": "Test seçimini ölçmek istediğin özellikle eşleştir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1087,9 +933,7 @@
       "Etik değerlendirme",
       "Medya analizi",
       "Psikolojik değerlendirme"
-    ],
-    "explanation": "Boy ve kütle antropometrik ölçümlerdir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1101,9 +945,7 @@
       "Liderlik tarzı",
       "İletişim kanalı",
       "Patlayıcı kuvvet"
-    ],
-    "explanation": "Mekik koşusu aerobik kapasite tahmininde kullanılabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1115,9 +957,7 @@
       "Hukuki",
       "Sosyolojik",
       "Psikolojik"
-    ],
-    "explanation": "Boy ve kütle antropometrik ölçülerdir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1129,9 +969,7 @@
       "Bütçe incelemesi",
       "Spor hukuku testi",
       "Mekik koşusu"
-    ],
-    "explanation": "Dikey sıçrama patlayıcı kuvvet hakkında bilgi verebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1143,9 +981,7 @@
       "Hiçbir ölçüm yapılmaması gerektiği için",
       "Sadece test adını değiştirmek için",
       "Testin her zaman en kısa sürede bitmesi için"
-    ],
-    "explanation": "Test, değerlendirilmek istenen özellikle ilişkili olmalıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1157,9 +993,7 @@
       "Motivasyon iklimi",
       "Tahkim kararı",
       "Çeviklik testi"
-    ],
-    "explanation": "Boy ve vücut kütlesi antropometrik ölçümlerdir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1171,9 +1005,7 @@
       "İletişim kanalı",
       "Liderlik biçimi",
       "Motorik özellik"
-    ],
-    "explanation": "Somatotip vücut yapısının sınıflandırılmasıyla ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1185,9 +1017,7 @@
       "Kurumsal imaj",
       "Vitamin türü",
       "Aerobik kapasite"
-    ],
-    "explanation": "T-test ve Illinois testi çeviklik değerlendirmesinde kullanılabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-6",
@@ -1199,9 +1029,7 @@
       "Boy ölçümü ve iletişim analizi",
       "Somatotip ve hukuki inceleme",
       "Otur-uzan ve T-test"
-    ],
-    "explanation": "Dikey sıçrama patlayıcı kuvvet, mekik koşusu aerobik kapasite tahmini hakkında bilgi verebilir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1213,9 +1041,7 @@
       "Çevre performansı etkilemez",
       "Yaş hiçbir rol oynamaz",
       "Yetenek yalnız kalıtımla belirlenir"
-    ],
-    "explanation": "Yetenek seçimi tek ölçümlük değil, izleme gerektiren bir süreçtir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1227,9 +1053,7 @@
       "Çevre gelişimi etkilemez",
       "Bütün sporcular aynı hızda gelişir",
       "Yetenek yalnız boy uzunluğuna bağlıdır"
-    ],
-    "explanation": "Gelişim ve antrenmana yanıt zaman içinde izlenmelidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1241,9 +1065,7 @@
       "Antrenmanı tamamen bırakmayı",
       "Sadece boy uzunluğunu",
       "Hareketi en yüksek hızda yapmayı"
-    ],
-    "explanation": "Hareket ekonomisi işin enerji maliyetiyle ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1255,9 +1077,7 @@
       "Çevre gelişime etki etmez",
       "Bütün çocuklar aynı anda gelişir",
       "Yetenek yalnız kalıtımla belirlenir"
-    ],
-    "explanation": "Yetenek değerlendirmesi gelişimi ve yanıtı zaman içinde izlemelidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1269,9 +1089,7 @@
       "İletişim gürültüsü",
       "Bağıl not",
       "Maksimal kuvvet"
-    ],
-    "explanation": "Hareket ekonomisi yapılan işe karşılık enerji maliyetiyle ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1283,9 +1101,7 @@
       "Antrenman yanıtının değerlendirilmesi",
       "Farklı özelliklerin birlikte incelenmesi",
       "Birkaç yıla yayılan gözlem"
-    ],
-    "explanation": "Tek bir başlangıç ölçümü gelişim potansiyelini kesin olarak belirlemez.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1297,9 +1113,7 @@
       "Etkin dinleme",
       "Taktik faul",
       "Reaksiyon sürati"
-    ],
-    "explanation": "Hareket ekonomisi yapılan işin enerji maliyetiyle ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1311,9 +1125,7 @@
       "Sporcuların gelişim hızı hep aynıdır",
       "Antrenman yanıtı hiç değişmez",
       "Çevre koşulları gelişimi etkilemez"
-    ],
-    "explanation": "Gelişim hızı ve antrenmana verilen yanıt kişiden kişiye ve zamanla değişebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "0-7",
@@ -1325,9 +1137,7 @@
       "Çevrenin hiçbir etkisi yoktur",
       "Bütün çocuklar aynı zamanda olgunlaşır",
       "Yetenek yalnız kalıtımla belirlenir"
-    ],
-    "explanation": "Gelişim ve antrenmana verilen yanıt zaman içinde farklılaşabilir; tek sonuç kesin gelecek tahmini değildir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1339,9 +1149,7 @@
       "İkinci tip",
       "Dördüncü tip",
       "Kaldıraç değildir"
-    ],
-    "explanation": "Fleksiyon açıyı küçültür; üçüncü tip kaldıraçta kuvvet ortadadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1353,9 +1161,7 @@
       "Distal",
       "Posterior",
       "Proksimal"
-    ],
-    "explanation": "Medial orta hatta yakınlığı ifade eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1367,9 +1173,7 @@
       "Transvers",
       "Çapraz finansal",
       "Oblik"
-    ],
-    "explanation": "Sagittal düzlem fleksiyon ve ekstansiyonla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1381,9 +1185,7 @@
       "Kuvvet",
       "Denge duygusu",
       "Hareket açısı"
-    ],
-    "explanation": "İkinci tip kaldıraçta yük destek ile kuvvet arasındadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1395,9 +1197,7 @@
       "Yere",
       "Birbirine zorunlu dönük",
       "Dışa (yanlara)"
-    ],
-    "explanation": "Standart anatomik duruşta avuç içleri öne bakar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1409,9 +1209,7 @@
       "Sosyalleşme",
       "Örgütleme",
       "Abduksiyon"
-    ],
-    "explanation": "Fleksiyon ilgili eklem açısının küçülmesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1423,9 +1221,7 @@
       "Proksimal",
       "Superior",
       "Distal"
-    ],
-    "explanation": "Lateral, orta hattan uzak konumu anlatır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1437,9 +1233,7 @@
       "İkinci tip",
       "Kaldıraç değildir",
       "Dördüncü tip"
-    ],
-    "explanation": "Üçüncü tip kaldıraçta kuvvet destek ile yük arasındadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1451,9 +1245,7 @@
       "Lateral",
       "Posterior",
       "Medial"
-    ],
-    "explanation": "Proksimal, başlangıç noktasına veya gövdeye daha yakın konumdur.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1465,9 +1257,7 @@
       "Yalnız yatay çizgi",
       "Yönetim düzlemi",
       "Transvers düzlem"
-    ],
-    "explanation": "Abduksiyon ve adduksiyon frontal düzlemle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1479,9 +1269,7 @@
       "Üçüncü tip",
       "Kaldıraç değildir",
       "Dördüncü tip"
-    ],
-    "explanation": "Parmak ucunda yükselme yükün ortada olduğu ikinci tip kaldıraca örnektir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1493,9 +1281,7 @@
       "Orta hatta yakınlığı",
       "Gövdeye yakınlığı",
       "Orta hatta uzaklığı"
-    ],
-    "explanation": "Posterior anatomik olarak arka yönü belirtir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1507,9 +1293,7 @@
       "Yalnız frontal düzlem",
       "Yönetim düzlemi",
       "Oblik düzlem"
-    ],
-    "explanation": "Rotasyon hareketleri transvers düzlemle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-0",
@@ -1521,9 +1305,7 @@
       "Fleksiyon ve birinci tip",
       "Rotasyon ve ikinci tip",
       "Ekstansiyon ve üçüncü tip"
-    ],
-    "explanation": "Açının küçülmesi fleksiyondur; kuvvetin ortada olduğu kaldıraç üçüncü tiptir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1535,9 +1317,7 @@
       "Yalnız aerobik sistem",
       "Protein sentezi",
       "Anaerobik glikoliz"
-    ],
-    "explanation": "Enerji sistemleri birbirini açıp kapatmaz; katkı oranları değişir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1549,9 +1329,7 @@
       "Anaerobik glikolitik sistem",
       "Laktik asit sistemi",
       "Fosfajen sistem"
-    ],
-    "explanation": "Uzun süreli, düşük-orta şiddetli çalışmalarda enerji oksijen kullanılarak (aerobik yolla) üretilir.",
-    "kind": "sample"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1563,9 +1341,7 @@
       "Eklem kapsülü",
       "Tendon",
       "Mitokondri"
-    ],
-    "explanation": "Ribozom protein sentezinde görev alır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1577,9 +1353,7 @@
       "CAS",
       "Tendon",
       "Mitokondri"
-    ],
-    "explanation": "Sarkoplazmik retikulum kalsiyumun depolanması ve salınmasında rol oynar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1591,9 +1365,7 @@
       "ATP egzersizde kullanılmaz",
       "Enerji sistemleri yalnız dinlenmede çalışır",
       "Sistemler yalnızca yarışmada devreye girer"
-    ],
-    "explanation": "Enerji sistemleri birlikte çalışır; süre ve şiddet katkılarını değiştirir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1605,9 +1377,7 @@
       "Evet, ATP kullanılmaz",
       "Hayır, hiçbir sistem enerji sağlamaz",
       "Evet, yalnız aerobik sistem çalışır"
-    ],
-    "explanation": "Enerji sistemleri aynı anda çalışır; katkı oranları değişir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1619,9 +1389,7 @@
       "Eklem kapsülü",
       "Bağ dokusu",
       "Ribozom"
-    ],
-    "explanation": "Mitokondri aerobik enerji üretiminde önemli rol oynar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1633,9 +1401,7 @@
       "TARGET modeli",
       "POLICE",
       "Krebs döngüsü"
-    ],
-    "explanation": "Fosfajen sistem ATP-CP sistemi olarak da adlandırılır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1647,9 +1413,7 @@
       "Tendon ve bağ",
       "Kas lifi ve eklem kapsülü",
       "Mitokondri ve ribozom"
-    ],
-    "explanation": "Kalsiyum düzenlenmesinde sarkoplazmik retikulum; protein sentezinde ribozom görevlidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-1",
@@ -1661,9 +1425,7 @@
       "Aerobik sistem kısa çabada hiçbir zaman çalışmaz",
       "ATP kas faaliyetinde kullanılmaz",
       "Yalnızca tek bir sistem tüm eforu karşılar"
-    ],
-    "explanation": "Enerji sistemleri eşzamanlı çalışır; süre ve şiddet göreli katkıyı değiştirir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1675,9 +1437,7 @@
       "Mineral",
       "Vitamin",
       "Karbonhidrat"
-    ],
-    "explanation": "Karbonhidrat yakıt; protein yapım ve onarım ile ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1689,9 +1449,7 @@
       "Kolajen",
       "Hemoglobin",
       "Miyoglobin"
-    ],
-    "explanation": "Glikojen karbonhidratın depolanmış biçimidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1703,9 +1461,7 @@
       "B vitamini",
       "Su",
       "Folik asit"
-    ],
-    "explanation": "A, D, E ve K vitaminleri yağda çözünür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1717,9 +1473,7 @@
       "Ribozom",
       "Ekecheiria",
       "Miyoglobin"
-    ],
-    "explanation": "Karbonhidrat glikojen biçiminde kas ve karaciğerde depolanabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1731,9 +1485,7 @@
       "B vitamini",
       "Su",
       "Folik asit"
-    ],
-    "explanation": "A, D, E ve K vitaminleri yağda çözünür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1745,9 +1497,7 @@
       "D vitamini",
       "K vitamini",
       "E vitamini"
-    ],
-    "explanation": "B ve C vitaminleri suda çözünür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1759,9 +1509,7 @@
       "Yönetim denetimi",
       "Antrenman döngüsü oluşturma",
       "Vücut sıvı dengesinin tek kaynağı olmak"
-    ],
-    "explanation": "Proteinler doku yapımı ve onarımında önemlidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1773,9 +1521,7 @@
       "Kalsiyum",
       "Demir",
       "Su"
-    ],
-    "explanation": "Yağlar özellikle uzun süreli etkinliklerde önemli bir enerji kaynağı olabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1787,9 +1533,7 @@
       "Glikojen",
       "Protein",
       "Sodyum"
-    ],
-    "explanation": "Demir hemoglobinin yapısıyla ve oksijen taşınmasıyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1801,9 +1545,7 @@
       "C vitamini",
       "ATP",
       "Demir"
-    ],
-    "explanation": "Kalsiyum kemik sağlığı ve kas kasılmasında rol oynar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1815,9 +1557,7 @@
       "Tendon ve bağ",
       "Kalp kapağı ve eklem kapsülü",
       "Akciğer ve böbrek"
-    ],
-    "explanation": "Glikojen kas ve karaciğerde depolanabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1829,9 +1569,7 @@
       "E ve K",
       "A ve K",
       "D ve K"
-    ],
-    "explanation": "B ve C vitaminleri suda çözünür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-2",
@@ -1843,9 +1581,7 @@
       "C vitamini ve yağ",
       "Demir ve su",
       "Yağ ve kalsiyum"
-    ],
-    "explanation": "Glikojen karbonhidrat deposudur; protein doku yapımı ve onarımında rol oynar.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1857,9 +1593,7 @@
       "Oksijen seviyesi",
       "Dış konum",
       "Ortopedik lazer"
-    ],
-    "explanation": "TOTAPS değerlendirme, POLICE yaralanma yönetimi çerçevesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1871,9 +1605,7 @@
       "Hücresel organeller",
       "Motor dönemler",
       "Psikolojik faktörler"
-    ],
-    "explanation": "Zemin ve ekipman çevresel yani dışsal faktörlerdir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1885,9 +1617,7 @@
       "Skill: beceri testi",
       "Passive: pasif hareket",
       "Observe: gözlem"
-    ],
-    "explanation": "TOTAPS konuşma ve öykü alma ile başlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1899,9 +1629,7 @@
       "Yalnız kalıtsal faktör",
       "Motor gelişim evresi",
       "Psikolojik faktör"
-    ],
-    "explanation": "Zemin çevresel yani dışsal bir risk faktörüdür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1913,9 +1641,7 @@
       "VKİ",
       "Gallahue modeli",
       "POLICE"
-    ],
-    "explanation": "TOTAPS konuşma ve öykü alma ile başlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1927,9 +1653,7 @@
       "İletişim kanalı",
       "Yasal kurul",
       "Ekipman faktörü"
-    ],
-    "explanation": "Yorgunluk bireye ait bir içsel risk faktörüdür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1941,9 +1665,7 @@
       "Yaralanmayı yok saymayı",
       "Yalnız takım seçimini",
       "Bölgeyi haftalarca tam hareketsiz bırakmayı"
-    ],
-    "explanation": "Optimal yüklenme uygun düzeyde kontrollü yük verilmesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1955,9 +1677,7 @@
       "Pasif hareket",
       "Sporcu seçimi",
       "Dokunma"
-    ],
-    "explanation": "TOTAPS sırası konuşma ve ardından gözlemle başlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1969,9 +1689,7 @@
       "Beceri testinin kaldırılması",
       "İletişim kanalının değiştirilmesi",
       "Yaralanan bölgeye sıcak uygulanması"
-    ],
-    "explanation": "Elevation, yaralanan bölgenin yükseltilmesini ifade eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1983,9 +1701,7 @@
       "Beceri testi",
       "Pasif hareket",
       "Konuşma"
-    ],
-    "explanation": "Observe, sporcuyu ve olası asimetriyi gözlemleme aşamasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -1997,9 +1713,7 @@
       "Gözlem",
       "Beceri testi",
       "Dokunma"
-    ],
-    "explanation": "Aktif harekette hareketi sporcu kendisi yapar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-3",
@@ -2011,9 +1725,7 @@
       "Dışsal risk; dokunma ve beceri testi",
       "İçsel risk; pasif hareket ve konuşma",
       "Dışsal risk; gözlem ve dokunma"
-    ],
-    "explanation": "Zemin dışsal risktir; TOTAPS konuşma ve gözlemle başlar. Ciddi yaralanmada tıbbi yardım gerekir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2025,9 +1737,7 @@
       "Düzenli uyumak",
       "Isınma yapmak",
       "Dengeli beslenmek"
-    ],
-    "explanation": "Doping ihlali yalnızca pozitif test demek değildir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2039,9 +1749,7 @@
       "Teknik çalışma",
       "Su tüketimi",
       "Dengeli beslenme"
-    ],
-    "explanation": "Yasaklı maddeyi bulundurma da ihlal oluşturabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2053,9 +1761,7 @@
       "TİCİ",
       "TARGET",
       "IOC"
-    ],
-    "explanation": "WADA Dünya Anti-Doping Ajansıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2067,9 +1773,7 @@
       "Liste hiçbir zaman değişmez",
       "Kontrol kuralları önemsizdir",
       "Bulundurma yalnız antrenörler için ihlaldir"
-    ],
-    "explanation": "Yasaklı madde bulundurmak da doping kural ihlali oluşturabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2081,9 +1785,7 @@
       "İlaç adını tahmin etmek",
       "Yalnız takım arkadaşına sormak",
       "İnternetteki forum yorumlarına bakmak"
-    ],
-    "explanation": "Yasaklı liste güncellenebilir; yetkili güncel kaynak kontrol edilmelidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2095,9 +1797,7 @@
       "Yalnız bir beslenme tercihidir",
       "Antrenman hacmini tanımlar",
       "Hiçbir yaptırımı olmayan kişisel tercihtir"
-    ],
-    "explanation": "Numune vermekten kaçınma doping kural ihlali oluşturabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2109,9 +1809,7 @@
       "Yalnız antrenörün görüşü belirler",
       "Sadece besin türlerini listeler",
       "Yalnız yarışma dışı dönemde geçerlidir"
-    ],
-    "explanation": "Yasaklı liste ve uygulama kuralları güncellenebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2123,9 +1821,7 @@
       "Su içmek",
       "Antrenmandan sonra dinlenmek",
       "Dengeli beslenmek"
-    ],
-    "explanation": "Yasaklı madde bulundurmak ilgili kurallara göre ihlal oluşturabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2137,9 +1833,7 @@
       "Yalnız ölçme ve değerlendirme yöntemidir",
       "Bir antrenman döngüsüdür",
       "Yalnız yarışma günü geçerli bir haktır"
-    ],
-    "explanation": "Numune vermekten kaçınma doping kural ihlali oluşturabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2151,9 +1845,7 @@
       "Uygun ısınma",
       "Su tüketimi",
       "Dengeli beslenme"
-    ],
-    "explanation": "Kan dopingi yasaklı yöntemler arasında yer alır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2165,9 +1857,7 @@
       "Numune verme kuralları sadece antrenöre uygulanır",
       "Ret yalnızca antrenman hacmini etkiler",
       "Numune vermeyi reddetmek sporcunun cezasız hakkıdır"
-    ],
-    "explanation": "Doping ihlalleri pozitif testle sınırlı değildir; numune vermekten kaçınma da ihlal oluşturabilir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "1-4",
@@ -2179,9 +1869,7 @@
       "İlaç adından yasallığı tahmin etmek",
       "Yalnız takımın bütçesine bakmak",
       "Yalnız diğer sporculara danışmak"
-    ],
-    "explanation": "Doping kuralları ve yasaklılar listesi güncellenebilir; yetkili güncel kaynak kontrol edilmelidir.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2193,9 +1881,7 @@
       "Yalnız finansal yaklaşım",
       "Mekanik kaldıraç yaklaşımı",
       "Sistem yaklaşımı"
-    ],
-    "explanation": "Klasik: yapı; neo-klasik: insan; sistem: etkileşim.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2207,9 +1893,7 @@
       "Yöneltme",
       "Koordinasyon",
       "Denetim"
-    ],
-    "explanation": "Örgütleme; kimin hangi işi yapacağının, yetki ve sorumlulukların belirlenmesidir.",
-    "kind": "sample"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2221,9 +1905,7 @@
       "Fosfajen sistem",
       "Fair play ödülü",
       "Neo-klasik yaklaşım"
-    ],
-    "explanation": "Sistem yaklaşımı bileşenler ve aralarındaki ilişkilere bakar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2235,9 +1917,7 @@
       "İstismar türlerinin",
       "Hareket düzlemlerinin",
       "İletişim ögelerinin"
-    ],
-    "explanation": "Planlama ve denetim temel yönetim süreçlerindendir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2249,9 +1929,7 @@
       "Kas kasılması",
       "İstismar türü",
       "Klasik bürokrasi"
-    ],
-    "explanation": "Sistem yaklaşımı girdi, süreç, çıktı ve geri bildirime odaklanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2263,9 +1941,7 @@
       "Doping",
       "Glikoliz",
       "Denetim"
-    ],
-    "explanation": "Görev ve birimlerin düzenlenmesi örgütleme sürecidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2277,9 +1953,7 @@
       "Kaldıraç yaklaşımı",
       "Fosfajen sistem",
       "Sistem yaklaşımı"
-    ],
-    "explanation": "Neo-klasik yaklaşım örgütte insan ilişkilerini vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2291,9 +1965,7 @@
       "Fleksiyon",
       "İhmal",
       "Örgütleme"
-    ],
-    "explanation": "Planlama hedefleri ve bunlara ulaşma yollarını belirler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2305,9 +1977,7 @@
       "Motor öğrenme",
       "Glikojen depolama",
       "Örgütleme"
-    ],
-    "explanation": "Denetim, uygulamayı hedef ve ölçütlerle karşılaştırma sürecidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2319,9 +1989,7 @@
       "CAS",
       "WADA",
       "Beden Terbiyesi Genel Müdürlüğü"
-    ],
-    "explanation": "TİCİ 1922’de kurulmuştur ve ilk özerk spor örgütlenmesi olarak anılır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2333,9 +2001,7 @@
       "Ling",
       "Gallahue",
       "Weber"
-    ],
-    "explanation": "Taylor bilimsel yönetim yaklaşımıyla ilişkilendirilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2347,9 +2013,7 @@
       "Coubertin",
       "Skinner",
       "Taylor"
-    ],
-    "explanation": "Weber bürokrasi yaklaşımıyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2361,9 +2025,7 @@
       "İhmal",
       "Pekiştirme",
       "Denetim"
-    ],
-    "explanation": "Koordinasyon faaliyetler ve birimler arasında uyum sağlamayı amaçlar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-0",
@@ -2375,9 +2037,7 @@
       "Sadece kaldıraç yaklaşımı",
       "Ölçümden bağımsız yönetim",
       "Yalnız bürokratik hiyerarşi"
-    ],
-    "explanation": "Sistem yaklaşımı girdi, süreç, çıktı ve geri bildirim arasındaki ilişkiyi inceler.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2389,9 +2049,7 @@
       "Denetim",
       "Personel seçimi",
       "Halkla ilişkiler"
-    ],
-    "explanation": "AR-GE geliştirme; pazarlama hedef kitleye ulaşmadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2403,9 +2061,7 @@
       "Doping kontrolü",
       "Motor gelişim",
       "Muhasebe"
-    ],
-    "explanation": "Pazarlama hizmetin hedef kitleye ulaşmasıyla ilgilenir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2417,9 +2073,7 @@
       "Hakemlik",
       "Esneklik",
       "Halkla ilişkiler"
-    ],
-    "explanation": "Finans kaynak yaratma ve bütçelemeyi içerir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2431,9 +2085,7 @@
       "Anatomik duruş",
       "Tahkim",
       "Halkla ilişkiler"
-    ],
-    "explanation": "Yeni hizmet veya ürün geliştirme AR-GE kapsamındadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2445,9 +2097,7 @@
       "Duygusal istismar",
       "Kaldıraç tipi",
       "İnsan kaynakları"
-    ],
-    "explanation": "Bütçeleme ve kaynak yönetimi finansla ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2459,9 +2109,7 @@
       "Spor tarihi",
       "Kas fizyolojisi",
       "Finans"
-    ],
-    "explanation": "İnsan kaynakları istihdam ve çalışan gelişimi gibi süreçleri kapsar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2473,9 +2121,7 @@
       "Kalsiyum depolama",
       "Fleksiyon",
       "Satın alma"
-    ],
-    "explanation": "Pazarlama hizmetin hedef kitleye ulaştırılmasıyla ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2487,9 +2133,7 @@
       "İlk yardım",
       "Kinesiyoloji",
       "Muhasebe"
-    ],
-    "explanation": "İnsan kaynakları istihdam, eğitim ve çalışan değerlendirmesiyle ilgilenir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2501,9 +2145,7 @@
       "Anatomi",
       "Motor gelişim",
       "Muhasebe"
-    ],
-    "explanation": "Halkla ilişkiler paydaş iletişimi ve kurumsal imajla ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2515,9 +2157,7 @@
       "Fair play",
       "Spor anatomisi",
       "Halkla ilişkiler"
-    ],
-    "explanation": "Muhasebe finansal işlemlerin kayıt altına alınmasıyla ilgilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2529,9 +2169,7 @@
       "Anatomi ve fizyoloji",
       "Ölçme ve dinlenme",
       "Finans ve muhasebe"
-    ],
-    "explanation": "Pazarlama hedef kitleye ulaşmayı, halkla ilişkiler paydaş iletişimini vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2543,9 +2181,7 @@
       "Finans, pazarlama, AR-GE",
       "Halkla ilişkiler, anatomi, muhasebe",
       "AR-GE, pazarlama, finans"
-    ],
-    "explanation": "Yeni hizmet geliştirme AR-GE; bütçe finans; hedef kitleye ulaşma pazarlama işlevidir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "2-1",
@@ -2557,9 +2193,7 @@
       "Pazarlama ve denetim",
       "İletişim ve tahkim",
       "Finans ve halkla ilişkiler"
-    ],
-    "explanation": "Kaynakları edinme satın alma; kaynakları ürün veya hizmete dönüştürme üretimdir.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2571,9 +2205,7 @@
       "Pasif dinleme",
       "Bürokratik ölçme",
       "Otoriter liderlik"
-    ],
-    "explanation": "Dönüşümcü = vizyon ve değişim; etkileşimci = ödül ve sonuç.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2585,9 +2217,7 @@
       "Anatomik",
       "Statik",
       "Demokratik"
-    ],
-    "explanation": "Etkileşimci liderlik ödül ve sonuç ilişkisini vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2599,9 +2229,7 @@
       "Tek yönlü",
       "Kayıtsız",
       "Baskıcı"
-    ],
-    "explanation": "Demokratik yaklaşım katılımı destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2613,9 +2241,7 @@
       "Pasif dinleme",
       "Antropometrik ölçüm",
       "Otoriter liderlik"
-    ],
-    "explanation": "Vizyon ve değişim dönüşümcü liderlikle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2627,9 +2253,7 @@
       "Sistematik ihmal",
       "Anatomik yaklaşım",
       "Hizmetkâr liderlik"
-    ],
-    "explanation": "Etkileşimci liderlik ödül ve sonuç ilişkisini vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2641,9 +2265,7 @@
       "Anatomik",
       "Lokomotor",
       "Otoriter"
-    ],
-    "explanation": "Dönüşümcü liderlik vizyon ve değişime odaklanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2655,9 +2277,7 @@
       "Kaldıraç sistemi",
       "Enerji metabolizması",
       "Liderlik"
-    ],
-    "explanation": "Yönetici resmî görevinin sağladığı yetkiyi kullanabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2669,9 +2289,7 @@
       "Enerji metabolizması",
       "Antropometrik değerlendirme",
       "Etkileşimci liderlik"
-    ],
-    "explanation": "Demokratik liderlik karar sürecinde katılımı destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2683,9 +2301,7 @@
       "Somatotip",
       "Pasif dinlenme",
       "Otoriter liderlik"
-    ],
-    "explanation": "Hizmetkâr liderlik başkalarının ihtiyaçlarına ve gelişimine odaklanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2697,9 +2313,7 @@
       "Yalnız dinleyici",
       "Hakem çizgisi",
       "Lider"
-    ],
-    "explanation": "Yöneticinin biçimsel yetkisi bulunduğu görevden kaynaklanabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2711,9 +2325,7 @@
       "Otoriter ve pasif dinleme",
       "Sistem ve anatomik",
       "Demokratik ve hizmetkâr"
-    ],
-    "explanation": "Etkileşimci liderlik ödülle, dönüşümcü liderlik vizyon ve değişimle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-2",
@@ -2725,9 +2337,7 @@
       "Liberal ve anatomik",
       "Bürokratik ve lokomotor",
       "Otoriter ve demokratik"
-    ],
-    "explanation": "Ortak vizyon dönüşümcü; hedef ve ödül ilişkisi etkileşimci liderlikle ilişkilidir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2739,9 +2349,7 @@
       "Kanal",
       "Kaynak",
       "Mesaj"
-    ],
-    "explanation": "Geri bildirim anlaşılmayı görünür kılar; gürültü iletişimi engeller.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2753,9 +2361,7 @@
       "Alıcı",
       "Liderlik",
       "Kanal"
-    ],
-    "explanation": "Gürültü iletişimi bozabilen etkendir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2767,9 +2373,7 @@
       "Yalnız konuşma",
       "Tek yönlü emir",
       "Pasif dinleme"
-    ],
-    "explanation": "Etkin dinleme duyulanı anlamayı ve doğrulamayı içerir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2781,9 +2385,7 @@
       "Pasif görmezden gelme",
       "Yalnız emir verme",
       "Geri bildirimsiz anlatım"
-    ],
-    "explanation": "Etkin dinleme anlamı doğrulamayı içerir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2795,9 +2397,7 @@
       "Alıcı",
       "Kaynak",
       "Kanal"
-    ],
-    "explanation": "İletişimi bozan etken gürültüdür.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2809,9 +2409,7 @@
       "Gürültü",
       "Geri bildirim",
       "Kanal"
-    ],
-    "explanation": "Kaynak, mesajı oluşturan ve gönderen taraftır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2823,9 +2421,7 @@
       "Yüklenme hacmi",
       "Spor tahkimi",
       "Kanal"
-    ],
-    "explanation": "Geri bildirim kaynak için anlaşılmayı görünür kılar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2837,9 +2433,7 @@
       "Gürültü",
       "Geriye dönüş",
       "Kaynak"
-    ],
-    "explanation": "Kanal mesajın aktarılmasında kullanılan yol veya araçtır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2851,9 +2445,7 @@
       "Gürültü",
       "Kanal",
       "Geri bildirim"
-    ],
-    "explanation": "Mesajı alan taraf alıcıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2865,9 +2457,7 @@
       "Fiziksel ölçme",
       "Örgütleme",
       "Tek yönlü emir"
-    ],
-    "explanation": "İçerik ve duyguyu doğrulamak etkin dinlemeye örnektir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-3",
@@ -2879,9 +2469,7 @@
       "Alıcı ve kanal",
       "Geri bildirim ve gürültü",
       "Kaynak ve alıcı"
-    ],
-    "explanation": "Salon sesi iletişimi bozan gürültü, sporcunun yanıtı geri bildirimdir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2893,9 +2481,7 @@
       "Motor gelişim",
       "Antrenman hacmi",
       "Spor pazarlaması"
-    ],
-    "explanation": "CAS spor tahkimiyle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2907,9 +2493,7 @@
       "Sarkoplazmik retikulum",
       "Sagittal düzlem",
       "Glikojen"
-    ],
-    "explanation": "Federasyonlar spor hukukunun kurumsal aktörlerindendir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2921,9 +2505,7 @@
       "Kuralları görmezden gelmek",
       "Tüm branşların aynı olduğunu varsaymak",
       "Yalnız kulüp geleneklerine bakmak"
-    ],
-    "explanation": "Mevzuat değişebilir; güncel metin kontrol edilmelidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2935,9 +2517,7 @@
       "Kurallar tamamen göz ardı edilmeli",
       "Yalnızca varsayımla hareket edilmeli",
       "Yalnız diğer kulüplerin uygulamasına bakılmalı"
-    ],
-    "explanation": "Spor mevzuatı ve kuralları değişebilir; güncel metin kontrol edilmelidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2949,9 +2529,7 @@
       "Anatomik düzlemler",
       "Vitamin sınıflaması",
       "Spor fizyolojisi"
-    ],
-    "explanation": "Spor hukuku sporla ilgili kişi ve kurumların ilişkilerini düzenleyen kurallarla ilgilenir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2963,9 +2541,7 @@
       "ATP-CP",
       "Glikojen",
       "WADA"
-    ],
-    "explanation": "CAS uluslararası spor tahkimiyle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2977,9 +2553,7 @@
       "Sagittal düzlem",
       "Glikojen",
       "Ribozom"
-    ],
-    "explanation": "Spor kulüpleri spor hukukundaki kurumsal aktörlerdendir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -2991,9 +2565,7 @@
       "Hiçbir kurala bakmadan varsaymak",
       "Yalnız beslenme tablosunu incelemek",
       "Yalnız sosyal medya yorumlarına güvenmek"
-    ],
-    "explanation": "Mevzuat değişebilir; güncel yetkili metne başvurulmalıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "2-4",
@@ -3005,9 +2577,7 @@
       "Hiçbir kurala bakmadan karar vermek",
       "Yalnız performans testine dayanmak",
       "Yalnız diğer kulüplerin uygulamasını örnek almak"
-    ],
-    "explanation": "Hukuki kurallar değişebileceğinden güncel yetkili metin kontrol edilmelidir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3019,9 +2589,7 @@
       "Enerji sistemlerini",
       "Tek tip liderliği",
       "Yalnız antrenörün otoritesini"
-    ],
-    "explanation": "Performans kadar yaşam boyu katılım da değerlidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3033,9 +2601,7 @@
       "Yalnız profesyonellik",
       "Zorunlu emeklilik",
       "Yalnız performans yolu"
-    ],
-    "explanation": "Katılım yaklaşımı yaşam boyu spor deneyimine alan açar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3047,9 +2613,7 @@
       "Yalnız ceza aracı olarak",
       "Sadece finansal kayıt olarak",
       "Rekabet ilişkisi olarak"
-    ],
-    "explanation": "Destekleyici iletişim sporcu deneyimini etkileyebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3061,9 +2625,7 @@
       "Sadece elit sonuç yaklaşımı",
       "Geriye dönüş ilkesi",
       "Erken uzmanlaşma yaklaşımı"
-    ],
-    "explanation": "Katılım yaklaşımı yaşam boyu spor deneyimine de alan açar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3075,9 +2637,7 @@
       "Enerji sistemini",
       "VKİ formülünü",
       "Antrenör-hakem ilişkisini"
-    ],
-    "explanation": "Üç paydaş arasındaki destekleyici iletişim sporcu deneyimini etkiler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3089,9 +2649,7 @@
       "Güvenliği görmezden gelme",
       "Her konuda iletişimi kesme",
       "Yalnız sonuç üzerinden konuşma"
-    ],
-    "explanation": "Açık ve destekleyici iletişim sporcu deneyimini destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3103,9 +2661,7 @@
       "Sadece profesyonel başarı",
       "Herkesin spordan uzaklaşması",
       "Yalnız madalya sayısı"
-    ],
-    "explanation": "Katılım yaklaşımı yaşam boyu sporla ilişki kurmayı önemser.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3117,9 +2673,7 @@
       "Enerji sistemi seçimi",
       "Kas lifi sınıflaması",
       "Antrenör-hakem ilişkisi"
-    ],
-    "explanation": "Sporcu, antrenör ve ebeveyn arasındaki iletişim üçlü paydaş ilişkisini oluşturur.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3131,9 +2685,7 @@
       "Yalnız profesyoneller için mümkündür",
       "Motor gelişimle ilgisizdir",
       "Yalnızca zaman kaybıdır"
-    ],
-    "explanation": "Katılım yaklaşımı yaşam boyu spora katılmayı da önemser.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-0",
@@ -3145,9 +2697,7 @@
       "Sporcu hemen sistemden çıkarılmalıdır",
       "Sadece müsabaka sonucu önemlidir",
       "Yalnızca yetenekli çocuklar spora devam etmelidir"
-    ],
-    "explanation": "Katılım yaklaşımı yarışma dışındaki yaşam boyu spor deneyimlerine de değer verir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3159,9 +2709,7 @@
       "Refleks",
       "Statik duruş",
       "İnce beceri"
-    ],
-    "explanation": "Açık = değişken çevre; kapalı = öngörülebilir çevre.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3173,9 +2721,7 @@
       "Antrenmanın toplam süresini kısaltmak",
       "Sporcular arasında başarı sıralaması yapmak",
       "Rakibin oyun planını önceden çözümlemek"
-    ],
-    "explanation": "Geri bildirim hataları düzeltir, doğru hareket paternini pekiştirir ve öğrenmeyi kalıcı kılar.",
-    "kind": "sample"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3187,9 +2733,7 @@
       "Sosyalleşme",
       "Fazla tamamlama",
       "Kaba beceri"
-    ],
-    "explanation": "Kapalı beceriler görece sabit koşullarda uygulanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3201,9 +2745,7 @@
       "Refleks",
       "Gelişim ilkesi",
       "Seri beceri"
-    ],
-    "explanation": "Kesikli becerinin başlangıç ve bitişi belirgindir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3215,9 +2757,7 @@
       "Yalnız refleks",
       "Statik ölçüm",
       "Statik denge"
-    ],
-    "explanation": "Değişen çevre koşulları açık beceriyle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3229,9 +2769,7 @@
       "Sosyalleşme",
       "Fazla tamamlama",
       "Uyarlanabilir beceri"
-    ],
-    "explanation": "Kapalı beceriler görece sabit koşullarda uygulanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3243,9 +2781,7 @@
       "Refleks dönemi",
       "Doping kuralı",
       "Sürekli beceri"
-    ],
-    "explanation": "Seri beceri birbiriyle bağlantılı hareketlerden oluşur.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3257,9 +2793,7 @@
       "Yalnız refleks",
       "Sadece antropometrik ölçüm",
       "Yalnız statik denge"
-    ],
-    "explanation": "Açık beceriler değişen çevre koşullarına uyum gerektirir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3271,9 +2805,7 @@
       "Refleksif dönem",
       "Bağıl değerlendirme",
       "Seri beceri"
-    ],
-    "explanation": "Koşu tekrar eden akışı nedeniyle sürekli beceriye örnektir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3285,9 +2817,7 @@
       "Yalnız açık beceri",
       "Statik döngü",
       "Kapalı beceri"
-    ],
-    "explanation": "İnce beceri hassas küçük kas kontrolüyle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3299,9 +2829,7 @@
       "İkisi de yalnız refleks",
       "İkisi de zorunlu olarak seri",
       "Kaba ve ince"
-    ],
-    "explanation": "Sabit ve öngörülebilir koşul kapalı, değişken rakipli ortam açık beceriye örnektir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "3-1",
@@ -3313,9 +2841,7 @@
       "Performans ile öğrenme tamamen aynı şeydir",
       "Yorgunluk performansı hiçbir koşulda etkilemez",
       "Tek deneme öğrenmenin tamamlandığını kanıtlar"
-    ],
-    "explanation": "Performans anlık gözlemdir; öğrenme görece kalıcı değişimdir ve tek denemeden kesin çıkarılamaz.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3327,9 +2853,7 @@
       "Yalnız statik denge",
       "Refleksif hareket",
       "Dengeleme"
-    ],
-    "explanation": "Koşma: yer değiştirme; atma: nesne kontrolü; eğilme: dengeleme.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3341,9 +2865,7 @@
       "Doping kontrolü",
       "Muhasebe",
       "Dengeleme"
-    ],
-    "explanation": "Koşma lokomotor yani yer değiştirme becerisidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3355,9 +2877,7 @@
       "Finans farkındalığı",
       "Liderlik farkındalığı",
       "Beden farkındalığı"
-    ],
-    "explanation": "Alan farkındalığı hareketin gerçekleştiği yeri kapsar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3369,9 +2889,7 @@
       "Yalnız statik denge",
       "Yasal denetim",
       "Dengeleme"
-    ],
-    "explanation": "Atma ve yakalama nesne kontrolü becerileridir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3383,9 +2901,7 @@
       "Spor tahkimi",
       "Örgütleme",
       "Hareket ilişkileri"
-    ],
-    "explanation": "Efor farkındalığı hareketin nasıl, hangi hız veya güçle yapıldığına ilişkindir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3397,9 +2913,7 @@
       "Yalnız statik denge",
       "Finansal yönetim",
       "Dengeleme (stabilite)"
-    ],
-    "explanation": "Koşma yer değiştirme yani lokomotor beceridir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3411,9 +2925,7 @@
       "Yalnız yer değiştirme",
       "Yasal denetim",
       "Efor farkındalığı"
-    ],
-    "explanation": "Eğilme ve ağırlık aktarma dengeleme becerilerine örnektir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3425,9 +2937,7 @@
       "İkisi de sadece dengeleme",
       "İkisi de ölçme",
       "Dengeleme ve nesne kontrolü"
-    ],
-    "explanation": "Topa vurma nesne kontrolü, atlama yer değiştirmedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3439,9 +2949,7 @@
       "Bağıl değerlendirme",
       "Fosfajen sistem",
       "Efor farkındalığı"
-    ],
-    "explanation": "Hareket ilişkileri kişi ve nesnelerle kurulan bağlantıları kapsar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-2",
@@ -3453,9 +2961,7 @@
       "Dengeleme, yer değiştirme, nesne kontrolü",
       "Üçü de yalnız yer değiştirme",
       "Yer değiştirme, dengeleme, nesne kontrolü"
-    ],
-    "explanation": "Koşma yer değiştirme, yakalama nesne kontrolü, tek ayakta duruş dengelemedir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3467,9 +2973,7 @@
       "İlkel hareketler",
       "Yalnız elit performans",
       "Sporla ilgili hareketler"
-    ],
-    "explanation": "Temel hareketler yaklaşık 2–7 yaşta gelişir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3481,9 +2985,7 @@
       "Sistem yaklaşımı",
       "Geriye dönüş",
       "Baştan ayağa gelişim"
-    ],
-    "explanation": "Proksimodistal gelişim içten dışa ilerlemeyi anlatır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3495,9 +2997,7 @@
       "İşletme dönemi",
       "Karma deneme",
       "Temel hareketler"
-    ],
-    "explanation": "Refleksif hareketler istem dışı tepkilerle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3509,9 +3009,7 @@
       "Yalnız yetişkin emeklilik dönemi",
       "Spor hukuku dönemi",
       "Sporla ilgili hareketler dönemi"
-    ],
-    "explanation": "Temel hareketler dönemi yaklaşık 2–7 yaşla ilişkilendirilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3523,9 +3021,7 @@
       "Dönüşümcü liderlik",
       "Geriye dönüş",
       "İçten dışa gelişim"
-    ],
-    "explanation": "Söz konusu gelişim yönü sefalokaudal yani baştan ayağa ilkedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3537,9 +3033,7 @@
       "Yalnız emeklilik dönemi",
       "Yönetim dönemi",
       "Temel hareketler dönemi"
-    ],
-    "explanation": "İlkel hareketler dönemi yaklaşık 0–2 yaşta ilk istemli hareketlerle ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3551,9 +3045,7 @@
       "Sabit grup ortalaması",
       "Tam dinlenme",
       "Özelden genele"
-    ],
-    "explanation": "Genelden özele gelişim daha farklılaşmış hareketlere ilerlemeyi ifade eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3565,9 +3057,7 @@
       "Yönetim dönemi",
       "Tahkim dönemi",
       "İlkel hareketler dönemi"
-    ],
-    "explanation": "Sporla ilgili hareketler döneminde temel beceriler spor bağlamında birleştirilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-3",
@@ -3579,9 +3069,7 @@
       "Sporla ilgili, ilkel, refleksif hareketler",
       "Refleksif, sporla ilgili, ilkel hareketler",
       "İlkel, sporla ilgili, temel hareketler"
-    ],
-    "explanation": "İlk istemli hareketler ilkel, koşma-atlama temel, spor bağlamında birleştirme sporla ilgili dönemle ilişkilidir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3593,9 +3081,7 @@
       "Gözlem hatası",
       "Grup ortalaması",
       "Öznel değerlendirme"
-    ],
-    "explanation": "Ölçme sayı verir; değerlendirme karar verir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3607,9 +3093,7 @@
       "Ceza",
       "Tahkim",
       "Bağıl değerlendirme"
-    ],
-    "explanation": "Ölçme gözlemin sayı ya da sembolle ifade edilmesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3621,9 +3105,7 @@
       "Yalnız ölçüm",
       "Doping kontrolü",
       "Öznel değerlendirme"
-    ],
-    "explanation": "Bağıl değerlendirme grup referansına dayanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3635,9 +3117,7 @@
       "80",
       "160",
       "10"
-    ],
-    "explanation": "VKİ 80 bölü 2 metrenin karesi, yani 20 kg/m² olur.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3649,9 +3129,7 @@
       "Yalnız ölçme",
       "Sosyalleşme",
       "Öznel değerlendirme"
-    ],
-    "explanation": "Önceden belirlenen sabit ölçüte göre karar mutlak değerlendirmedir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3663,9 +3141,7 @@
       "Pekiştirme",
       "Tahkim",
       "Bağıl değerlendirme"
-    ],
-    "explanation": "Gözlemin sayıyla ifade edilmesi ölçmedir; karar için ölçüt gerekir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3677,9 +3153,7 @@
       "Ceza",
       "Kuramsal hazırlık",
       "Bağıl değerlendirme"
-    ],
-    "explanation": "Ölçme gözlem sonucunu sayıyla ifade eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3691,9 +3165,7 @@
       "Sadece ölçme",
       "Katılım modeli",
       "Öznel değerlendirme"
-    ],
-    "explanation": "Mutlak değerlendirme sabit ve önceden belirlenmiş bir ölçüte dayanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3705,9 +3177,7 @@
       "Doping kontrolü",
       "Spor tahkimi",
       "Yalnız yerleştirme sınavı"
-    ],
-    "explanation": "Biçimlendirici değerlendirme süreç içinde gelişimi destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3719,9 +3189,7 @@
       "Fleksiyon",
       "Aktif dinlenme",
       "Biçimlendirici değerlendirme"
-    ],
-    "explanation": "Özetleyici değerlendirme süreç sonunda başarıya ilişkin karar için kullanılabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3733,9 +3201,7 @@
       "Sadece gözlem kaydı",
       "Doping ihlali",
       "Antropometri"
-    ],
-    "explanation": "Ölçüm bir ölçütle karşılaştırılarak karar verildiğinde değerlendirme yapılır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3747,9 +3213,7 @@
       "Kilogram cinsinden boy",
       "Boy ile ağırlığın toplamı",
       "Metre cinsinden boyun yarısı"
-    ],
-    "explanation": "VKİ, kilogram cinsinden ağırlığın metre cinsinden boyun karesine bölünmesidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3761,9 +3225,7 @@
       "Bağıl değerlendirme ve yalnız gözlem",
       "Ölçme ve bağıl değerlendirme",
       "Yalnız ölçme ve yalnız gözlem"
-    ],
-    "explanation": "Sürenin kaydı ölçme, sabit ölçüte göre karar mutlak değerlendirmedir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "3-4",
@@ -3775,9 +3237,7 @@
       "Yalnız tahkim",
       "Gürültü oluşturma",
       "Yalnız not verme"
-    ],
-    "explanation": "Eksiklerin belirlenmesi tanılama amacına hizmet eder.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3789,9 +3249,7 @@
       "Bürokrasi",
       "Klasik yönetim",
       "Sunuş yoluyla öğretim"
-    ],
-    "explanation": "Davranışçı: pekiştirme; bilişsel: zihinsel süreç; yapılandırmacı: aktif inşa.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3803,9 +3261,7 @@
       "Sistem teorisi",
       "Fair play",
       "Bilişsel yaklaşım"
-    ],
-    "explanation": "Davranışçı yaklaşım pekiştirme ve davranış ilişkisini vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3817,9 +3273,7 @@
       "Finansal denetim",
       "Yaralanma protokolü",
       "Sunuş yoluyla öğretim"
-    ],
-    "explanation": "Buluş stratejisi öğrenenin örneklerden sonuca ulaşmasını destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3831,9 +3285,7 @@
       "Spor tahkimi",
       "Kaldıraç sınıflaması",
       "Davranışçılık"
-    ],
-    "explanation": "Yapılandırmacılık öğrenenin aktif deneyimlerle bilgi oluşturmasını vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3845,9 +3297,7 @@
       "Yalnız ceza",
       "Gelişigüzel sıralama",
       "Karmaşıktan basite"
-    ],
-    "explanation": "Basitten karmaşığa öğretim öğrenmeyi aşamalı biçimde destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3859,9 +3309,7 @@
       "Spor tahkimi",
       "Anatomik yaklaşım",
       "Yapılandırmacı yaklaşım"
-    ],
-    "explanation": "Davranışçı yaklaşım davranış ve pekiştirme ilişkisini inceler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3873,9 +3321,7 @@
       "Doping kontrolü",
       "Antropometrik yaklaşım",
       "Davranışçı yaklaşım"
-    ],
-    "explanation": "Bilişsel yaklaşım zihinsel süreçlere odaklanır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3887,9 +3333,7 @@
       "Doping kontrolü",
       "Geriye dönüş",
       "Buluş yoluyla öğretim"
-    ],
-    "explanation": "Sunuş stratejisinde bilgi öğretici tarafından düzenli olarak sunulur.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3901,9 +3345,7 @@
       "Yalnız cezalandırma",
       "Geriye dönüş",
       "Soyuttan somuta"
-    ],
-    "explanation": "Somuttan soyuta öğretimde gözlenebilir örneklerden soyut kavramlara geçilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "3-5",
@@ -3915,9 +3357,7 @@
       "Bağıl değerlendirme ve pekiştirme",
       "Geriye dönüş ve tahkim",
       "Somuttan soyuta ve sunuş yoluyla öğretim"
-    ],
-    "explanation": "Nesneden kavrama geçiş somuttan soyuta; örneklerden kural keşfi buluş yoluyla öğretimdir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "4-0",
@@ -3929,9 +3369,7 @@
       "Thomas Arnold",
       "Pierre de Coubertin",
       "Johann GutsMuths"
-    ],
-    "explanation": "Jahn = Alman; Ling = İsveç; Arnold = İngiliz.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -3943,9 +3381,7 @@
       "Tokyo",
       "Berlin",
       "Paris"
-    ],
-    "explanation": "Modern Olimpiyatlar 1896 Atina ile yeniden başlamıştır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -3957,9 +3393,7 @@
       "POLICE",
       "VKİ",
       "Olimpizm"
-    ],
-    "explanation": "Ekecheiria antik olimpiyatlarla ilişkili kutsal ateşkestir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -3971,9 +3405,7 @@
       "Thomas Arnold",
       "Pierre de Coubertin",
       "Johann GutsMuths"
-    ],
-    "explanation": "İsveç jimnastik akımı Ling ile ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -3985,9 +3417,7 @@
       "VKİ",
       "ATP-CP",
       "Olimpizm"
-    ],
-    "explanation": "Ekecheiria kutsal ateşkes kavramıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -3999,9 +3429,7 @@
       "776 Roma",
       "1938 Londra",
       "1900 Paris"
-    ],
-    "explanation": "Modern Olimpiyatlar 1896 yılında Atina’da yeniden başlamıştır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -4013,9 +3441,7 @@
       "Friedrich Jahn",
       "Elton Mayo",
       "Pierre de Coubertin"
-    ],
-    "explanation": "İngiliz okul sporları yaklaşımı Thomas Arnold ile ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -4027,9 +3453,7 @@
       "Elton Mayo",
       "Frederick Taylor",
       "Thomas Arnold"
-    ],
-    "explanation": "Pierre de Coubertin modern Olimpiyatların yeniden canlandırılmasıyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -4041,9 +3465,7 @@
       "1922",
       "1938",
       "MS 393"
-    ],
-    "explanation": "Antik Olimpiyatların başlangıcı MÖ 776 ile ilişkilendirilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -4055,9 +3477,7 @@
       "Mayo ve Taylor",
       "Skinner ve Pavlov",
       "Arnold ve Coubertin"
-    ],
-    "explanation": "Alman akımı Jahn, İsveç akımı Ling ile ilişkilendirilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-0",
@@ -4069,9 +3489,7 @@
       "İngiliz akımı, Alman akımı ve TİCİ’nin kuruluşu",
       "Alman akımı, İngiliz akımı ve kutsal ateşkes",
       "İsveç akımı, İngiliz akımı ve modern Olimpiyatların başlangıcı"
-    ],
-    "explanation": "Jahn Alman, Ling İsveç akımıyla ilişkilidir; 1896 Atina modern Olimpiyatların başlangıcıdır.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4083,9 +3501,7 @@
       "Fleksiyon",
       "Mikro döngü",
       "Glikojen"
-    ],
-    "explanation": "Sosyalleşme ajanları bireyin toplumsal öğrenmesine etki eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4097,9 +3513,7 @@
       "Kaldıraç tipleri",
       "Kas lifleri",
       "Liderlik tarzları"
-    ],
-    "explanation": "Bu gruplar bireyin toplumsal öğrenmesini etkileyebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4111,9 +3525,7 @@
       "Tahkim",
       "Fosfajen üretimi",
       "Bireysel rekabet"
-    ],
-    "explanation": "Kültürel aktarım toplumsal değerlerin taşınmasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4125,9 +3537,7 @@
       "Doping kontrolü",
       "Fazla tamamlama",
       "Tabakalaşma"
-    ],
-    "explanation": "Aile önemli bir sosyalleşme ajanıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4139,9 +3549,7 @@
       "Kaldıraç desteği",
       "Kalsiyum salınımı",
       "Toplumsal tabakalaşma"
-    ],
-    "explanation": "Spor kültürel değerlerin aktarılmasına katkıda bulunabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4153,9 +3561,7 @@
       "Kaldıraç",
       "Kas lifi",
       "Glikojen"
-    ],
-    "explanation": "Akranlar toplumsal öğrenmeyi etkileyen ajanlardandır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4167,9 +3573,7 @@
       "Sadece VKİ formülünü",
       "Yalnız kemik uzunluğunu",
       "Yalnız oyun kurallarını"
-    ],
-    "explanation": "Toplumsal kalıplar spora erişim ve temsili etkileyebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4181,9 +3585,7 @@
       "Süperkompansasyon",
       "Tahkim",
       "Tabakalaşma"
-    ],
-    "explanation": "Akranlar sosyalleşme ajanıdır ve toplumsal öğrenmeyi etkiler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4195,9 +3597,7 @@
       "Kas fleksiyonu",
       "Yasal tahkim",
       "Toplumsal tabakalaşma"
-    ],
-    "explanation": "Sporun toplumsal işlevlerinden biri bütünleşmeye katkı sunmasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4209,9 +3609,7 @@
       "Optimal yüklenme",
       "Tahkim",
       "Tabakalaşma"
-    ],
-    "explanation": "Antrenör sporda bir sosyalleşme ajanıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4223,9 +3621,7 @@
       "Enerji sistemi",
       "Kaldıraç desteği",
       "Sosyal hareketlilik"
-    ],
-    "explanation": "Medyadaki cinsiyet temsili toplumsal cinsiyet ve spor konusuyla ilişkilidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4237,9 +3633,7 @@
       "Tahkim ve kaldıraç",
       "Aerobik kapasite ve somatotip",
       "Tabakalaşma ve sosyal hareketlilik"
-    ],
-    "explanation": "Aile bir sosyalleşme ajanıdır; kadın sporcuların medyada temsili toplumsal cinsiyetle ilişkilidir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "4-1",
@@ -4251,9 +3645,7 @@
       "Fleksiyon ve ekstansiyon",
       "Ölçme ve tahkim",
       "Kültürel aktarım ve tabakalaşma"
-    ],
-    "explanation": "Spora katılımı etkileyen süreç spora yönelik; spor ortamında toplumsal deneyim edinme spor yoluyla sosyalleşmedir.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4265,9 +3657,7 @@
       "Bürokratik iklim",
       "Pasif iklim",
       "Ego yönelimli iklim"
-    ],
-    "explanation": "Ustalık iklimi = çaba ve gelişim.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4279,9 +3669,7 @@
       "Dışsal ve kontrol edilebilir",
       "Dışsal ve kontrol edilemez",
       "Dışsal ve değişmez"
-    ],
-    "explanation": "Çaba kişinin kendisinden kaynaklanır ve kişi tarafından değiştirilebilir; bu nedenle içsel ve kontrol edilebilir bir yüklemedir.",
-    "kind": "sample"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4293,9 +3681,7 @@
       "Statik denge",
       "Mutlak değerlendirme",
       "Tükenmişlik"
-    ],
-    "explanation": "Durumluk kaygı belirli bir zamandaki kaygıyı ifade eder.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4307,9 +3693,7 @@
       "Güvenli bakım",
       "Dengeleme",
       "Görev yönelimli iklim"
-    ],
-    "explanation": "Performans iklimi başkalarıyla karşılaştırmayı öne çıkarabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4321,9 +3705,7 @@
       "Statik denge",
       "Bağıl ölçüt",
       "Tükenmişlik"
-    ],
-    "explanation": "Durumluk kaygı belirli bir anda hissedilen kaygıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4335,9 +3717,7 @@
       "Şike iklimi",
       "Doping iklimi",
       "Ego yönelimli iklim"
-    ],
-    "explanation": "Ustalık iklimi çaba ve kişisel gelişimi önemser.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4349,9 +3729,7 @@
       "Statik denge",
       "Mutlak değerlendirme",
       "Tükenmişlik"
-    ],
-    "explanation": "Sürekli kaygı daha genel bir kaygı eğilimini anlatır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4363,9 +3741,7 @@
       "Şike",
       "Gürültü",
       "Ego yönelimli iklim"
-    ],
-    "explanation": "Ustalık iklimi çaba ve kişisel gelişimi vurgular.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4377,9 +3753,7 @@
       "Güvenli bakım",
       "Motor gelişim dönemi",
       "Görev yönelimli iklim"
-    ],
-    "explanation": "Performans iklimi sonuç ve sosyal karşılaştırmayı öne çıkarabilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4391,9 +3765,7 @@
       "Geri bildirim",
       "Hareket ekonomisi",
       "Durumluk kaygı"
-    ],
-    "explanation": "Tükenmişlik uzun süreli stresle ilişkili fiziksel ve zihinsel yıpranmadır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4405,9 +3777,7 @@
       "Hacim ve şiddet",
       "Statik ve dinamik denge",
       "Tükenmişlik ve içsel motivasyon"
-    ],
-    "explanation": "Belirli andaki kaygı durumluk, genel eğilim sürekli kaygıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4419,9 +3789,7 @@
       "Statik ve dinamik denge",
       "Mutlak ve bağıl ölçme",
       "Durumluk ve sürekli kaygı"
-    ],
-    "explanation": "Ustalık gelişime, performans iklimi sosyal karşılaştırmaya ağırlık verir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-2",
@@ -4433,9 +3801,7 @@
       "Durumluk ve sürekli kaygı",
       "Fiziksel ve duygusal istismar",
       "İçsel ve dışsal kaygı"
-    ],
-    "explanation": "Kişisel gelişim ustalık; başkalarıyla karşılaştırma performans iklimine yakındır.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4447,9 +3813,7 @@
       "Şike",
       "Rakibi aşağılamak",
       "Hakemi yanıltmak"
-    ],
-    "explanation": "Fair play = kuralların ötesinde dürüstlük ve saygı.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4461,9 +3825,7 @@
       "Dürüstlük",
       "Eşit mücadele",
       "Kurallara uyma"
-    ],
-    "explanation": "Şike dürüst ve eşit mücadeleye aykırıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4475,9 +3837,7 @@
       "Yalnız kazanma anlamına gelir",
       "Yalnız beslenmeyle ilgilidir",
       "Evet, yalnız hakem kararıyla ilgilidir"
-    ],
-    "explanation": "Fair play yazılı kuralların ötesinde etik davranışı içerir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4489,9 +3849,7 @@
       "İhmal",
       "Doping",
       "Şiddet"
-    ],
-    "explanation": "Rakibe saygı ve dürüstlük fair play değerleriyle uyumludur.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4503,9 +3861,7 @@
       "Dürüstlüğü artırır",
       "Yalnız teknik hazırlıktır",
       "Rakibe saygıyı gösterir"
-    ],
-    "explanation": "Şike dürüst ve eşit mücadeleye aykırıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4517,9 +3873,7 @@
       "Doping",
       "İhmal",
       "Şiddet"
-    ],
-    "explanation": "Fair play dürüstlük, rakibe saygı ve eşit mücadeleyi kapsar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4531,9 +3885,7 @@
       "Kuralları tamamen reddettiği için",
       "Yalnız fiziksel uygunluğu ölçtüğü için",
       "Yalnız hakemlerin uyması gerektiği için"
-    ],
-    "explanation": "Fair play kuralların yanında dürüstlük ve saygıyı da kapsar.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4545,9 +3897,7 @@
       "Doping",
       "İhmal",
       "Şiddet"
-    ],
-    "explanation": "Rakibe saygı ve dürüstlük fair play değerleridir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4559,9 +3909,7 @@
       "Dürüstlük",
       "Kurallara uyma",
       "Hoşgörü"
-    ],
-    "explanation": "Şike eşit ve dürüst mücadele anlayışıyla çelişir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4573,9 +3921,7 @@
       "Her kazanma davranışı otomatik olarak dürüsttür",
       "Fair play sadece beslenmeyle ilgilidir",
       "Kurallar izin veriyorsa etik sorumluluk aranmaz"
-    ],
-    "explanation": "Fair play yazılı kuralların ötesinde rakibe saygı ve dürüstlüğü içerir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "4-3",
@@ -4587,9 +3933,7 @@
       "Duygusal ve fiziksel",
       "Bağıl ve mutlak",
       "Yazılı ve zorunlu"
-    ],
-    "explanation": "Yazılı kurala uyma formal, kuralların ötesinde gönüllü etik davranış informal fair play ile ilişkilidir.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4601,9 +3945,7 @@
       "Yalnız ihmal",
       "Sportif geri bildirim",
       "Yapıcı eleştiri"
-    ],
-    "explanation": "Hakaret: duygusal istismar; temel bakımın karşılanmaması: ihmal.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4615,9 +3957,7 @@
       "Dönüşümcü liderlik",
       "Fazla tamamlama",
       "Fiziksel istismar"
-    ],
-    "explanation": "İhmal temel ihtiyaçların karşılanmamasıdır.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4629,9 +3969,7 @@
       "Güvenlik ihtiyaçlarının yok sayılması",
       "Gizli cezalandırma",
       "Şikâyetlerin kayıt dışı bırakılması"
-    ],
-    "explanation": "Koruma politikaları ve uygun bildirim yolları güvenliği destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4643,9 +3981,7 @@
       "Aşağılamayı normalleştirmek",
       "Temel bakım ihtiyaçlarını yok saymak",
       "Şikâyetleri kayıt dışı bırakmak"
-    ],
-    "explanation": "Koruma politikası ve bildirim mekanizması çocukların güvenliğini destekler.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4657,9 +3993,7 @@
       "Kültürel aktarım",
       "Makro döngü",
       "Fiziksel istismar"
-    ],
-    "explanation": "Temel tıbbi bakımın sağlanmaması ihmal kapsamında değerlendirilebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4671,9 +4005,7 @@
       "Kültürel aktarım",
       "Antrenman periyotlaması",
       "İhmal"
-    ],
-    "explanation": "Fiziksel ceza fiziksel istismar kapsamına girebilir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4685,9 +4017,7 @@
       "Çocuğu cezalandırmak",
       "Hiçbir koruma prosedürüne bakmamak",
       "Yalnız aileyi suçlamak"
-    ],
-    "explanation": "Çocuğun güvenliği ve uygun bildirim mekanizmaları önceliklidir.",
-    "kind": "standard"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4699,9 +4029,7 @@
       "Fiziksel istismar ve fair play",
       "Aktif dinleme ve fiziksel hazırlık",
       "Fiziksel istismar ve duygusal istismar"
-    ],
-    "explanation": "Aşağılama duygusal istismardır; gerekli bakımın sağlanmaması ihmal olabilir. Çocuk güvenliği önceliklidir.",
-    "kind": "challenge"
+    ]
   },
   {
     "unitId": "4-4",
@@ -4713,9 +4041,7 @@
       "Sadece sportif sıralamayı",
       "Yalnız finansal kayıtları",
       "Şikâyetlerin kayıt dışı kalmasını"
-    ],
-    "explanation": "Koruma politikası ve erişilebilir bildirim çocukların güvenli spora katılımını destekler.",
-    "kind": "book"
+    ]
   },
   {
     "unitId": "3-4",
@@ -4727,9 +4053,7 @@
       "20,6 kg/m²",
       "14,6 kg/m²",
       "22,6 kg/m²"
-    ],
-    "explanation": "VKİ = ağırlık / boy² = 48 / (1,70 × 1,70) ≈ 16,6 kg/m². Bu değer “Zayıf” aralığındadır.",
-    "kind": "bmi"
+    ]
   },
   {
     "unitId": "3-4",
@@ -4741,9 +4065,7 @@
       "25,0 – 29,9 kg/m² (Fazla kilolu)",
       "30,0 – 34,9 kg/m² (1. derece obez)",
       "35,0 – 39,9 kg/m² (2. derece obez)"
-    ],
-    "explanation": "VKİ = ağırlık / boy² = 48 / (1,70 × 1,70) ≈ 16,6 kg/m². 16,6 kg/m² ⇒ 18,5 kg/m²’nin altı.",
-    "kind": "bmi"
+    ]
   },
   {
     "unitId": "3-4",
@@ -4755,9 +4077,7 @@
       "Fazla kilolu",
       "1. derece obez",
       "2. derece obez"
-    ],
-    "explanation": "VKİ = ağırlık / boy² = 52 / (1,60 × 1,60) ≈ 20,3 kg/m². 20,3 kg/m² ⇒ Normal (18,5 – 24,9 kg/m²).",
-    "kind": "bmi"
+    ]
   },
   {
     "unitId": "3-4",
@@ -4769,8 +4089,6 @@
       "62 kg",
       "70 kg",
       "78 kg"
-    ],
-    "explanation": "Ağırlık = VKİ × boy² = 20,3 × (1,60 × 1,60) ≈ 52 kg.",
-    "kind": "bmi"
+    ]
   }
 ]

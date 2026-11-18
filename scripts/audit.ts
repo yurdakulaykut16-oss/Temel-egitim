@@ -22,12 +22,12 @@ books.forEach((b,bi)=>b.units.forEach((u,ui)=>{
  answerGroups+=answers.size;
 }));
 const bmi=bmiExercises(books[3].units[4]);const bmiStems=new Set(bmi.map(x=>norm(x.question)));if(bmiStems.size!==bmi.length)errors.push('VKİ soru kökleri tekrarlı');for(const q of bmi){if(new Set([q.answer,...q.wrong].map(norm)).size!==5)errors.push(`VKİ tekrarlı seçenek: ${q.question}`)}
-console.log(`Sabit soru kaynakları (tekrar ayıklamadan önce): ${count} kavram/senaryo sorusu, ${bmi.length} sayısal alıştırma; ${repeatedStems} birebir eşleşen soru kökü; ünite başına normalize doğru yanıta göre ${answerGroups} grup.`);
+console.log(`${count} kavram/senaryo sorusu, ${bmi.length} sayısal alıştırma; ${repeatedStems} birebir eşleşen soru kökü; ünite başına normalize doğru yanıta göre ${answerGroups} grup.`);
 // --- Kaynak temellendirme (konu anlatımı + kitap pasajı) raporu ---
 const gi=groundingIndex as Record<string,number>;
 const giVals=Object.values(gi);
 const lowGrounding=giVals.filter(v=>Number(v)<0.55).length;
-console.log(`Çalışma havuzu: ${giVals.length} hazır soru dizinlendi, ${lowGrounding} tanesi konu anlatım özeti + kitap pasajı dışında (eşik %55).`);
+console.log(`Kaynak temellendirme: ${giVals.length} soru dizinlendi, ${lowGrounding} tanesi konu anlatım özeti + kitap pasajı dışında (eşik %55).`);
 if(lowGrounding>0){
  const lowStems=Object.entries(gi).filter(([,v])=>Number(v)<0.55).slice(0,10);
  for(const [stem,v] of lowStems)console.log(`   · ${v} :: ${stem.slice(0,90)}`);
