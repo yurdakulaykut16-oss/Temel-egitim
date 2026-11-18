@@ -1,3 +1,4 @@
+import { getSummaryIndex } from './summary-index.mjs';
 import { generationDifficultyOf } from './question-difficulty.mjs';
 // ÜRETİM PLANI
 // Her konuya tur tur uğranır. Eski 50 soru/tur hedefi yarılanarak 25 olmuştur.
@@ -286,11 +287,8 @@ const tokens = s => normTr(s).split(' ').filter(t => t.length >= 3);
 
 /** Konu özetini cümlelere böler (çok kısa parçalar atılır). */
 export function splitSummarySentences(summary) {
- return String(summary || '')
-  // Küçük harfle devam eden yerde cümle bitmez ("vb. gibi", "19. yüzyılda").
-  .split(/(?<=[.!?])\s+(?![a-zçğıöşüâîû])/)
-  .map(s => s.trim())
-  .filter(s => s.length >= 25);
+ // Dışarıya kopya ver: çağıran diziyi değiştirse de ortak indeks bozulmaz.
+ return getSummaryIndex(summary).sentences.slice();
 }
 
 /**
@@ -301,13 +299,14 @@ export function splitSummarySentences(summary) {
 export function evidenceWithinSummary(evidence, summary) {
  const ev = normTr(evidence);
  if (ev.length < 15) return { ok: false, reason: 'Kanıt cümlesi çok kısa.' };
- const full = normTr(summary);
+ const full = getSummaryIndex(summary).normalized;
  if (full.includes(ev)) return { ok: true, tier: 'exact' };
  const evTokens = tokens(evidence);
  if (evTokens.length < 3) return { ok: false, reason: 'Kanıt cümlesi konu özetinde bulunamadı.' };
- const sentences = splitSummarySentences(summary);
+ const sourceIndex = getSummaryIndex(summary);
+ const sentences = sourceIndex.sentences;
  for (let i = 0; i < sentences.length; i++) {
-  const windowTokens = new Set(tokens(`${sentences[i]} ${sentences[i + 1] || ''}`));
+  const windowTokens = sourceIndex.neighborTokenSets[i];
   let hit = 0;
   for (const t of evTokens) if (windowTokens.has(t)) hit++;
   if (hit / evTokens.length >= 0.85) return { ok: true, tier: 'tokens' };
@@ -326,7 +325,8 @@ export function evidenceWithinSummary(evidence, summary) {
 export function summaryWindow(summary, anchor = '', maxChars = 2400) {
  const full = String(summary || '');
  if (full.length <= maxChars) return { text: full, windowed: false, start: 0, end: -1, center: -1 };
- const sentences = splitSummarySentences(full);
+ const sourceIndex = getSummaryIndex(full);
+ const sentences = sourceIndex.sentences;
  if (!sentences.length) return { text: full.slice(0, maxChars), windowed: true, start: 0, end: -1, center: -1 };
  let center = 0;
  let matched = false;
@@ -336,14 +336,14 @@ export function summaryWindow(summary, anchor = '', maxChars = 2400) {
   // 1) birebir geçen cümle  2) kelimelerinin çoğu aynı olan cümle
   // Önce cümlenin kendisi; yoksa onu içeren (ya da onun içerdiği) cümle. (Kısa bir cümle, daha önce
   // geçen uzun bir cümlenin parçası olabilir; pencere yine de aranan cümlenin çevresine kurulmalı.)
-  const norms = sentences.map(normTr);
+  const norms = sourceIndex.norms;
   let exact = norms.indexOf(anchorNorm);
   if (exact < 0) exact = norms.findIndex(n => n.includes(anchorNorm) || anchorNorm.includes(n));
   if (exact >= 0) { center = exact; matched = true; }
   else if (anchorTokens.length >= 3) {
    let best = -1, bestRatio = 0;
    for (let i = 0; i < sentences.length; i++) {
-    const set = new Set(tokens(sentences[i]));
+    const set = sourceIndex.tokenSets[i];
     let hit = 0;
     for (const t of anchorTokens) if (set.has(t)) hit++;
     const ratio = hit / anchorTokens.length;
@@ -449,9 +449,10 @@ export function leastUsedOption(options, used = [], rotation = 0) {
  * @param rotation  aynı kullanım sayısındaki cümleler arasında dönmek için sayaç (ör. deneme sayısı)
  */
 export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
- const sentences = splitSummarySentences(summary);
+ const sourceIndex = getSummaryIndex(summary);
+ const sentences = sourceIndex.sentences;
  if (!sentences.length) return null;
- const sentenceTokens = sentences.map(s => new Set(tokens(s)));
+ const sentenceTokens = sourceIndex.tokenSets;
  const usage = sentences.map(() => 0);
  const askedBy = new Map();
  for (const it of unitItems) {

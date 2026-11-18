@@ -31,6 +31,7 @@ test('canlı ölçüm yalnız GET kullanır, az örnekte hedefe ulaşıldı deme
  const result = await runFixture(() => state(3));
  assert.equal(result.code, 0, result.err);
  const report = JSON.parse(result.out);
+ assert.equal(report.targetSecondsPerApproved, 6);
  assert.equal(report.approved, 0);
  assert.equal(report.secondsPerApproved, null);
  assert.equal(report.targetMet, null);

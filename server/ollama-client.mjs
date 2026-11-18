@@ -10,8 +10,8 @@
  *     yeniden yükler. Eski kod her çağrıya prompt uzunluğundan hesaplanan FARKLI
  *     bir num_ctx gönderiyor (4937, 4489, 4723…) ve keep_alive=0 ile modeli her
  *     çağrıdan sonra boşaltıyordu. Sonuç: her çağrı = tam model yüklemesi.
- *     Burada model başına SABİT bir num_ctx kullanılır, başka hiçbir çalıştırıcı
- *     seçeneği gönderilmez ve model bellekte tutulur.
+ *     Burada model başına SABİT bir num_ctx kullanılır, isteğe bağlı batch/GPU/thread
+ *     ayarları da tüm çağrılarda sabit kalır ve model bellekte tutulur.
  *
  *  2) PROMPTUN BAĞLAM PENCERESİNE SIĞMAMASI
  *     Ollama sığmayan promptu SESSİZCE baştan keser; talimatlar (JSON şeması,
@@ -87,18 +87,31 @@ function classifyHttpError(status, text) {
  return 'http';
 }
 
+// Donanıma bağlı seçenekleri yalnız açıkça verilmiş, tam ve güvenli aralıktaki
+// sayılarsa kullan. Boş/geçersiz değer Ollama'nın otomatik ayarını korur.
+function optionalRunnerInt(value, min, max) {
+ if (!['number', 'string'].includes(typeof value) || String(value).trim() === '') return null;
+ const n = Number(value);
+ return Number.isInteger(n) && n >= min && n <= max ? n : null;
+}
+
 /**
  * @param {object} cfg
  * @param {string} cfg.base           Ollama taban adresi
  * @param {string|number} [cfg.keepAlive]  Modelin bellekte tutulma süresi (varsayılan 30 dk)
  * @param {number} [cfg.numCtx]       Tüm modeller için sabit bağlam penceresi
  * @param {number} [cfg.numThread]    CPU'da çalışacak sabit Ollama thread sayısı
+ * @param {number|string} [cfg.numBatch] Sabit istem işleme batch boyutu (32–2048); boşsa Ollama seçer
+ * @param {number|string} [cfg.numGpu]   GPU katman sayısı (-1: tümü, 0: CPU); boşsa Ollama seçer
  * @param {typeof fetch} [cfg.fetchFn]
  */
-export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_NUM_CTX, numThread = null, fetchFn = (...a) => fetch(...a) } = {}) {
+export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_NUM_CTX, numThread = null, numBatch = null, numGpu = null, fetchFn = (...a) => fetch(...a) } = {}) {
  const baseUrl = String(base || 'http://127.0.0.1:11434').replace(/\/$/, '');
  let fixedNumCtx = clampNumCtx(numCtx);
  const fixedNumThread = Number.isFinite(Number(numThread)) && Number(numThread) > 0 ? Math.max(1, Math.min(32, Math.round(Number(numThread)))) : null;
+ // Çalıştırıcı seçenekleri rol/model çağrıları arasında DEĞİŞMEZ.
+ const fixedNumBatch = optionalRunnerInt(numBatch, 32, 2048);
+ const fixedNumGpu = optionalRunnerInt(numGpu, -1, 999);
  let keepAliveValue = keepAlive;
 
  const noThinkParam = new Set();     // think parametresini reddeden modeller
@@ -174,6 +187,8 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
    // ÇALIŞTIRICI SEÇENEĞİ — her çağrıda aynı: model asla yeniden yüklenmez.
    num_ctx: fixedNumCtx,
    ...(fixedNumThread ? { num_thread: fixedNumThread } : {}),
+   ...(fixedNumBatch !== null ? { num_batch: fixedNumBatch } : {}),
+   ...(fixedNumGpu !== null ? { num_gpu: fixedNumGpu } : {}),
    // Örnekleme seçenekleri — yeniden yükleme gerektirmez.
    temperature,
    num_predict: Math.max(16, Math.round(numPredict))
@@ -262,6 +277,7 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
    let final = null;
    let firstTokenAt = 0;
    let buffer = '';
+   let completed = false;
    const decoder = new TextDecoder();
    const handleLine = line => {
     const trimmed = line.trim();
@@ -274,6 +290,7 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
     if (piece) text += piece;
     if ((piece || thinking) && !firstTokenAt) firstTokenAt = Date.now();
     if (obj.done || obj.done_reason || Number.isFinite(obj.eval_count)) final = obj;
+    if (obj.done === true) completed = true;
     // 2. değişken: o ana kadar gelen ham metin (çağıran, tamamlanan alanları erkenden okuyabilir).
     if (onProgress && piece) { try { onProgress(text.length, text); } catch {} }
    };
@@ -288,7 +305,10 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
      while ((nl = buffer.indexOf('\n')) !== -1) {
       handleLine(buffer.slice(0, nl));
       buffer = buffer.slice(nl + 1);
+      if (completed) break;
      }
+     // Ollama nihai metriklerle done=true bildirdiyse HTTP EOF beklemek gerekmez.
+     if (completed) { void reader.cancel().catch(() => {}); break; }
      // İlk token geldiyse: sessizlik bekçisi + toplam üretim tavanı.
      if (firstTokenAt) {
       const remainingTotal = firstTokenAt + totalTimeoutMs - Date.now();
@@ -297,8 +317,10 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
       else arm(idleTimeoutMs, 'timeout_idle');
      }
     }
-    buffer += decoder.decode();
-    if (buffer.trim()) handleLine(buffer);
+    if (!completed) {
+     buffer += decoder.decode();
+     if (buffer.trim()) handleLine(buffer);
+    }
    } else {
     handleLine(await res.text());
    }
@@ -435,6 +457,8 @@ export function createOllamaClient({ base, keepAlive = '30m', numCtx = DEFAULT_N
   return {
    numCtx: fixedNumCtx,
    numThread: fixedNumThread,
+   numBatch: fixedNumBatch,
+   numGpu: fixedNumGpu,
    keepAlive: keepAliveValue,
    ...stats,
    loadMsTotal: Math.round(stats.loadMsTotal),

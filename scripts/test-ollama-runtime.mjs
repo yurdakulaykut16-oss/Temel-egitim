@@ -191,3 +191,58 @@ test('draft-repair: biçim hataları onarılır, içerik değişmez', () => {
  assert.equal(verdict.difficulty, 'kolay');
  assert.equal(verdict.qualityScore, 4);
 });
+
+test('hız parametreleri üretici ve hakemde sabit kalır, tekrar model yükletmez', async () => {
+ const sim = createFakeOllama({ loadMs: 20, genMs: 15, judgeMs: 15 });
+ const port = await sim.listen();
+ try {
+  const client = createOllamaClient({ base: `http://127.0.0.1:${port}`, numBatch: '512', numGpu: '-1', numThread: 6 });
+  for (const prompt of ['KONU ANLATIMI: Antrenman planlı bir süreçtir.', 'Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin. KONU ANLATIMI: Antrenman planlı bir süreçtir.\nSORU: Plan nedir?\nSEÇENEKLER: ["a","b","c","d"]']) {
+   await client.generate({model: 'qwen3:8b', prompt});
+  }
+  assert.equal(sim.stats.loadsByModel['qwen3:8b'], 1);
+  assert.ok(sim.stats.requests.every(r => r.options.num_batch === 512 && r.options.num_gpu === -1));
+  assert.equal(client.snapshot().numBatch, 512);
+  assert.equal(client.snapshot().numGpu, -1);
+ } finally { await sim.close(); }
+});
+
+test('boş/geçersiz hız parametreleri gönderilmez; GPU=0 kaybolmaz', async () => {
+ for (const value of ['', ' ', undefined, null, 'abc', NaN, Infinity, true, 10.5]) {
+  let payload;
+  const client = createOllamaClient({ base: 'http://test.invalid', numBatch: value, numGpu: value, fetchFn: async (_url, opts) => {
+   payload = JSON.parse(opts.body);
+   return new Response(JSON.stringify({response:'{"ok":true}', done:true}));
+  }});
+  await client.generate({model:'test', prompt:'test'});
+  assert.equal(payload.options.num_batch, undefined);
+  assert.equal(payload.options.num_gpu, undefined);
+ }
+ const cpu = createOllamaClient({numBatch: 2049, numGpu: 0});
+ assert.equal(cpu.snapshot().numGpu, 0);
+ assert.equal(cpu.snapshot().numBatch, null);
+ assert.equal(createOllamaClient({numGpu: 1000}).snapshot().numGpu, null);
+ assert.equal(createOllamaClient({numBatch: 31}).snapshot().numBatch, null);
+});
+
+test('done=true sonrasında HTTP kapanışını beklemez; nihai metrikleri korur', async () => {
+ let cancelled = false;
+ const stream = new ReadableStream({
+  start(controller) {
+   controller.enqueue(new TextEncoder().encode(JSON.stringify({response:'{"answer":"Doğru"}', done:true, eval_count:12, eval_duration:100000000, done_reason:'stop'})+'\n'));
+   // Gerçekten kapanmayan bir HTTP gövdesi: yalnızca done=true dönüşü bitirmeli.
+  },
+  cancel() { cancelled = true; }
+ });
+ const client=createOllamaClient({base:'http://test.invalid', fetchFn:async()=>new Response(stream)});
+ const result=await client.generate({model:'test',prompt:'x', firstTokenTimeoutMs:500, idleTimeoutMs:500, totalTimeoutMs:1000});
+ assert.equal(result.parsed.answer,'Doğru');
+ assert.equal(result.metrics.evalTokens,12);
+ assert.equal(result.metrics.doneReason,'stop');
+ assert.equal(cancelled,true);
+});
+
+test('done=true olsa bile kesilmiş JSON onaylanmaz', async () => {
+ const client=createOllamaClient({base:'http://test.invalid',fetchFn:async()=>new Response(JSON.stringify({response:'{"answer":',done:true,done_reason:'length'})+'\n')});
+ await assert.rejects(client.generate({model:'test',prompt:'x'}), e=>e.kind==='truncated_output');
+});
