@@ -48,7 +48,7 @@ test('paralel yuvalar: 4 eşzamanlı üretim, tek hakem doğrulaması, /concurre
     `Sabit yaklaşım ${tag}: herkese aynı yük uygulanır`
    ];
    let result;
-   if (prompt.includes('soru denetçisisin')) {
+   if (prompt.includes('tek yapay zekâ hakemisin')) {
     const qMatch = prompt.match(/SORU: ([\s\S]*?)\nSEÇENEKLER:/);
     const question = qMatch ? qMatch[1] : '';
     const difficulty = difficultyByQuestion.get(question) || 'orta';

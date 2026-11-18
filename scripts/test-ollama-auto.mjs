@@ -53,7 +53,7 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
    if(req.url==='/api/create'){inFlight--;return res.end(JSON.stringify({status:'success'}));}
    const prompt=data.prompt||'';
    const isBatchVerify=prompt.includes('"verdicts":');
-   const isVerify=prompt.includes('soru denetçisisin')&&!isBatchVerify;
+   const isVerify=prompt.includes('tek yapay zekâ hakemisin')&&!isBatchVerify;
    let result;
    const optsMatch=prompt.match(/SEÇENEKLER: (\[[\s\S]*?\])/);
    let opts0=PLAUSIBLE_OPTIONS[0];
@@ -155,18 +155,12 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   const units=new Set(questions.items.map(x=>x.unitId));
   assert.ok(units.size>=2,`en az 2 farklı ünite üretilmeliydi, görülen: ${units.size}`);
   assert.ok(questions.items.every(x=>x.status==='approved'));
-  assert.ok(questions.items.every(x=>['kolay','orta','zor'].includes(x.difficulty)));
+  assert.ok(questions.items.every(x=>x.difficulty==='orta'),'tüm üretimler orta olarak kaydedilir');
   assert.ok(questions.items.every(x=>Array.isArray(x.verification?.judges)&&x.verification.judges.length===1));
   assert.ok(questions.items.every(x=>typeof x.passageId==='string' && x.passageId.includes('#')));
 
-  // Her ünitenin soruları sırayla kolay -> orta -> zor kalıbıyla eklenmiş olmalı
-  const byUnit={};
-  for(const q of questions.items){(byUnit[q.unitId]=byUnit[q.unitId]||[]).push(q)}
-  for(const unitId in byUnit){
-   const ordered=byUnit[unitId].slice().sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
-   const expected=['kolay','orta','zor'];
-   ordered.forEach((q,i)=>{assert.equal(q.difficulty,expected[i%3],`${unitId} ünitesinde ${i+1}. soru ${expected[i%3]} olmalıydı, bulunan: ${q.difficulty}`)});
-  }
+  // Herhangi bir üretim sırası/kotası olmadan tüm ünitelerde tüm sorular orta kabul edilir.
+  for(const q of questions.items) assert.equal(q.difficulty,'orta');
 
   let changed=await fetch(`${base}/api/ollama/concurrency`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:1})});
   assert.equal(changed.status,200);assert.equal((await changed.json()).autoConcurrency,1);
