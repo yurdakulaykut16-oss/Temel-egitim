@@ -265,15 +265,17 @@ Otomatik üretim rastgele dolaşmaz; sabit bir plan izler. Kitapların **bölüm
 | Tur | Bölüm başına 50 soru | Tur sonunda bölüm başına toplam (kolay / orta / zor) |
 |---|---|---|
 | 1. tur | 17 kolay + 17 orta + 16 zor | 17 / 17 / 16 |
-| 2. tur | 10 kolay + 20 orta + 20 zor | **27 / 37 / 36** |
+| 2. tur | 10 kolay + 20 orta + 20 zor | 27 / 37 / 36 |
+| 3. tur | 6 kolay + 22 orta + 22 zor | 33 / 59 / 58 |
+| 4. tur | 4 kolay + 23 orta + 23 zor | **37 / 82 / 81** |
 
-Varsayılan hedef, kitapta listelenen 29 ünitenin her biri için **100 soru**: 2 tur × 50 soru; toplam **2.900 soru**. Planın sırası, tur başına soru dağılımı ve diğer çalışma kuralları PR #18’deki sistemle aynıdır. Önceden onaylanmış sorular silinmez; mevcut sayılar hedefe sayılır. Hedefe ulaşan ünite için yeni plan sorusu üretilmez. `TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ile özel ayarlar yapılabilir; toplam hedef havuz kapasitesinin %95’ini aşmaz.
+Varsayılan hedef, kitapta listelenen 29 ünitenin her biri için **200 soru**: 4 tur × 50 soru; toplam **5.800 soru**. Planın sırası, tur başına soru dağılımı ve diğer çalışma kuralları PR #18’deki sistemle aynıdır. Önceden onaylanmış sorular silinmez; mevcut sayılar hedefe sayılır. Hedefe ulaşan ünite için yeni plan sorusu üretilmez. `TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ile özel ayarlar yapılabilir; toplam hedef havuz kapasitesinin %95’ini aşmaz.
 
-> **Süre:** Dakikada 1 onaylı soruyla sıfırdan 2.900 soruya ulaşmak yaklaşık 2 gün kesintisiz çalışma gerektirir. Üretimi istediğin an durdurabilirsin.
+> **Süre:** Dakikada 1 onaylı soruyla sıfırdan 5.800 soruya ulaşmak yaklaşık 4 gün kesintisiz çalışma gerektirir. Üretimi istediğin an durdurabilirsin.
 
 
 - **İki bölüm aynı anda, yarım bırakmadan:** Bölümler "Aynı anda hazırlanan soru" ayarı kadar (varsayılan 2) gruplar hâlinde işlenir: 1. ve 2. bölüm birlikte başlar. Biri o turdaki 50 sorusuna ulaşınca boşalan hat 3. bölüme geçmez, **eksik kalan bölüme yardım eder**; ikisi de dolunca 3. ve 4. bölüm başlar. Ayarı 1 yaparsan bölümler teker teker dolar. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
-- **Kota kesindir:** hiçbir bölüm bir zorlukta plandaki toplamı (27 / 37 / 36) aşmaz; iki hat aynı bölümde çalışırken bile fazladan soru kaydedilmez.
+- **Kota kesindir:** hiçbir bölüm bir zorlukta plandaki toplamı (37 / 82 / 81) aşmaz; iki hat aynı bölümde çalışırken bile fazladan soru kaydedilmez.
 - **Sorular kitabın sayfalarından ve konu başlıklarından kurulur.** Her soruda bölüm anlatımının en az soru sorulmuş cümlesi odak olarak verilir; odaklar bölümün sayfalarına ve konularına yayılarak seçilir. Kanıt cümlesi bölüm anlatımında geçmeyen soru reddedilir. **Soru kartında sorunun konu başlığı ve kitap sayfası yazar** (ör. "Antrenmanla İlgili Temel Kavramlar › Performans · kitap s. 12"); modele verilen istemde de konu başlığı bulunur.
 - **Anlatım kitaptan derlenir.** Elle yazılmış kısa özete kitap PDF'lerinin o bölüme ait sayfalarından **birebir alınmış** tanım, sınıflama, ilke, açıklama ve örnek cümleleri eklenir (toplam 6.104 kitap cümlesi; bölüm başına hedef 600). Her cümlenin hangi konu başlığının altında geçtiği kayıtlıdır (`src/bookSummary.json`, başlıklar `src/bookToc.json`). Kitabın kendi test sayfaları ve cevap anahtarları alınmaz. Gövde metni az olan bölümler hedefin çok altındadır: *Ölçme ve değerlendirme (0-6)* 67, *Dopingle mücadele* 97, *Beceri öğrenimi* 115 cümle; en uzunu *Egzersiz fizyolojisi* 547 cümledir. Bütün bölümlerde (ek anlatımlarla birlikte) toplam 7.158 cümle vardır.
 - **İnternetten derlenen ek anlatım.** Her bölüme, konusuyla ilgili Türkçe kaynaklardan (federasyon ve bakanlık yayınları, üniversite ders notları, TÜBİTAK Ansiklopedi vb.) derlenmiş ek cümleler eklenir: 121 grupta 714 cümle (`src/webSummary.json`). Cümleler kaynaktan kopyalanmamış, kaynağın anlattığı bilgi yeniden yazılmıştır; her grubun kaynak adresi kayıtlıdır. Bu cümlelere dayanan soruda kitap sayfası yerine **"internet kaynağı"** bağlantısı görünür. Kitap dışı bilgi istemiyorsan `TEMPO_WEB_SUMMARY=0` ile kapat. Yeni kaynak eklemek için dosyaya `{ "topic", "sourceTitle", "source", "sentences": [...] }` grubu ekleyip `npm run contexts` çalıştır.
@@ -696,7 +698,7 @@ Eğitilmiş adaptörü taban modelle biçim, çeldirici dengesi, uzunluk sızın
 
 ## Bilmen gerekenler
 
-Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vardır. **5000 benzersiz soru, ünite başına 100 soru, kitapların tüm ayrıntıları ve uzman doğrulaması tamamlanmış değildir.** Kitap PDF'leri konu kaynağı olarak kullanılabilir; PDF sorularının tamamı interaktif teste aktarılmamıştır. Uygulama sınav başarısı veya cevap doğruluğu garantisi vermez.
+Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vardır. **5000 benzersiz soru, ünite başına 200 soru, kitapların tüm ayrıntıları ve uzman doğrulaması tamamlanmış değildir.** Kitap PDF'leri konu kaynağı olarak kullanılabilir; PDF sorularının tamamı interaktif teste aktarılmamıştır. Uygulama sınav başarısı veya cevap doğruluğu garantisi vermez.
 
 ## 20. Yeni özellikler (Kayserili Koç, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
 
