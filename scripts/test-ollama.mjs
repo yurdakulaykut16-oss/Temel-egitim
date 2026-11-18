@@ -36,7 +36,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   let result;
   if(data.prompt.includes('Baş Stratejisti')){
    result={reason:'0-1 ünitesine öncelik ver ve uzun şıkları dengeli tut',focusUnits:['0-1'],generatorAddendum:'Tüm şıklar aynı terim sınıfından olsun ama tek doğru kalsın',judgeAddendum:'İki şık birden doğruysa dualAnswerRisk=true ver',customRuleCode:'function evaluateCandidate(candidate, unit){ if (candidate.question.length < 15) return {ok:false, reason:"Soru kökü çok kısa"}; return {ok:true}; }'};
-  }else if(data.prompt.includes('tek yapay zekâ hakemisin')){
+  }else if(data.prompt.includes('soru denetçisisin')){
    if(isUnit01)result={answer:'Kondisyonel ve teknik hazırlık',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:wrongDifficulty?'zor':'kolay',evidence,reason:'Anlatım kondisyonel ve teknik hazırlığı birlikte sayar.'};
    else if(isUnit02){
     const answer='Bireysel ve sürekli ilkeler';
@@ -93,7 +93,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   // Üretim akışı deterministik olsun diye ünite özeti pasajlarına geç (mock kanıtları özet metne ait).
   const modeRes=await fetch(`${base}/api/ollama/config`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({passageMode:'summary-only'})});
   assert.equal(modeRes.status,200);
-  assert.equal((await modeRes.json()).settings.passageMode,'full-book','üretim her zaman kitap pasajlarından yararlanmalı');
+  assert.equal((await modeRes.json()).settings.passageMode,'summary-only');
 
   // İki seçenek aynı kelimeleri içerip örtüşüyorsa hakeme bile gitmeden reddedilmeli
   overlapOptions=true;
@@ -123,9 +123,9 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.match((await response.json()).error,/birleşmedi/);
   assert.equal((await (await fetch(`${base}/api/ollama/questions`)).json()).items.length,0);
   mismatch=false;response=await post();assert.equal(response.status,200);const result=await response.json();assert.equal(result.item.status,'approved');assert.equal(result.item.verification.answer,result.item.answer);
-  assert.equal(result.item.difficulty,'orta');assert.equal(result.item.verification.difficulty,'orta');
+  assert.equal(result.item.difficulty,'kolay');assert.equal(result.item.verification.difficulty,'kolay');
   assert.equal(result.item.verification.judges.length,1,'soru yalnızca tek hakemden geçmeli');
-  for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlı ve tekrarlı olması');assert.equal(j.difficulty,undefined,'hakem zorluk etiketi döndürmez');assert.ok(j.reason);assert.ok(j.qualityScore>=1)}
+  for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlı ve tekrarlı olması');assert.equal(j.difficulty,'kolay');assert.ok(j.reason);assert.ok(j.qualityScore>=1)}
   assert.ok(calls.some(c=>c.prompt.includes('SORU:')));
   assert.ok(!calls.some(c=>c.prompt.includes('Egzersiz düzenli ve planlı etkinliktir.')));
 
@@ -147,15 +147,15 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal((await (await fetch(`${base}/api/ollama/status`)).json()).rejected,1);
 
   const post01=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-1']})});
-  // Zorluk hedefi veya hakem sınıflandırması yok: zor etiketli bir örnek de orta kabul edilir.
+  // Akıllı zorluk dengesi: 0-1 ünitesine 3 "zor" soru yerleştir, böylece zor kademesi doyar
+  // ve hedef "kolay" iken hakemlerin ortak "zor" kararı reddedilir.
   writeFileSync(join(dir,'questions.json'),JSON.stringify([
-   {id:'seed-a',unitId:'0-1',status:'approved',difficulty:'zor',question:'Antrenman günlüğü tutmanın temel yararı nedir?',options:['Yüklenme ve toparlanmayı izleyerek programı ayarlamak','Antrenmanı tamamen rastgele planlamak','Yalnızca yarışma gününü kaydetmek','Sporcu sayısını artırmak','Isınma süresini kısaltmak'],answer:'Yüklenme ve toparlanmayı izleyerek programı ayarlamak',explanation:'Günlük, yüklenme ile toparlanmayı izlemeyi sağlar.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Antrenman izleme',createdAt:new Date().toISOString()}
+   {id:'seed-a',unitId:'0-1',status:'approved',difficulty:'zor',question:'Antrenman günlüğü tutmanın temel yararı nedir?',options:['Yüklenme ve toparlanmayı izleyerek programı ayarlamak','Antrenmanı tamamen rastgele planlamak','Yalnızca yarışma gününü kaydetmek','Sporcu sayısını artırmak','Isınma süresini kısaltmak'],answer:'Yüklenme ve toparlanmayı izleyerek programı ayarlamak',explanation:'Günlük, yüklenme ile toparlanmayı izlemeyi sağlar.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Antrenman izleme',createdAt:new Date().toISOString()},
+   {id:'seed-b',unitId:'0-1',status:'approved',difficulty:'zor',question:'Toparlanma süresi antrenman planında nasıl konumlandırılmalıdır?',options:['Program içine düzenli dinlenme günleri serpiştirilerek','Her antrenmandan sonra belirsiz bırakılarak','Yalnızca sakatlık halinde eklenerek','Sezon sonunda toplu olarak verilerek','Yarışma haftasında tümüyle kaldırılarak'],answer:'Program içine düzenli dinlenme günleri serpiştirilerek',explanation:'Toparlanma planın parçası olmalıdır.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Toparlanma',createdAt:new Date().toISOString()},
+   {id:'seed-c',unitId:'0-1',status:'approved',difficulty:'zor',question:'Branşa özgü teknik çalışma hangi dönemde yoğunlaştırılmalıdır?',options:['Hazırlık döneminden yarışma dönemine kademeli artırılarak','Yalnızca sezon başında bir kez yapılarak','Yarışma günü sabahı başlatılarak','Antrenman takvimi dışında bırakılarak','Geçiş döneminde en üst düzeye çıkarılarak'],answer:'Hazırlık döneminden yarışma dönemine kademeli artırılarak',explanation:'Teknik çalışma dönemsel olarak kademeli artar.',evidence:'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri',topic:'Teknik çalışma',createdAt:new Date().toISOString()}
   ]));
-  wrongDifficulty=true;let acceptedHard=await post01();assert.equal(acceptedHard.status,200,JSON.stringify(await acceptedHard.clone().json()));
-  const item01=(await acceptedHard.json()).item;assert.equal(item01.difficulty,'orta');
-  assert.equal(item01.verification.judges.length,1);
-  assert.equal(item01.verification.judges[0].difficulty,undefined,'hakemden zorluk etiketi istenmez');
-  wrongDifficulty=false;
+  wrongDifficulty=true;let mismatchResponse=await post01();assert.equal(mismatchResponse.status,502);assert.match((await mismatchResponse.json()).error,/hedef zorluk/);
+  wrongDifficulty=false;let okResponse=await post01();assert.equal(okResponse.status,200);const item01=(await okResponse.json()).item;assert.equal(item01.difficulty,'kolay');
 
   let roleSel=await fetch(`${base}/api/ollama/select-model`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({model:'fake:1',role:'verifier'})});
   assert.equal(roleSel.status,200);
@@ -165,16 +165,16 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(statusAfterRoles.model,'fake:2');assert.equal(statusAfterRoles.verifierModel,'fake:2');assert.equal(statusAfterRoles.judge2Model,'fake:2');
 
   const post02=()=>fetch(`${base}/api/ollama/generate`,{method:'POST',headers:{'Content-Type':'application/json','Origin':base},body:JSON.stringify({units:['0-2']})});
-  // Tek hakem yalnızca kaliteyi denetler; döndürdüğü eski zorluk alanı yok sayılır.
+  // Tek hakem zorluğu doğrudan belirler; ikinci hakem/oylama çağrısı yoktur.
   singleJudgeDifficulty='orta';
   let judgedMedium=await post02();assert.equal(judgedMedium.status,200);
   const item02=(await judgedMedium.json()).item;assert.equal(item02.difficulty,'orta');
   assert.equal(item02.verification.judges.length,1);
-  assert.equal(item02.verification.judges[0].difficulty,undefined,'hakem zorluk sınıflandırmaz');
+  assert.equal(item02.verification.judges[0].difficulty,'orta');
   singleJudgeDifficulty='kolay';
 
   // Sayısal düşündürücü çeldiriciler ("20 dakika" vs "30 dakika") ASLA yanlışlıkla elenmemeli!
-  // Eski akıllı zorluk ayarı gönderilse bile sınıflandırma açılmamalı.
+  // 0-0'da ilk soru kolay idi, sonraki 0-0 sorusu orta zorluk hedefleyecek; mock orta döndürsün
   numericOptions=true;
   const oldCallsLen=calls.length;
   const resNum=await fetch(`${base}/api/ollama/config`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({smartDifficulty:true})});
@@ -190,7 +190,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(cfgRes.status,200);
   const cfgData=(await cfgRes.json()).settings;
   assert.equal(cfgData.batchPerCall,1);assert.equal(cfgData.preset,'balanced');
-  assert.equal(cfgData.selfCorrection,true);assert.equal(cfgData.smartDifficulty,false);
+  assert.equal(cfgData.selfCorrection,true);assert.equal(cfgData.smartDifficulty,true);
   assert.equal(cfgData.passageMode,'full-book');assert.equal(cfgData.fastThink,true);
 
   const specRes=await fetch(`${base}/api/ollama/create-specialist`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({role:'generator',baseModel:'fake:1',name:'tempo-ogretmen:latest'})});

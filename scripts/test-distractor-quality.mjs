@@ -92,7 +92,7 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
   const textMatch = prompt.match(/KONU ANLATIMI:\s*([\s\S]*?)\nSORU:/);
   const evidence = (textMatch ? textMatch[1] : 'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri').trim().slice(0, 80);
 
-  if (prompt.includes('tek yapay zekâ hakemisin')) {
+  if (prompt.includes('soru denetçisisin')) {
    const qMatch = prompt.match(/SORU: ([\s\S]*?)\nSEÇENEKLER:/);
    const optionsMatch = prompt.match(/SEÇENEKLER: ([\s\S]*)$/);
    const options = optionsMatch ? JSON.parse(optionsMatch[1]) : [];
