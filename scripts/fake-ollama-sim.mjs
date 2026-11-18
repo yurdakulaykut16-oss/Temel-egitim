@@ -79,7 +79,7 @@ export function createFakeOllama({
  };
  const loaded = new Map(); // name -> { sig, sizeGb, lastUsed }
  const chains = new Map(); // name -> Promise (model başına sıralı kuyruk)
- const registry = new Map(); // soru kökü -> { answer, difficulty }
+ const registry = new Map(); // soru kökü -> doğru cevap
  let inFlight = 0;
  let counter = 0;
  const sizeOf = name => models.find(m => m.name === name)?.sizeGb ?? 4;
@@ -108,12 +108,10 @@ export function createFakeOllama({
   const textMatch = prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
   const text = textMatch ? textMatch[1] : '';
   const tag = `${++counter}`;
-  const diffMatch = prompt.match(/Sorunun zorluk seviyesi: (KOLAY|ORTA|ZOR):/);
-  const difficulty = diffMatch ? diffMatch[1].toLocaleLowerCase('tr-TR') : 'kolay';
   const question = makeQuestion(tag, text);
   const options = makeOptions(tag, text);
   const answer = options[0];
-  registry.set(question, { answer, difficulty });
+  registry.set(question, { answer });
   const sentences = text.split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(x => x.length >= 40 && x.length <= 300);
   const sentence = sentences.length ? sentences[hash(tag) % sentences.length] : text.trim().split(/\s+/).slice(0, 12).join(' ');
   const typeMatch = prompt.match(/questionType \("([a-z_]+)"\)/);
@@ -132,7 +130,7 @@ export function createFakeOllama({
   if (out.questionType === 'paragraf') {
    out.paragraph = sentences.slice(0, 4).join(' ');
    out.question = `Bu parçaya göre ${question}`;
-   registry.set(out.question, { answer, difficulty });
+   registry.set(out.question, { answer });
   }
   if (isSloppy) {
    // İçerik aynı; yalnızca biçim gerçek küçük modellerdeki gibi dağınık.
@@ -151,7 +149,7 @@ export function createFakeOllama({
   const text = textMatch ? textMatch[1] : '';
   let options = [];
   try { options = JSON.parse(optsMatch ? optsMatch[1] : '[]'); } catch {}
-  const known = registry.get(qMatch ? qMatch[1] : '') || { answer: options[0], difficulty: 'kolay' };
+  const known = registry.get(qMatch ? qMatch[1] : '') || { answer: options[0] };
   const answer = options.includes(known.answer) ? known.answer : options[0];
   const sentences = text.split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(x => x.length >= 40 && x.length <= 300);
   const evidence = sentences[0] || text.trim().split(/\s+/).slice(0, 12).join(' ');
@@ -163,7 +161,6 @@ export function createFakeOllama({
     singleCorrect: 'true', dualAnswerRisk: 'false', secondBestOption: '',
     supported: 'true', distractorPlausible: 'true', qualityOk: 'true',
     qualityScore: '5', examPotential: '4',
-    difficulty: known.difficulty[0].toLocaleUpperCase('tr-TR') + known.difficulty.slice(1),
     bloomLevel: 'kavrama'
    };
   }
@@ -171,7 +168,7 @@ export function createFakeOllama({
    evidence, reason: 'Metin bu seçeneği doğrudan destekliyor.', answer,
    singleCorrect: true, dualAnswerRisk: false, secondBestOption: '', supported: true,
    distractorPlausible: true, qualityOk: true, qualityScore: 5, examPotential: 4,
-   difficulty: known.difficulty, bloomLevel: 'kavrama'
+   bloomLevel: 'kavrama'
   };
  }
 
@@ -213,7 +210,7 @@ export function createFakeOllama({
    return res.end(JSON.stringify({ error: 'invalid format: expected "json"' }));
   }
 
-  const isJudge = prompt.includes('soru denetçisisin');
+  const isJudge = prompt.includes('tek yapay zekâ hakemisin');
   const isFix = prompt.includes('ESKİ TASLAK');
   const entry = {
    model: name, role: isJudge ? 'judge' : isFix ? 'fix' : 'generator',

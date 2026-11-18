@@ -1,18 +1,18 @@
 import {useEffect, useRef, useState} from 'react';
 import {AlertCircle, BookOpen, Check, Cpu, Gauge, Layers, Play, ShieldCheck, Sparkles, Square, Zap} from 'lucide-react';
 
-type JudgeVerdict = {model: string; answer: string; difficulty?: 'kolay' | 'orta' | 'zor'; qualityScore?: number; examPotential?: number; bloomLevel?: string; dualAnswerRisk?: boolean; secondBestOption?: string; evidence: string; reason: string};
+type JudgeVerdict = {model: string; answer: string; qualityScore?: number; examPotential?: number; bloomLevel?: string; dualAnswerRisk?: boolean; secondBestOption?: string; evidence: string; reason: string};
 export type GeneratedQuestion = {
  id: string; unitId: string; book: string; unit: string; topic: string;
  question: string; options: string[]; answer: string; explanation: string; evidence: string; paragraph?: string;
  status: 'approved' | 'rejected'; model: string; createdAt: string;
- difficulty?: 'kolay' | 'orta' | 'zor';
+ difficulty?: string;
  curatedBy?: string; curationReason?: string;
  passageId?: string; passageHeading?: string; pages?: number[]; section?: string; sectionParent?: string; webSource?: {title?: string; url?: string; topic?: string; kind?: string};
  questionType?: string; questionAngle?: string; bloomLevel?: string; qualityScore?: number; examPotential?: number; curatorScore?: number;
  precisionScore?: number; styleScore?: number; precisionTier?: string; tvgfbfAligned?: boolean;
  improvementCount?: number; improvedAt?: string;
- verification?: {judges?: JudgeVerdict[]; answer: string; difficulty?: 'kolay' | 'orta' | 'zor'; qualityScore?: number; examPotential?: number; bloomLevel?: string; model?: string; evidence?: string; reason?: string};
+ verification?: {judges?: JudgeVerdict[]; answer: string; difficulty?: string; qualityScore?: number; examPotential?: number; bloomLevel?: string; model?: string; evidence?: string; reason?: string};
 };
 type Audit = {checked: number; invalid: number; duplicates: number; answerGroups: number};
 type Telemetry = {
@@ -43,28 +43,18 @@ type QualityLoop = {
  lastPassAt: string | null; lastImprovedAt: string | null;
  recentImprovements: QualityImprovement[];
 };
-type UnitCoverage = {unit: string; book: string; questions: number; passagesCovered: number; totalPassages: number; kolay: number; orta: number; zor: number};
+type UnitCoverage = {unit: string; book: string; questions: number; passagesCovered: number; totalPassages: number};
 type Coverage = {totalPassages: number; coveredPassages: number; coveragePercent: number; perUnit: Record<string, UnitCoverage>};
 type CuratorReport = {
  lastScanAt: string | null; totalScans: number; avgCompositeScore?: number;
  totalPrunedLifetime?: number; lastRunRemoved?: number; nearDuplicatesFound?: number;
- refillPriorityUnits?: string[]; tierBreakdown?: {kolay: number; orta: number; zor: number};
-};
-type PlanStep = {key: string; pass: number; difficulty: string; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; quota: number};
-type PlanCell = {difficulty: string; done: number; quota: number; from: number; share: number; parked?: boolean; streak?: number};
-type PlanUnit = {pass: number; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; target: number; cells: PlanCell[]};
-type ProductionPlan = {
- enabled: boolean; quota?: number; passCount?: number; perUnitTarget?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
- current?: PlanStep | null; working?: (PlanStep & {streak?: number})[]; workingUnits?: PlanUnit[]; parallel?: number; parked?: PlanStep[];
- difficulties?: {difficulty: string; done: number; target: number}[];
- passes?: {pass: number; difficulty?: string; done: number; target: number; unitsDone: number; units: number; mix?: {kolay: number; orta: number; zor: number}}[];
+ refillPriorityUnits?: string[];
 };
 type Status = {
  connected: boolean; installed: boolean; verifierInstalled: boolean; judge2Installed: boolean;
  model: string; verifierModel: string; judge2Model: string; models: string[];
  busy: boolean; phase: string; storage?: {total: number; limit: number; modelsReserved: number};
  lastError: string; count: number; approved: number; rejected: number;
- difficultyCounts?: {kolay: number; orta: number; zor: number};
  curator?: CuratorReport;
  autoRunning: boolean; autoConcurrency: number; autoTimeoutMs: number;
  questionCapacity?: number; maxQuestionsStored?: number; poolRevision?: string;
@@ -78,14 +68,11 @@ type Status = {
  autoBlock?: {code: string; reason: string} | null;
  autoEvents?: AutoEvent[];
  lineup?: Lineup;
- plan?: ProductionPlan;
  ollamaRuntime?: {numCtx?: number; numThread?: number | null; keepAlive?: string | number};
  settings?: {passageMode?: 'full-book' | 'summary-only'};
  telemetry?: Telemetry; coverage?: Coverage; qualityLoop?: QualityLoop;
 };
 
-const judgeLabel = (_i: number) => 'Tek hakem';
-const difficultyLabel: Record<string, string> = {kolay: 'Kolay', orta: 'Orta', zor: 'Zor'};
 const typeLabel: Record<string, string> = {
  kavram: 'Kavram', vaka: 'Vaka Analizi', karsilastirma: 'Karşılaştırma',
  neden_sonuc: 'Neden-Sonuç', istisna: 'İstisna', uygulama: 'Uygulama',
@@ -107,7 +94,7 @@ const pipelinePhaseLabel: Record<string, string> = {
  producing: 'Üretici soru yazıyor',
  generating: 'Üretici soru yazıyor',
  verifying: 'Tek hakem denetliyor',
- verifying_j1: '1. hakem denetliyor',
+ verifying_j1: 'Tek hakem denetliyor',
  verifying_j2: 'Son denetim',
  fixing: 'Öz-düzeltme yapılıyor',
  saving: 'Soru havuza kaydediliyor'
@@ -276,7 +263,6 @@ export function OllamaStudio({read}: {read: string[]}) {
  const viewCount = {approved: status?.approved ?? 0, rejected: status?.rejected ?? 0};
  const tel = status?.telemetry;
  const lineup = status?.lineup;
- const plan = status?.plan?.enabled ? status.plan : null;
  const timeoutRange = status?.modelCallTimeoutRange || {min: 5000, max: 900000, default: 120000};
  const cov = status?.coverage;
  const qg = status?.qualityLoop;
@@ -287,13 +273,13 @@ export function OllamaStudio({read}: {read: string[]}) {
   <div className="page-title">
    <div className="eyebrow muted">YEREL SORU MOTORU · OLLAMA</div>
    <h1>Soru stüdyosu<span className="accent">.</span></h1>
-   <p>Beş ders kitabındaki pasajlardan kaynak alan, ÖSYM çıtasında soru üreten stüdyo. Proje açıldığı andan itibaren <b>iki şey hiç durmadan çalışır</b>: kaliteli soru üretimi ve havuzdaki soruların sürekli daha iyileştirilmesi.</p>
+   <p>Kitapların konu anlatımları, özetleri ve örnek sorularından yararlanarak özgün soru üretir; tek model ve tek hakemle soru kalitesini korur.</p>
   </div>
 
   <div className="notice">
    <ShieldCheck size={20}/>
    <span>
-    <b>Her zaman açık iki motor:</b> Tek modelin üretim ve tek hakem çağrıları kuyruktan geçer; her soru kitap kaynağı, tek-doğru ön kontrolü, hakemin kolay/orta/zor sınıflandırması ve gerekirse düzeltme süzgecinden geçer (Motor 1). Kalite motoru (Motor 2) ise onaylı havuzdaki her soruyu 0-100 puanlar; en zayıf olanları <u>üretim boştayken</u> yeniden yazdırır, aynı tek hakemden geçirir ve skoru artmayanı eski haliyle bırakır. Üretim her zaman önceliklidir.
+    <b>Üretim ve kalite:</b> Tek model soru üretir, tek hakem doğru cevabı, kaynak dayanağını ve çeldiricileri denetler. Yeni sorular orta düzeyde tutulur; zorluk sınıflandırması yapılmaz. Sınav, Motor ve Hassasiyet puanları korunur. Kalite motoru düşük puanlı soruları üretim boşta olduğunda iyileştirmeyi dener.
    </span>
   </div>
 
@@ -324,7 +310,6 @@ export function OllamaStudio({read}: {read: string[]}) {
      <li><span>Aktif soru hattı</span><b>{status?.autoActive ?? 0} / {status?.autoConcurrencyEffective ?? status?.autoConcurrency ?? 1}</b></li>
      <li><span>Son onaylanan soru</span><b>{fmtAgo(tel?.lastApprovedAt)}</b></li>
      <li><span>Deneme / zaman aşımı / altyapı hatası</span><b>{tel?.attemptsTotal ?? 0} / {tel?.timeouts ?? 0} / {tel?.infraErrors ?? 0}</b></li>
-     <li><span>Zorluk</span><b>K {status?.difficultyCounts?.kolay ?? 0} · O {status?.difficultyCounts?.orta ?? 0} · Z {status?.difficultyCounts?.zor ?? 0}</b></li>
      <li><span>Üretilen / Reddedilen</span><b>{status?.count ?? 0} / {status?.rejected ?? 0}</b></li>
     </ul>
     {status?.autoPhases && status.autoPhases.length > 0 && (
@@ -334,7 +319,7 @@ export function OllamaStudio({read}: {read: string[]}) {
       ))}
      </p>
     )}
-    <p className="engine-foot">Her soru: kitap pasajından kanıt → tek-doğru ön kontrolü → tek hakem (zorluk sınıflandırması) → gerekirse öz-düzeltme. Kolay/orta/zor dengesi korunur.</p>
+    <p className="engine-foot">Her soru: kitap kaynağından kanıt → tek doğru ve anlamlı çeldirici kontrolleri → tek hakem; tüm yeni sorular orta düzeyde kaydedilir.</p>
    </section>
 
    {/* MOTOR 2 — SÜREKLİ KALİTE İYİLEŞTİRME */}
@@ -390,7 +375,7 @@ export function OllamaStudio({read}: {read: string[]}) {
 
     <div className="preset-bar">
      <span className="preset-label"><Cpu size={14}/> Çalışma Profili:</span>
-     <span className="preset-btn active" title="Aynı model soru üretir, tek hakem olarak doğrular ve zorluğu sınıflandırır.">⚖️ Tek model · tek hakem · zorluk sınıflandırması</span>
+     <span className="preset-btn active" title="Aynı model soru üretir; tek hakem cevap, kaynak ve çeldiricileri denetler.">⚖️ Tek model · tek hakem · orta düzey</span>
      <span className="jarvis-badge ok" style={{marginLeft: 8}} title={lineup?.swapMode ? 'Modeller ekran kartı belleğinde aynı anda kalamıyor; sorular gruplar hâlinde hazırlanır ve model grup başına bir kez değişir. Ayar gerekmez.' : undefined}>
       {lineup?.swapMode ? `🌊 Dalga düzeni: ${status?.autoConcurrencyEffective ?? 4} soru birlikte, model dalga başına bir kez değişir` : `🔒 Aynı anda en çok ${status?.modelInferenceConcurrency ?? 1} model çağrısı`}
      </span>
@@ -401,58 +386,6 @@ export function OllamaStudio({read}: {read: string[]}) {
       <b>Üretim şu an ilerlemiyor:</b> {status.autoBlock.reason}
       {lineup?.recommended?.pullCommand && (status.autoBlock.code === 'no_models' || status.autoBlock.code === 'model_missing') && (
        <code>{lineup.recommended.pullCommand}</code>
-      )}
-     </div>
-    )}
-
-    {plan && (
-     <div className="lineup-box plan-box" aria-label="Üretim planı">
-      <div className="lineup-head">
-       <b>Üretim planı</b>
-       <span className={`jarvis-badge ${plan.complete ? 'ok' : 'neutral'}`}>
-        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · kolay + orta + zor karışık` : 'Atlanan adımlar yeniden denenecek'}
-       </span>
-       <span>Toplam <b>{plan.totalDone ?? 0}</b> / {plan.totalTarget ?? 0} soru</span>
-      </div>
-      {(plan.workingUnits || []).map(u => (
-       <div key={`${u.pass}-${u.unitId}`}>
-        <p className="lineup-line">
-         {(plan.workingUnits || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{u.bookNo}. kitap {u.unitNo}. bölüm — {u.unit}</b> ({u.book}) · bu turda <b>{u.done} / {u.target}</b>
-         {' · '}{u.cells.map(c => `${c.difficulty} ${Math.max(0, c.done - c.from)}/${c.share}${c.parked ? ' (atlandı)' : ''}`).join(' · ')}
-         {u.cells.filter(c => (c.streak ?? 0) >= 5).map(c => ` · ${c.difficulty}: üst üste ${c.streak} deneme sonuçsuz (${plan.stuckLimit} olunca atlanır)`).join('')}
-        </p>
-        <div className="plan-bar" role="progressbar" aria-valuemin={0} aria-valuemax={u.target} aria-valuenow={u.done}>
-         <span style={{width: `${Math.min(100, Math.round((u.done / Math.max(1, u.target)) * 100))}%`}}/>
-        </div>
-       </div>
-      ))}
-      {(() => {
-       // Tur özeti: biten turlar tek satırda toplanır; süren tur ve sıradaki iki tur payıyla birlikte gösterilir.
-       const passes = plan.passes || [];
-       const finished = passes.filter(p => p.done >= p.target).length;
-       const shown = passes.filter(p => p.done < p.target).slice(0, 3);
-       const mixText = (p: {mix?: {kolay: number; orta: number; zor: number}}) => p.mix ? ` · bölüm başına ${p.mix.kolay} kolay + ${p.mix.orta} orta + ${p.mix.zor} zor` : '';
-       return (
-        <p className="lineup-line">
-         {passes.length} turun {finished} tanesi bitti.
-         {shown.map(p => ` ${p.pass}. tur: ${p.done}/${p.target} (${p.unitsDone}/${p.units} bölüm${mixText(p)}).`).join('')}
-        </p>
-       );
-      })()}
-      {(plan.difficulties || []).length > 0 && (
-       <p className="lineup-line">
-        Bütün bölümlerde toplam: {(plan.difficulties || []).map(d => `${d.difficulty} ${d.done}/${d.target}`).join(' · ')}
-       </p>
-      )}
-      <p className="lineup-line">
-       Sıra: 1. kitabın 1. bölümünden başlayarak her bölüme {plan.quota} soru; zorluklar karışıktır (kolay → orta → zor …), yani her bölümün kolay, orta ve zor sorusu birlikte gelir. Bütün bölümler bitince sıradaki tur başlar ({plan.passCount} tur → bölüm başına {plan.perUnitTarget} soru). 1. tur dengelidir; sonraki turlarda kolay soru gittikçe azalır, soruların yarısı orta yarısı zor yazılır.
-       {(plan.parallel ?? 1) > 1 ? ` Bölümler ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan bölüme yardım eder, grup tamamlanmadan sıradaki bölümlere geçilmez.` : ''} Sorular bölümün kitap sayfalarından (ve işaretli internet kaynaklarından) derlenmiş özetinden kurulur; her soru kartında kitabın içindekiler bölümündeki konu başlığı ve kitap sayfası yazar. Aynı bilgi yeniden sorulduğunda farklı bir soru biçimi kullanılır.
-      </p>
-      {(plan.parked || []).length > 0 && (
-       <p className="lineup-warn">
-        ⚠ Atlanan adımlar: {(plan.parked || []).slice(0, 6).map(p => `${p.bookNo}. kitap ${p.unitNo}. bölüm ${p.difficulty} (${p.done}/${p.quota})`).join(', ')}{(plan.parked || []).length > 6 ? ` ve ${(plan.parked || []).length - 6} adım daha` : ''}.
-        Bu adımlarda üst üste {plan.stuckLimit} deneme soru çıkarmadı (konu özeti o zorlukta yeni soru için yetersiz kalmış olabilir). Diğer adımlar bitince yeniden denenir.
-       </p>
       )}
      </div>
     )}
@@ -486,22 +419,18 @@ export function OllamaStudio({read}: {read: string[]}) {
      <span>{status?.connected ? (status.installed ? 'hazır' : 'kurulu değil') : 'bekleniyor'}</span>
     </div>
     <p className="lineup-line">
-     Tek model hattı: <b>{lineup?.model || '—'}</b> soru üretir ve tek hakem olarak doğrular; kolay / orta / zor düzeyini de belirler. Model bellekte tutulur. {lineup?.ramOffloadGb ? `Model seçiminde en çok ${lineup.ramOffloadGb} GB RAM/CPU offload payı hesaba katılır; disk takası yapılmaz.` : 'Öncelik tam GPU hızıdır; güvenli RAM offload alanı oluşursa otomatik değerlendirilir.'}
+     Tek model hattı: <b>{lineup?.model || '—'}</b> soru üretir; tek hakem cevap, kaynak ve çeldiricileri doğrular. Tüm yeni sorular orta düzeyde kaydedilir. Model bellekte tutulur. {lineup?.ramOffloadGb ? `Model seçiminde en çok ${lineup.ramOffloadGb} GB RAM/CPU offload payı hesaba katılır; disk takası yapılmaz.` : 'Öncelik tam GPU hızıdır; güvenli RAM offload alanı oluşursa otomatik değerlendirilir.'}
     </p>
 
-    {/* KAYNAK AYARI — hız/kalite her zaman korunan çıtada */}
     <div className="config-grid">
      <div className="config-item">
-      <label htmlFor="passage-choice">Kaynak genişliği</label>
-      <select id="passage-choice" value={plan ? 'summary-only' : (status?.settings?.passageMode || 'full-book')} disabled={Boolean(plan)} title={plan ? 'Üretim planı açıkken sorular yalnızca konu özetinden kurulur.' : undefined} onChange={e => updateConfig({passageMode: e.target.value})}>
-       <option value="full-book">5 Kitabın Tamamı (1.021 pasaj)</option>
-       <option value="summary-only">Yalnız Kısa Özetler (29 pasaj)</option>
-      </select>
+      <span>Üretim kaynakları</span>
+      <b>Ünite özeti · ilgili kitap pasajları · kitaptaki soru örnekleri · kullanıcı örnekleri</b>
      </div>
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · tek hakem (kolay/orta/zor sınıflandırması) · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
+     🔒 Kalite hattı: <b>1 soru/çağrı · kitap anlatımı + özet + ilgili kitap pasajı · her soru orta · tek doğru ve kaynak kontrolü · tek hakem, zorluk sınıflandırması yok · gerekirse öz-düzeltme.</b> Yanlış şıklar doğru cevapla aynı kavram ailesinden, birbirine yakın uzunlukta ve inandırıcı olmalı; alakasız/saçma çeldiricili sorular reddedilir.
     </p>
 
     <div className="model-select">
@@ -574,7 +503,7 @@ export function OllamaStudio({read}: {read: string[]}) {
    ● {!audit ? 'Önce soru havuzu kontrol ediliyor…'
     : audit.invalid || audit.duplicates ? 'Havuz kontrolünde hata var; üretim bekliyor.'
      : !status?.connected ? 'Ollama bağlantısı bekleniyor.'
-      : !status.installed || !status.verifierInstalled || !status.judge2Installed ? 'Üretici veya hakem modellerden birinin kurulması bekleniyor.'
+      : !status.installed || !status.verifierInstalled ? 'Üretici veya hakem modellerden birinin kurulması bekleniyor.'
        : (status.autoActive || 0) > 0 ? `${status.autoActive} ünite şu an üretiliyor/denetleniyor (${pipelinePhaseLabel[tel?.pipelinePhase || 'idle'] || ''})…`
         : 'Yeni dalga için hazır…'}
   </p>}
@@ -606,7 +535,6 @@ export function OllamaStudio({read}: {read: string[]}) {
         <div className="progress"><div style={{width: `${pct}%`, background: '#79bd48'}}/></div>
         <div className="coverage-meta">
          <span>Pasaj: {u.passagesCovered}/{u.totalPassages} (%{pct})</span>
-         <span>K:{u.kolay} O:{u.orta} Z:{u.zor}</span>
         </div>
        </div>
       );
@@ -624,7 +552,7 @@ export function OllamaStudio({read}: {read: string[]}) {
   </div>
 
   <div className="tabs studio-tabs">
-   {([['approved', 'Hakemler Onayladı'], ['rejected', 'Hakemler Eledi']] as const).map(([v, label]) => (
+   {([['approved', 'Hakem Onayladı'], ['rejected', 'Hakem Reddetti']] as const).map(([v, label]) => (
     <button key={v} className={view === v ? 'selected' : ''} onClick={() => { viewRef.current = v; setView(v); setItems([]); listKey.current = ''; refresh(); }}>
      {label} ({viewCount[v].toLocaleString('tr-TR')})
     </button>
@@ -646,7 +574,6 @@ export function OllamaStudio({read}: {read: string[]}) {
       </div>
       <div className="tag-row">
        <span className="topic-label">Konu: {q.topic}</span>
-       {q.difficulty && <span className={`difficulty-tag difficulty-${q.difficulty}`}>Zorluk: {difficultyLabel[q.difficulty] || q.difficulty}</span>}
        {q.questionType && <span className="type-tag">{typeLabel[q.questionType] || q.questionType}</span>}
        {q.questionAngle && <span className="type-tag">{angleLabel[q.questionAngle] || q.questionAngle}</span>}
        {q.qualityScore && <span className="score-tag">★ {q.qualityScore}/5</span>}
@@ -667,17 +594,15 @@ export function OllamaStudio({read}: {read: string[]}) {
       </ol>
       <p><b>Gerekçe:</b> {q.explanation}</p>
       <p><b>Kitaptaki dayanak:</b> &quot;{q.evidence}&quot;</p>
-      {q.curationReason && <p><b>Kurul kararı:</b> {q.curationReason}</p>}
       {q.verification?.judges?.length ? (
        <div className="judges-box">
         <p className="judges-title">
-         <b>{q.verification.judges.length} bağımsız yapay zekâ hakeminin kararı</b> — ortak zorluk: {difficultyLabel[q.verification.difficulty || ''] || q.verification.difficulty || '—'}
-         {q.verification.qualityScore ? ` · Ortalama kalite: ${q.verification.qualityScore}/5` : ''}
+         <b>Tek hakem denetimi</b>
+         {q.verification.qualityScore ? ` · Kalite: ${q.verification.qualityScore}/5` : ''}
         </p>
         {q.verification.judges.map((j, i) => (
          <div className="judge-row" key={i}>
-          <span className="judge-name">{judgeLabel(i)} · {j.model}</span>
-          {j.difficulty && <span className={`difficulty-tag difficulty-${j.difficulty}`}>{difficultyLabel[j.difficulty] || j.difficulty}</span>}
+          <span className="judge-name">Tek hakem · {j.model}</span>
           {j.qualityScore && <span className="score-tag">★ {j.qualityScore}/5</span>}
           <p>{j.reason}</p>
           <p className="judge-evidence">Dayanak: &quot;{j.evidence}&quot;</p>
