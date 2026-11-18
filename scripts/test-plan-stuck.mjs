@@ -83,9 +83,9 @@ test('plan: sonuç vermeyen adım atlanır, üretim sıradaki konuyla sürer', a
   console.log(`\nSıra: ${seq.slice(0, 8).join(', ')} · atlanan: ${(status.plan.parked || []).map(p => p.key).join(', ')}`);
 
   assert.ok(!items.some(q => q.unitId === first.id), 'hakemlerin reddettiği konudan soru kaydedilmemeli');
-  // Varsayılan ayarda iki konu aynı anda çalışır; bu yüzden sıra değil içerik sınanır.
-  assert.deepEqual(items.filter(q => q.unitId === second.id).map(q => q.difficulty).sort(), ['kolay', 'orta'], 'takılan konu atlanıp sıradaki konunun kolayı ve ortası yazılmalı');
-  assert.deepEqual(items.filter(q => q.unitId === third.id).map(q => q.difficulty), ['orta', 'orta'], 'farklı zorluk kendi kotasına yazılmalı');
+  // Aynı ünite sıralı biçimde tamamlanır; zorlanan kovalar park edilince de kalan hedeflere geçilir.
+  assert.deepEqual(items.filter(q => q.unitId === second.id).map(q => q.difficulty).sort(), ['kolay', 'kolay', 'orta', 'orta'], 'ikinci ünite yalnızca kolay ve orta hedeflerini karşılamalı');
+  assert.deepEqual(items.filter(q => q.unitId === third.id).map(q => q.difficulty), ['orta', 'orta'], 'zorlanan kolay hedefi park edilince orta kovası dengelenmeli');
   assert.equal(items.filter(q => q.unitId === third.id).length, 2, 'orta kotası (2) dolunca fazlası kaydedilmemeli');
   assert.ok(items.some(q => q.unitId === contexts[3].id), 'üretim 4. konuyla sürmeli');
 

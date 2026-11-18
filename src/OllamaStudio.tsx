@@ -293,7 +293,7 @@ export function OllamaStudio({read}: {read: string[]}) {
   <div className="notice">
    <ShieldCheck size={20}/>
    <span>
-    <b>Her zaman açık iki motor:</b> Tek modelin üretim ve tek hakem çağrıları kuyruktan geçer; her soru kitap kaynağı, tek-doğru ön kontrolü, hakemin kolay/orta/zor sınıflandırması ve gerekirse düzeltme süzgecinden geçer (Motor 1). Kalite motoru (Motor 2) ise onaylı havuzdaki her soruyu 0-100 puanlar; en zayıf olanları <u>üretim boştayken</u> yeniden yazdırır, aynı tek hakemden geçirir ve skoru artmayanı eski haliyle bırakır. Üretim her zaman önceliklidir.
+    <b>Sürekli soru üretimi:</b> İki üretim hattı aynı ünite üzerinde paralel çalışır; her taslak kaynak ve tek-doğru kontrolünden geçer. Açık hedefi az kalan ünite ve zorluk kovası önce tamamlanır. Zorluk kararları yalnızca kolay ve orta düzeyinde tutulur; soru başına yıldızlı puanlama yapılmaz.
    </span>
   </div>
 
@@ -410,14 +410,14 @@ export function OllamaStudio({read}: {read: string[]}) {
       <div className="lineup-head">
        <b>Üretim planı</b>
        <span className={`jarvis-badge ${plan.complete ? 'ok' : 'neutral'}`}>
-        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · kolay + orta + zor karışık` : 'Atlanan adımlar yeniden denenecek'}
+        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · kolay + orta` : 'Atlanan adımlar yeniden denenecek'}
        </span>
        <span>Toplam <b>{plan.totalDone ?? 0}</b> / {plan.totalTarget ?? 0} soru</span>
       </div>
       {(plan.workingUnits || []).map(u => (
        <div key={`${u.pass}-${u.unitId}`}>
         <p className="lineup-line">
-         {(plan.workingUnits || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Eksik kalan (bütün hatlar burada): ' : 'Şu an: '}<b>{u.bookNo}. kitap {u.unitNo}. bölüm — {u.unit}</b> ({u.book}) · bu turda <b>{u.done} / {u.target}</b>
+         {(plan.workingUnits || []).length > 1 ? 'Aynı anda: ' : (plan.parallel ?? 1) > 1 ? 'Aynı ünitede eşzamanlı: ' : 'Şu an: '}<b>{u.bookNo}. kitap {u.unitNo}. bölüm — {u.unit}</b> ({u.book}) · bu turda <b>{u.done} / {u.target}</b>
          {' · '}{u.cells.map(c => `${c.difficulty} ${Math.max(0, c.done - c.from)}/${c.share}${c.parked ? ' (atlandı)' : ''}`).join(' · ')}
          {u.cells.filter(c => (c.streak ?? 0) >= 5).map(c => ` · ${c.difficulty}: üst üste ${c.streak} deneme sonuçsuz (${plan.stuckLimit} olunca atlanır)`).join('')}
         </p>
@@ -445,8 +445,8 @@ export function OllamaStudio({read}: {read: string[]}) {
        </p>
       )}
       <p className="lineup-line">
-       Sıra: 1. kitabın 1. bölümünden başlayarak her bölüme {plan.quota} soru; zorluklar karışıktır (kolay → orta → zor …), yani her bölümün kolay, orta ve zor sorusu birlikte gelir. Bütün bölümler bitince sıradaki tur başlar ({plan.passCount} tur → bölüm başına {plan.perUnitTarget} soru). 1. tur dengelidir; sonraki turlarda kolay soru gittikçe azalır, soruların yarısı orta yarısı zor yazılır.
-       {(plan.parallel ?? 1) > 1 ? ` Bölümler ${plan.parallel}'li gruplar hâlinde hazırlanır; biri dolunca boşalan hat eksik kalan bölüme yardım eder, grup tamamlanmadan sıradaki bölümlere geçilmez.` : ''} Sorular bölümün kitap sayfalarından (ve işaretli internet kaynaklarından) derlenmiş özetinden kurulur; her soru kartında kitabın içindekiler bölümündeki konu başlığı ve kitap sayfası yazar. Aynı bilgi yeniden sorulduğunda farklı bir soru biçimi kullanılır.
+       Sıra: 1. kitabın 1. bölümünden başlayarak her bölüme {plan.quota} soru; yalnızca kolay ve orta düzeyde, dengeli sayıda soru üretilir. Bütün turlar tamamlandığında bölüm başına {plan.perUnitTarget} soruya ulaşılır.
+       {(plan.parallel ?? 1) > 1 ? ` Aynı ünitede ${plan.parallel} soru hattı birlikte çalışır; ünitenin ${plan.perUnitTarget} soruluk hedefi tamamlanmadan sonraki üniteye geçilmez.` : ` Ünite tamamlanmadan sonraki üniteye geçilmez.`} Sorular bölümün kitap sayfalarından (ve işaretli internet kaynaklarından) derlenmiş özetinden kurulur; her soru kartında kitabın içindekiler bölümündeki konu başlığı ve kitap sayfası yazar. Aynı bilgi yeniden sorulduğunda farklı bir soru biçimi kullanılır.
       </p>
       {(plan.parked || []).length > 0 && (
        <p className="lineup-warn">
@@ -486,7 +486,7 @@ export function OllamaStudio({read}: {read: string[]}) {
      <span>{status?.connected ? (status.installed ? 'hazır' : 'kurulu değil') : 'bekleniyor'}</span>
     </div>
     <p className="lineup-line">
-     Tek model hattı: <b>{lineup?.model || '—'}</b> soru üretir ve tek hakem olarak doğrular; kolay / orta / zor düzeyini de belirler. Model bellekte tutulur. {lineup?.ramOffloadGb ? `Model seçiminde en çok ${lineup.ramOffloadGb} GB RAM/CPU offload payı hesaba katılır; disk takası yapılmaz.` : 'Öncelik tam GPU hızıdır; güvenli RAM offload alanı oluşursa otomatik değerlendirilir.'}
+     Tek model hattı: <b>{lineup?.model || '—'}</b> soru üretir ve tek hakem olarak kaynak ile tek-doğru kontrolü yapar; üretim kolay / orta düzeyde kalır. Model bellekte tutulur. {lineup?.ramOffloadGb ? `Model seçiminde en çok ${lineup.ramOffloadGb} GB RAM/CPU offload payı hesaba katılır; disk takası yapılmaz.` : 'Öncelik tam GPU hızıdır; güvenli RAM offload alanı oluşursa otomatik değerlendirilir.'}
     </p>
 
     {/* KAYNAK AYARI — hız/kalite her zaman korunan çıtada */}
@@ -501,7 +501,7 @@ export function OllamaStudio({read}: {read: string[]}) {
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · tek hakem (kolay/orta/zor sınıflandırması) · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta → zor)' : 'kolay/orta/zor dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
+     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · tek hakem · kolay / orta hedefi · gerekirse öz-düzeltme · {plan ? 'ünite sıralı üretim planı' : 'kolay / orta dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden ve anlaşılır olmalı; alakasız seçenek içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">
@@ -649,11 +649,6 @@ export function OllamaStudio({read}: {read: string[]}) {
        {q.difficulty && <span className={`difficulty-tag difficulty-${q.difficulty}`}>Zorluk: {difficultyLabel[q.difficulty] || q.difficulty}</span>}
        {q.questionType && <span className="type-tag">{typeLabel[q.questionType] || q.questionType}</span>}
        {q.questionAngle && <span className="type-tag">{angleLabel[q.questionAngle] || q.questionAngle}</span>}
-       {q.qualityScore && <span className="score-tag">★ {q.qualityScore}/5</span>}
-       {q.examPotential && <span className="score-tag">Sınav {q.examPotential}/5</span>}
-       {q.curatorScore !== undefined && <span className="score-tag">Motor {q.curatorScore}/100</span>}
-       {q.precisionScore !== undefined && <span className="precision-pill">Hassasiyet {q.precisionScore}/100</span>}
-       {Number(q.improvementCount) > 0 && <span className="precision-pill style">Motor 2 ×{q.improvementCount}</span>}
        <span className={`jarvis-badge ${q.status === 'approved' ? 'ok' : 'warn'}`}>{q.status === 'approved' ? 'Hakem Onaylı' : 'Hakem Eledi'}</span>
       </div>
       {q.paragraph && <blockquote className="question-paragraph">{q.paragraph}</blockquote>}
@@ -672,13 +667,11 @@ export function OllamaStudio({read}: {read: string[]}) {
        <div className="judges-box">
         <p className="judges-title">
          <b>{q.verification.judges.length} bağımsız yapay zekâ hakeminin kararı</b> — ortak zorluk: {difficultyLabel[q.verification.difficulty || ''] || q.verification.difficulty || '—'}
-         {q.verification.qualityScore ? ` · Ortalama kalite: ${q.verification.qualityScore}/5` : ''}
         </p>
         {q.verification.judges.map((j, i) => (
          <div className="judge-row" key={i}>
           <span className="judge-name">{judgeLabel(i)} · {j.model}</span>
           {j.difficulty && <span className={`difficulty-tag difficulty-${j.difficulty}`}>{difficultyLabel[j.difficulty] || j.difficulty}</span>}
-          {j.qualityScore && <span className="score-tag">★ {j.qualityScore}/5</span>}
           <p>{j.reason}</p>
           <p className="judge-evidence">Dayanak: &quot;{j.evidence}&quot;</p>
          </div>

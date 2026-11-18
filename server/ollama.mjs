@@ -1014,10 +1014,10 @@ async function savePlanState() {
 }
 
 /**
- * Boşalan hat için planın işi (plan kapalıysa ya da tamamlandıysa planActive=false; grupta
- * şu an verilecek iş yoksa step=null ve hat kısa süre bekler).
- * Aynı anda N soru hazırlanıyorsa konular N'li gruplar hâlinde işlenir: gruptaki bir konu
- * dolunca boşalan hat sıradaki gruba geçmez, grubun eksik kalan konusuna yardım eder.
+ * Boşalan hat için planın işi (plan kapalıysa ya da tamamlandıysa planActive=false; sıradaki
+ * ünitede/turda şu an verilecek iş yoksa step=null ve hat kısa süre bekler).
+ * Aynı anda N soru hazırlanıyorsa bütün hatlar sıradaki aynı üniteden soru alır; tüm turlar
+ * tamamlanmadan sonraki üniteye geçilmez.
  * @param inflight  { [stepKey]: o adımda şu an hazırlanan soru sayısı }
  */
 async function nextPlanStep(items, inflight = {}, size = 1) {
@@ -2317,21 +2317,7 @@ function buildVerifierPrompt(ctx, draft, passage = null, policy = null, apexStat
  const policyRule = policy?.judgeAddendum ? `\nEK KURAL: ${policy.judgeAddendum}` : '';
  const axiomBlock = precisionEngine.getUnitAxiomPromptBlock(ctx.id);
  const paragraphBlock = typeof draft.paragraph === 'string' && draft.paragraph.trim() ? `\nPARÇA: ${draft.paragraph.trim()}` : '';
- return `Sen ÖSYM sınav komisyonunda görevli bağımsız bir soru denetçisisin. Soruyu doğru cevabı bilmeden, YALNIZCA KONU ANLATIMI ile çöz; dış bilgi kullanma.
-Her seçeneği karşılaştır: tek doğru, kaynak desteği, ikinci doğru riski, çeldirici niteliği ve Türkçeyi denetle.
-JSON alanları:
-- evidence: cevabı kanıtlayan cümleyi kaynaktan birebir kopyala (>15 karakter).
-- reason: denetimin gerekçesi, en fazla 2 kısa Türkçe cümle.
-- answer: doğru seçeneğin metni, birebir; kaynakla çözülemiyorsa boş ve supported=false.
-- singleCorrect: yalnızca bir seçenek doğruysa true.
-- dualAnswerRisk: ikinci bir seçenek doğru/savunulabilir ise true; yalnızca benzerlik yetmez. secondBestOption: o seçenek, yoksa boş.
-- supported: cevap anlatımda açıkça destekleniyor mu?
-- distractorPlausible: yanlışlar ilgili, ciddi ve aynı kavram ailesinden mi? Alakasız/komik veya hepsi/hiçbiri varsa false.
-- qualityOk: kök açık, Türkçe düzgün, uzunluk/kelime ipucu yok ve soru sınava uygun mu?
-- qualityScore ve examPotential: 1-5 (kalite ve sınavda çıkma potansiyeli).
-- difficulty: "kolay" (tek bilgi hatırlama), "orta" (ilişki/yakın kavram ayrımı), "zor" (vaka/ince ayrım/çok adımlı çıkarım).
-- bloomLevel: "hatirlama"|"kavrama"|"uygulama"|"analiz".
-Yalnızca JSON döndür; şemadaki tüm alanları doldur.${policyRule}${axiomBlock}
+ return `Sen bağımsız bir soru denetçisisin. Soruyu yalnızca verilen KONU ANLATIMI'na göre kısa biçimde doğrula. Doğru cevap kaynakta açıkça desteklenmeli ve yalnızca tek seçenek doğru olmalıdır. Yalnızca kolay veya orta zorluk kullan; ayrıntılı psikometrik/puanlama değerlendirmesi yapma. Kalite alanları için qualityOk=true, qualityScore=4 ve examPotential=3 döndür; uygunsa difficulty alanını hedeften al. evidence alanına kaynaktan birebir cümle, reason alanına kısa gerekçe yaz. JSON alanları: evidence, reason, answer, singleCorrect, dualAnswerRisk, secondBestOption, supported, distractorPlausible, qualityOk, qualityScore, examPotential, difficulty (kolay|orta), bloomLevel (hatirlama|kavrama).${policyRule}${axiomBlock}
 KONU ANLATIMI: ${sourceText}${paragraphBlock}
 SORU: ${draft.question}
 SEÇENEKLER: ${JSON.stringify(draft.options)}`;

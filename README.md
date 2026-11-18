@@ -258,24 +258,17 @@ Ortam değişkenleriyle ince ayar:
 
 ### 4.1.1 Üretim planı: sorular hangi sırayla gelir?
 
-Otomatik üretim rastgele dolaşmaz; sabit bir plan izler. Kitapların **bölümleri ve konu başlıkları her kitabın "İçindekiler" sayfalarından** (PDF'in 5–7. sayfaları) alınır: 5 kitap, 29 bölüm, 436 konu ve alt konu başlığı (gövdede geçen 276 ara başlıkla birlikte 712). 1. kitabın 1. bölümünden başlanır, her bölüme **50 soru** yazılır ve sıradaki bölüme geçilir; 29 bölüm bitince tur biter.
+Otomatik üretim rastgele dolaşmaz; sabit bir plan izler. Kitapların **bölümleri ve konu başlıkları "İçindekiler" sayfalarından** alınır: 5 kitap, 29 bölüm. İki eşzamanlı üretim hattı aynı ünitede çalışır; her ünitenin dört turu (varsayılan 50 soru/tur) tamamlanınca sıradaki üniteye geçilir.
 
-**Zorluk karışımı tura göre değişir.** 1. turda her bölümde kolay, orta ve zor eşittir; sonraki turlarda kolay giderek azalır, 6. turdan sonra hiç kolay yazılmaz; kalan sorular yarı yarıya orta ve zordur.
+**Zorluk dağılımı sade tutulur:** üretim yalnızca kolay ve orta düzeyde yapılır. Her 50 soruluk turda 25 kolay + 25 orta hedeflenir (tek kalan soru varsa turlar arasında dönüşümlü verilir). Ek hakem puanlaması kullanılmaz; temel kaynak ve tek-doğru kontrolleri korunur.
 
-| Tur | Bölüm başına 50 soru | Tur sonunda bölüm başına toplam (kolay / orta / zor) |
-|---|---|---|
-| 1. tur | 17 kolay + 17 orta + 16 zor | 17 / 17 / 16 |
-| 2. tur | 10 kolay + 20 orta + 20 zor | 27 / 37 / 36 |
-| 3. tur | 6 kolay + 22 orta + 22 zor | 33 / 59 / 58 |
-| 4. tur | 4 kolay + 23 orta + 23 zor | **37 / 82 / 81** |
-
-Varsayılan hedef, kitapta listelenen 29 ünitenin her biri için **200 soru**: 4 tur × 50 soru; toplam **5.800 soru**. Planın sırası, tur başına soru dağılımı ve diğer çalışma kuralları PR #18’deki sistemle aynıdır. Önceden onaylanmış sorular silinmez; mevcut sayılar hedefe sayılır. Hedefe ulaşan ünite için yeni plan sorusu üretilmez. `TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ile özel ayarlar yapılabilir; toplam hedef havuz kapasitesinin %95’ini aşmaz.
+Varsayılan hedef, kitapta listelenen 29 ünitenin her biri için **200 soru**: 4 tur × 50 soru; toplam **5.800 soru**. Önceden onaylanmış sorular silinmez; mevcut sayılar hedefe sayılır. Hedefe ulaşan ünite için yeni plan sorusu üretilmez. `TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ile özel ayarlar yapılabilir; toplam hedef havuz kapasitesinin %95’ini aşmaz.
 
 > **Süre:** Dakikada 1 onaylı soruyla sıfırdan 5.800 soruya ulaşmak yaklaşık 4 gün kesintisiz çalışma gerektirir. Üretimi istediğin an durdurabilirsin.
 
 
-- **İki bölüm aynı anda, yarım bırakmadan:** Bölümler "Aynı anda hazırlanan soru" ayarı kadar (varsayılan 2) gruplar hâlinde işlenir: 1. ve 2. bölüm birlikte başlar. Biri o turdaki 50 sorusuna ulaşınca boşalan hat 3. bölüme geçmez, **eksik kalan bölüme yardım eder**; ikisi de dolunca 3. ve 4. bölüm başlar. Ayarı 1 yaparsan bölümler teker teker dolar. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
-- **Kota kesindir:** hiçbir bölüm bir zorlukta plandaki toplamı (37 / 82 / 81) aşmaz; iki hat aynı bölümde çalışırken bile fazladan soru kaydedilmez.
+- **İki soru hattı aynı ünitede çalışır:** Varsayılan iki hat da ilk üniteden soru üretir; biri başka bir üniteye geçmez. Her turdaki 50 soru tamamlanınca aynı ünitenin sonraki turuna devam edilir. Ünitenin 200 soruluk toplam hedefi dolunca sıradaki üniteye geçilir. "Aynı anda hazırlanan soru" ayarı hat sayısını değiştirir, ünite sırasını değiştirmez. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
+- **Kota kesindir:** hedef üretimde yalnızca kolay ve orta düzey sorular yer alır; her bölümde bu iki seviyeden eşit sayıya yakın toplam 200 soru hedeflenir. İki hat aynı bölümde çalışırken bile fazladan soru kaydedilmez.
 - **Sorular kitabın sayfalarından ve konu başlıklarından kurulur.** Her soruda bölüm anlatımının en az soru sorulmuş cümlesi odak olarak verilir; odaklar bölümün sayfalarına ve konularına yayılarak seçilir. Kanıt cümlesi bölüm anlatımında geçmeyen soru reddedilir. **Soru kartında sorunun konu başlığı ve kitap sayfası yazar** (ör. "Antrenmanla İlgili Temel Kavramlar › Performans · kitap s. 12"); modele verilen istemde de konu başlığı bulunur.
 - **Anlatım kitaptan derlenir.** Elle yazılmış kısa özete kitap PDF'lerinin o bölüme ait sayfalarından **birebir alınmış** tanım, sınıflama, ilke, açıklama ve örnek cümleleri eklenir (toplam 6.104 kitap cümlesi; bölüm başına hedef 600). Her cümlenin hangi konu başlığının altında geçtiği kayıtlıdır (`src/bookSummary.json`, başlıklar `src/bookToc.json`). Kitabın kendi test sayfaları ve cevap anahtarları alınmaz. Gövde metni az olan bölümler hedefin çok altındadır: *Ölçme ve değerlendirme (0-6)* 67, *Dopingle mücadele* 97, *Beceri öğrenimi* 115 cümle; en uzunu *Egzersiz fizyolojisi* 547 cümledir. Bütün bölümlerde (ek anlatımlarla birlikte) toplam 7.158 cümle vardır.
 - **İnternetten derlenen ek anlatım.** Her bölüme, konusuyla ilgili Türkçe kaynaklardan (federasyon ve bakanlık yayınları, üniversite ders notları, TÜBİTAK Ansiklopedi vb.) derlenmiş ek cümleler eklenir: 121 grupta 714 cümle (`src/webSummary.json`). Cümleler kaynaktan kopyalanmamış, kaynağın anlattığı bilgi yeniden yazılmıştır; her grubun kaynak adresi kayıtlıdır. Bu cümlelere dayanan soruda kitap sayfası yerine **"internet kaynağı"** bağlantısı görünür. Kitap dışı bilgi istemiyorsan `TEMPO_WEB_SUMMARY=0` ile kapat. Yeni kaynak eklemek için dosyaya `{ "topic", "sourceTitle", "source", "sentences": [...] }` grubu ekleyip `npm run contexts` çalıştır.
@@ -294,7 +287,7 @@ Varsayılan hedef, kitapta listelenen 29 ünitenin her biri için **200 soru**: 
 - **Anlatımı yeniden üretmek** (kitap PDF'i ya da seçim kuralları değiştiyse): `pip install pymupdf` ardından `npm run summary`. Betik (`scripts/build-book-summary.py`) içindekiler sayfalarını okur, başlıkları gövdede bulur ve yalnızca gövde yazı tipindeki paragrafları alır; tablo, şekil yazısı, kaynakça, etkinlik yönergesi, soru cümlesi ve başka cümleye gönderme yapan ("bu, bunlar…") cümleleri almaz. `python3 scripts/build-book-summary.py --check --toc` içindekilerden okunan başlıkları listeler.
 - Daha önce üretilmiş onaylı sorular kotalara sayılır.
 - **Onaylı sorular havuz bakımında toplu reddedilmez.** Eski sürümde arka plandaki "Otonom Kurul" bakımı, hakemlerin 1–5'lik kalite puanını 0–100'lük bir eşikle karşılaştırdığı için havuz 15 soruyu geçtikten sonra onaylı soruların 10'u dışında hepsini "reddedildi"ye çeviriyordu (plan da aynı bölümleri baştan dolduruyordu). Eşik artık hakem ölçeğindedir; bu hatayla reddedilmiş ve hâlâ kayıtlı olan sorular (reddedilenlerin son 250'si saklanır) ilk havuz bakımında, kotayı aşmamak koşuluyla yeniden onaylı yapılır.
-- Stüdyodaki **Üretim planı** kutusu biten tur sayısını, sıradaki turların kolay / orta / zor karışımını, çalışılan bölümleri, her bölümün zorluk ilerlemesini ve bütün bölümlerdeki zorluk toplamlarını gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
+- Stüdyodaki **Üretim planı** kutusu biten tur sayısını, kolay / orta hedef dağılımını, çalışılan üniteyi, ilerlemeyi ve üniteler toplamını gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
 
 
 ### 4.1.2 Şık sayısı: 4 ya da 5 (A–E)

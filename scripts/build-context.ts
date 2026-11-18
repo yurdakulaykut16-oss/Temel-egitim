@@ -18,7 +18,7 @@ import webSummary from '../src/webSummary.json';
 import {examSamples,examSampleLines} from '../src/examSamples';
 // Konu özeti = elle yazılmış anlatım + kitaptan seçilmiş cümleler (src/bookSummary.json;
 // scripts/build-book-summary.py kitap PDF'lerinden üretir). Soru stüdyosu soruları YALNIZCA bu
-// özetten kurar; 50 kolay + 50 orta + 50 zor soruya yetmesi için özet kitapla büyütülmüştür.
+// özetten kurar; 200 kolay / orta soruya yetmesi için özet kitapla büyütülmüştür.
 // baseChars: metnin elle yazılmış bölümünün uzunluğu (kısa özet isteyen modüller için).
 // pageMarks: [metindeki başlangıç konumu, kitap sayfası] — kitaptan alınan her bölümün hangi sayfadan geldiği.
 // chapter / chapterNo / sections: kitabın "İçindekiler" sayfalarından çıkarılan bölüm adı ve konu başlıkları
