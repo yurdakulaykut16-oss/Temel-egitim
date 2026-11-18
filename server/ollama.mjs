@@ -980,7 +980,7 @@ async function getPipelineConfig() {
 }
 
 // --- ÜRETİM PLANI (bkz. server/production-plan.mjs) ---------------------------------
-// Bölümlere tur tur uğranır; her uğrayışta bölüme PLAN.quota (50) soru yazılır, zorluklar karışıktır.
+// Bölümlere tur tur uğranır; her uğrayışta bölüme PLAN.quota soru yazılır, zorluklar karışıktır.
 // 1. tur dengelidir; sonraki turlarda kolay payı azalır, sorular yarı yarıya orta ve zor olur.
 // Sorular yalnızca konu özetinden kurulur. TEMPO_PLAN=0 planı kapatır (eski dengeli dolaşım).
 const PLAN = planConfigFromEnv(process.env);
@@ -1014,8 +1014,8 @@ async function savePlanState() {
 }
 
 /**
- * Boşalan hat için planın işi (plan kapalıysa ya da tamamlandıysa planActive=false; grupta
- * şu an verilecek iş yoksa step=null ve hat kısa süre bekler).
+ * Plan kapalıysa eski dolaşım kullanılır. Plan açıksa boşalan hat için iş seçilir;
+ * grup doluysa hat bekler, plan tamamlandıysa yeni soru başlatılmaz.
  * Aynı anda N soru hazırlanıyorsa konular N'li gruplar hâlinde işlenir: gruptaki bir konu
  * dolunca boşalan hat sıradaki gruba geçmez, grubun eksik kalan konusuna yardım eder.
  * @param inflight  { [stepKey]: o adımda şu an hazırlanan soru sayısı }
@@ -1033,13 +1033,7 @@ async function nextPlanStep(items, inflight = {}, size = 1) {
   snap = planSnapshot({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked });
  }
  planLastSnapshot = snap;
- if (snap.complete) {
-  if (!planAnnounced.has('complete')) {
-   planAnnounced.add('complete');
-   tempoLog(`Plan tamamlandı: ${snap.totalDone}/${snap.totalTarget} soru. Üretim dengeli dolaşımla sürüyor.`);
-  }
-  return { step: null, planActive: false };
- }
+ if (snap.complete) return { step: null, planActive: true, complete: true };
  const step = pickPlanWork(snap.all, size, inflight);
  // Konu başına bir kez duyurulur (zorluklar konu içinde karışık ilerler).
  const visitKey = step ? `${step.pass}|${step.unitId}` : '';
@@ -1842,8 +1836,8 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   const record = validate(parsed, ctx, latest, model, passage, policy);
   record.verification = verification;
   record.difficulty = verification.difficulty;
-  // Plan kotası kesindir: iki hat aynı konuda çalışırken bile hiçbir kova 50'yi aşamaz.
-  if (PLAN.enabled && DIFFICULTIES.includes(record.difficulty) && planDifficultyForUnit(ctx.id, latest, PLAN.quota, PLAN.passes)
+  // Plan kotası kesindir: iki hat aynı konuda çalışırken bile hiçbir kova plan hedefini aşmamalı.
+  if (PLAN.enabled && DIFFICULTIES.includes(record.difficulty)
    && !planBucketHasRoom(ctx.id, record.difficulty, latest, PLAN.quota, PLAN.passes)) {
    recordRejection('plan_quota_full');
    throw Error(`Bu bölümün ${record.difficulty} kotası (${planCap(record.difficulty)}) doldu; soru kaydedilmedi.`);
@@ -4392,21 +4386,23 @@ async function autoScheduler() {
        setAutoBlock('pool_audit', `Soru havuzunda ${a.invalid} bozuk kayıt ve ${a.duplicates} birebir tekrar var; otomatik onarılamadı. .tempo-data/questions.json dosyasını yedekleyip sil.`);
        nextSleep = 5000;
       } else {
-       setAutoBlock('', '');
        // Plan: konular `limit`'li gruplar hâlinde işlenir; gruptaki bir konu dolunca boşalan hat
        // eksik kalan konuya yardım eder, grup bitmeden sıradaki konulara geçilmez.
        const inflight = {};
        for (const entry of autoControllers.values()) if (entry.planKey) inflight[entry.planKey] = (inflight[entry.planKey] || 0) + 1;
-       const { step: planStep, planActive } = await nextPlanStep(items, inflight, autoState.planGroupSize);
+       const { step: planStep, planActive, complete } = await nextPlanStep(items, inflight, autoState.planGroupSize);
        if (stopEpoch !== autoStopEpoch || autoStopPending > 0) {
         // Bu tur sürerken üretim durduruldu: soru başlatılmaz, bir sonraki turda ayar yeniden okunur.
         nextSleep = 100;
        } else if (planActive && !planStep) {
-        // Grubun kalan soruları zaten hazırlanıyor (kota aşılmasın diye yeni soru açılmaz); sonuç beklenir.
+        // Tamamlanmış plan dengeli dolaşıma düşüp hedefi aşmasın. Bakım yer açarsa devam eder.
+        setAutoBlock(complete ? 'plan_complete' : '', complete ? 'Tüm ünitelerin üretim hedefi tamamlandı.' : '');
         autoState.planSaturated = true;
         modelInferenceQueue.poke();
-        nextSleep = 200;
+        nextSleep = complete ? 30_000 : 200;
        } else {
+        setAutoBlock('', '');
+        autoState.planSaturated = false;
         const ctx = (planStep && contexts.find(c => c.id === planStep.unitId)) || contexts[autoCursor++ % contexts.length];
         autoState.lastLaunchAt = Date.now();
         // Aynı konuda o an hazırlanan soru sayısı: ikinci hat farklı soru tipi/açısıyla yazar.
@@ -5121,7 +5117,7 @@ export function ollamaPlugin() {
        ok: true,
        total: filtered.length,
        unitsCovered: new Set(filtered.map(q => q.unitId)).size,
-       sourceTotal: bookParallelQuestions.length,
+       sourceTotal: bookStyleQuestions.length,
        questions: filtered
       });
      }
@@ -6998,8 +6994,13 @@ export function ollamaPlugin() {
       const tGenReq = performance.now();
       const input = await body(req);
       const ids = Array.isArray(input.units) ? input.units.filter(x => typeof x === 'string') : [];
-      const candidates = contexts.filter(x => ids.includes(x.id));
+      let candidates = contexts.filter(x => ids.includes(x.id));
       if (!candidates.length) return respond(res, 400, { error: 'Önce en az bir üniteyi tamamla.' });
+      if (PLAN.enabled) {
+       const counts = countApproved(await load());
+       candidates = candidates.filter(c => PLAN_DIFFICULTIES.some(d => (counts.get(stepKey(c.id, d)) || 0) < planCap(d)));
+       if (!candidates.length) return respond(res, 409, { error: 'Seçilen ünitelerin üretim hedefi tamamlandı.' });
+      }
       const ctx = candidates[cursor++ % candidates.length];
       try {
        const record = await generateOneManual(ctx, model, verifierModel, judge2Model, {

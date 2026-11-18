@@ -238,8 +238,8 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_MANAGE_OLLAMA` | `1` | `0` yapılınca açılışta Ollama ayarlarına ve sürecine dokunulmaz |
 | `TEMPO_AUTO_PULL` | `1` | `0` yapılınca eksik model kendiliğinden indirilmez |
 | `TEMPO_PLAN` | `1` | Sıralı üretim planı (aşağıda §4.1.1). `0` yapılınca eski dengeli dolaşıma dönülür |
-| `TEMPO_PLAN_QUOTA` | `50` | Bir turda her bölüme yazılacak soru sayısı |
-| `TEMPO_PLAN_PASSES` | `40` | Tur sayısı (1–200; varsayılan havuz sınırıyla 50'lik kotada en çok 42). 1. tur dengeli, sonraki turlarda kolay azalır |
+| `TEMPO_PLAN_QUOTA` | `25` | Bir turda her bölüme yazılacak soru sayısı |
+| `TEMPO_PLAN_PASSES` | `40` | Tur sayısı (1–200; varsayılan havuz sınırıyla 25'lik kotada en çok 85). 1. tur dengeli, sonraki turlarda kolay azalır |
 | `TEMPO_POOL_CAPACITY` | `65000` | Onaylı soru havuzunun üst sınırı (5.000–200.000). Plan toplamı bu sınırın %95'ini geçemez; daha çok tur istiyorsan önce bunu büyüt |
 | `TEMPO_EXAM_STYLE` | `1` | `0` yapılınca soru yazan modele "sınav tarzı örneği" (gönderdiğin örnek / çıkmış sorular ve kitap soruları) gösterilmez |
 | `TEMPO_WEB_SUMMARY` | `1` | `0` yapılınca internetten derlenen ek anlatım ve ders notları (benzersor notları, gönderdiğin görseller, video özeti) kullanılmaz; sorular yalnızca kitap cümlelerinden kurulur |
@@ -258,25 +258,25 @@ Ortam değişkenleriyle ince ayar:
 
 ### 4.1.1 Üretim planı: sorular hangi sırayla gelir?
 
-Otomatik üretim rastgele dolaşmaz; sabit bir plan izler. Kitapların **bölümleri ve konu başlıkları her kitabın "İçindekiler" sayfalarından** (PDF'in 5–7. sayfaları) alınır: 5 kitap, 29 bölüm, 436 konu ve alt konu başlığı (gövdede geçen 276 ara başlıkla birlikte 712). 1. kitabın 1. bölümünden başlanır, her bölüme **50 soru** yazılır ve sıradaki bölüme geçilir; 29 bölüm bitince tur biter.
+Otomatik üretim rastgele dolaşmaz; sabit bir plan izler. Kitapların **bölümleri ve konu başlıkları her kitabın "İçindekiler" sayfalarından** (PDF'in 5–7. sayfaları) alınır: 5 kitap, 29 bölüm, 436 konu ve alt konu başlığı (gövdede geçen 276 ara başlıkla birlikte 712). 1. kitabın 1. bölümünden başlanır, her bölüme **25 soru** yazılır ve sıradaki bölüme geçilir; 29 bölüm bitince tur biter.
 
-**Zorluk karışımı tura göre değişir.** 1. turda her bölümde kolay, orta ve zor eşittir; sonraki turlarda kolay giderek azalır, 6. turdan sonra hiç kolay yazılmaz; kalan sorular yarı yarıya orta ve zordur.
+**Zorluk karışımı tura göre değişir.** İlk tur dengelidir; sonraki turlarda kolay payı azalır, 6. turdan itibaren kolay soru yazılmaz. Orta ve zor payları en fazla bir soru farklıdır.
 
-| Tur | Bölüm başına 50 soru | Tur sonunda bölüm başına toplam |
+| Tur | Bölüm başına 25 soru | Tur sonunda bölüm başına toplam (kolay / orta / zor) |
 |---|---|---|
-| 1. tur | 17 kolay + 17 orta + 16 zor | 17 / 17 / 16 |
-| 2. tur | 10 kolay + 20 orta + 20 zor | 27 / 37 / 36 |
-| 3. tur | 6 kolay + 22 orta + 22 zor | 33 / 59 / 58 |
-| 4. tur | 4 kolay + 23 orta + 23 zor | 37 / 82 / 81 |
-| 5. tur | 2 kolay + 24 orta + 24 zor | 39 / 106 / 105 |
-| 6.–40. tur | 25 orta + 25 zor | 12. tur sonunda 39 / 281 / 280 · 40. tur sonunda **39 kolay / 981 orta / 980 zor** |
+| 1. tur | 9 kolay + 8 orta + 8 zor | 9 / 8 / 8 |
+| 2. tur | 5 kolay + 10 orta + 10 zor | 14 / 18 / 18 |
+| 3. tur | 3 kolay + 11 orta + 11 zor | 17 / 29 / 29 |
+| 4. tur | 2 kolay + 12 orta + 11 zor | 19 / 41 / 40 |
+| 5. tur | 1 kolay + 12 orta + 12 zor | 20 / 53 / 52 |
+| 6.–20. tur | Çift turda 13 orta + 12 zor, tek turda 12 orta + 13 zor | 20. tur sonunda **20 / 241 / 239** |
 
-40 tur × 50 = bölüm başına **2.000**, toplam 29 × 2.000 = **58.000 soru** (önceki plan 12 tur, bölüm başına 600, toplam 17.400 idi). Plan yalnızca **uzadı**: ilk 12 turun sırası ve payları aynıdır, bu yüzden bilgisayarındaki ilerleme kaybolmaz; 12. tur bitince 13. tur başlar. Tur sayısı `TEMPO_PLAN_PASSES` ile değişir; plan toplamı havuz sınırının (`TEMPO_POOL_CAPACITY`, varsayılan 65.000) %95'ini geçemez (50 soruluk kotayla en çok 42 tur = 60.900 soru). Daha da uzatmak için ikisini birlikte büyüt, ör. `TEMPO_POOL_CAPACITY=100000` ve `TEMPO_PLAN_PASSES=65`; kısaltmak için `TEMPO_PLAN_PASSES=12`.
+Varsayılan üretim hedefi 20 tur × 25 = **ünite başına 500 soru**, 29 ünitede **14.500 soru**. Önceden onaylanan sorular silinmez; her zorlukta yeni hedefe kadar ilerlemeye sayılır. Bütün hedefler dolduğunda plan yeni soru başlatmaz; kalite bakımı sürer. `TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ile verilen özel ayarlar geçerlidir. Plan hedefi havuz kapasitesinin (`TEMPO_POOL_CAPACITY`, varsayılan 65.000) %95'ine sığacak şekilde sınırlanır: 25 soruluk kotayla en çok 85 tur = 61.625 soru.
 
-> **Süre ve yük:** Plan bitene kadar üretim durmaz. Dakikada 1 onaylı soruyla 58.000 soru yaklaşık 40 gün kesintisiz çalışma demektir; istediğin an durdurabilirsin, turlar her bölüme eşit uğradığı için yarıda kalan plan da dengelidir. Havuz büyüdükçe `.tempo-data/questions.json` da büyür (57.000 soruda yaklaşık 130 MB) ve sunucu belleği 1,5 GB civarına çıkar.
+> **Süre:** Dakikada 1 onaylı soruyla sıfırdan 14.500 soruya ulaşmak yaklaşık 10 gün kesintisiz çalışma gerektirir. Üretimi istediğin an durdurabilirsin.
 
-- **İki bölüm aynı anda, yarım bırakmadan:** Bölümler "Aynı anda hazırlanan soru" ayarı kadar (varsayılan 2) gruplar hâlinde işlenir: 1. ve 2. bölüm birlikte başlar. Biri o turdaki 50 sorusuna ulaşınca boşalan hat 3. bölüme geçmez, **eksik kalan bölüme yardım eder**; ikisi de dolunca 3. ve 4. bölüm başlar. Ayarı 1 yaparsan bölümler teker teker dolar. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
-- **Kota kesindir:** hiçbir bölüm bir zorlukta plandaki toplamı (39 / 981 / 980) aşmaz; iki hat aynı bölümde çalışırken bile fazladan soru kaydedilmez.
+- **İki bölüm aynı anda, yarım bırakmadan:** Bölümler "Aynı anda hazırlanan soru" ayarı kadar (varsayılan 2) gruplar hâlinde işlenir: 1. ve 2. bölüm birlikte başlar. Biri o turdaki 25 sorusuna ulaşınca boşalan hat 3. bölüme geçmez, **eksik kalan bölüme yardım eder**; ikisi de dolunca 3. ve 4. bölüm başlar. Ayarı 1 yaparsan bölümler teker teker dolar. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
+- **Kota kesindir:** hiçbir bölüm bir zorlukta plandaki toplamı (20 / 241 / 239) aşmaz; iki hat aynı bölümde çalışırken bile fazladan soru kaydedilmez.
 - **Sorular kitabın sayfalarından ve konu başlıklarından kurulur.** Her soruda bölüm anlatımının en az soru sorulmuş cümlesi odak olarak verilir; odaklar bölümün sayfalarına ve konularına yayılarak seçilir. Kanıt cümlesi bölüm anlatımında geçmeyen soru reddedilir. **Soru kartında sorunun konu başlığı ve kitap sayfası yazar** (ör. "Antrenmanla İlgili Temel Kavramlar › Performans · kitap s. 12"); modele verilen istemde de konu başlığı bulunur.
 - **Anlatım kitaptan derlenir.** Elle yazılmış kısa özete kitap PDF'lerinin o bölüme ait sayfalarından **birebir alınmış** tanım, sınıflama, ilke, açıklama ve örnek cümleleri eklenir (toplam 6.104 kitap cümlesi; bölüm başına hedef 600). Her cümlenin hangi konu başlığının altında geçtiği kayıtlıdır (`src/bookSummary.json`, başlıklar `src/bookToc.json`). Kitabın kendi test sayfaları ve cevap anahtarları alınmaz. Gövde metni az olan bölümler hedefin çok altındadır: *Ölçme ve değerlendirme (0-6)* 67, *Dopingle mücadele* 97, *Beceri öğrenimi* 115 cümle; en uzunu *Egzersiz fizyolojisi* 547 cümledir. Bütün bölümlerde (ek anlatımlarla birlikte) toplam 7.158 cümle vardır.
 - **İnternetten derlenen ek anlatım.** Her bölüme, konusuyla ilgili Türkçe kaynaklardan (federasyon ve bakanlık yayınları, üniversite ders notları, TÜBİTAK Ansiklopedi vb.) derlenmiş ek cümleler eklenir: 121 grupta 714 cümle (`src/webSummary.json`). Cümleler kaynaktan kopyalanmamış, kaynağın anlattığı bilgi yeniden yazılmıştır; her grubun kaynak adresi kayıtlıdır. Bu cümlelere dayanan soruda kitap sayfası yerine **"internet kaynağı"** bağlantısı görünür. Kitap dışı bilgi istemiyorsan `TEMPO_WEB_SUMMARY=0` ile kapat. Yeni kaynak eklemek için dosyaya `{ "topic", "sourceTitle", "source", "sentences": [...] }` grubu ekleyip `npm run contexts` çalıştır.
@@ -291,7 +291,7 @@ Otomatik üretim rastgele dolaşmaz; sabit bir plan izler. Kitapların **bölüm
 - **Aynı bilgi, farklı soru biçimi.** Bir cümleden daha önce soru yazıldıysa bu kez **kullanılmamış bir soru tipi ve açısı** seçilir; modele o cümleden yazılmış önceki soru kökleri gösterilir ve "aynı bilgiyi başka biçimde sor" denir. Soru tipleri: kavram, vaka, karşılaştırma, neden-sonuç, istisna, uygulama, en iyi seçim, **tanımdan terim, boşluk doldurma, doğru yargı, ilginç bilgi, durumdan kavrama ("hangisi baskındır / önceliklidir"), kısa ve net (çıkmış soru tarzı)** ve paragraf. Tipi farklı olan iki soru aynı cevabı paylaşabilir; kökü gerçekten benzeyen ya da şıklarının çoğu aynı olan soru yine reddedilir (§4.3).
 - **Modele anlatımın tamamı değil ilgili bölümü gösterilir.** Bölüm anlatımı (8–68 bin karakter) modelin bağlam penceresine sığmaz; soru yazarına odak cümlenin, hakemlere kanıt cümlesinin çevresindeki ~2.400 karakterlik kesintisiz bölüm verilir (`TEMPO_SUMMARY_WINDOW_CHARS`). Kanıt denetimi ise anlatımın tamamına bakar.
 - Hakemler bir soruyu hedeften farklı zorlukta bulursa (ör. kolay hedeflenmişken "orta") ve o bölümün o zorluktaki kotası dolmamışsa soru o zorlukla kaydedilir ve o zorluğun payına sayılır; kota doluysa reddedilir.
-- **Bir bölümden istenen sayıda farklı soru çıkmayabilir** (özellikle cümlesi az olan bölümlerde: 67 cümleden 2.000 farklı soru beklenmemeli; turlar ilerledikçe "benzer soru zaten kayıtlı" retleri artar). Bir bölümün bir zorluğunda üst üste 25 deneme soru çıkarmazsa o zorluk **atlanır**; bölümün diğer zorlukları ve sıradaki bölümler sürer, atlananlar stüdyoda "Atlanan adımlar" olarak gösterilir ve diğer her şey bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
+- **Bir bölümden istenen sayıda farklı soru çıkmayabilir** (özellikle cümlesi az olan bölümlerde: 67 cümleden 500 farklı soru beklenmemeli; turlar ilerledikçe "benzer soru zaten kayıtlı" retleri artar). Bir bölümün bir zorluğunda üst üste 25 deneme soru çıkarmazsa o zorluk **atlanır**; bölümün diğer zorlukları ve sıradaki bölümler sürer, atlananlar stüdyoda "Atlanan adımlar" olarak gösterilir ve diğer her şey bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
 - **Anlatımı yeniden üretmek** (kitap PDF'i ya da seçim kuralları değiştiyse): `pip install pymupdf` ardından `npm run summary`. Betik (`scripts/build-book-summary.py`) içindekiler sayfalarını okur, başlıkları gövdede bulur ve yalnızca gövde yazı tipindeki paragrafları alır; tablo, şekil yazısı, kaynakça, etkinlik yönergesi, soru cümlesi ve başka cümleye gönderme yapan ("bu, bunlar…") cümleleri almaz. `python3 scripts/build-book-summary.py --check --toc` içindekilerden okunan başlıkları listeler.
 - Daha önce üretilmiş onaylı sorular kotalara sayılır.
 - **Onaylı sorular havuz bakımında toplu reddedilmez.** Eski sürümde arka plandaki "Otonom Kurul" bakımı, hakemlerin 1–5'lik kalite puanını 0–100'lük bir eşikle karşılaştırdığı için havuz 15 soruyu geçtikten sonra onaylı soruların 10'u dışında hepsini "reddedildi"ye çeviriyordu (plan da aynı bölümleri baştan dolduruyordu). Eşik artık hakem ölçeğindedir; bu hatayla reddedilmiş ve hâlâ kayıtlı olan sorular (reddedilenlerin son 250'si saklanır) ilk havuz bakımında, kotayı aşmamak koşuluyla yeniden onaylı yapılır.
@@ -343,13 +343,15 @@ Sınavda uzun köklü/parçaya dayalı soru çıkma ihtimaline karşı havuza se
 
 ### 4.5 Kitaptan üretim: resmî kitap soruları, paralelleri ve kaynak sınırı
 
-**1) Kitabın kendi soruları birebir havuzda.** 5 resmî ders kitabının her ünitesinin sonundaki "Neler Öğrendik?" değerlendirme soruları PDF'lerden otomatik çıkarılır:
+**Aktif hazır soru havuzu:** 5 kitaptaki 29 ünite için **890 hazır soru** var: 341 sabit soru (gönderdiğin kaynaklı sınav örnekleri dahil), 290 resmî kitap sorusu ve 259 kitap paraleli. **890 bir üst sınır değil**, mevcut toplamdır. Yeni kaynaklar eklendiğinde `npm run contexts` sabit bankadaki tekrarları ayıklar ve hazır soruların tamamını dizine alır. Hazır havuza ünite ya da proje kotası uygulanmaz. Test başına soru sınırı ve otomatik üretim hedefi ayrı ayarlardır.
+
+**1) Kitabın kendi soruları kaynak arşivinde birebir korunur.** 5 resmî ders kitabının her ünitesinin sonundaki "Neler Öğrendik?" değerlendirme soruları PDF'lerden otomatik çıkarılır:
 
 ```powershell
 npm run books:questions   # -> server/book-style-questions.json  (29 ünite x 10 = 290 soru)
 ```
 
-Her soruda kitabın kendi 5 şıkkı, doğru cevap harfi ve "yanlışsa şu konuyu tekrar oku" ipucu bulunur. Test merkezindeki **Kitaptan "Neler Öğrendik?" + TVGFBF** sınavı ve karma testler bu soruları kullanır.
+Her soruda kitabın kendi 5 şıkkı, doğru cevap harfi ve "yanlışsa şu konuyu tekrar oku" ipucu bulunur. Test merkezindeki **Kitaptan "Neler Öğrendik?" + TVGFBF** sınavı ve karma testler için bu soruların tamamı havuzda bulunur; her test kendi soru sınırına göre seçim yapar.
 
 **2) Aynı bilgiyi ölçen "kitap paraleli" sorular.** Kitap sorusunu ezberlemek yetmesin diye, her kitap sorusundan **aynı kavramı ve kitabın kendi çeldiricilerini kullanan, ama kökü yeniden yazılmış** bir paralel soru üretilir:
 
@@ -372,7 +374,7 @@ Puan = `0.4 x doğru cevabın kapsanması + 0.6 x soru kökünün kapsanması`. 
 
 - **Yapay zekâ üretiminde sert kapı:** eşiğin altında kalan taslak doğrudan reddedilir ("Soru konu anlatım özetinde ve kitap pasajlarında yeterince karşılığı olmayan kavramlar içeriyor..."). Alakasız/uydurma deneme soruları ölçekte 0.00–0.52 alır, yani tamamı elenir.
 - **Hazır havuzda etiketleme:** statik banka, kitap soruları ve paraleller de puanlanır (`npm run contexts` + `npm run parallels`), `src/groundingIndex.json` dosyasına yazılır.
-- **Test merkezinde tek anahtar:** "**Konu anlatım özetlerimde olmayan soru çıkmasın**" anahtarı açıkken (varsayılan) kaynak dışı işaretlenen sorular hiçbir teste girmez. Şu anda 894 sorudan yalnızca **8'i** kaynak dışıdır (günlük Türkçeyle yazılmış senaryo soruları); anahtarı kapatırsan bunlar da gelir.
+- **Test merkezinde tek anahtar:** "**Konu anlatım özetlerimde olmayan soru çıkmasın**" anahtarı açıkken (varsayılan) kaynak dışı işaretlenen sorular hiçbir teste girmez. Çalışma havuzundaki kaynak dışı soruların sayısı arayüzde gösterilir; anahtarı kapatırsan bunlar da gelir.
 - Paragraf sorularında parçanın kendisi de ölçüme katılır (zaten kaynaktan birebir alındığı için).
 
 ### 4.6 Yanlış yaptığın soru değiştirilerek, rastgele tekrar karşına çıkar
@@ -381,7 +383,7 @@ Hata defterine düşen soru bir daha **birebir** sorulmaz; `src/questionVariants
 
 - **Aynı bilgi, farklı lafız:** doğru cevap ve ünitenin/kitabın kendi çeldiricileri korunur, yalnızca soru kökü değişir ve **şık sırası karıştırılır** (şık yerinin ezberlenmesi boşa çıkar).
 - **Her yanlışta yeni yazım:** varyant, hata sayısıyla tohumlanır; yani aynı soruyu 2. kez yanlış yaptığında farklı bir kalıpla karşına gelir.
-- **Rastgele serpiştirme:** "Hata Defterimden Çöz"ü beklemen gerekmez; karma/tekrar testlerinde havuza **rastgele konumlara** enjekte edilir (test uzunluğunun en fazla %20'si, en çok 4 soru).
+- **Rastgele serpiştirme:** "Hata Defterimden Çöz"ü beklemen gerekmez; karma/tekrar testlerinde en fazla 2 soru **rastgele seçilen soruların yerini alır**; test uzamaz. Hata defterini ayrı açarsan tek oturumda en fazla 13 yanlışını tekrar çözersin.
 - **Doğru yapınca orijinal hata kapanır:** varyantı doğru yanıtladığında, varyantın türediği asıl hata kaydı "ustalaşmış" sayılır; asıl soruyu tekrar görmezsin.
 - Yerel model açıksa `/api/ollama/rephrase` uç noktası kökü **modelle** yeniden yazar; model yoksa aynı deterministik motor devreye girer (sonuç her zaman aynı kalır).
 
@@ -530,7 +532,7 @@ Voice Studio tarayıcı ve Windows'un sunduğu konuşma sentezini kullanır; ayr
 
 ## 11B. Test çöz
 
-Ünite sayfasında **Ünite testine geç** düğmesini kullan. **Test merkezi** bölümünden kitap ve karma testleri de açabilirsin. Testlerde yalnız tamamlanan ünitelerin uygun soruları kullanılır; yapay zekânın kendi kendine onayladığı sorular ek bir işlem gerekmeden havuza girmiş olur. Rastgele seçim nedeniyle bir soru her testte hemen görünmeyebilir. Bir üniteyi yanlış yaptıkça o ünite, art arda üç doğruya ulaşana kadar karma testlerde daha sık ve daha ağırlıklı çıkar; üç doğruya ulaştığında ağırlığı azalır, ama kalıcılığı Tekrar yolu'ndaki uzun vadeli program korur.
+Ünite, kitap ve karma alıştırma testlerinde en fazla **10 soru** sorulur. Resmî formatlı tam deneme ise değişmez: **5 kitap × 20 = 100 soru**, kitap başına 12 doğru barajı. Ünite sayfasında **Ünite testine geç** düğmesini kullan. **Test merkezi** bölümünden kitap ve karma testleri de açabilirsin. Testlerde yalnız tamamlanan ünitelerin uygun soruları kullanılır; yapay zekânın kendi kendine onayladığı sorular ek bir işlem gerekmeden havuza girmiş olur. Rastgele seçim nedeniyle bir soru her testte hemen görünmeyebilir. Bir üniteyi yanlış yaptıkça o ünite, art arda üç doğruya ulaşana kadar karma testlerde daha sık ve daha ağırlıklı çıkar; üç doğruya ulaştığında ağırlığı azalır, ama kalıcılığı Tekrar yolu'ndaki uzun vadeli program korur.
 
 ## 11C. Nasıl çalışmalı, hangi konulara ağırlık ver
 
@@ -542,7 +544,7 @@ Bu bölüm, "Antrenörlük Temel Eğitimi" sınavının genel formatı ve çalı
 - **Önce en zayıf olduğun modülü bul:** Baraj modül başına olduğu için en kritik modül, en zayıf olduğun modüldür. Uygulamadaki **Test merkezi**nden her kitap için ayrı deneme çöz, en düşük çıkan modülde fazladan zaman geçir (hedef: güvenlik payı için 20 soruda 15-16 doğru).
 - **Bazı modüller daha teknik olma eğilimindedir:** Hareket ve Antrenman Bilimleri ile Spor ve Sağlık Bilimleri, anatomi/fizyoloji/antrenman terminolojisi içerdiğinden genelde daha zor bulunur; kart/özet çıkararak ve kavramları görselleştirerek (örn. "süper telafi" eğrisini çizerek) çalışmak ezbere göre daha kalıcı olabilir. Spor Yönetimi ve Sporda Psikososyal Alanlar genelde daha az teknik bulunur.
 - **Konuyu başka birine (veya kendine) sesli anlat:** Bir konuyu notlara bakmadan kendi cümlelerinle anlatabilmek, gerçekten öğrenip öğrenmediğini en iyi gösteren testlerden biridir. Uygulamadaki **Tekrar yolu**, tam bunun için kart başına "önce anlat, sonra notu gör" akışını kullanır.
-- **Son haftalarda süreyle (zamanlı) çalış:** Gerçek sınavda modül başına yaklaşık 1 dakika/soru düşer. Sınavdan 1-2 hafta önce **Test merkezi**nde 20 soruluk kitap testlerini zamanlayarak çözmek, gerçek temponu ölçmene yardımcı olur.
+- **Son haftalarda süreyle (zamanlı) çalış:** Gerçek sınavda modül başına yaklaşık 1 dakika/soru düşer. Sınavdan 1-2 hafta önce **Test merkezi**nde 10 soruluk kısa testleri veya 100 soruluk tam denemeyi zamanlayarak çözmek, gerçek temponu ölçmene yardımcı olur.
 - **Yanlış yaptıkların listesini tut, sonda onları tekrar çöz:** Her şeyi baştan yeniden okumak yerine, özellikle yanlış yaptığın sorulara yakın zamanda tekrar dön; uygulama bunu zaten otomatik yapar (bkz. "11B. Test çöz" ve "11. Tekrar yolunu kullan" — yanlış yapılan ünite, üç doğruya ulaşana kadar karma testlerde daha sık ve ağırlıklı çıkar).
 - **Erken başla:** Genel öneri, sınavdan 4-6 hafta önce düzenli çalışmaya başlamak ve kaynak metni (sadece özet değil) birkaç kez okumaktır; gerçek sınav ince ayrıntıları da sorabilir.
 
