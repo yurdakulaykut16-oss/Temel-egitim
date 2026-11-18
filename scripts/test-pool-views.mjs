@@ -3,7 +3,7 @@
 //  - /questions?status=…&limit=N yalnızca o listedeki en yeni N kaydı verir
 //  - /questions?fields=quiz yalnızca onaylı soruların Test merkezi alanlarını verir;
 //    revision aynıysa liste yeniden gönderilmez
-//  - varsayılan plan 40 tur × 50 = bölüm başına 2.000, toplam 58.000 sorudur ve havuz sınırına sığar
+//  - varsayılan plan 20 tur × 25 = bölüm başına 500, toplam 14.500 sorudur ve havuz sınırına sığar
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -36,7 +36,7 @@ function seed(count) {
  return items;
 }
 
-test('büyük havuz görünümleri: sürüm numarası, son N kayıt, sade test listesi ve 58.000 soruluk varsayılan plan', async () => {
+test('büyük havuz görünümleri: sürüm numarası, son N kayıt, sade test listesi ve 14.500 soruluk varsayılan plan', async () => {
  const dir = await mkdtemp(join(tmpdir(), 'tempo-poolviews-'));
  const saved = {};
  const env = { TEMPO_DATA_DIR: dir, TEMPO_DISABLE_AUTOLOOP: '1', TEMPO_QUIET: '1', TEMPO_OFFLINE_ONLY: '1', OLLAMA_MODEL: 'fake:1', OLLAMA_VERIFIER_MODEL: 'fake:1', OLLAMA_JUDGE2_MODEL: 'fake:1' };
@@ -74,14 +74,14 @@ test('büyük havuz görünümleri: sürüm numarası, son N kayıt, sade test l
  const json = async path => JSON.parse((await get(path)).text);
 
  try {
-  // Varsayılan plan: 40 tur × 50 soru = bölüm başına 2.000; havuz sınırı planı kısmıyor.
+  // Varsayılan plan: 20 tur × 25 soru = bölüm başına 500; havuz sınırı planı kısmıyor.
   const status = await json('/status');
   assert.equal(status.questionCapacity, 65000);
-  assert.equal(status.plan.quota, 50);
-  assert.equal(status.plan.passCount, 40);
-  assert.equal(status.plan.perUnitTarget, 2000);
-  assert.equal(status.plan.totalTarget, contexts.length * 2000);
-  assert.equal(status.plan.totalTarget, 58000);
+  assert.equal(status.plan.quota, 25);
+  assert.equal(status.plan.passCount, 20);
+  assert.equal(status.plan.perUnitTarget, 500);
+  assert.equal(status.plan.totalTarget, contexts.length * 500);
+  assert.equal(status.plan.totalTarget, 14500);
   assert.ok(status.plan.totalTarget <= status.questionCapacity * 0.95, 'plan toplamı havuz sınırının %95\'ine sığmalı');
   // 4 ve 5 şıklı kayıtlar birlikte sayılır.
   assert.equal(status.approved, approvedSeed);
@@ -145,6 +145,28 @@ test('büyük havuz görünümleri: sürüm numarası, son N kayıt, sade test l
   assert.ok(changed.items.some(x => x.id === genBody.item.id));
   assert.equal((await json('/questions?status=approved&limit=1')).items[0].id, genBody.item.id, 'en yeni kayıt listenin sonundadır');
   assert.equal((await json('/audit')).checked, audit1.checked + 1);
+
+  // Aynı kayıtlarla, zaten dolu olan daha küçük bir planla yeniden başlat. Fazla onaylar
+  // silinmemeli; ne zamanlayıcı eski dengeli dolaşıma dönmeli ne de elle yeni soru eklenmeli.
+  process.env.TEMPO_PLAN_QUOTA = '1';
+  process.env.TEMPO_PLAN_PASSES = '1';
+  process.env.TEMPO_DISABLE_AUTOLOOP = '0';
+  const smaller = await import(`../server/ollama.mjs?smaller=${Date.now()}`);
+  try {
+   smaller.ollamaPlugin().configureServer({ middlewares: { use(_p, h) { middleware = h; } } });
+   let status = await json('/status');
+   const deadline = Date.now() + 8000;
+   while (status.autoBlock?.code !== 'plan_complete' && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    status = await json('/status');
+   }
+   assert.equal(status.plan.complete, true);
+   assert.equal(status.plan.totalDone, contexts.length);
+   assert.equal(status.autoBlock?.code, 'plan_complete');
+   const extra = await fetch(`${base}/api/ollama/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: JSON.stringify({ units: ['0-0'] }) });
+   assert.equal(extra.status, 409);
+   assert.deepEqual((await json('/questions?fields=quiz')).items.map(q => q.id), changed.items.map(q => q.id));
+  } finally { smaller.stopOllamaLoops(); }
  } finally {
   stopOllamaLoops?.();
   app.closeAllConnections?.();
