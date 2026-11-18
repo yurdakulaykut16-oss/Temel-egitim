@@ -79,7 +79,7 @@ type Status = {
  autoEvents?: AutoEvent[];
  lineup?: Lineup;
  plan?: ProductionPlan;
- ollamaRuntime?: {numCtx?: number; numThread?: number | null; keepAlive?: string | number};
+ ollamaRuntime?: {numCtx?: number; numThread?: number | null; numBatch?: number | null; numGpu?: number | null; keepAlive?: string | number};
  settings?: {passageMode?: 'full-book' | 'summary-only'};
  telemetry?: Telemetry; coverage?: Coverage; qualityLoop?: QualityLoop;
 };
@@ -511,14 +511,14 @@ export function OllamaStudio({read}: {read: string[]}) {
     </div>
 
     <p className="manifest-line" style={{margin: '4px 0 10px'}}>
-     🔒 Kalite hattı: <b>1 soru/çağrı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · tek hakem (kolay/orta (zor içerik dahil) sınıflandırması) · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta)' : 'kolay/orta (zor içerik dahil) dengesi'}.</b> Her soruda beş şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
+     🔒 Kalite hattı: <b>1 soru/çağrı · yeni sorularda 4 şık + kısa gerekçe + uygun tiplerde kısa vaka bağlamı · {plan ? 'yalnızca konu özeti' : 'ilgili kitap pasajı'} · tek-doğru ve kaynak kontrolü · tek hakem (kolay/orta (zor içerik dahil) sınıflandırması) · gerekirse öz-düzeltme · {plan ? 'sıralı üretim planı (kolay → orta)' : 'kolay/orta (zor içerik dahil) dengesi'}.</b> Her soruda dört şık da aynı kavram ailesinden, birbirine yakın uzunlukta ve “az kalsın doğru” niteliğinde olmalı; alakasız/saçma şık içeren sorular otomatik reddedilir.
     </p>
 
     <div className="model-select">
      <label>Model kuyruğu</label>
      <span>{status?.modelInferenceQueue?.active
       ? `Çalışıyor: ${status.modelInferenceQueue.active.label}`
-      : 'Boşta'} · {status?.modelInferenceQueue?.queued ?? 0} bekleyen · aynı anda en çok {status?.modelInferenceConcurrency ?? 1} çağrı · CPU {status?.ollamaRuntime?.numThread ?? '—'} thread</span>
+      : 'Boşta'} · {status?.modelInferenceQueue?.queued ?? 0} bekleyen · aynı anda en çok {status?.modelInferenceConcurrency ?? 1} çağrı · CPU {status?.ollamaRuntime?.numThread ?? '—'} thread{status?.ollamaRuntime?.numBatch != null ? ` · batch ${status.ollamaRuntime.numBatch}` : ''}{status?.ollamaRuntime?.numGpu != null ? ` · GPU katmanı ${status.ollamaRuntime.numGpu === -1 ? 'tümü' : status.ollamaRuntime.numGpu}` : ''}</span>
      <label htmlFor="concurrency-choice" style={{marginLeft: 10}}>Hazırlık hatları (1-8; model çağrısı aynı anda 1)</label>
      <select id="concurrency-choice" value={status?.autoConcurrency ?? 2} onChange={async e => {
       const r = await fetch(`${api}/concurrency`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: Number(e.target.value)})});

@@ -127,6 +127,17 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   assert.equal(result.item.verification.judges.length,1,'soru yalnızca tek hakemden geçmeli');
   for(const j of result.item.verification.judges){assert.equal(j.answer,'Planlı ve tekrarlı olması');assert.equal(j.difficulty,'kolay');assert.ok(j.reason);assert.ok(j.qualityScore>=1)}
   assert.ok(calls.some(c=>c.prompt.includes('SORU:')));
+  const compactCalls=calls.filter(c=>c.format?.properties?.options);
+  assert.ok(compactCalls.length>0);
+  for(const c of compactCalls){
+   assert.equal(c.format.properties.options.minItems,4);
+   assert.equal(c.format.properties.options.maxItems,4);
+   assert.equal(c.options.num_predict,640,'JSON tavanı hız uğruna kesilmez');
+  }
+  assert.ok(compactCalls.some(c=>c.prompt.includes('ek ezber ipucu yazma')));
+  const judgeCalls=calls.filter(c=>c.format?.properties?.singleCorrect);
+  assert.ok(judgeCalls.length>0);
+  for(const c of judgeCalls) for(const key of ['singleCorrect','dualAnswerRisk','supported','distractorPlausible']) assert.ok(c.format.required.includes(key));
   assert.ok(!calls.some(c=>c.prompt.includes('Egzersiz düzenli ve planlı etkinliktir.')));
 
   response=await post();assert.equal(response.status,502);assert.match((await response.json()).error,/zaten kayıtlı|benzer/);
