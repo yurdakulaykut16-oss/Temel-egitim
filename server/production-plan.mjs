@@ -1,23 +1,23 @@
 // ÜRETİM PLANI
 // ---------------------------------------------------------------------------
 // Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Kitabın bölümlerine sırayla, TUR TUR
-// uğranır ve her uğrayışta o bölüme 25 soru yazılır; zorluklar KARIŞIKTIR (kolay → orta → zor → …):
+// uğranır ve her uğrayışta o bölüme 50 soru yazılır; zorluklar KARIŞIKTIR (kolay → orta → zor → …):
 //
-//   1. tur: her bölüme 9 kolay + 8 orta + 8 zor (dengeli)
-//   2. tur: 5 kolay + 10 orta + 10 zor      3. tur: 3 kolay + 11 orta + 11 zor
-//   4. tur: 2 kolay + 12 orta + 11 zor       5. tur: 1 kolay + 12 orta + 12 zor
-//   6. tur ve sonrası: 12 ve 13 soru orta/zor arasında dönüşümlü paylaşılır (kolay soru yazılmaz)
+//   1. tur: her bölüme 17 kolay + 17 orta + 16 zor (dengeli)
+//   2. tur: 10 kolay + 20 orta + 20 zor      3. tur: 6 kolay + 22 orta + 22 zor
+//   4. tur: 4 kolay + 23 orta + 23 zor       5. tur: 2 kolay + 24 orta + 24 zor
+//   6. tur ve sonrası: 25 orta + 25 zor (kolay soru yazılmaz)
 //
 // Yani ilk turdan itibaren her bölümün kolay, orta ve zor sorusu vardır; 1. turdan sonra kolay payı
 // gittikçe azalır, soruların yarısı orta yarısı zor olur. Tur sayısı TEMPO_PLAN_PASSES ile ayarlanır
-// (varsayılan 20 → bölüm başına 500 soru; 29 bölümde toplam 14.500).
+// (varsayılan 2 → bölüm başına 100 soru; 29 bölümde toplam 2.900).
 //
 // Plan "hücre"lerden oluşur: (tur, konu, zorluk). Hücrenin `quota` alanı o konu + zorlukta o turun
-// SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 14); `from` turun başındaki
+// SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 33); `from` turun başındaki
 // sayıdır, `share` o tura düşen paydır.
 //
 // Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) konular N'li GRUPLAR hâlinde işlenir:
-// ör. 1. ve 2. konu birlikte başlar; biri 25'e ulaşınca boşalan hat 3. konuya GEÇMEZ, eksik kalan
+// ör. 1. ve 2. konu birlikte başlar; biri 50'ye ulaşınca boşalan hat 3. konuya GEÇMEZ, eksik kalan
 // konuya yardım eder. Gruptaki bütün konular dolunca (ya da atlanınca) sıradaki grup başlar.
 //
 // Konu özeti bir zorlukta yeni soru için yetmeyebilir: o konu + zorlukta üst üste çok sayıda deneme
@@ -27,8 +27,8 @@
 // Bu dosya saf fonksiyonlardan oluşur (dosya/ağ erişimi yok); server/ollama.mjs kullanır.
 
 export const PLAN_DIFFICULTIES = ['kolay', 'orta', 'zor'];
-export const DEFAULT_PLAN_QUOTA = 25;
-export const DEFAULT_PLAN_PASSES = 20;
+export const DEFAULT_PLAN_QUOTA = 50;
+export const DEFAULT_PLAN_PASSES = 2;
 // 1. turdan sonra kolay soruların tur içindeki payı (2., 3., 4., 5. tur); 6. turdan itibaren 0.
 export const EASY_FRACTIONS = { 2: 0.20, 3: 0.12, 4: 0.08, 5: 0.04 };
 export const DEFAULT_PLAN_STUCK_LIMIT = 25;
@@ -52,7 +52,7 @@ export function planConfigFromEnv(env = process.env) {
 
 /**
  * `pass`. turda bir bölümün `difficultyIndex` zorluğuna (0 kolay, 1 orta, 2 zor) düşen soru payı.
- * Her turun toplamı `quota`dır. 1. tur dengelidir (25 → 9+8+8); sonraki turlarda kolay payı
+ * Her turun toplamı `quota`dır. 1. tur dengelidir (50 → 17+17+16); sonraki turlarda kolay payı
  * azalır (EASY_FRACTIONS), kalan sorular yarı yarıya orta ve zor olur (tek kalan soru çift turlarda
  * ortaya, tek turlarda zora yazılır).
  */
