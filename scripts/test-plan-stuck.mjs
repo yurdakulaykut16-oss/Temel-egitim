@@ -47,7 +47,7 @@ test('plan: sonuç vermeyen adım atlanır, üretim sıradaki konuyla sürer', a
   process.env.TEMPO_DATA_DIR = dir;
   process.env.TEMPO_OFFLINE_ONLY = '1';
   process.env.TEMPO_QUIET = '1';
-  process.env.TEMPO_PLAN_QUOTA = '4'; // Yarılama sonrası etkin kota 2
+  process.env.TEMPO_PLAN_QUOTA = '2';
   process.env.TEMPO_PLAN_PASSES = '2';
   process.env.TEMPO_PLAN_STUCK_LIMIT = '3';
   process.env.TEMPO_QUESTION_INTERVAL_MS = '20';
