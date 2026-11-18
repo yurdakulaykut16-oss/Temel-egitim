@@ -1,3 +1,4 @@
+import { generationDifficultyOf, normalizeGeneratedQuestion } from './question-difficulty.mjs';
 import { similarity } from './stem-similarity.mjs';
 import { readFile, mkdir, writeFile, rename, readdir, lstat, stat, appendFile } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
@@ -980,8 +981,8 @@ async function getPipelineConfig() {
 }
 
 // --- ÜRETİM PLANI (bkz. server/production-plan.mjs) ---------------------------------
-// Bölümlere tur tur uğranır; her uğrayışta bölüme PLAN.quota (50) soru yazılır, zorluklar karışıktır.
-// 1. tur dengelidir; sonraki turlarda kolay payı azalır, sorular yarı yarıya orta ve zor olur.
+// Bölümlere tur tur uğranır; her uğrayışta bölüme PLAN.quota (varsayılan 25) soru yazılır, zorluklar karışıktır.
+// İlk tur kolay payı %20; sonraki turlarda azalır. Orta ve zor içerik kullanıcıya orta yansır.
 // Sorular yalnızca konu özetinden kurulur. TEMPO_PLAN=0 planı kapatır (eski dengeli dolaşım).
 const PLAN = planConfigFromEnv(process.env);
 // Plan hedefi soru havuzunun kapasitesini aşmasın (aşarsa havuz bakımı soruları siler, plan baştan doldurur).
@@ -1138,7 +1139,7 @@ function nextDifficulty(ctx, items, offset = 0) {
  const unitAiItems = [...questionBank, ...items].filter(x => x.unitId === ctx.id && DIFFICULTIES.includes(x.difficulty));
  if (offset === 0 && unitAiItems.length === 0) return DIFFICULTIES[0];
  const counts = { kolay: 0, orta: 0, zor: 0 };
- for (const it of unitAiItems) counts[it.difficulty]++;
+ for (const it of unitAiItems) counts[generationDifficultyOf(it)]++;
  if (unitAiItems.length < 3 && offset === 0) return DIFFICULTIES[unitAiItems.length % 3];
  const sorted = DIFFICULTIES.slice().sort((a, b) => counts[a] - counts[b]);
  return sorted[offset % sorted.length];
@@ -1357,7 +1358,7 @@ async function load() {
   const sig = `${st.mtimeMs}:${st.size}`;
   if (_qCache && _qSig === sig) return _qCache.slice();
   const data = JSON.parse(await readFile(dataFile, 'utf8'));
-  const arr = Array.isArray(data) ? data : [];
+  const arr = Array.isArray(data) ? data.map(normalizeGeneratedQuestion) : [];
   _qCache = arr;
   _qSig = sig;
   _qRev += 1;
@@ -1435,7 +1436,7 @@ async function saveJsonAtomic(filePath, dataObj) {
  }
 }
 
-const save = items => saveJsonAtomic(dataFile, items);
+const save = items => saveJsonAtomic(dataFile, items.map(normalizeGeneratedQuestion));
 
 let saveQueue = Promise.resolve();
 function withSaveLock(fn) {
@@ -1842,7 +1843,7 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   const record = validate(parsed, ctx, latest, model, passage, policy);
   record.verification = verification;
   record.difficulty = verification.difficulty;
-  // Plan kotası kesindir: iki hat aynı konuda çalışırken bile hiçbir kova 50'yi aşamaz.
+  // Plan kotası kesindir: iki hat aynı konuda çalışırken bile hiçbir kova belirlenen kotayı aşamaz.
   if (PLAN.enabled && DIFFICULTIES.includes(record.difficulty) && planDifficultyForUnit(ctx.id, latest, PLAN.quota, PLAN.passes)
    && !planBucketHasRoom(ctx.id, record.difficulty, latest, PLAN.quota, PLAN.passes)) {
    recordRejection('plan_quota_full');
@@ -1854,6 +1855,7 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   // Model soru tipini yazmadıysa istenen tip kaydedilir (aynı cümleye sonraki uğrayışta farklı tip seçilebilsin).
   if (!record.questionType && targetType) record.questionType = targetType;
   if (verification.bloomLevel && !record.bloomLevel) record.bloomLevel = verification.bloomLevel;
+  Object.assign(record, normalizeGeneratedQuestion(record));
   record.curatedBy = 'ai-council';
 
   // Adaptif kalite eşiği: düşük kaliteli taslaklar onay havuzuna alınmaz.
@@ -2393,7 +2395,7 @@ function difficultyAccepted(agreedDifficulty, targetDifficulty, ctx, items, smar
  if (PLAN.enabled && planDifficultyForUnit(ctx.id, items, PLAN.quota, PLAN.passes)) return planAcceptsDifficulty(ctx.id, agreedDifficulty, targetDifficulty, items, PLAN.quota, PLAN.passes);
  if (!smartDifficulty) return false;
  const counts = { kolay: 0, orta: 0, zor: 0 };
- for (const it of items) if (it.unitId === ctx.id && DIFFICULTIES.includes(it.difficulty)) counts[it.difficulty]++;
+ for (const it of items) if (it.unitId === ctx.id && DIFFICULTIES.includes(it.difficulty)) counts[generationDifficultyOf(it)]++;
  const minCount = Math.min(counts.kolay, counts.orta, counts.zor);
  return counts[agreedDifficulty] <= minCount + 2;
 }
@@ -3399,7 +3401,7 @@ function launchAutoUnit(ctx, model, verifierModel, judge2Model, _timeoutMs, cfg,
   ...(typeof extra.parallelJudges === 'boolean' ? { parallelJudges: extra.parallelJudges } : {})
  })
   .then(async record => {
-   const onTarget = planStep && record?.difficulty === planStep.difficulty;
+   const onTarget = planStep && generationDifficultyOf(record) === planStep.difficulty;
    // İki hat aynı adımda çalışabildiği için ilerleme havuzdan yeniden sayılır.
    const done = planStep ? (countApproved(await load().catch(() => [])).get(planStep.key) || 0) : 0;
    autoState.instantFails = 0;
@@ -3755,8 +3757,8 @@ async function runPoolCuratorScan({ forcePrune = false } = {}) {
      if (!Number.isFinite(q.qualityScore) || q.qualityScore < curatorThreshold || q.qualityScore > 5) continue;
      const stem = String(q.question || '').trim().toLocaleLowerCase('tr-TR');
      if (!stem || approvedStems.has(stem)) continue;
-     const key = stepKey(q.unitId, q.difficulty);
-     if (PLAN.enabled && (bucket.get(key) || 0) >= planCap(q.difficulty)) continue;
+     const key = stepKey(q.unitId, generationDifficultyOf(q));
+     if (PLAN.enabled && (bucket.get(key) || 0) >= planCap(generationDifficultyOf(q))) continue;
      q.status = 'approved';
      delete q.curationReason;
      approvedStems.add(stem);
@@ -4808,7 +4810,7 @@ async function qualityImprovementPass() {
 
    const policy = await evolver.loadPolicy();
    const freshPool = items.filter(x => x.id !== q.id);
-   const record = validate(upgraded, ctx, freshPool, model, passage, policy, q.difficulty || null);
+   const record = validate(upgraded, ctx, freshPool, model, passage, policy, generationDifficultyOf(q) || null);
    if (PLAN.enabled) {
     const inSummary = evidenceWithinSummary(record.evidence, ctx.text);
     if (!inSummary.ok) throw Error(inSummary.reason);
@@ -4835,7 +4837,7 @@ async function qualityImprovementPass() {
    const agreedDifficulties = new Set(judges.map(j => j.difficulty));
    const agreedDifficulty = agreedDifficulties.size === 1 && ['kolay', 'orta', 'zor'].includes([...agreedDifficulties][0]) ? [...agreedDifficulties][0] : (record.difficulty || q.difficulty || 'orta');
    // Plan açıkken yeniden yazım sorunun zorluğunu değiştiremez (konu/zorluk kotaları kaymasın).
-   if (PLAN.enabled && DIFFICULTIES.includes(q.difficulty) && agreedDifficulty !== q.difficulty) {
+   if (PLAN.enabled && DIFFICULTIES.includes(generationDifficultyOf(q)) && agreedDifficulty !== generationDifficultyOf(q)) {
     qualityTelemetry.rejectedRewriteTotal += 1;
     await appendTrace({ type: 'quality_rewrite_rejected', unitId: ctx.id, question: record.question, reason: `difficulty_changed_${q.difficulty}_to_${agreedDifficulty}` }).catch(() => {});
     return;
@@ -4845,6 +4847,7 @@ async function qualityImprovementPass() {
    const bloomLevel = judges.find(j => j.bloomLevel)?.bloomLevel;
    record.verification = { judges, answer: record.answer, difficulty: agreedDifficulty, qualityScore: avgQuality, examPotential: avgExamPot, ...(bloomLevel ? { bloomLevel } : {}) };
    record.difficulty = agreedDifficulty;
+   Object.assign(record, normalizeGeneratedQuestion(record));
    record.qualityScore = avgQuality;
    record.examPotential = avgExamPot;
    if (bloomLevel) record.bloomLevel = bloomLevel;

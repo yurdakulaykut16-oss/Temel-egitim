@@ -53,7 +53,7 @@ test('plan: iki konu aynı anda; biri dolunca boşalan hat eksik kalana yardım 
   process.env.TEMPO_DATA_DIR = dir;
   process.env.TEMPO_OFFLINE_ONLY = '1';
   process.env.TEMPO_QUIET = '1';
-  process.env.TEMPO_PLAN_QUOTA = String(QUOTA);
+  process.env.TEMPO_PLAN_QUOTA = String(QUOTA * 2);
   process.env.TEMPO_QUESTION_INTERVAL_MS = '20';
   delete process.env.TEMPO_PLAN;
   delete process.env.TEMPO_AUTO_CONCURRENCY; // varsayılan: aynı anda 2 soru
@@ -98,11 +98,11 @@ test('plan: iki konu aynı anda; biri dolunca boşalan hat eksik kalana yardım 
   assert.ok(workingPair, '/status plan.working iki konuyu birlikte göstermeli');
   assert.equal(workingPair.parallel, 2);
   assert.deepEqual(workingPair.workingUnits.map(w => w.unitId), [A.id, B.id]);
-  assert.deepEqual(workingPair.workingUnits[0].cells.map(c => [c.difficulty, c.share]), [['kolay', 2], ['orta', 2], ['zor', 2]]);
+  assert.deepEqual(workingPair.workingUnits[0].cells.map(c => [c.difficulty, c.share]), [['kolay', 1], ['orta', 3], ['zor', 2]]);
   assert.ok(workingSingle, '1. konu dolunca /status yalnızca eksik kalan 2. konuyu göstermeli');
 
   // Grup tamamlanmadan sıradaki grubun konularına soru yazılmaz; hiçbir hücre payını aşmaz.
-  const SHARE = QUOTA / 3; // 1. turda konu başına her zorluktan 2 soru
+  const SHARE = { kolay: 1, orta: 3, zor: 2 }; // 1. turda konu başına her zorluktan 2 soru
   const DIFFS = ['kolay', 'orta', 'zor'];
   const counts = new Map();   // konu -> { kolay, orta, zor } (kaydedilen zorluk)
   const onTarget = new Map(); // konu -> { kolay, orta, zor } (hedef zorluğuyla kaydedilenler)
@@ -110,21 +110,21 @@ test('plan: iki konu aynı anda; biri dolunca boşalan hat eksik kalana yardım 
   for (const q of items) {
    const group = Math.floor(stepIndex.get(q.unitId) / 2);
    const earlier = contexts.slice(0, group * 2);
-   const unfinished = earlier.filter(c => DIFFS.some(d => ((counts.get(c.id) || zero())[d]) < SHARE)).map(c => c.id);
+   const unfinished = earlier.filter(c => DIFFS.some(d => ((counts.get(c.id) || zero())[d]) < SHARE[d])).map(c => c.id);
    assert.deepEqual(unfinished, [], `${q.unitId} sorusu yazılırken önceki gruptaki ${unfinished.join(', ')} eksikti: ${seq.join(' ')}`);
    if (!counts.has(q.unitId)) { counts.set(q.unitId, zero()); onTarget.set(q.unitId, zero()); }
-   counts.get(q.unitId)[q.difficulty]++;
-   assert.ok(counts.get(q.unitId)[q.difficulty] <= QUOTA, `${q.unitId} ${q.difficulty} kotasını (${QUOTA}) aşmamalı`);
-   if (q.verification?.targetDifficulty === q.difficulty) {
-    onTarget.get(q.unitId)[q.difficulty]++;
-    assert.ok(onTarget.get(q.unitId)[q.difficulty] <= SHARE, `${q.unitId} ${q.difficulty}: 1. turdaki pay (${SHARE}) aşılmamalı: ${seq.join(' ')}`);
+   counts.get(q.unitId)[q.generationDifficulty]++;
+   assert.ok(counts.get(q.unitId)[q.generationDifficulty] <= QUOTA, `${q.unitId} ${q.difficulty} kotasını (${QUOTA}) aşmamalı`);
+   if (q.verification?.generationTargetDifficulty === q.generationDifficulty) {
+    onTarget.get(q.unitId)[q.generationDifficulty]++;
+    assert.ok(onTarget.get(q.unitId)[q.generationDifficulty] <= SHARE[q.generationDifficulty], `${q.unitId} ${q.difficulty}: 1. turdaki pay (${SHARE}) aşılmamalı: ${seq.join(' ')}`);
    }
   }
   // 1. ve 2. konunun kolay, orta ve zor sorusu vardır (zorluk konuya göre değil, konu içinde karışık).
   for (const unit of [A, B]) {
-   for (const d of DIFFS) assert.ok(counts.get(unit.id)[d] >= SHARE, `${unit.id}: ${d} sorusu eksik (${JSON.stringify(counts.get(unit.id))})`);
+   for (const d of DIFFS) assert.ok(counts.get(unit.id)[d] >= SHARE[d], `${unit.id}: ${d} sorusu eksik (${JSON.stringify(counts.get(unit.id))})`);
   }
-  const firstA = items.filter(q => q.unitId === A.id).slice(0, 3).map(q => q.verification?.targetDifficulty);
+  const firstA = items.filter(q => q.unitId === A.id).slice(0, 3).map(q => q.verification?.generationTargetDifficulty);
   assert.deepEqual(firstA, ['kolay', 'orta', 'zor'], 'konu içinde zorluklar sırayla döner');
   // 2. konunun son soruları, 1. konu bittikten sonra yazıldı (yardım gerçekten işe yaradı).
   assert.ok(seq.lastIndexOf(B.id) > seq.lastIndexOf(A.id));

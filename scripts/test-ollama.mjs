@@ -43,7 +43,7 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
     const difficulty=singleJudgeDifficulty;
     result={answer,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:4,distractorPlausible:true,difficulty,evidence,reason:`${data.model} bağımsız değerlendirmesi.`};
    }
-   else result={answer:numericOptions?'20 dakika egzersiz':mismatch?'Tekrarlı fakat programsız olması':'Planlı ve tekrarlı olması',singleCorrect:!dualAnswerRisk,dualAnswerRisk,secondBestOption:dualAnswerRisk?'Tekrarlı fakat programsız olması':'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:numericOptions?'orta':'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
+   else result={answer:numericOptions?'20 dakika egzersiz':mismatch?'Tekrarlı fakat programsız olması':'Planlı ve tekrarlı olması',singleCorrect:!dualAnswerRisk,dualAnswerRisk,secondBestOption:dualAnswerRisk?'Tekrarlı fakat programsız olması':'',supported:true,qualityOk:true,qualityScore:5,distractorPlausible:true,difficulty:numericOptions?'zor':'kolay',evidence,reason:'Anlatım egzersizin planlı ve tekrarlı olduğunu belirtir.'};
   }else{
    if(isUnit01){result={question:'Antrenmanı oluşturan ögelerden hangileri birlikte sayılır?',options:['Kondisyonel ve teknik hazırlık','Kondisyonel ve taktik hazırlık','Teknik ve zihinsel hazırlık','Yalnızca kondisyonel hazırlık','Taktik ve zihinsel hazırlık'],answer:'Kondisyonel ve teknik hazırlık',explanation:'Kondisyonel ve teknik hazırlık birlikte sayılır.',evidence,topic:'Antrenmanın ögeleri'};}
    else if(isUnit02)result={question:'Antrenman yükü planlanırken hangi temel ilkeler gözetilir?',options:['Bireysel ve sürekli ilkeler','Süreklilik ve aşırı yüklenme ilkeleri','Çeşitlilik ve branşa özgülük ilkeleri','Bireysellik ve çeşitlilik ilkeleri','Özgüllük ve tersinirlik ilkeleri'],answer:'Bireysel ve sürekli ilkeler',explanation:'Bireyselleştirme ve süreklilik temel ilkelerdendir.',evidence,topic:'Antrenman ilkeleri'};
@@ -182,6 +182,12 @@ test('soru üretimi: kör denetim, çift-cevap koruması, çeldirici hijyeni, ç
   let numericRes=await post();
   const numericBody=await numericRes.json();
   assert.equal(numericRes.status,200,JSON.stringify(numericBody));
+  assert.equal(numericBody.item.difficulty,'orta');
+  assert.equal(numericBody.item.generationDifficulty,'zor');
+  assert.equal(numericBody.item.verification.difficulty,'orta');
+  assert.equal(numericBody.item.verification.judges[0].difficulty,'orta');
+  const mappedPool=await (await fetch(`${base}/api/ollama/questions`)).json();
+  assert.ok(mappedPool.items.every(q=>q.difficulty!=='zor'),'mevcut zor sorular da orta görünmeli');
   assert.ok(calls.length>oldCallsLen);
   numericOptions=false;
 

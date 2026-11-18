@@ -47,7 +47,7 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   await writeFile(join(dir, 'questions.json'), JSON.stringify([wronged('eski-1', 'Eski sürümde haksız yere reddedilen soru hangisidir?', 5), wronged('eski-2', 'Hakem puanı gerçekten düşük olan soru hangisidir?', 2)]));
   process.env.TEMPO_OFFLINE_ONLY = '1';
   process.env.TEMPO_QUIET = '1';
-  process.env.TEMPO_PLAN_QUOTA = '3';
+  process.env.TEMPO_PLAN_QUOTA = '6'; // Yarılama sonrası etkin kota 3
   process.env.TEMPO_PLAN_PASSES = '3';
   process.env.TEMPO_QUESTION_INTERVAL_MS = '20';
   delete process.env.TEMPO_PLAN;
@@ -66,7 +66,7 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
 
   // Hakem bir soruyu hedeften farklı zorlukta bulursa soru o zorlukla kaydedilir (kotası varsa);
   // sıra, hedef zorluğuyla kaydedilen sorular üzerinden sınanır.
-  const onTarget = list => list.filter(q => q.verification?.targetDifficulty === q.difficulty);
+  const onTarget = list => list.filter(q => q.verification?.generationTargetDifficulty === q.generationDifficulty);
   let items = [];
   let midStatus = null;
   for (let i = 0; i < 700 && items.length < WANT; i++) {
@@ -77,7 +77,7 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   const status = await (await fetch(`${base}/api/ollama/status`)).json();
   assert.ok(items.length >= WANT, `en az ${WANT} soru üretilmeliydi; üretilen: ${items.length}, engel: ${JSON.stringify(status.autoBlock)}, plan: ${JSON.stringify(status.plan?.current)}, son olay: ${JSON.stringify(status.autoEvents?.[0])}`);
 
-  const seq = items.slice(0, FIRST_PASS).map(q => `${q.unitId}:${q.difficulty}`);
+  const seq = items.slice(0, FIRST_PASS).map(q => `${q.unitId}:${q.generationDifficulty}`);
   const expected = contexts.flatMap(c => ['kolay', 'orta', 'zor'].map(d => `${c.id}:${d}`));
   console.log(`\nİlk 7: ${seq.slice(0, 7).join(', ')} … 1. turun sonu: ${seq.slice(-3).join(', ')} → ${items.slice(FIRST_PASS, WANT).map(q => q.unitId).join(', ')}`);
   assert.deepEqual(seq, expected, 'sıra: konu konu (kitap/konu sırasıyla), her konuda kolay → orta → zor');
@@ -142,11 +142,11 @@ test('plan: önce her konuya sırayla kolay, tur bitince orta; sorular yalnızca
   assert.equal(status.plan.passes[0].unitsDone, contexts.length);
   assert.equal(status.plan.current.pass, 2);
   // Kota 3, 3 tur: 1. tur 1/1/1, 2. tur 1/1/1, 3. tur 0/1/2 → bölüm başına kolay 2, orta 3, zor 4.
-  assert.deepEqual(status.plan.difficulties.map(d => [d.difficulty, d.target]), [['kolay', contexts.length * 2], ['orta', contexts.length * 3], ['zor', contexts.length * 4]], 'kolay payı turlar ilerledikçe azalır');
+  assert.deepEqual(status.plan.difficulties.map(d => [d.difficulty, d.target]), [['kolay', contexts.length], ['orta', contexts.length * 4], ['zor', contexts.length * 4]], 'kolay payı turlar ilerledikçe azalır');
   assert.ok(status.plan.difficulties.every(d => d.done >= contexts.length), 'her zorlukta her bölümden soru olmalı');
   assert.equal(status.plan.passCount, 3);
   assert.equal(status.plan.perUnitTarget, 9);
-  assert.deepEqual(status.plan.passes.map(p => [p.pass, p.mix.kolay, p.mix.orta, p.mix.zor]), [[1, 1, 1, 1], [2, 1, 1, 1], [3, 0, 1, 2]], 'her turun kolay / orta / zor karışımı görünmeli');
+  assert.deepEqual(status.plan.passes.map(p => [p.pass, p.mix.kolay, p.mix.orta, p.mix.zor]), [[1, 1, 1, 1], [2, 0, 2, 1], [3, 0, 1, 2]], 'her turun kolay / orta / zor karışımı görünmeli');
   // İçindekilerden gelen konu başlığı ve internet kaynağı soru kaydında görünür.
   const done = items.slice(0, WANT);
   for (const q of done) {
