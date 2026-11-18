@@ -1,14 +1,12 @@
 // Gerçek çalışan uygulamayı SADECE GET /status ile gözlemler; ayar/havuz değiştirmez.
 // npm run bench:live -- http://localhost:5173 180 30
-// Argümanlar: uygulama URL'si, ölçüm saniyesi, ısınma saniyesi, hedef sn/onay (varsayılan 6).
+// Argümanlar: uygulama URL'si, ölçüm saniyesi, ısınma saniyesi.
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const base = new URL(process.argv[2] || 'http://localhost:5173');
 if (!['http:', 'https:'].includes(base.protocol)) throw Error('HTTP(S) uygulama URL’si gerekli.');
 const seconds = Number(process.argv[3] || 180);
 const warmup = Number(process.argv[4] ?? 30);
-const target = Number(process.argv[5] ?? 6);
-if (!Number.isFinite(target) || target < 0.25 || target > 60) throw Error('Hedef 0.25–60 sn/onay olmalı.');
 if (!Number.isFinite(seconds) || seconds < 10 || seconds > 3600 || !Number.isFinite(warmup) || warmup < 0 || warmup > 600) throw Error('Ölçüm: 10–3600 sn; ısınma: 0–600 sn.');
 const url = new URL('/api/ollama/status', base);
 async function status() {
@@ -39,16 +37,15 @@ try {
  const delta = key => (last.telemetry[key] || 0) - (first.telemetry[key] || 0);
  console.log(JSON.stringify({
   kind: 'live-ollama-observation', model: last.model,
-  targetSecondsPerApproved: target, warmupSeconds: warmup,
+  targetSecondsPerApproved: 10, warmupSeconds: warmup,
   elapsedSeconds: +elapsed.toFixed(2), approved: count,
   secondsPerApproved: perItem === null ? null : +perItem.toFixed(2),
-  targetMet: count < minSamples ? null : perItem <= target,
+  targetMet: count < minSamples ? null : perItem <= 10,
   sampleNote: count < minSamples ? `Karar için en az ${minSamples} onaylı soru gerekli; gözlem süresini uzatın.` : 'Retler ve bekleme ölçüm süresine dahildir; ısınma hariçtir.',
   rejectedPreflight: delta('rejectedPreflight'), rejectedJudges: delta('rejectedJudges'),
   infraErrors: delta('infraErrors'), timeouts: delta('timeouts'),
   pipelineAveragesMs: { generator: last.telemetry.avgGenMs, judge: last.telemetry.avgVerifyMs },
   tokensPerSecond: last.telemetry.tokensPerSecond,
-  runtime: last.ollamaRuntime || null,
   autoBlock: last.autoBlock, lastError: last.autoLastError || null,
   note: 'Bu gözlem içerik kalitesinin insan incelemesi veya watt ölçümü değildir.'
  }, null, 2));

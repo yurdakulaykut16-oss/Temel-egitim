@@ -1,23 +1,36 @@
-import { getSummaryIndex } from './summary-index.mjs';
-import { generationDifficultyOf } from './question-difficulty.mjs';
 // ÜRETİM PLANI
-// Her konuya tur tur uğranır. Eski 50 soru/tur hedefi yarılanarak 25 olmuştur.
-// 40 tur: konu başına 1.000, 29 konuda toplam 29.000 soru.
-// TEMPO_PLAN_QUOTA ile verilen önceki özel hedef de yarılanır (tek sayılar yukarı yuvarlanır).
-// İç üretim hedefleri kolay/orta/zor olarak kalır: zor vaka ve çok adımlı sorular basitleştirilmez.
-// Kullanıcıya yansıyan etiket/sayaçta zor sorular orta olur. generationDifficulty yalnızca
-// plan hücrelerinin doluluğunu izler; aksi halde zor hücresi hiç dolmaz ve üretim takılır.
-// Hücre kotası kümülatiftir; eski sorular silinmez ve kendi üretim hücrelerine sayılır.
-// Aynı anda hazırlanan konular gruplar halinde tamamlanır; sonuçsuz hücreler park edilebilir.
+// ---------------------------------------------------------------------------
+// Soru üretimi rastgele ünite dolaşmaz; sabit bir sırayı izler. Kitabın bölümlerine sırayla, TUR TUR
+// uğranır ve her uğrayışta o bölüme 50 soru yazılır; zorluklar KARIŞIKTIR (kolay → orta → zor → …):
+//
+//   1. tur: her bölüme 17 kolay + 17 orta + 16 zor (dengeli)
+//   2. tur: 10 kolay + 20 orta + 20 zor      3. tur: 6 kolay + 22 orta + 22 zor
+//   4. tur: 4 kolay + 23 orta + 23 zor       5. tur: 2 kolay + 24 orta + 24 zor
+//   6. tur ve sonrası: 25 orta + 25 zor (kolay soru yazılmaz)
+//
+// Yani ilk turdan itibaren her bölümün kolay, orta ve zor sorusu vardır; 1. turdan sonra kolay payı
+// gittikçe azalır, soruların yarısı orta yarısı zor olur. Tur sayısı TEMPO_PLAN_PASSES ile ayarlanır
+// (varsayılan 40 → bölüm başına 2.000 soru; 29 bölümde toplam 58.000).
+//
+// Plan "hücre"lerden oluşur: (tur, konu, zorluk). Hücrenin `quota` alanı o konu + zorlukta o turun
+// SONUNDA ulaşılması gereken toplam soru sayısıdır (ör. 2. tur kolay: 33); `from` turun başındaki
+// sayıdır, `share` o tura düşen paydır.
+//
+// Aynı anda birden çok soru hazırlanıyorsa (varsayılan 2) konular N'li GRUPLAR hâlinde işlenir:
+// ör. 1. ve 2. konu birlikte başlar; biri 50'ye ulaşınca boşalan hat 3. konuya GEÇMEZ, eksik kalan
+// konuya yardım eder. Gruptaki bütün konular dolunca (ya da atlanınca) sıradaki grup başlar.
+//
+// Konu özeti bir zorlukta yeni soru için yetmeyebilir: o konu + zorlukta üst üste çok sayıda deneme
+// sonuç vermezse hücre "atlanır" (park edilir), konunun diğer zorlukları ve sıradaki konular sürer;
+// tüm hücreler bittiğinde atlananlar yeniden denenir.
 //
 // Bu dosya saf fonksiyonlardan oluşur (dosya/ağ erişimi yok); server/ollama.mjs kullanır.
 
 export const PLAN_DIFFICULTIES = ['kolay', 'orta', 'zor'];
-export const DEFAULT_PLAN_QUOTA = 25;
-const PREVIOUS_PLAN_QUOTA = 50;
+export const DEFAULT_PLAN_QUOTA = 50;
 export const DEFAULT_PLAN_PASSES = 40;
 // 1. turdan sonra kolay soruların tur içindeki payı (2., 3., 4., 5. tur); 6. turdan itibaren 0.
-export const EASY_FRACTIONS = { 2: 0.10, 3: 0.06, 4: 0.04, 5: 0.02 };
+export const EASY_FRACTIONS = { 2: 0.20, 3: 0.12, 4: 0.08, 5: 0.04 };
 export const DEFAULT_PLAN_STUCK_LIMIT = 25;
 
 export const stepKey = (unitId, difficulty) => `${unitId}|${difficulty}`;
@@ -31,8 +44,7 @@ const clampInt = (value, fallback, min, max) => {
 export function planConfigFromEnv(env = process.env) {
  return {
   enabled: env.TEMPO_PLAN !== '0',
-  // Mevcut özel kotalar da yarılanır; tek sayılarda yukarı yuvarlanır.
-  quota: Math.ceil(clampInt(env.TEMPO_PLAN_QUOTA, PREVIOUS_PLAN_QUOTA, 1, 1000) / 2),
+  quota: clampInt(env.TEMPO_PLAN_QUOTA, DEFAULT_PLAN_QUOTA, 1, 1000),
   passes: clampInt(env.TEMPO_PLAN_PASSES, DEFAULT_PLAN_PASSES, 1, 200),
   stuckLimit: clampInt(env.TEMPO_PLAN_STUCK_LIMIT, DEFAULT_PLAN_STUCK_LIMIT, 2, 1000)
  };
@@ -40,16 +52,18 @@ export function planConfigFromEnv(env = process.env) {
 
 /**
  * `pass`. turda bir bölümün `difficultyIndex` zorluğuna (0 kolay, 1 orta, 2 zor) düşen soru payı.
- * Her turun toplamı `quota`dır. İlk tur kolay payı %20, ardından %10/%6/%4/%2,
- * altıncı turdan itibaren sıfırdır. İlk tur küçük kotalarda en az bir kolay korunur.
- * Kalan pay orta ve zor içerik arasında bölünür; ikisi de kullanıcıya orta yansır.
+ * Her turun toplamı `quota`dır. 1. tur dengelidir (50 → 17+17+16); sonraki turlarda kolay payı
+ * azalır (EASY_FRACTIONS), kalan sorular yarı yarıya orta ve zor olur (tek kalan soru çift turlarda
+ * ortaya, tek turlarda zora yazılır).
  */
 export function passShare(quota, pass, difficultyIndex) {
- const easy = pass <= 1
-  ? Math.min(quota, Math.max(1, Math.floor(quota * 0.20)))
-  : Math.min(quota, Math.round(quota * (EASY_FRACTIONS[pass] || 0)));
+ if (pass <= 1) {
+  const base = Math.floor(quota / 3);
+  return base + (difficultyIndex < quota % 3 ? 1 : 0);
+ }
+ const easy = Math.min(quota, Math.round(quota * (EASY_FRACTIONS[pass] || 0)));
  const rest = quota - easy;
- const orta = pass <= 1 ? Math.ceil(rest / 2) : Math.floor(rest / 2) + (rest % 2 && pass % 2 === 0 ? 1 : 0);
+ const orta = Math.floor(rest / 2) + (rest % 2 && pass % 2 === 0 ? 1 : 0);
  return [easy, orta, rest - orta][difficultyIndex];
 }
 
@@ -111,8 +125,8 @@ export function buildPlanSteps(contexts, quota = DEFAULT_PLAN_QUOTA, passes = DE
 export function countApproved(items) {
  const counts = new Map();
  for (const it of items || []) {
-  if (!it || it.status !== 'approved' || !PLAN_DIFFICULTIES.includes(generationDifficultyOf(it))) continue;
-  const key = stepKey(it.unitId, generationDifficultyOf(it));
+  if (!it || it.status !== 'approved' || !PLAN_DIFFICULTIES.includes(it.difficulty)) continue;
+  const key = stepKey(it.unitId, it.difficulty);
   counts.set(key, (counts.get(key) || 0) + 1);
  }
  return counts;
@@ -287,8 +301,11 @@ const tokens = s => normTr(s).split(' ').filter(t => t.length >= 3);
 
 /** Konu özetini cümlelere böler (çok kısa parçalar atılır). */
 export function splitSummarySentences(summary) {
- // Dışarıya kopya ver: çağıran diziyi değiştirse de ortak indeks bozulmaz.
- return getSummaryIndex(summary).sentences.slice();
+ return String(summary || '')
+  // Küçük harfle devam eden yerde cümle bitmez ("vb. gibi", "19. yüzyılda").
+  .split(/(?<=[.!?])\s+(?![a-zçğıöşüâîû])/)
+  .map(s => s.trim())
+  .filter(s => s.length >= 25);
 }
 
 /**
@@ -299,14 +316,13 @@ export function splitSummarySentences(summary) {
 export function evidenceWithinSummary(evidence, summary) {
  const ev = normTr(evidence);
  if (ev.length < 15) return { ok: false, reason: 'Kanıt cümlesi çok kısa.' };
- const full = getSummaryIndex(summary).normalized;
+ const full = normTr(summary);
  if (full.includes(ev)) return { ok: true, tier: 'exact' };
  const evTokens = tokens(evidence);
  if (evTokens.length < 3) return { ok: false, reason: 'Kanıt cümlesi konu özetinde bulunamadı.' };
- const sourceIndex = getSummaryIndex(summary);
- const sentences = sourceIndex.sentences;
+ const sentences = splitSummarySentences(summary);
  for (let i = 0; i < sentences.length; i++) {
-  const windowTokens = sourceIndex.neighborTokenSets[i];
+  const windowTokens = new Set(tokens(`${sentences[i]} ${sentences[i + 1] || ''}`));
   let hit = 0;
   for (const t of evTokens) if (windowTokens.has(t)) hit++;
   if (hit / evTokens.length >= 0.85) return { ok: true, tier: 'tokens' };
@@ -325,8 +341,7 @@ export function evidenceWithinSummary(evidence, summary) {
 export function summaryWindow(summary, anchor = '', maxChars = 2400) {
  const full = String(summary || '');
  if (full.length <= maxChars) return { text: full, windowed: false, start: 0, end: -1, center: -1 };
- const sourceIndex = getSummaryIndex(full);
- const sentences = sourceIndex.sentences;
+ const sentences = splitSummarySentences(full);
  if (!sentences.length) return { text: full.slice(0, maxChars), windowed: true, start: 0, end: -1, center: -1 };
  let center = 0;
  let matched = false;
@@ -336,14 +351,14 @@ export function summaryWindow(summary, anchor = '', maxChars = 2400) {
   // 1) birebir geçen cümle  2) kelimelerinin çoğu aynı olan cümle
   // Önce cümlenin kendisi; yoksa onu içeren (ya da onun içerdiği) cümle. (Kısa bir cümle, daha önce
   // geçen uzun bir cümlenin parçası olabilir; pencere yine de aranan cümlenin çevresine kurulmalı.)
-  const norms = sourceIndex.norms;
+  const norms = sentences.map(normTr);
   let exact = norms.indexOf(anchorNorm);
   if (exact < 0) exact = norms.findIndex(n => n.includes(anchorNorm) || anchorNorm.includes(n));
   if (exact >= 0) { center = exact; matched = true; }
   else if (anchorTokens.length >= 3) {
    let best = -1, bestRatio = 0;
    for (let i = 0; i < sentences.length; i++) {
-    const set = sourceIndex.tokenSets[i];
+    const set = new Set(tokens(sentences[i]));
     let hit = 0;
     for (const t of anchorTokens) if (set.has(t)) hit++;
     const ratio = hit / anchorTokens.length;
@@ -449,10 +464,9 @@ export function leastUsedOption(options, used = [], rotation = 0) {
  * @param rotation  aynı kullanım sayısındaki cümleler arasında dönmek için sayaç (ör. deneme sayısı)
  */
 export function pickFocusSentence(summary, unitItems = [], rotation = 0) {
- const sourceIndex = getSummaryIndex(summary);
- const sentences = sourceIndex.sentences;
+ const sentences = splitSummarySentences(summary);
  if (!sentences.length) return null;
- const sentenceTokens = sourceIndex.tokenSets;
+ const sentenceTokens = sentences.map(s => new Set(tokens(s)));
  const usage = sentences.map(() => 0);
  const askedBy = new Map();
  for (const it of unitItems) {
