@@ -53,7 +53,7 @@ Sürüm ve kurulu model listesi görünmeli. Komut bulunamazsa PowerShell'i kapa
 
 ## 4. İndirmen gereken TÜM modeller ve nasıl indirilir?
 
-Uygulama içinde **5 ana yapay zekâ rolü** vardır: **Üretici Öğretmen**, **1. Hakem**, **Bağımsız 2. Hakem**, **Evrim Mimarı (JARVIS)** ve **Qwen Code (Zorluk & Sistem Geliştiricisi)**. İyi haber: **proje açıldığı anda kurulu modelleri otomatik algılayıp tüm rollere kendisi yerleştirir** ve eksik uzman profillerini (`tempo-ogretmen:latest`, `tempo-hakem:latest`, `tempo-mimar:latest`, `tempo-qwen-coder:latest`) **açılışta bir kez kendiliğinden oluşturur** — bunları elle indirmene gerek yoktur.
+Üretim hattı, soru taslağını hazırlamak için bir üretici ve kaynak/cevap denetimi için bir hakem kullanır. İsteğe bağlı destek araçları ayrı modeller kullanabilir. Ollama'da kurulu modeller otomatik algılanır; üretici ve hakem modeli stüdyodan seçilebilir.
 
 Aşağıdaki komutları **tek tek** PowerShell'de çalıştır. Hepsini indirmen şart değil; kendine uygun **bir set** yeterlidir. (İnternet hızına göre her model 1-10 GB arası sürer.)
 
@@ -66,7 +66,7 @@ ollama pull qwen3:14b
 # 2) Bağımsız 2. hakem — Google Gemma 3 12B (farklı aileden gerçek ikinci görüş, ~8 GB)
 ollama pull gemma3:12b
 
-# 3) Qwen Code rolü — zorluk motoru & kalite kuralları (~9 GB)
+# 3) İsteğe bağlı kod yardımcısı — üretim hattından bağımsız (~9 GB)
 ollama pull qwen2.5-coder:14b
 ```
 
@@ -208,7 +208,7 @@ Ayarlar doğruysa betik hiçbir şeyi değiştirmez ve bir saniyeden kısa süre
 
 ```
 [tempo] Model kadrosu: üretici=qwen3:8b · 1. hakem=qwen3:8b · 2. hakem=gemma3:4b · bağlam=4096 · bellekte tutma=30m
-[tempo] ✓ 2-3 onaylandı (orta, 41.2 sn) — Antrenman yükünün temel bileşenleri…
+[tempo] ✓ 2-3 onaylandı (41.2 sn) — Antrenman yükünün temel bileşenleri…
 [tempo] ✗ 0-1 altyapı hatası (model_timeout): qwen3:8b 120 sn içinde yanıtı tamamlayamadı…
 ```
 
@@ -237,13 +237,13 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_VERBOSE` / `TEMPO_QUIET` | `0` | Terminal günlüğünü ayrıntılandırır / kapatır |
 | `TEMPO_MANAGE_OLLAMA` | `1` | `0` yapılınca açılışta Ollama ayarlarına ve sürecine dokunulmaz |
 | `TEMPO_AUTO_PULL` | `1` | `0` yapılınca eksik model kendiliğinden indirilmez |
-| `TEMPO_PLAN` | `1` | Sıralı üretim planı (aşağıda §4.1.1). `0` yapılınca eski dengeli dolaşıma dönülür |
+| `TEMPO_PLAN` | `1` | Sıralı üretim planı (aşağıda §4.1.1). `0` yapılınca plan kotası kapanır |
 | `TEMPO_PLAN_QUOTA` | `50` | Bir turda her bölüme yazılacak soru sayısı |
-| `TEMPO_PLAN_PASSES` | `40` | Tur sayısı (1–200; varsayılan havuz sınırıyla 50'lik kotada en çok 42). 1. tur dengeli, sonraki turlarda kolay azalır |
+| `TEMPO_PLAN_PASSES` | `4` | 50 soruluk geçiş sayısı (varsayılan toplam 200 soru/ünite) |
 | `TEMPO_POOL_CAPACITY` | `65000` | Onaylı soru havuzunun üst sınırı (5.000–200.000). Plan toplamı bu sınırın %95'ini geçemez; daha çok tur istiyorsan önce bunu büyüt |
 | `TEMPO_EXAM_STYLE` | `1` | `0` yapılınca soru yazan modele "sınav tarzı örneği" (gönderdiğin örnek / çıkmış sorular ve kitap soruları) gösterilmez |
 | `TEMPO_WEB_SUMMARY` | `1` | `0` yapılınca internetten derlenen ek anlatım ve ders notları (benzersor notları, gönderdiğin görseller, video özeti) kullanılmaz; sorular yalnızca kitap cümlelerinden kurulur |
-| `TEMPO_PLAN_STUCK_LIMIT` | `25` | Bir adımda üst üste bu kadar deneme soru çıkarmazsa adım atlanır |
+| `TEMPO_PLAN_STUCK_LIMIT` | `25` | Bir geçişte bu kadar başarısız deneme olunca geçiş park edilir; ünite kotası dolmadan sonraki üniteye geçilmez |
 | `TEMPO_SUMMARY_WINDOW_CHARS` | `2400` | İsteme konan özet bölümünün uzunluğu (1200–6000). Özetin tamamı değil, odak/kanıt cümlesinin çevresi verilir |
 
 **Sorun giderme**
@@ -258,17 +258,14 @@ Ortam değişkenleriyle ince ayar:
 
 ### 4.1.1 Üretim planı: sorular hangi sırayla gelir?
 
-Otomatik üretim rastgele dolaşmaz; sabit bir plan izler. Kitapların **bölümleri ve konu başlıkları "İçindekiler" sayfalarından** alınır: 5 kitap, 29 bölüm. İki eşzamanlı üretim hattı aynı ünitede çalışır; her ünitenin dört turu (varsayılan 50 soru/tur) tamamlanınca sıradaki üniteye geçilir.
+Otomatik üretim kitap sırasındaki **29 ünitenin tamamını** işler. Her ünitede 50 soruluk dört geçiş yapılır; toplam **200 onaylı soru** tamamlanmadan sonraki üniteye geçilmez. Varsayılan toplam hedef 5.800 sorudur. Daha önce onaylanmış sorular ünite toplamına sayılır.
 
-**Zorluk dağılımı sade tutulur:** üretim yalnızca kolay ve orta düzeyde yapılır. Her 50 soruluk turda 25 kolay + 25 orta hedeflenir (tek kalan soru varsa turlar arasında dönüşümlü verilir). Ek hakem puanlaması kullanılmaz; temel kaynak ve tek-doğru kontrolleri korunur.
+Üretimde kolay / orta / zor sınıflandırması, zorluk kotası veya zorluğa bağlı ret kuralı yoktur. Her soru kaynak desteği, tek doğru cevap ve şıkların soru ile ilgili, makul ve bariz biçimde saçma/alakasız olmaması açısından denetlenir. Sayısal kalite puanlama ve sürekli yeniden yazma üretim akışından çıkarılmıştır.
 
-Varsayılan hedef, kitapta listelenen 29 ünitenin her biri için **200 soru**: 4 tur × 50 soru; toplam **5.800 soru**. Önceden onaylanmış sorular silinmez; mevcut sayılar hedefe sayılır. Hedefe ulaşan ünite için yeni plan sorusu üretilmez. `TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ile özel ayarlar yapılabilir; toplam hedef havuz kapasitesinin %95’ini aşmaz.
+`TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ayarları geçiş büyüklüğünü değiştirir; varsayılan 50 × 4 = 200'dür. Bir adım art arda 25 başarısız deneme alırsa park edilir; aynı ünitenin hedefi dolmadan sonraki üniteye geçilmez, park edilen adımlar yeniden denenir. Plan ilerlemesi ve bekleyen adımlar Soru stüdyosunda görünür; plan durumu `.tempo-data/production-plan.json` dosyasında tutulur.
 
-> **Süre:** Dakikada 1 onaylı soruyla sıfırdan 5.800 soruya ulaşmak yaklaşık 4 gün kesintisiz çalışma gerektirir. Üretimi istediğin an durdurabilirsin.
-
-
-- **İki soru hattı aynı ünitede çalışır:** Varsayılan iki hat da ilk üniteden soru üretir; biri başka bir üniteye geçmez. Her turdaki 50 soru tamamlanınca aynı ünitenin sonraki turuna devam edilir. Ünitenin 200 soruluk toplam hedefi dolunca sıradaki üniteye geçilir. "Aynı anda hazırlanan soru" ayarı hat sayısını değiştirir, ünite sırasını değiştirmez. Modeller ekran kartına birlikte sığmıyorsa kendiliğinden tek hatta inilir.
-- **Kota kesindir:** hedef üretimde yalnızca kolay ve orta düzey sorular yer alır; her bölümde bu iki seviyeden eşit sayıya yakın toplam 200 soru hedeflenir. İki hat aynı bölümde çalışırken bile fazladan soru kaydedilmez.
+- **Ünite sırası kesindir:** Eşzamanlı üretim hatları aynı etkin ünite üzerinde çalışır. 50 soruluk geçişler, aynı ünitenin toplam 200 hedefini tamamlar; ancak bundan sonra sıradaki üniteye geçilir.
+- **Kota kesindir:** Her ünite için toplam onaylı soru sayısı 200 ile sınırlıdır. Zorluk sınıflandırması veya zorluk kovası kullanılmaz.
 - **Sorular kitabın sayfalarından ve konu başlıklarından kurulur.** Her soruda bölüm anlatımının en az soru sorulmuş cümlesi odak olarak verilir; odaklar bölümün sayfalarına ve konularına yayılarak seçilir. Kanıt cümlesi bölüm anlatımında geçmeyen soru reddedilir. **Soru kartında sorunun konu başlığı ve kitap sayfası yazar** (ör. "Antrenmanla İlgili Temel Kavramlar › Performans · kitap s. 12"); modele verilen istemde de konu başlığı bulunur.
 - **Anlatım kitaptan derlenir.** Elle yazılmış kısa özete kitap PDF'lerinin o bölüme ait sayfalarından **birebir alınmış** tanım, sınıflama, ilke, açıklama ve örnek cümleleri eklenir (toplam 6.104 kitap cümlesi; bölüm başına hedef 600). Her cümlenin hangi konu başlığının altında geçtiği kayıtlıdır (`src/bookSummary.json`, başlıklar `src/bookToc.json`). Kitabın kendi test sayfaları ve cevap anahtarları alınmaz. Gövde metni az olan bölümler hedefin çok altındadır: *Ölçme ve değerlendirme (0-6)* 67, *Dopingle mücadele* 97, *Beceri öğrenimi* 115 cümle; en uzunu *Egzersiz fizyolojisi* 547 cümledir. Bütün bölümlerde (ek anlatımlarla birlikte) toplam 7.158 cümle vardır.
 - **İnternetten derlenen ek anlatım.** Her bölüme, konusuyla ilgili Türkçe kaynaklardan (federasyon ve bakanlık yayınları, üniversite ders notları, TÜBİTAK Ansiklopedi vb.) derlenmiş ek cümleler eklenir: 121 grupta 714 cümle (`src/webSummary.json`). Cümleler kaynaktan kopyalanmamış, kaynağın anlattığı bilgi yeniden yazılmıştır; her grubun kaynak adresi kayıtlıdır. Bu cümlelere dayanan soruda kitap sayfası yerine **"internet kaynağı"** bağlantısı görünür. Kitap dışı bilgi istemiyorsan `TEMPO_WEB_SUMMARY=0` ile kapat. Yeni kaynak eklemek için dosyaya `{ "topic", "sourceTitle", "source", "sentences": [...] }` grubu ekleyip `npm run contexts` çalıştır.
@@ -277,17 +274,16 @@ Varsayılan hedef, kitapta listelenen 29 ünitenin her biri için **200 soru**: 
   - *Gönderilen ders notu görselleri* (Hareket 1. ünite slaytları ve "en önemli konular" listeleri): spor tanımları, LTAD aşamaları ve yaş aralıkları, DMSP evreleri, sürantrenmanın etkileri ve önlenmesi, kas lifi tipleri, VO₂max, RICE, geri bildirim türleri, transfer, öğretim yöntemleri, atıf kuramı. Bu gruplar `"kind": "ders-notu"` taşır, adresleri yoktur; soru kartında **"ders notu: …"** yazar.
   - *Video özeti* (1. Kademe Temel Antrenörlük Eğitimi): antrenman ilkeleri, biyomotor sınıflamalar, koordinatif yetenekler, birim antrenmanın dört bölümü, yetenek ve yaş kavramları.
   - "En önemli konular" listesindeki bazı başlıklar (atıf kuramı, komut yöntemi, grup bütünlüğü, 220 − yaş, öğrenmenin transferi) 1. kademe kitaplarında geçmez; bunlar genel alan bilgisinden kısa cümlelerle yazıldı. **Kitapla ya da kendi notlarınla karşılaştırıp yanlış bulduğun cümleyi dosyadan sil**, ardından `npm run contexts`.
-- **Sınav tarzı örnekleri ("bu sınavda sorular nasıl soruluyor").** Soru yazan modele her üretimde seçilen soru tipine uyan bir örnek gösterilir; yalnızca biçimini örnek alması, bilgiyi konu anlatımından alması ve örneği kopyalamaması istenir. Kitaplık; `src/examSamples.json` içindeki kaynaklı/kullanıcı örneklerini, `server/user-exam-examples.json` içindeki kullanıcının paylaştığı 100 antrenman bilimi soru kökü-cevap örneğini ve kitapların kendi "Neler Öğrendik?" sorularını içerir. Kullanıcının güvenilir olarak belirttiği 100 örnek konu bölümlerine eşleştirilir ve aynı bölümde soru üretirken cevapları içerik referansı olarak kullanılır; başka bölümde yalnızca biçim örneğidir. Örnek soru kopyalanmaz; kolayda doğrudan, ortada ilişkilendirme/karşılaştırma, zorda uygulama/çok adımlı akıl yürütme biçimine uyarlanır. Kitap temelli kanıt ve tek-doğru kalite kapıları korunur; örnekler sabit soru bankasına otomatik eklenmez. Sorular kök kalıbına göre ailelere ayrılır (`server/exam-style.mjs`): uzun tanım → terim, durum → kavram, olumsuz kök, sayı / yaş aralığı, boşluk doldurma, kısa ve net. Önce uygun örnek aynı bölümden, yoksa aynı kitaptan, o da yoksa başka kitaptan seçilir; örnekler döndürülür. Kapatmak için `TEMPO_EXAM_STYLE=0`.
+- **Sınav tarzı örnekleri ("bu sınavda sorular nasıl soruluyor").** Soru yazan modele her üretimde seçilen soru tipine uyan bir örnek gösterilir; yalnızca biçimini örnek alması, bilgiyi konu anlatımından alması ve örneği kopyalamaması istenir. Kitaplık; `src/examSamples.json` içindeki kaynaklı/kullanıcı örneklerini, `server/user-exam-examples.json` içindeki kullanıcının paylaştığı 100 antrenman bilimi soru kökü-cevap örneğini ve kitapların kendi "Neler Öğrendik?" sorularını içerir. Kullanıcının güvenilir olarak belirttiği 100 örnek konu bölümlerine eşleştirilir ve aynı bölümde soru üretirken cevapları içerik referansı olarak kullanılır; başka bölümde yalnızca biçim örneğidir. Örnek soru kopyalanmaz; farklı soru türleri ve açılarında yeni kökler kurulur. Kitap temelli kanıt ve tek-doğru kalite kapıları korunur; örnekler sabit soru bankasına otomatik eklenmez. Sorular kök kalıbına göre ailelere ayrılır (`server/exam-style.mjs`): uzun tanım → terim, durum → kavram, olumsuz kök, sayı / yaş aralığı, boşluk doldurma, kısa ve net. Önce uygun örnek aynı bölümden, yoksa aynı kitaptan, o da yoksa başka kitaptan seçilir; örnekler döndürülür. Kapatmak için `TEMPO_EXAM_STYLE=0`.
   - **Kaynaklı yeni örnek eklemek:** `src/examSamples.json` içine `{ "id", "unitId", "origin", "style", "question", "options5", "options", "answer", "explanation" }` ekle, `npm run contexts` çalıştır. Bu yoldan eklenen doğrulanmış örnekler sabit soru bankasına ve stil kitaplığına girer. Güvenilir kullanıcı örneği eklemek için `server/user-exam-examples.json` dosyasına `id`, `unitId`, `question`, `answer` alanları ekle; aynı bölümde cevap içerik referansı, başka bölümlerde soru biçimi örneği olur ve kayıtlar Test merkezi soru bankasına yazılmaz. Uygulama sınavdaki gibi **beş şıkla (A–E)** çalışır.
   - Gönderdiğin sorular şu bölümlere kondu: *denge tanımı* → Koordinatif özellikler; *baskın enerji sistemi* → Spor fizyolojisi; *2024 çıkmış soru (teknik antrenman)* → Antrenmanı oluşturan ögeler. Çıkmış sorunun cevap anahtarı gönderilmedi; cevap kitaba göre **Fiziksel antrenman** olarak işaretlendi (`answerVerified: false`). Yalnızca açıklaması gönderilen üç sorunun (atıf kuramı, geri bildirim, örgütleme) kökü açıklamadan **yeniden yazıldı** (`reconstructed: true`).
 - **Aynı bilgi, farklı soru biçimi.** Bir cümleden daha önce soru yazıldıysa bu kez **kullanılmamış bir soru tipi ve açısı** seçilir; modele o cümleden yazılmış önceki soru kökleri gösterilir ve "aynı bilgiyi başka biçimde sor" denir. Soru tipleri: kavram, vaka, karşılaştırma, neden-sonuç, istisna, uygulama, en iyi seçim, **tanımdan terim, boşluk doldurma, doğru yargı, ilginç bilgi, durumdan kavrama ("hangisi baskındır / önceliklidir"), kısa ve net (çıkmış soru tarzı)** ve paragraf. Tipi farklı olan iki soru aynı cevabı paylaşabilir; kökü gerçekten benzeyen ya da şıklarının çoğu aynı olan soru yine reddedilir (§4.3).
 - **Modele anlatımın tamamı değil ilgili bölümü gösterilir.** Bölüm anlatımı (8–68 bin karakter) modelin bağlam penceresine sığmaz; soru yazarına odak cümlenin, hakemlere kanıt cümlesinin çevresindeki ~2.400 karakterlik kesintisiz bölüm verilir (`TEMPO_SUMMARY_WINDOW_CHARS`). Kanıt denetimi ise anlatımın tamamına bakar.
-- Hakemler bir soruyu hedeften farklı zorlukta bulursa (ör. kolay hedeflenmişken "orta") ve o bölümün o zorluktaki kotası dolmamışsa soru o zorlukla kaydedilir ve o zorluğun payına sayılır; kota doluysa reddedilir.
-- **Bir bölümden istenen sayıda farklı soru çıkmayabilir** (özellikle cümlesi az olan bölümlerde: 67 cümleden 100 farklı soru beklenmemeli; turlar ilerledikçe "benzer soru zaten kayıtlı" retleri artar). Bir bölümün bir zorluğunda üst üste 25 deneme soru çıkarmazsa o zorluk **atlanır**; bölümün diğer zorlukları ve sıradaki bölümler sürer, atlananlar stüdyoda "Atlanan adımlar" olarak gösterilir ve diğer her şey bitince yeniden denenir. Atlananlar `.tempo-data/production-plan.json` dosyasında tutulur (silersen hepsi baştan denenir).
+- **Farklı soru üretimi:** Benzer/tekrarlanan soru taslakları reddedilebilir. Art arda 25 başarısız deneme alan geçiş park edilse de sistem aynı ünitede devam eder; 200 onaylı soruya ulaşmadan sonraki üniteye geçmez. Park edilen adımlar daha sonra yeniden denenir.
 - **Anlatımı yeniden üretmek** (kitap PDF'i ya da seçim kuralları değiştiyse): `pip install pymupdf` ardından `npm run summary`. Betik (`scripts/build-book-summary.py`) içindekiler sayfalarını okur, başlıkları gövdede bulur ve yalnızca gövde yazı tipindeki paragrafları alır; tablo, şekil yazısı, kaynakça, etkinlik yönergesi, soru cümlesi ve başka cümleye gönderme yapan ("bu, bunlar…") cümleleri almaz. `python3 scripts/build-book-summary.py --check --toc` içindekilerden okunan başlıkları listeler.
 - Daha önce üretilmiş onaylı sorular kotalara sayılır.
-- **Onaylı sorular havuz bakımında toplu reddedilmez.** Eski sürümde arka plandaki "Otonom Kurul" bakımı, hakemlerin 1–5'lik kalite puanını 0–100'lük bir eşikle karşılaştırdığı için havuz 15 soruyu geçtikten sonra onaylı soruların 10'u dışında hepsini "reddedildi"ye çeviriyordu (plan da aynı bölümleri baştan dolduruyordu). Eşik artık hakem ölçeğindedir; bu hatayla reddedilmiş ve hâlâ kayıtlı olan sorular (reddedilenlerin son 250'si saklanır) ilk havuz bakımında, kotayı aşmamak koşuluyla yeniden onaylı yapılır.
-- Stüdyodaki **Üretim planı** kutusu biten tur sayısını, kolay / orta hedef dağılımını, çalışılan üniteyi, ilerlemeyi ve üniteler toplamını gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
+- Üretim onayı yalnızca kaynak desteği, tek doğru cevap ve seçeneklerin soru ile konu bakımından makul olmasıyla belirlenir. Üretim hattı soru taslaklarına zorluk etiketi veya sayısal kalite puanı vermez. Ayrı havuz kapasite bakımı, üretim onayından bağımsızdır.
+- Stüdyodaki **Üretim planı** kutusu tur ilerlemesini, etkin üniteyi ve toplam onaylı soru sayısını gösterir; terminalde `[tempo] Plan: …` satırları yazılır.
 
 
 ### 4.1.2 Şık sayısı: 4 ya da 5 (A–E)
@@ -418,15 +414,9 @@ npm.cmd run dev -- --host 127.0.0.1
 
 Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak için **Ctrl + C** kullanabilirsin. Ollama uygulaması da açık olmalı. Bu yerel sunucuyu internete açma; kullanıcı yetkilendirmesi yoktur.
 
-**Önemli — Açıldığı Anda İki Motor Çalışır (Sıralı Model Kuyruğu):**
-Proje başladığı saniyeden itibaren **hiçbir düğmeye basman gerekmez** ve projede sürekli çalışan yalnızca iki şey vardır:
+**Üretim davranışı:** Sunucu açıldığında üretim otomatik başlar ve model/kaynak erişilebilir olduğu sürece devam eder. 29 ünitenin her biri sırayla 200 onaylı soruya tamamlanır. Her taslak kaynak desteği, tek doğru cevap ve şıkların ilgili/makul oluşu açısından denetlenir. Üretim kararlarında kolay/orta/zor etiketi, zorluk kotası veya sayısal kalite puanı kullanılmaz; sürekli yeniden yazma döngüsü yoktur.
 
-1. **Motor 1 — Sürekli Kaliteli Soru Üretimi (her zaman önceliklidir):** Tarayıcı sekmesini kapatsan bile sunucu ve Ollama açık kaldığı sürece soru üretimi durmaz; hız, modelin ve ekran kartının hızına bağlıdır (8B sınıfı modelle 12 GB kartta soru başına kabaca 30–90 sn beklenir). Her turda tek soru üretilir; kitaptan ilgili pasaj, tek-doğru ön kontrolü, iki ardışık hakem, çeldirici kalite kapısı, gerekirse öz-düzeltme ve `kolay`/`orta`/`zor` dengesi uygulanır. Kalite, hızdan önce gelir: iki hakem onaylamadıkça soru havuza girmez.
-2. **Motor 2 — Sürekli Kalite İyileştirme (hiç durmaz):** Onaylı havuzdaki sorular düzenli olarak 0-API puanlamasından geçer (hakem puanı, sınav potansiyeli, çeldirici dengesi, kanıt derinliği, benzerlik cezası). Ortalama çıtanın (74/100) altında kalan sorular tek tek yeniden yazılır; yeni sürüm ancak **iki bağımsız hakemin** onayından ve en az **+4 puan** iyileşme kapısından geçerse eski sürümün yerine geçer ve bu sırada soru kimliği ile oluşturulma tarihi korunur. Motor 2 model çağrılarını **yalnızca üretim boştayken** yapar — üretim hiçbir zaman iyileştirme için beklemez; havuz 20.000'e ulaştığında en zayıf soruları ayıklayıp yer açma görevini de dördüncü turda bir kez üstlenir.
-3. **Havuz 65.000 ile sınırlı** (`TEMPO_POOL_CAPACITY` ile değişir): Onaylı soru sayısı sınıra ulaşınca küratör bot en zayıf ve birbirine benzeyen soruları ayıklayıp havuzu sınırın %92,5'ine (~60.125) indirir; üretim devam eder. Toplam kayıt sayısı da sınırı geçmez.
-4. **Modeller kontrollü paralel çalışır:** Tüm model çağrıları (Motor 1 ve Motor 2) uygulama içindeki sınırlı kuyruktan geçer; aynı anda en fazla `TEMPO_AUTO_CONCURRENCY` (varsayılan **2**, 1–8 arası) model çağrısı çalışır. Her üretim hattı kendi tam çift-hakem doğrulamasından geçer; Motor 2'nin çağrıları üretim boştayken sıraya girer.
-5. **Model kurulumu açılışta yalnızca bir kez yapılır:** Ollama'daki modeller taranır; Üretici, 1. Hakem, 2. Hakem ve Evrim rolleri otomatik atanır. Eksik uzman profiller (`tempo-ogretmen`, `tempo-hakem`, `tempo-mimar`, `tempo-qwen-coder` ve gerekirse `tempo-osym-uzmani`, `tempo-celdirici-muhendisi` vb.) açılışta bir kez oluşturulur. Bundan sonra projede **kesintisiz çalışan üçüncü bir ajan yoktur**.
-6. **İki motoru Soru stüdyosunda izle:** Uygulamadaki **Soru stüdyosu** sayfasının en üstünde iki motor kartı bulunur: Motor 1 (üretilen/onaylanan soru, havuz doluluğu, onay oranı, hız, zorluk dağılımı) ve Motor 2 (ortalama kalite puanı vs 74 hedefi, taranan/iyileştirilen soru sayısı, son iyileştirilen sorular). Hiçbir düğmeye basmadan ikisi de canlı akar.
+Model çağrıları ortak kuyruk ve havuz kapasitesi sınırlarına tabidir. İlerleme Soru stüdyosundaki **Üretim planı** alanında izlenebilir.
 
 ## 8. Modelleri ve rolleri kontrol et (isteğe bağlı)
 
@@ -439,56 +429,46 @@ Modeller proje açılışında otomatik atanır, ancak farklı bir model denemek
    - `OLLAMA_MODEL` (üretici), `OLLAMA_VERIFIER_MODEL` (1. hakem), `OLLAMA_JUDGE2_MODEL` (2. hakem), `OLLAMA_EVOLVER_MODEL` (mimar), `OLLAMA_CODER_MODEL` (Qwen Coder)
    - `TEMPO_QWEN_CLI_BIN` (özel `qwen` CLI yolu), `TEMPO_WEB_RESEARCH=0` (internet araştırmasını kapatmak istersen), `LLAMA_CPP_DIR` (`llama.cpp` konumu)
 
-## 9. İki Motorun Arkasındaki Mimarisi — Üretim & Sürekli Kalite İyileştirme
+## 9. Soru üretimi ve isteğe bağlı destek araçları
 
-Bu sürümde yapay zekâlar 5 kitabın tamamından (824 sayfa, ~2 milyon karakter, **1.021 konu pasajı**) beslenir. Proje açık olduğu sürece kesintisiz çalışan yalnızca **Motor 1 (sürekli kaliteli soru üretimi)** ve **Motor 2 (üretilmiş soruların sürekli kalite iyileştirmesi)**'dir. Aşağıdaki bileşenler bu iki motoru ve senin test çözme/çalışma akışını besler; bunların hiçbiri arka planda gizlice ve kesintisiz koşmaz — ilgili ekranı açtığında veya bir düğmeye bastığında çalışır:
+Soru üretimi 29 üniteyi sırayla işler; her birinde 200 onaylı soruya ulaşınca devam eder. Üretim kararlarında zorluk etiketleri, zorluk kotaları veya sayısal kalite puanları kullanılmaz. Aşağıdaki ayrı destek özellikleri ilgili ekranda/istekte çalışır:
 
-1. Kesintisiz Üretim Hattı (Motor 1 — Asla Durmaz):**
-   - Sorular **tek tek** (`batchPerCall: 1`) üretilir; ilgili kitap pasajı, tek-doğru ön kontrolü, iki ardışık hakem ve gerekirse öz-düzeltmeden geçer. Model çağrıları ortak kuyrukta sıraya girer, böylece modeller çakışmaz.
-   - **Soru üretimi asla duraklatılmaz.** Havuz sınırına (varsayılan 65.000) ulaşsa dahi en düşük puanlı/tekrar sorular ayıklanarak kesintisiz yeni soru üretimi sürer.
+1. **Soru üretimi:** Her soru için kaynak desteği, tek doğru cevap ve şıkların ilgili/makul oluşu denetlenir; bariz alakasız veya saçma seçenekler reddedilir. 29 ünitelik sıralı plan 200 onaylı soru/ünite hedefinde durur. Ek kalite puanı veya sürekli yeniden yazma döngüsü üretim hattında çalışmaz.
 2. İnternet Araştırması & Sınav Tahmini (talep üzerine — `server/research-agent.mjs`):**
    - Araştırmacı ajan, **JARVIS'e "ünite X'i araştır" dediğinde** (veya ilgili API çağrıldığında) 29 ünite içinden sıradakini seçerek **Türkçe Vikipedi + DuckDuckGo web araması** üzerinden ilgili ders kavramlarını ve sınav vurgularını tarar (ağ yoksa hata vermeden kitap pasajları üzerinde derin örüntü analizine döner). Bu araştırma arka planda kesintisiz koşmaz; sonucu `.tempo-data/ai-brain/research-memory.json` dosyasına yazılır ve **sonraki tüm soru üretimlerine** rehberlik eder.
    - Taradığı veriler + resmi kitap metni üzerinden **sınavda çıkabilecek soruları akıl yürüterek tahmin eder** (`examHypotheses`), sınavlarda en çok karıştırılan tuzak kavram çiftlerini (`confusionPairs`) çıkarır ve `.tempo-data/ai-brain/research-memory.json` üzerinden doğrudan soru üreticisine yön verir.
    - *Güvenlik ilkesi:* Araştırma yalnızca "hangi kavramın ve tuzağın sorulacağı" konusunda akıl yürütür; sorunun **kanıt alıntısı (`evidence`) her zaman %100 resmi ders kitabından** alınmak zorundadır.
-3. Gelişim Seviyesine Göre Dinamik Kalite Ayarı (`computeAdaptiveQuality`):**
-   - Yapay zekâ deneyim, araştırma ve Qwen Code inovasyonu kazandıkça (**Seviye 1 → Seviye 4 · Usta Sınav Mimarı**), beklediği minimum kalite çıtası ve vaka/analiz derinliği kendiliğinden yükselir.
-4. Qwen Code Sürekli İnovasyonu & `kolay` / `orta` / `zor` Koruması:**
-5. Çok Yanlış Yönlendirmesi & Anlatım/Kodlama Yenileme (`server/lesson-engine.mjs`):**
+3. Çok Yanlış Yönlendirmesi & Anlatım/Kodlama Yenileme (`server/lesson-engine.mjs`):**
    - Bir konuda üst üste hata yaptığında uygulama seni anında o konuyu biraz daha okumaya veya **konu anlatımını sesli dinlemeye** yönlendirir.
    - Hâlâ akılda kalmıyorsa **"Aklımda Kalmıyor: Kodlamaları & Anlatımı Değiştir"** (tek tıkla) eski kodlamaları tamamen yasaklayıp yepyeni bir benzetme/akrostiş/hikâye tarzıyla dersi baştan kurgular.
-6. "Ya Çıkarsa?" %100 Pasaj Kapsamı ve `5 × 20 = 100` Sınav Provası:**
+4. "Ya Çıkarsa?" %100 Pasaj Kapsamı ve `5 × 20 = 100` Sınav Provası:**
    - Sınavda 5 kitabın her birinden 20'şer toplam 100 soru geleceği için yapay zekâ "az önemli" saysa bile hiçbir kitap bölümü atlanmaz: her ünitede `everyCornerDetails` ("Ya Çıkarsa?" köşeleri), sıfır kör nokta pasaj önceliği ve Test Merkezinde **5 × 20 = 100 Soru Tam Sınav** + **"Ya Çıkarsa?" Kör Nokta Testi** bulunur.
-7. Çoklu Ücretsiz Ses Stüdyosu (`server/voice-studio.mjs`, `src/VoiceStudio.tsx`):**
+5. Çoklu Ücretsiz Ses Stüdyosu (`server/voice-studio.mjs`, `src/VoiceStudio.tsx`):**
    - **64'ten fazla tamamen ücretsiz ses** (yerel VoiceStudio köprüsü, Speechify, OpenAI ve ElevenLabs ücretsiz katmanları dâhil) tek katalogda toplanır; konu anlatımı, sorular ve Kayserili koç tepkileri bu seslerle seslendirilir.
    - **Diyalog karakter ses kadrosu** (Koç, Kayserili, Hamam Böceği Böcü, Ada, Can ve Anlatıcı) her role ayrı bir ses atar; ses dosyaları sunucudan `audio/mpeg` akışıyla uygulama içinde oynatılır (**başka siteye veya sayfaya yönlendirme yapmaz**).
    - Tamamı **0-API** prensibiyle çalışır: harici anahtar veya abonelik gerekmez (`zeroApiRequired`, `noApiKeyPrompts`).
-8. Hyper-150x Meta-Geliştirici Bot — ApexArchitect v3 (`server/apex-architect.mjs`, `server/jarvis-core.mjs`, `server/sandbox-evolver.mjs`):**
+6. Hyper-150x Meta-Geliştirici Bot — ApexArchitect v3 (`server/apex-architect.mjs`, `server/jarvis-core.mjs`, `server/sandbox-evolver.mjs`):**
    - İstek üzerine çalıştırıldığında projedeki **tüm 8 botu** (`Üretici`, `Hakem Konseyi`, `20k+ Havuz Botu`, `LessonEngine`, `ResearchAgent`, `Kayseri Koçu`, `Qwen Code Sandbox`, `Turbo Kalite Kilidi`) canlı MR taramasından geçirir, kök nedenleri ve pasaj/hata darboğazlarını tespit eder.
-   - **Adli Eleştirmen × 3 Adaylı Turnuva Mimarı × Self-Repair (Kendini Onaran Kural) × 8-Tuzak Adversarial F1 Stres Testçisi** kuruluyla birden fazla rakip stratejiyi yarıştırır, bozuk kuralı otomatik tamir eder, önceki turun gerçek etkisini ölçüp `winningPlaybook` altın defterine yazar ve canlı `hyperParams` (`temperatureOffset`, `batchSizeHint`, `priorityPassageUnits`, `reframePriorityUnits`, `curatorMinScoreHint`) ile tüm proje botlarını fiilen yöneterek Zekâ Çarpanını **25x → 150x–500x** bandına tırmandırır (`kolay/orta/zor` üçlü kademesi korunur).
-   - Qwen Code (`qwen2.5-coder` / `qwen3-coder` veya harici `qwen` CLI), sorulardaki **`kolay` / `orta` / `zor` 3 kademeli zorluk sistemini ASLA silmeden** her seviyenin direktiflerini geliştirir ve izole `node:vm` kum havuzunda `evaluateDifficultyFit` / `evaluateCandidate` kuralları yazar (`SandboxEvolver` üçlü zorluk sisteminin silinmesini yazılımsal kapıyla engeller).
+   - İstek üzerine çalışan bu araç önerileri ve stratejileri destekler; soru üretiminin kaynak, cevap veya seçenek denetim kurallarını ve ünite kotasını değiştirmez.
+   - Qwen Code ve kod evrimi özellikleri isteğe bağlıdır; zorluk sınıfı üretim kabul kapısı olarak kullanılmaz.
    - Uygulama koduna yönelik güvenli önerileri `.tempo-data/ai-brain/jarvis-memory.json` → `codeProposals` kuyruğunda toplar; canlı kaynak kodu asla bozmaz.
-9. Katman 1 + Katman 2 Öğrenme (`server/jarvis-core.mjs`, `training/auto_train_cycle.py`):**
+7. Katman 1 + Katman 2 Öğrenme (`server/jarvis-core.mjs`, `training/auto_train_cycle.py`):**
    - **Katman 1 (Anlık Koçluk — 0 ek VRAM):** Hakem retlerinden öğrenilen dersleri (`avoidLessons`) ve başarı desenlerini (`goldenPatterns`) anında sonraki üretim promptlarına işler; bu, Motor 1'in olağan çalışma biçimidir.
    - **Katman 2 (LoRA + DPO Ağırlık Eğitimi & Hot-Swap):** Eğitim, bu rehberin 13–18. adımlarında (İsteğe bağlı) **senin başlattığın** bir işlemdir; proje açılır açılmaz kendiliğinden GPU eğitimi başlatmaz. Yeni model held-out testlerde tabandan iyiyse `tempo-jarvis:vN` olarak Ollama'ya aktarılıp sıcak geçişle devreye alınabilir (beğenilmezse tek tıkla önceki modele dönülebilir).
-10. Çift-Cevap Kalkanı:**
+8. Çift-Cevap Kalkanı:**
    - 2 şıkkın birden doğru sayılabildiği tüm sorular 0 ms ön-kontrol + bağımsız hakemlerin `dualAnswerRisk` kalkanıyla elenir; hiçbir soru bu kapıdan geçmeden havuza giremez.
-11. Soru Havuzu Tarama ve Kalite Yenileme Botu (`server/pool-curator.mjs`):**
-   - `PoolCuratorBot`, Motor 2'nin 0-API taraması ve Motor 1'in havuz-sınırı koruması tarafından kullanılır; ayrıca istek üzerine elle çalıştırılabilir. Havuzdaki soruları 0–100 bileşik kalite puanıyla (hakem puanı, `examPotential` sınavda çıkma potansiyeli, 5 soru açısı zenginliği, çeldirici uzunluk dengesi, açıklama/kanıt derinliği ve Jaccard benzerlik cezası) tarar ve raporlar.
-   - Havuzdaki onaylı soru sayısı **havuz sınırını (varsayılan 65.000) geçtiğinde**, ünite ve `kolay`/`orta`/`zor` tabanını koruyarak en kalitesiz ve yakın tekrar soruları otomatik temizler (sınırın %92,5'ine indirir), yerlerini daha yüksek sınav potansiyelli taze sorularla doldurmak üzere üretim önceliklerini günceller ve elenenleri DPO öğrenme izine aktarır.
-12. 100/100 Full Doğru Hedefli 5 Farklı Soru Açısı (`QUESTION_ANGLES`):**
-   - `kolay`, `orta` ve `zor` seviyelerinin tamamı yüksek kaliteli ve sınavda çıkma potansiyeli (`examPotential: 1–5`) yüksek sorulardan oluşur.
-   - Bir kavram 5 farklı açıdan sorulabiliyorsa (`1. Doğrudan Tanım`, `2. Ters Köşe / İstisna`, `3. Saha Vakası`, `4. Karşılaştırmalı Tuzak`, `5. Şaşırtıcı Bağlam`) yapay zekâ hepsini dengeli döndürerek öğrenciyi şaşırtıcı varyasyonlara da hazırlar.
-13. Süre ve Performansa Göre Şekillenen Uzun, Tekrarlı, Püf Noktalı & Kodlamalı Ünite Anlatımları (`server/lesson-engine.mjs`):**
+9. Soru havuzu sınır bakımı (`server/pool-curator.mjs`):** Üretim onayı ve ünite kotası, kaynak desteği, tek doğru cevap ve ilgili/makul seçenekler dışındaki kalite puanlarına bağlı değildir. Ayrı havuz bakımı yalnızca havuz kapasitesine ulaşıldığında çalışır; aynı ünite içindeki yakın tekrarları tarayıp alan açabilir.
+10. Soru açısı çeşitliliği (`QUESTION_ANGLES`):** Farklı soru biçimleri (doğrudan tanım, istisna, saha vakası, karşılaştırma ve bağlam) içerik çeşitliliğine yardımcı olabilir; zorluk sınıfı veya puan kotası uygulanmaz.
+11. Süre ve Performansa Göre Şekillenen Uzun, Tekrarlı, Püf Noktalı & Kodlamalı Ünite Anlatımları (`server/lesson-engine.mjs`):**
    - Derslerim ekranı önce kısa ezber özetini gösterir (bkz. 11. bölüm). Altındaki **Uzun anlatım** kutusunda derin bölümler, zihin çıpaları, akılda kalıcı **kodlamalar/akrostişler**, klasik tuzak uyarıları, **"1 Kavram — 5 Farklı Soru Açısı" haritası**, yankılı tekrar kutuları ve anında kontrol soruları içerir.
    - Test çözerken sistem her soruda harcadığın **süreyi (saniye ve dakika)** ve doğruluk/seri performansını otomatik kaydedip `/api/ollama/student-state` üzerinden kaydeder; `LessonEngine` bu verilere bakarak (örneğin yavaş kaldığın veya hata yaptığın ünitelere hızlandırıcı kodlama/tuzak uyarıları ekleyerek) ünite konu anlatımlarını bu sinyallerle güçlendirir.
+## 10. Soru doğrulama akışı
 
-## 10. Otonom Yapay Zekâ Kalite Kurulu (Senin Onaylaman veya Reddetmen Gerekmez)
+Üretim sırasında taslaklar otomatik doğrulanır; sorular zorluk etiketleri veya sayısal kalite eşikleriyle sınıflandırılmaz:
 
-Bu sürümde **havuzdaki soruları tek tek onaylaman ya da reddetmen gerekmez**; onay ve eleme kararlarını yapay zekâlar kendi aralarında yürütür ve Motor 2 reddedilmemesi gereken zayıf soruları yeniden yazar:
-
-1. Üretilen her soru önce **0 ms Çeldirici & Örtüşme Kalkanı**ndan ve **SandboxEvolver** JS kurallarından geçer.
-2. Ardından **iki bağımsız yapay zekâ hakemi** soruyu kitaba bakarak çözer; tek doğru cevap, kanıt ve zorluk etiketinde tam birleşen ve JARVIS adaptif kalite çıtasını aşan sorular **`AI Konseyi Onayladı`** statüsüyle anında sitedeki testlere açılır.
-3. Çift cevap riski taşıyan, kanıtsız veya kalite çıtasının altında kalan sorular otomatik **`AI Otomatik Eledi`** sekmesine ayrılır ve DPO tercih çifti (`rejected-traces.jsonl`) olarak modelleri daha da güçlendirmek için kullanılır.
+1. Bağımsız denetçi kaynakta desteklenen doğru cevabı ve tek doğru seçenek koşulunu kontrol eder.
+2. Şıklar soru ile ilgili ve makul olmalıdır; yalnızca açıkça alakasız/saçma şıklar bu nedenle reddedilir.
+3. Kanıtı veya cevabı desteklenmeyen taslaklar kaydedilmez; başarı/ret gerekçeleri stüdyoda görülebilir.
 4. **Soru stüdyosu** sayfasından dilediğin zaman AI Konseyi'nin onayladığı ve otomatik elediği soruları, hakem gerekçelerini, web araştırma tahminlerini ve JARVIS canlı günlüğünü izleyebilirsin.
 
 ## 11. Dersi oku, yarın hatırla (ezber özeti ve Tekrar yolu)
@@ -695,7 +675,7 @@ Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vard
 
 ## 20. Yeni özellikler (Kayserili Koç, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
 
-- **Dengeli kalite modu (tek mod):** Soru üretimi daima kalite hattından geçer: 1 soru/çağrı, kitaptan ilgili pasaj, tek-doğru ve kaynak kanıtı kontrolü, iki ardışık hakem, gerekirse öz-düzeltme, `kolay`/`orta`/`zor` dengesi. Tüm model çağrıları tek kuyrukta sıraya girer (eşzamanlılık 1), böylece **iki model aynı anda çalışmaz** ve sistem yükü düşük kalır. Havuz 20.000 kayıtla sınırlıdır.
+- **Soru üretimi:** Kaynak kanıtı ve tek doğru cevap denetlenir; şıklar yalnızca açıkça alakasız veya saçma olduklarında reddedilir. Zorluk etiketi/kotası yoktur. Tüm model çağrıları tek kuyrukta sıraya girer (eşzamanlılık 1), böylece **iki model aynı anda çalışmaz** ve sistem yükü düşük kalır. Havuz 20.000 kayıtla sınırlıdır.
 - **Kayserili Sert-Komedi Şık Tepkisi (`/api/ollama/kayseri-react`):** Test sırasında bir şıkka basıldığında süre ve seriye göre anında Kayserili şiveli/sert-komedi (ve tek tıkla `Temiz Klasik` geçişli + `Sesli Oku` destekli) koç tepkisi, net bilgi ve önemli terim gösterilir.
 - **+%15500 (`Hyper-155x+`) Qwen Code & ApexArchitect:** İstek üzerine çalıştırıldığında 8 alt-sistemi (üretici, hakem, küratör, ders motoru, araştırmacı, Kayseri koçu, Qwen Code sandbox ve Turbo kalite kilidi) 16 tuzaklı stres testi ve 4 adaylı turnuvayla değerlendirip geliştirir.
 

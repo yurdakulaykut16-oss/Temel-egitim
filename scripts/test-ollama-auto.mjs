@@ -9,7 +9,7 @@ const listen=server=>new Promise(resolve=>server.listen(0,'127.0.0.1',()=>resolv
 const close=server=>new Promise(resolve=>server.close(resolve));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kitap kapsamı, zorluk sıralaması ve sabit eşzamanlılık',async()=>{
+test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kaynak kontrolü ve sabit eşzamanlılık',async()=>{
  let app, fake, dir, base, stopOllamaLoops;
  let failure=null;
  try{
@@ -41,7 +41,6 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   const phrase=words.slice(start,start+10).join(' ');
   return `${phrase} — bu anlatımdaki temel kavram hangisidir? (#${tag})`;
  };
-  const difficultyByQuestion=new Map();
   fake=http.createServer(async(req,res)=>{
    res.setHeader('Content-Type','application/json');
    if(req.url==='/api/tags')return res.end(JSON.stringify({models:[{name:'fake:1'},{name:'tempo-ogretmen:latest'},{name:'tempo-hakem:latest'},{name:'tempo-mimar:latest'},{name:'tempo-qwen-coder:latest'}]}));
@@ -66,38 +65,22 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
     result={verdicts:qMatches.map(m=>{
      const id=Number(m[1]);
      const question=m[2].trim();
-     const difficulty=difficultyByQuestion.get(question)||'kolay';
-     return {id,answer:opts0,answerSource:'first',singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Toplu kör hakem onayı.'};
+     return {id,answer:opts0,singleCorrect:true,supported:true,choicesPlausible:true,evidence,reason:'Kaynak ve seçenek denetimi geçti.'};
     })};
    }else if(isVerify){
     const qMatch=prompt.match(/SORU: ([\s\S]*?)\nSEÇENEKLER:/);
     const question=qMatch?qMatch[1].trim():'';
-    const difficulty=difficultyByQuestion.get(question)||'kolay';
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*?)\nSORU:/);
     const text=textMatch?textMatch[1]:'';
     const evidence=text.trim().split(/\s+/).slice(0,8).join(' ')||'yeterince uzun bir kanit metni';
-    result={answer:opts0,singleCorrect:true,dualAnswerRisk:false,secondBestOption:'',supported:true,qualityOk:true,qualityScore:5,difficulty,evidence,reason:'Anlatımda bu bilgi doğrudan geçer.'};
+    result={answer:opts0,singleCorrect:true,supported:true,choicesPlausible:true,evidence,reason:'Anlatımda bu bilgi doğrudan geçer.'};
    }else{
     const textMatch=prompt.match(/KONU ANLATIMI:\s*([\s\S]*)$/);
     const text=textMatch?textMatch[1]:'';
     const evidence=text.trim().split(/\s+/).slice(0,8).join(' ')||'yeterince uzun bir kanit metni';
-    const batchMatches=[...prompt.matchAll(/Soru \d+: zorluk=(KOLAY|ORTA|ZOR)/g)];
-    if(batchMatches.length>0){
-     result={questions:batchMatches.map((m,i)=>{
-      const diff=m[1].toLocaleLowerCase('tr-TR');
-      const question=makeQuestion(`${calls}-${i}`,text);
-      difficultyByQuestion.set(question,diff);
-      const opts=makeOptions(`${calls}-${i}`,text);
-      return {question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu',questionType:'kavram'};
-     })};
-    }else{
-     const difficultyMatch=prompt.match(/(?:tam olarak şöyle olmalı|Sorunun zorluk seviyesi): (KOLAY|ORTA|ZOR):/);
-     const difficulty=difficultyMatch?difficultyMatch[1].toLocaleLowerCase('tr-TR'):'kolay';
-     const question=makeQuestion(`${calls}`,text);
-     difficultyByQuestion.set(question,difficulty);
-     const opts=makeOptions(`${calls}`,text);
-     result={question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu'};
-    }
+    const question=makeQuestion(`${calls}`,text);
+    const opts=makeOptions(`${calls}`,text);
+    result={question,options:opts,answer:opts[0],explanation:'Açıklama metni yeterince uzun bir şekilde yazılmıştır.',evidence,topic:'Test konu'};
    }
    res.end(JSON.stringify({response:JSON.stringify(result),eval_count:160,eval_duration:200_000_000}));
    inFlight--;
@@ -155,18 +138,11 @@ test('otomatik havuz: arka planda sürekli üretim, sıralı model kuyruğu, kit
   const units=new Set(questions.items.map(x=>x.unitId));
   assert.ok(units.size>=2,`en az 2 farklı ünite üretilmeliydi, görülen: ${units.size}`);
   assert.ok(questions.items.every(x=>x.status==='approved'));
-  assert.ok(questions.items.every(x=>['kolay','orta','zor'].includes(x.difficulty)));
   assert.ok(questions.items.every(x=>Array.isArray(x.verification?.judges)&&x.verification.judges.length===1));
   assert.ok(questions.items.every(x=>typeof x.passageId==='string' && x.passageId.includes('#')));
 
-  // Her ünitenin soruları sırayla kolay -> orta -> zor kalıbıyla eklenmiş olmalı
-  const byUnit={};
-  for(const q of questions.items){(byUnit[q.unitId]=byUnit[q.unitId]||[]).push(q)}
-  for(const unitId in byUnit){
-   const ordered=byUnit[unitId].slice().sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
-   const expected=['kolay','orta','zor'];
-   ordered.forEach((q,i)=>{assert.equal(q.difficulty,expected[i%3],`${unitId} ünitesinde ${i+1}. soru ${expected[i%3]} olmalıydı, bulunan: ${q.difficulty}`)});
-  }
+  assert.ok(questions.items.every(x=>!Object.hasOwn(x, 'difficulty')));
+  assert.ok(questions.items.every(x=>!Object.hasOwn(x.verification || {}, 'qualityScore')));
 
   let changed=await fetch(`${base}/api/ollama/concurrency`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({value:1})});
   assert.equal(changed.status,200);assert.equal((await changed.json()).autoConcurrency,1);

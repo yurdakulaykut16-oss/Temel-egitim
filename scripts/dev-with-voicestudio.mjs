@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { hasInstalledVoiceStudioModel, voiceStudioApiAlive } from '../server/voice-studio-bootstrap.mjs';
 
 const execFileAsync = promisify(execFile);
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -113,13 +114,8 @@ async function ensureUv() {
 }
 
 async function voiceStudioHealth() {
- for (const p of ['/system/info', '/health']) {
-  try {
-   const r = await fetch(`http://127.0.0.1:${VS_PORT}${p}`, { signal: AbortSignal.timeout(1500) });
-   if (r.ok) return true;
-  } catch {}
- }
- return false;
+ // A model-gated readiness route may return 503 while the catalog API is already usable.
+ return voiceStudioApiAlive(`http://127.0.0.1:${VS_PORT}`);
 }
 
 async function ensureSource() {
@@ -161,7 +157,7 @@ async function installModelIfMissing() {
   const r = await fetch(`http://127.0.0.1:${VS_PORT}/models`);
   if (!r.ok) return;
   const cat = await r.json();
-  if ((cat.models || []).some(m => m.repo_id === MODEL_REPO && m.installed)) {
+  if (hasInstalledVoiceStudioModel(cat.models, MODEL_REPO)) {
    log('VoiceStudio OmniVoice modeli hazır.');
    return;
   }

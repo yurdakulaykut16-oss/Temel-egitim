@@ -5,9 +5,23 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FREE_VOICESTUDIO_CATALOG, VoiceStudioManager } from '../server/voice-studio.mjs';
+import { hasInstalledVoiceStudioModel, voiceStudioApiAlive } from '../server/voice-studio-bootstrap.mjs';
 
 const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 const close = server => new Promise(resolve => server.close(resolve));
+
+test('VoiceStudio bootstrap recognizes live catalog API despite model-gated 503 readiness', async () => {
+ const seen = [];
+ const alive = await voiceStudioApiAlive('http://voice.test/', async url => {
+  seen.push(new URL(url).pathname);
+  return { ok: url.endsWith('/models') };
+ }, 50);
+ assert.equal(alive, true);
+ assert.deepEqual(seen, ['/health', '/system/info', '/models']);
+ assert.equal(hasInstalledVoiceStudioModel([{ id: 'k2-fsa/OmniVoice', downloaded: true }], 'k2-fsa/OmniVoice'), true);
+ assert.equal(hasInstalledVoiceStudioModel([{ repo_id: 'k2-fsa/OmniVoice', installed: true }], 'k2-fsa/OmniVoice'), true);
+ assert.equal(hasInstalledVoiceStudioModel([{ id: 'k2-fsa/OmniVoice', downloaded: false }], 'k2-fsa/OmniVoice'), false);
+});
 
 test('VoiceStudioManager: 60+ ücretsiz ses, çoklu karakter kadrosu, tercih kaydı ve yerel 3900 köprüsü', async () => {
  assert.ok(FREE_VOICESTUDIO_CATALOG.length >= 60, `En az 60 ücretsiz ses olmalı, bulunan: ${FREE_VOICESTUDIO_CATALOG.length}`);
@@ -95,6 +109,26 @@ test('VoiceStudioManager: 60+ ücretsiz ses, çoklu karakter kadrosu, tercih kay
  }
 });
 
+test('VoiceStudio hazır değilse katalog kullanılabilir kalır ve ses isteği hata yerine fallback bildirir', async () => {
+ const dir = await mkdtemp(join(tmpdir(), 'tempo-vs-offline-'));
+ const unavailableVS = http.createServer((_req, res) => {
+  res.statusCode = 503; // backend ayağa kalkmış olsa da model/lisans hazır değil
+  res.end('model unavailable');
+ });
+ const port = await listen(unavailableVS);
+ try {
+  const mgr = new VoiceStudioManager(dir, `http://127.0.0.1:${port}`);
+  const catalog = await mgr.getCatalog();
+  assert.equal(catalog.ok, true);
+  assert.equal(catalog.localAvailable, false);
+  assert.ok(catalog.voices.length >= 60, 'yerel servis yoksa katalog fallback kalmalı');
+  assert.equal((await mgr.synthesizeViaLocalServer({ text: 'Merhaba' })).ok, false);
+ } finally {
+  await close(unavailableVS);
+  await rm(dir, { recursive: true, force: true });
+ }
+});
+
 test('Ollama 0-API yerel yürütme durumu ve /voicestudio API uçları (katalog, tercih, ses) sorunsuz çalışır', async () => {
  const dir = await mkdtemp(join(tmpdir(), 'tempo-vs-ollama-'));
 
@@ -139,7 +173,7 @@ test('Ollama 0-API yerel yürütme durumu ve /voicestudio API uçları (katalog,
  process.env.TEMPO_DATA_DIR = dir;
  process.env.TEMPO_DISABLE_AUTOLOOP = '1';
 
- const { ollamaPlugin } = await import(`../server/ollama.mjs?v=${Date.now()}`);
+ const { ollamaPlugin, stopOllamaLoops } = await import(`../server/ollama.mjs?v=${Date.now()}`);
  let middleware;
  ollamaPlugin().configureServer({ middlewares: { use(_p, h) { middleware = h; } } });
  const app = http.createServer((req, res) => {
@@ -150,7 +184,6 @@ test('Ollama 0-API yerel yürütme durumu ve /voicestudio API uçları (katalog,
  const base = `http://127.0.0.1:${appPort}`;
 
  try {
-  // 1) Status 0-API yerel yürütme bayraklarını ve VoiceStudio özetini dönmeli
   const statusRes = await fetch(`${base}/api/ollama/status`);
   assert.equal(statusRes.status, 200);
   const status = await statusRes.json();
@@ -158,7 +191,6 @@ test('Ollama 0-API yerel yürütme durumu ve /voicestudio API uçları (katalog,
   assert.equal(status.localExecutionOnly, true);
   assert.ok(status.voiceStudio.totalFreeVoices >= 60);
 
-  // 2) VoiceStudio API uçları
   const cat = await (await fetch(`${base}/api/ollama/voicestudio/catalog`)).json();
   assert.equal(cat.ok, true);
   assert.ok(cat.voices.length >= 60);
@@ -177,8 +209,11 @@ test('Ollama 0-API yerel yürütme durumu ve /voicestudio API uçları (katalog,
   });
   assert.equal(spRes.status, 200);
   assert.match(spRes.headers.get('content-type') || '', /audio\/mpeg/);
-
  } finally {
+  stopOllamaLoops?.();
+  app.closeAllConnections?.();
+  fakeOllama.closeAllConnections?.();
+  fakeVS.closeAllConnections?.();
   await close(app);
   await close(fakeOllama);
   await close(fakeVS);
