@@ -45,7 +45,7 @@ type PlanStep = {key: string; pass: number; unitId: string; book: string; unit: 
 type PlanCell = {done: number; quota: number; from: number; share: number; parked?: boolean; streak?: number};
 type PlanUnit = {pass: number; unitId: string; book: string; unit: string; bookNo: number; unitNo: number; done: number; target: number; cells: PlanCell[]};
 type ProductionPlan = {
- enabled: boolean; quota?: number; passCount?: number; perUnitTarget?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
+ enabled: boolean; continuous?: boolean; cycle?: number; unitIndex?: number; quota?: number; passCount?: number; perUnitTarget?: number; stuckLimit?: number; complete?: boolean; totalDone?: number; totalTarget?: number;
  current?: PlanStep | null; working?: (PlanStep & {streak?: number})[]; workingUnits?: PlanUnit[]; parallel?: number; parked?: PlanStep[];
  passes?: {pass: number; done: number; target: number; unitsDone: number; units: number}[];
 };
@@ -357,7 +357,7 @@ export function OllamaStudio({read}: {read: string[]}) {
       <div className="lineup-head">
        <b>Üretim planı</b>
        <span className={`jarvis-badge ${plan.complete ? 'ok' : 'neutral'}`}>
-        {plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur · 50 soru` : 'Atlanan adımlar yeniden denenecek'}
+        {plan.continuous ? `Çevrim ${(plan.cycle ?? 0) + 1} · ${plan.current ? `${plan.current.pass}/${plan.passCount} tur` : 'adım yeniden denenecek'}` : plan.complete ? 'Plan tamamlandı' : plan.current ? `${plan.current.pass}. tur` : 'Atlanan adımlar yeniden denenecek'}
        </span>
        <span>Toplam <b>{plan.totalDone ?? 0}</b> / {plan.totalTarget ?? 0} soru</span>
       </div>
@@ -384,8 +384,8 @@ export function OllamaStudio({read}: {read: string[]}) {
        );
       })()}
       <p className="lineup-line">
-       Sıra: 1. kitabın 1. bölümünden başlayarak her bölüme {plan.quota} soru üretilir. Bütün turlar tamamlandığında bölüm başına {plan.perUnitTarget} soruya ulaşılır.
-       {(plan.parallel ?? 1) > 1 ? ` Aynı ünitede ${plan.parallel} soru hattı birlikte çalışır; ünitenin ${plan.perUnitTarget} soruluk hedefi tamamlanmadan sonraki üniteye geçilmez.` : ` Ünite tamamlanmadan sonraki üniteye geçilmez.`} Sorular bölümün kitap sayfalarından (ve işaretli internet kaynaklarından) derlenmiş özetinden kurulur; her soru kartında kitabın içindekiler bölümündeki konu başlığı ve kitap sayfası yazar. Aynı bilgi yeniden sorulduğunda farklı bir soru biçimi kullanılır.
+       Sıra 1. kitabın 1. bölümünden başlayarak ilerler. Her ünite için {plan.passCount} tur boyunca tur başına en çok {plan.quota} soru üretilir; çevrim hedefi {plan.perUnitTarget} onaylı sorudur.
+       {(plan.parallel ?? 1) > 1 ? ` Aynı ünitede ${plan.parallel} soru hattı birlikte çalışır; hedef dolmadan sonraki üniteye geçilmez.` : ` Hedef dolmadan sonraki üniteye geçilmez.`} Son ünite tamamlanınca yeni çevrim ilk üniteden başlar; üretim durmaz. Sorular bölümün kitap sayfalarından (ve işaretli internet kaynaklarından) derlenmiş özetinden kurulur; her soru kartında kitabın içindekiler bölümündeki konu başlığı ve kitap sayfası yazar. Aynı bilgi yeniden sorulduğunda farklı bir soru biçimi kullanılır.
       </p>
       {(plan.parked || []).length > 0 && (
        <p className="lineup-warn">

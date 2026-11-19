@@ -1,13 +1,13 @@
 // ÜRETİM PLANI
 // ---------------------------------------------------------------------------
-// Üniteler sırayla tamamlanır. Her ünite için 4 turda 50 soru üretilerek 200'e ulaşılır;
-// bir sonraki üniteye ancak mevcut ünite kotası dolunca geçilir.
+// Üniteler sırayla tamamlanır. Varsayılan her ünite için 100 tur × en çok 50 soru;
+// son ünite bitince yeni çevrim ilk üniteden başlar ve üretim kesintisiz sürer.
 // Eşzamanlı soru görevleri aynı ünite üzerinde çalışır. Zorluk sınıflandırması yapılmaz.
 //
 // Bu dosya saf planlama / metin yardımcılarından oluşur (dosya/ağ erişimi yok).
 
 export const DEFAULT_PLAN_QUOTA = 50;
-export const DEFAULT_PLAN_PASSES = 4;
+export const DEFAULT_PLAN_PASSES = 100;
 export const DEFAULT_PLAN_STUCK_LIMIT = 25;
 export const stepKey = (unitId, pass = null) => `${unitId}|${pass === null ? 'all' : `pass:${pass}`}`;
 
@@ -19,8 +19,8 @@ const clampInt = (value, fallback, min, max) => {
 export function planConfigFromEnv(env = process.env) {
  return {
   enabled: env.TEMPO_PLAN !== '0',
-  quota: clampInt(env.TEMPO_PLAN_QUOTA, DEFAULT_PLAN_QUOTA, 1, 1000),
-  passes: clampInt(env.TEMPO_PLAN_PASSES, DEFAULT_PLAN_PASSES, 1, 200),
+  quota: clampInt(env.TEMPO_PLAN_QUOTA, DEFAULT_PLAN_QUOTA, 1, DEFAULT_PLAN_QUOTA),
+  passes: clampInt(env.TEMPO_PLAN_PASSES, DEFAULT_PLAN_PASSES, 1, DEFAULT_PLAN_PASSES),
   stuckLimit: clampInt(env.TEMPO_PLAN_STUCK_LIMIT, DEFAULT_PLAN_STUCK_LIMIT, 2, 1000)
  };
 }
@@ -62,6 +62,88 @@ export function countApproved(items) {
   counts.set(key, (counts.get(key) || 0) + 1);
  }
  return counts;
+}
+
+export function initializeCyclicPlanState({ contexts, items, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES, state = {} }) {
+ const target = quota * passes;
+ const initialized = state?.cycleInitialized === true && state.cycleProgress && typeof state.cycleProgress === 'object';
+ const stored = initialized ? state.cycleProgress : Object.fromEntries(
+  [...countApproved(items)].map(([key, count]) => [key.slice(0, key.lastIndexOf('|')), Math.min(target, count)])
+ );
+ const cycleProgress = {};
+ for (const context of contexts) {
+  const value = Number(stored[context.id]);
+  cycleProgress[context.id] = Number.isFinite(value) ? Math.max(0, Math.min(target, Math.floor(value))) : 0;
+ }
+ let cycle = Math.max(0, Math.floor(Number(state.cycle) || 0));
+ let unitIndex = initialized ? Math.max(0, Math.min(contexts.length - 1, Math.floor(Number(state.unitIndex) || 0))) : 0;
+ while (unitIndex < contexts.length && cycleProgress[contexts[unitIndex].id] >= target) unitIndex++;
+ if (unitIndex >= contexts.length) {
+  cycle++;
+  unitIndex = 0;
+  for (const context of contexts) cycleProgress[context.id] = 0;
+ }
+ return { ...state, cycleInitialized: true, cycle, unitIndex, cycleProgress };
+}
+
+export function advanceCyclicPlanState(state, unitId, contexts, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES) {
+ const target = quota * passes;
+ const next = { ...state, cycleProgress: { ...(state?.cycleProgress || {}) }, parked: { ...(state?.parked || {}) }, streaks: { ...(state?.streaks || {}) } };
+ const contextIndex = contexts.findIndex(context => context.id === unitId);
+ if (contextIndex < 0) return next;
+ next.cycleProgress[unitId] = Math.min(target, (next.cycleProgress[unitId] || 0) + 1);
+ // Retire this pass marker; it must not park the same pass in the next cycle.
+ const completedPass = Math.ceil(next.cycleProgress[unitId] / quota);
+ delete next.parked[stepKey(unitId, completedPass)];
+ delete next.streaks[stepKey(unitId, completedPass)];
+ let unitIndex = Math.max(0, Math.min(contexts.length - 1, Number(next.unitIndex) || 0));
+ while (unitIndex < contexts.length && next.cycleProgress[contexts[unitIndex].id] >= target) {
+  const completedUnitId = contexts[unitIndex].id;
+  for (let pass = 1; pass <= passes; pass++) {
+   delete next.parked[stepKey(completedUnitId, pass)];
+   delete next.streaks[stepKey(completedUnitId, pass)];
+  }
+  unitIndex++;
+ }
+ if (unitIndex >= contexts.length) {
+  next.cycle = (Number(next.cycle) || 0) + 1;
+  next.unitIndex = 0;
+  for (const context of contexts) next.cycleProgress[context.id] = 0;
+  next.parked = {};
+  next.streaks = {};
+ } else {
+  next.unitIndex = unitIndex;
+ }
+ return next;
+}
+
+export function cyclicPlanSnapshot({ contexts, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES, parked = {}, cycle = 0, unitIndex = 0, cycleProgress = {} }) {
+ const steps = buildPlanSteps(contexts, quota, passes);
+ const target = quota * passes;
+ const all = steps.map(step => {
+  const unitDone = Math.max(0, Math.min(target, Number(cycleProgress[step.unitId]) || 0));
+  const done = step.from + Math.min(step.share, Math.max(0, unitDone - step.from));
+  const isParked = Boolean(parked[step.key]) && done < step.quota;
+  return { ...step, done, parked: isParked };
+ });
+ let activeIndex = Math.max(0, Math.min(contexts.length - 1, Math.floor(Number(unitIndex) || 0)));
+ while (activeIndex < contexts.length && (Number(cycleProgress[contexts[activeIndex].id]) || 0) >= target) activeIndex++;
+ if (activeIndex >= contexts.length) activeIndex = 0;
+ const activeUnit = contexts[activeIndex]?.id;
+ let queue = activeUnit ? all.filter(step => step.unitId === activeUnit && step.done < step.quota && !step.parked) : [];
+ if (activeUnit && queue.length === 0) {
+  const retry = all.find(step => step.unitId === activeUnit && step.done < step.quota && step.parked);
+  if (retry) { retry.parked = false; queue = [retry]; }
+ }
+ const totalDone = contexts.reduce((sum, context) => sum + (Number(cycleProgress[context.id]) || 0), 0);
+ return {
+  current: queue[0] || null, queue, all, complete: false, continuous: true,
+  cycle, unitIndex: activeIndex, activeUnit,
+  totalDone, totalTarget: contexts.length * target, targetPerUnit: target,
+  allParked: !queue.length && all.some(step => step.unitId === activeUnit && step.parked),
+  parkedSteps: all.filter(step => step.unitId === activeUnit && step.parked), steps,
+  counts: new Map(contexts.map(context => [stepKey(context.id), Number(cycleProgress[context.id]) || 0]))
+ };
 }
 
 export function planSnapshot({ contexts, items, quota = DEFAULT_PLAN_QUOTA, passes = DEFAULT_PLAN_PASSES, parked = {} }) {
@@ -107,9 +189,10 @@ export function pickPlanWork(all, _size = 1, inflight = {}) {
 }
 
 export function notePlanOutcome(state, step, outcome, { stuckLimit = DEFAULT_PLAN_STUCK_LIMIT, now = Date.now(), done = 0 } = {}) {
- const next = { parked: { ...(state?.parked || {}) }, streaks: { ...(state?.streaks || {}) } };
+ const next = { ...(state || {}), parked: { ...(state?.parked || {}) }, streaks: { ...(state?.streaks || {}) } };
  if (!step?.key) return { state: next, parkedNow: false };
  if (outcome === 'approved') {
+  delete next.parked[step.key];
   delete next.streaks[step.key];
   return { state: next, parkedNow: false };
  }
@@ -130,7 +213,16 @@ export function sanitizePlanState(state, contexts, quota = DEFAULT_PLAN_QUOTA, p
  const streaks = {};
  for (const [key, value] of Object.entries(state?.parked || {})) if (valid.has(key)) parked[key] = value;
  for (const [key, value] of Object.entries(state?.streaks || {})) if (valid.has(key) && Number.isFinite(value)) streaks[key] = Math.max(0, Math.floor(value));
- return { parked, streaks };
+ const result = { ...(state?.cycleInitialized === true ? {
+  cycleInitialized: true,
+  cycle: Math.max(0, Math.floor(Number(state.cycle) || 0)),
+  unitIndex: Math.max(0, Math.min((contexts || []).length - 1, Math.floor(Number(state.unitIndex) || 0))),
+  cycleProgress: Object.fromEntries((contexts || []).map(context => {
+   const value = Number(state.cycleProgress?.[context.id]);
+   return [context.id, Number.isFinite(value) ? Math.max(0, Math.min(quota * passes, Math.floor(value))) : 0];
+  }))
+ } : {}), parked, streaks };
+ return result;
 }
 
 const normTr = value => String(value || '').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, ' ').trim();

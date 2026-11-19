@@ -238,9 +238,9 @@ Ortam değişkenleriyle ince ayar:
 | `TEMPO_MANAGE_OLLAMA` | `1` | `0` yapılınca açılışta Ollama ayarlarına ve sürecine dokunulmaz |
 | `TEMPO_AUTO_PULL` | `1` | `0` yapılınca eksik model kendiliğinden indirilmez |
 | `TEMPO_PLAN` | `1` | Sıralı üretim planı (aşağıda §4.1.1). `0` yapılınca plan kotası kapanır |
-| `TEMPO_PLAN_QUOTA` | `50` | Bir turda her bölüme yazılacak soru sayısı |
-| `TEMPO_PLAN_PASSES` | `4` | 50 soruluk geçiş sayısı (varsayılan toplam 200 soru/ünite) |
-| `TEMPO_POOL_CAPACITY` | `65000` | Onaylı soru havuzunun üst sınırı (5.000–200.000). Plan toplamı bu sınırın %95'ini geçemez; daha çok tur istiyorsan önce bunu büyüt |
+| `TEMPO_PLAN_QUOTA` | `50` | Bir turda ünite başına üretilebilecek soru üst sınırı (en çok 50) |
+| `TEMPO_PLAN_PASSES` | `100` | Bir çevrimde ünite başına tur sayısı; 100 tur × en çok 50 soru = 5.000 hedef/ünite |
+| `TEMPO_POOL_CAPACITY` | `65000` | Soru havuzunun saklama üst sınırı (5.000–200.000). Kapasite dolunca havuz bakımı kayıtları budar; çevrim ilerlemesi kaydedildiğinden üretim baştan başlamaz |
 | `TEMPO_EXAM_STYLE` | `1` | `0` yapılınca soru yazan modele "sınav tarzı örneği" (gönderdiğin örnek / çıkmış sorular ve kitap soruları) gösterilmez |
 | `TEMPO_WEB_SUMMARY` | `1` | `0` yapılınca internetten derlenen ek anlatım ve ders notları (benzersor notları, gönderdiğin görseller, video özeti) kullanılmaz; sorular yalnızca kitap cümlelerinden kurulur |
 | `TEMPO_PLAN_STUCK_LIMIT` | `25` | Bir geçişte bu kadar başarısız deneme olunca geçiş park edilir; ünite kotası dolmadan sonraki üniteye geçilmez |
@@ -258,14 +258,14 @@ Ortam değişkenleriyle ince ayar:
 
 ### 4.1.1 Üretim planı: sorular hangi sırayla gelir?
 
-Otomatik üretim kitap sırasındaki **29 ünitenin tamamını** işler. Her ünitede 50 soruluk dört geçiş yapılır; toplam **200 onaylı soru** tamamlanmadan sonraki üniteye geçilmez. Varsayılan toplam hedef 5.800 sorudur. Daha önce onaylanmış sorular ünite toplamına sayılır.
+Otomatik üretim kitap sırasındaki **29 ünitenin tamamını** işler ve kesintisiz çevrimle sürer. Varsayılan olarak her ünitede 100 tur bulunur; her tur en çok 50 onaylı soru ekler. Ünite çevrim hedefi 5.000'dir. Son ünite tamamlanınca ilk üniteye dönülür; çevrim sayısı sınırlandırılmaz. Mevcut onaylı sorular ilk çevrimin ilerlemesine sayılır.
 
 Üretimde kolay / orta / zor sınıflandırması, zorluk kotası veya zorluğa bağlı ret kuralı yoktur. Her soru kaynak desteği, tek doğru cevap ve şıkların soru ile ilgili, makul ve bariz biçimde saçma/alakasız olmaması açısından denetlenir. Sayısal kalite puanlama ve sürekli yeniden yazma üretim akışından çıkarılmıştır.
 
-`TEMPO_PLAN_QUOTA` ve `TEMPO_PLAN_PASSES` ayarları geçiş büyüklüğünü değiştirir; varsayılan 50 × 4 = 200'dür. Bir adım art arda 25 başarısız deneme alırsa park edilir; aynı ünitenin hedefi dolmadan sonraki üniteye geçilmez, park edilen adımlar yeniden denenir. Plan ilerlemesi ve bekleyen adımlar Soru stüdyosunda görünür; plan durumu `.tempo-data/production-plan.json` dosyasında tutulur.
+`TEMPO_PLAN_QUOTA` tur başına üst sınırı (en çok 50), `TEMPO_PLAN_PASSES` çevrimdeki tur sayısını (en çok 100) belirler. Varsayılan hedef 50 × 100 = 5.000 onaylı soru/ünitedir; her çevrimden sonra plan ilk üniteden devam eder. Bir adım art arda 25 başarısız deneme alırsa park edilir; mevcut ünitenin hedefi dolmadan sonraki üniteye geçilmez, park edilen adımlar yeniden denenir. İlerleme, çevrim sayısı ve bekleyen adımlar Soru stüdyosunda görünür; plan durumu `.tempo-data/production-plan.json` içinde saklanır.
 
-- **Ünite sırası kesindir:** Eşzamanlı üretim hatları aynı etkin ünite üzerinde çalışır. 50 soruluk geçişler, aynı ünitenin toplam 200 hedefini tamamlar; ancak bundan sonra sıradaki üniteye geçilir.
-- **Kota kesindir:** Her ünite için toplam onaylı soru sayısı 200 ile sınırlıdır. Zorluk sınıflandırması veya zorluk kovası kullanılmaz.
+- **Ünite sırası kesindir:** Eşzamanlı üretim hatları aynı etkin ünite üzerinde çalışır. Bir ünite çevrim hedefi olan 5.000'e ulaşmadan sıradakine geçilmez.
+- **Ünite kotası çevrim başınadır:** Varsayılan 100 tur × en çok 50 soru = 5.000 onay/ünite. 29. ünite bitince yeni çevrim 1. üniteden başlar; üretim tamamlanıp durmaz. Zorluk sınıflandırması veya zorluk kovası kullanılmaz.
 - **Sorular kitabın sayfalarından ve konu başlıklarından kurulur.** Her soruda bölüm anlatımının en az soru sorulmuş cümlesi odak olarak verilir; odaklar bölümün sayfalarına ve konularına yayılarak seçilir. Kanıt cümlesi bölüm anlatımında geçmeyen soru reddedilir. **Soru kartında sorunun konu başlığı ve kitap sayfası yazar** (ör. "Antrenmanla İlgili Temel Kavramlar › Performans · kitap s. 12"); modele verilen istemde de konu başlığı bulunur.
 - **Anlatım kitaptan derlenir.** Elle yazılmış kısa özete kitap PDF'lerinin o bölüme ait sayfalarından **birebir alınmış** tanım, sınıflama, ilke, açıklama ve örnek cümleleri eklenir (toplam 6.104 kitap cümlesi; bölüm başına hedef 600). Her cümlenin hangi konu başlığının altında geçtiği kayıtlıdır (`src/bookSummary.json`, başlıklar `src/bookToc.json`). Kitabın kendi test sayfaları ve cevap anahtarları alınmaz. Gövde metni az olan bölümler hedefin çok altındadır: *Ölçme ve değerlendirme (0-6)* 67, *Dopingle mücadele* 97, *Beceri öğrenimi* 115 cümle; en uzunu *Egzersiz fizyolojisi* 547 cümledir. Bütün bölümlerde (ek anlatımlarla birlikte) toplam 7.158 cümle vardır.
 - **İnternetten derlenen ek anlatım.** Her bölüme, konusuyla ilgili Türkçe kaynaklardan (federasyon ve bakanlık yayınları, üniversite ders notları, TÜBİTAK Ansiklopedi vb.) derlenmiş ek cümleler eklenir: 121 grupta 714 cümle (`src/webSummary.json`). Cümleler kaynaktan kopyalanmamış, kaynağın anlattığı bilgi yeniden yazılmıştır; her grubun kaynak adresi kayıtlıdır. Bu cümlelere dayanan soruda kitap sayfası yerine **"internet kaynağı"** bağlantısı görünür. Kitap dışı bilgi istemiyorsan `TEMPO_WEB_SUMMARY=0` ile kapat. Yeni kaynak eklemek için dosyaya `{ "topic", "sourceTitle", "source", "sentences": [...] }` grubu ekleyip `npm run contexts` çalıştır.
@@ -279,7 +279,7 @@ Otomatik üretim kitap sırasındaki **29 ünitenin tamamını** işler. Her ün
   - Gönderdiğin sorular şu bölümlere kondu: *denge tanımı* → Koordinatif özellikler; *baskın enerji sistemi* → Spor fizyolojisi; *2024 çıkmış soru (teknik antrenman)* → Antrenmanı oluşturan ögeler. Çıkmış sorunun cevap anahtarı gönderilmedi; cevap kitaba göre **Fiziksel antrenman** olarak işaretlendi (`answerVerified: false`). Yalnızca açıklaması gönderilen üç sorunun (atıf kuramı, geri bildirim, örgütleme) kökü açıklamadan **yeniden yazıldı** (`reconstructed: true`).
 - **Aynı bilgi, farklı soru biçimi.** Bir cümleden daha önce soru yazıldıysa bu kez **kullanılmamış bir soru tipi ve açısı** seçilir; modele o cümleden yazılmış önceki soru kökleri gösterilir ve "aynı bilgiyi başka biçimde sor" denir. Soru tipleri: kavram, vaka, karşılaştırma, neden-sonuç, istisna, uygulama, en iyi seçim, **tanımdan terim, boşluk doldurma, doğru yargı, ilginç bilgi, durumdan kavrama ("hangisi baskındır / önceliklidir"), kısa ve net (çıkmış soru tarzı)** ve paragraf. Tipi farklı olan iki soru aynı cevabı paylaşabilir; kökü gerçekten benzeyen ya da şıklarının çoğu aynı olan soru yine reddedilir (§4.3).
 - **Modele anlatımın tamamı değil ilgili bölümü gösterilir.** Bölüm anlatımı (8–68 bin karakter) modelin bağlam penceresine sığmaz; soru yazarına odak cümlenin, hakemlere kanıt cümlesinin çevresindeki ~2.400 karakterlik kesintisiz bölüm verilir (`TEMPO_SUMMARY_WINDOW_CHARS`). Kanıt denetimi ise anlatımın tamamına bakar.
-- **Farklı soru üretimi:** Benzer/tekrarlanan soru taslakları reddedilebilir. Art arda 25 başarısız deneme alan geçiş park edilse de sistem aynı ünitede devam eder; 200 onaylı soruya ulaşmadan sonraki üniteye geçmez. Park edilen adımlar daha sonra yeniden denenir.
+- **Farklı soru üretimi:** Benzer/tekrarlanan soru taslakları reddedilebilir. Art arda 25 başarısız deneme alan geçiş park edilse de sistem aynı ünitede devam eder; çevrimde 5.000 onaylı soruya ulaşmadan sonraki üniteye geçmez. Park edilen adımlar daha sonra yeniden denenir.
 - **Anlatımı yeniden üretmek** (kitap PDF'i ya da seçim kuralları değiştiyse): `pip install pymupdf` ardından `npm run summary`. Betik (`scripts/build-book-summary.py`) içindekiler sayfalarını okur, başlıkları gövdede bulur ve yalnızca gövde yazı tipindeki paragrafları alır; tablo, şekil yazısı, kaynakça, etkinlik yönergesi, soru cümlesi ve başka cümleye gönderme yapan ("bu, bunlar…") cümleleri almaz. `python3 scripts/build-book-summary.py --check --toc` içindekilerden okunan başlıkları listeler.
 - Daha önce üretilmiş onaylı sorular kotalara sayılır.
 - Üretim onayı yalnızca kaynak desteği, tek doğru cevap ve seçeneklerin soru ile konu bakımından makul olmasıyla belirlenir. Üretim hattı soru taslaklarına zorluk etiketi veya sayısal kalite puanı vermez. Ayrı havuz kapasite bakımı, üretim onayından bağımsızdır.
@@ -414,7 +414,7 @@ npm.cmd run dev -- --host 127.0.0.1
 
 Bu PowerShell penceresi açık kalmalı. Kapatırsan uygulama durur; durdurmak için **Ctrl + C** kullanabilirsin. Ollama uygulaması da açık olmalı. Bu yerel sunucuyu internete açma; kullanıcı yetkilendirmesi yoktur.
 
-**Üretim davranışı:** Sunucu açıldığında üretim otomatik başlar ve model/kaynak erişilebilir olduğu sürece devam eder. 29 ünitenin her biri sırayla 200 onaylı soruya tamamlanır. Her taslak kaynak desteği, tek doğru cevap ve şıkların ilgili/makul oluşu açısından denetlenir. Üretim kararlarında kolay/orta/zor etiketi, zorluk kotası veya sayısal kalite puanı kullanılmaz; sürekli yeniden yazma döngüsü yoktur.
+**Üretim davranışı:** Sunucu açıldığında üretim otomatik başlar ve model/kaynak erişilebilir olduğu sürece devam eder. Varsayılan olarak 29 ünitenin her birinde 100 tur boyunca tur başına en çok 50 onaylı soru üretilir; çevrimde ünite başına 5.000'e ulaşınca sonraki üniteye geçilir. Son ünite bitince çevrim ilk üniteden yeniden başlar; plan üretimi tamamlayıp durdurmaz. Her taslak kaynak desteği, tek doğru cevap ve şıkların ilgili/makul oluşu açısından denetlenir. Üretim kararlarında kolay/orta/zor etiketi veya zorluk kotası kullanılmaz; sürekli yeniden yazma döngüsü yoktur.
 
 Model çağrıları ortak kuyruk ve havuz kapasitesi sınırlarına tabidir. İlerleme Soru stüdyosundaki **Üretim planı** alanında izlenebilir.
 
@@ -431,9 +431,9 @@ Modeller proje açılışında otomatik atanır, ancak farklı bir model denemek
 
 ## 9. Soru üretimi ve isteğe bağlı destek araçları
 
-Soru üretimi 29 üniteyi sırayla işler; her birinde 200 onaylı soruya ulaşınca devam eder. Üretim kararlarında zorluk etiketleri, zorluk kotaları veya sayısal kalite puanları kullanılmaz. Aşağıdaki ayrı destek özellikleri ilgili ekranda/istekte çalışır:
+Soru üretimi 29 üniteyi sırayla işler; her birinde varsayılan 5.000 onaylı soruluk çevrim hedefi dolunca devam eder. Son üniteden sonra yeni çevrim başlar; üretim durmaz. Üretim kararlarında zorluk etiketleri, zorluk kotaları veya sayısal kalite puanları kullanılmaz. Aşağıdaki ayrı destek özellikleri ilgili ekranda/istekte çalışır:
 
-1. **Soru üretimi:** Her soru için kaynak desteği, tek doğru cevap ve şıkların ilgili/makul oluşu denetlenir; bariz alakasız veya saçma seçenekler reddedilir. 29 ünitelik sıralı plan 200 onaylı soru/ünite hedefinde durur. Ek kalite puanı veya sürekli yeniden yazma döngüsü üretim hattında çalışmaz.
+1. **Soru üretimi:** Her soru için kaynak desteği, tek doğru cevap ve şıkların ilgili/makul oluşu denetlenir; bariz alakasız veya saçma seçenekler reddedilir. 29 üniteli plan her çevrimde varsayılan 5.000 onay/ünite hedefler ve çevrimler arasında üretime devam eder. Ek kalite puanı veya sürekli yeniden yazma döngüsü üretim hattında çalışmaz.
 2. İnternet Araştırması & Sınav Tahmini (talep üzerine — `server/research-agent.mjs`):**
    - Araştırmacı ajan, **JARVIS'e "ünite X'i araştır" dediğinde** (veya ilgili API çağrıldığında) 29 ünite içinden sıradakini seçerek **Türkçe Vikipedi + DuckDuckGo web araması** üzerinden ilgili ders kavramlarını ve sınav vurgularını tarar (ağ yoksa hata vermeden kitap pasajları üzerinde derin örüntü analizine döner). Bu araştırma arka planda kesintisiz koşmaz; sonucu `.tempo-data/ai-brain/research-memory.json` dosyasına yazılır ve **sonraki tüm soru üretimlerine** rehberlik eder.
    - Taradığı veriler + resmi kitap metni üzerinden **sınavda çıkabilecek soruları akıl yürüterek tahmin eder** (`examHypotheses`), sınavlarda en çok karıştırılan tuzak kavram çiftlerini (`confusionPairs`) çıkarır ve `.tempo-data/ai-brain/research-memory.json` üzerinden doğrudan soru üreticisine yön verir.
@@ -671,7 +671,7 @@ Eğitilmiş adaptörü taban modelle biçim, çeldirici dengesi, uzunluk sızın
 
 ## Bilmen gerekenler
 
-Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vardır. **5000 benzersiz soru, ünite başına 200 soru, kitapların tüm ayrıntıları ve uzman doğrulaması tamamlanmış değildir.** Kitap PDF'leri konu kaynağı olarak kullanılabilir; PDF sorularının tamamı interaktif teste aktarılmamıştır. Uygulama sınav başarısı veya cevap doğruluğu garantisi vermez.
+Bu sürümde 29 ünite için kısa anlatımlar ve çeşitli soru bankaları vardır. **Üretim planının varsayılan hedefi çevrim başına ünite başına 5.000 onaylı sorudur (100 tur × en çok 50 soru); bu hedef önceden doldurulmuş bir soru bankası anlamına gelmez.** Kitap PDF'leri konu kaynağı olarak kullanılabilir; PDF sorularının tamamı interaktif teste aktarılmamıştır. Uygulama sınav başarısı veya cevap doğruluğu garantisi vermez.
 
 ## 20. Yeni özellikler (Kayserili Koç, +15500% Hyper-155x+ & Kalite Kilitli Turbo Mod)
 

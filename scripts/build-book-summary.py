@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """KİTAPTAN GENİŞLETİLMİŞ ÖZET  ->  src/bookSummary.json
 
-Üretim planı her ünite için toplam 200 soru hedefler ve plan açıkken soruları yalnızca konu
-özetinden kurar; soru üretiminde zorluk sınıflandırması yapılmaz. 11–26 cümlelik eski özetler bu hedef için yeterli çeşitlilik sağlamaz. Bu betik beş ders
+Üretim planı varsayılan olarak çevrim başına her ünite için 5.000 onaylı soru hedefler (100 tur × en çok 50 soru) ve plan açıkken soruları yalnızca konu özetinden kurar; soru üretiminde zorluk sınıflandırması yapılmaz. 11–26 cümlelik eski özetler bu hedef için yeterli çeşitlilik sağlamaz. Bu betik beş ders
 kitabının PDF'lerini (public/books/*.pdf) okur ve her konu için, sınavda sorulmaya uygun
 cümleleri kitaptan seçerek özeti büyütür.
 
