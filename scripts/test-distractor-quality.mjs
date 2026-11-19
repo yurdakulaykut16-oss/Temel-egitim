@@ -77,8 +77,9 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
  process.env.TEMPO_DATA_DIR = dir;
  process.env.TEMPO_DISABLE_AUTOLOOP = '1';
 
- let rejectDistractor = false;
- let selfCorrectCalls = 0;
+  let rejectDistractor = true;
+  let selfCorrectCalls = 0;
+  let correctedDraft = false;
  let generatorCalls = 0;
  let lastOptions = [];
 
@@ -89,7 +90,7 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
   for await (const chunk of req) raw += chunk;
   const data = JSON.parse(raw || '{}');
   const prompt = data.prompt || '';
-  const textMatch = prompt.match(/KONU ANLATIMI:\s*([\s\S]*?)\nSORU:/);
+  const textMatch = prompt.match(/KONU ANLATIMI:\s*([\s\S]*?)(?:\nSORU:|$)/);
   const evidence = (textMatch ? textMatch[1] : 'Kondisyonel hazırlık kuvvet, dayanıklılık ve sürat gibi özellikleri').trim().slice(0, 80);
 
   if (prompt.includes('soru denetçisisin')) {
@@ -108,7 +109,7 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
      qualityScore: 4.8,
      examPotential: 4.8,
      // Hakem çeldiricileri alakasız bulduğunda soru elenir.
-     distractorPlausible: !rejectDistractor,
+     choicesPlausible: correctedDraft || !rejectDistractor,
      difficulty: 'kolay',
      bloomLevel: 'Kavrama',
      evidence,
@@ -118,7 +119,7 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
   }
 
   // ESKİ TASLAK => öz-düzeltme çağrısı: şıkları aynı kavram ailesinden yeniden kur.
-  if (prompt.includes('ESKİ TASLAK')) selfCorrectCalls++;
+  if (prompt.includes('ESKİ TASLAK')) { selfCorrectCalls++; correctedDraft = true; }
   const isFix = prompt.includes('ESKİ TASLAK');
   if (!isFix) generatorCalls++;
   const options = isFix
@@ -127,7 +128,7 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
   lastOptions = options;
   return res.end(JSON.stringify({
    response: JSON.stringify({
-    question: UNIT_01_QUESTION,
+    question: isFix ? UNIT_01_QUESTION : (generatorCalls > 1 ? 'Antrenörlükte hazırlık bileşenleri birlikte nasıl düzenlenir?' : UNIT_01_QUESTION),
     options,
     answer: options[0],
     explanation: 'Kondisyonel ve teknik hazırlık antrenmanın birlikte planlanan ögeleridir.',
@@ -178,10 +179,11 @@ test('Üretim hattı: alakasız şıklı taslak öz-düzeltme ile düzeltilir, h
 
   // 2) Hakem çeldiricileri alakasız bulursa soru kaydedilmez.
   rejectDistractor = true;
+  correctedDraft = false;
   const bad = await fetch(`${base}/generate`, { method: 'POST', headers, body: JSON.stringify({ units: ['0-2'] }) });
   const badJson = await bad.json();
   assert.equal(bad.status, 502);
-  assert.match(badJson.error || '', /distractorPlausible|çeldirici/);
+  assert.match(badJson.error || '', /ilgisiz, anlamsız|çeldirici/);
   assert.equal(lastOptions.length, 5);
  } finally {
   stopOllamaLoops?.();

@@ -189,21 +189,15 @@ test('ollamaPlugin uçtan uca 5-açı soru üretimi, timing-aware student-state,
     }));
     return;
    }
-   if (prompt.includes('bağımsız çöz') || prompt.includes('examPotential')) {
+   if (prompt.includes('soru denetçisisin')) {
     res.end(JSON.stringify({
      response: JSON.stringify({
       answer: 'Planlı ve tekrarlı biçimde fiziksel uygunluğu koruma amacı taşımasına',
       singleCorrect: true,
-      dualAnswerRisk: false,
-      secondBestOption: '',
       supported: true,
-      qualityOk: true,
-      qualityScore: 5,
-      examPotential: 5,
-      difficulty: 'kolay',
-      bloomLevel: 'kavrama',
+      choicesPlausible: true,
       evidence: 'Egzersiz planlı ve tekrarlıdır',
-      reason: 'Yalnızca tek seçenek doğrudur ve sınav potansiyeli yüksektir.'
+      reason: 'Cevap kaynakta destekleniyor ve tek seçenek doğru.'
      })
     }));
     return;
@@ -288,7 +282,8 @@ test('ollamaPlugin uçtan uca 5-açı soru üretimi, timing-aware student-state,
   // 4) examPotential + questionAngle ile soru üret
   const gen = await call('POST', '/generate', { units: ['0-0'] });
   assert.equal(gen.status, 200, JSON.stringify(gen.json));
-  assert.equal(gen.json.item.examPotential, 5);
+  assert.equal(Object.hasOwn(gen.json.item, 'difficulty'), false);
+  assert.equal(Object.hasOwn(gen.json.item.verification?.judges?.[0] || {}, 'qualityScore'), false);
   assert.ok(gen.json.item.questionAngle);
 
   // 5) 20k havuz tarayıcı bot taraması + /status telemetrisi

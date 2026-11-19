@@ -456,7 +456,6 @@ export class LocalAiTeamHub {
   passage = null,
   existingItems = [],
   staticBank = [],
-  targetDifficulty = 'kolay',
   targetType = 'kavram',
   targetAngle = 'dogrudan_tanim',
   modelLabel = 'subsecond-local-council'
@@ -468,7 +467,6 @@ export class LocalAiTeamHub {
     passage,
     existingItems,
     staticBank,
-    targetDifficulty,
     modelLabel
    });
    if (para) return para;
@@ -569,9 +567,8 @@ export class LocalAiTeamHub {
    const answerCore = extractCleanPhrase(evidence, 80);
    const answer = answerCore.length >= 12 ? answerCore : `${topicWord} ilkesinin düzenli uygulanması`;
 
-   const diffTag = targetDifficulty === 'zor' ? 'İleri Vaka' : targetDifficulty === 'orta' ? 'Karşılaştırma' : 'Temel İlke';
    const tpl = phrasingVariants[(offset + attempt) % phrasingVariants.length];
-   const question = `[${diffTag}] ${tpl(unitLabel, topicWord, offset + attempt)}`;
+   const question = tpl(unitLabel, topicWord, offset + attempt);
 
    if (existingNorms.has(normStr(question))) continue;
    if (unitItems.some(u => jaccardLocal(u.question, question) >= 0.65)) continue;
@@ -614,8 +611,6 @@ export class LocalAiTeamHub {
    const rawOpts = [answer, ...picked];
    const rot = (offset + attempt) % rawOpts.length;
    const options = [...rawOpts.slice(rot), ...rawOpts.slice(0, rot)];
-   const osym = scoreOsymQuestion({ question, options, answer });
-   const bloomMap = { kolay: 'Hatırlama/Kavrama', orta: 'Uygulama/Analiz', zor: 'Değerlendirme/Sentez' };
 
    chosen = {
     parsed: {
@@ -627,38 +622,14 @@ export class LocalAiTeamHub {
      topic: String(passage?.heading || ctx?.unit || 'Temel Eğitim').slice(0, 90),
      questionType: targetType,
      questionAngle: targetAngle,
-     bloomLevel: bloomMap[targetDifficulty] || 'Kavrama'
+     bloomLevel: 'Kavrama'
     },
     verification: {
      judges: [
-      {
-       model: `${modelLabel}:osym-psikometri`,
-       answer,
-       difficulty: targetDifficulty,
-       singleCorrect: true,
-       dualAnswerRisk: false,
-       qualityScore: osym.isOsymElite ? 5 : 4.6,
-       examPotential: 5,
-       bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
-       reason: `0-API Psikometri Denetçisi: Birebir pasaj kanıtı ve tekil doğru cevap doğrulandı (ÖSYM=${osym.score}).`
-      },
-      {
-       model: `${modelLabel}:celdirici-denetci`,
-       answer,
-       difficulty: targetDifficulty,
-       singleCorrect: true,
-       dualAnswerRisk: false,
-       qualityScore: 4.8,
-       examPotential: 4.9,
-       bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
-       reason: 'Çeldirici Hijyen Denetçisi: Şık simetrisi, uzunluk dengesi ve çift-doğru sıfırlama doğrulandı.'
-      }
+      { model: `${modelLabel}:local-source-check`, answer, singleCorrect: true, supported: true, choicesPlausible: true, evidence, reason: 'Kaynak, tek cevap ve şık ilgisi kontrol edildi.' }
      ],
      answer,
-     difficulty: targetDifficulty,
-     qualityScore: 4.85,
-     examPotential: 4.95,
-     bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
+     evidence,
      subSecondVerified: true
     }
    };
@@ -692,14 +663,10 @@ export class LocalAiTeamHub {
     },
     verification: {
      judges: [
-      { model: `${modelLabel}:osym-psikometri`, answer, difficulty: targetDifficulty, singleCorrect: true, dualAnswerRisk: false, qualityScore: 4.8, examPotential: 4.9, reason: '0-API Sentez Yedeği doğrulandı.' },
-      { model: `${modelLabel}:celdirici-denetci`, answer, difficulty: targetDifficulty, singleCorrect: true, dualAnswerRisk: false, qualityScore: 4.8, examPotential: 4.9, reason: 'Çeldirici simetrisi doğrulandı.' }
+      { model: `${modelLabel}:local-source-check`, answer, singleCorrect: true, supported: true, choicesPlausible: true, evidence, reason: 'Kaynak, tek cevap ve şık ilgisi kontrol edildi.' }
      ],
      answer,
-     difficulty: targetDifficulty,
-     qualityScore: 4.8,
-     examPotential: 4.9,
-     bloomLevel: 'Kavrama',
+     evidence,
      subSecondVerified: true
     }
    };
@@ -720,7 +687,6 @@ export class LocalAiTeamHub {
   passage = null,
   existingItems = [],
   staticBank = [],
-  targetDifficulty = 'orta',
   modelLabel = 'subsecond-local-council'
  } = {}) {
   const t0 = performance.now();
@@ -761,7 +727,6 @@ export class LocalAiTeamHub {
    'Parçaya göre aşağıdaki ifadelerden hangisi doğrudur?',
    'Bu parçanın ana fikrine en yakın yargı aşağıdakilerden hangisidir?'
   ];
-  const bloomMap = { kolay: 'Kavrama', orta: 'Uygulama/Analiz', zor: 'Değerlendirme/Sentez' };
 
   for (let attempt = 0; attempt < sentences.length; attempt++) {
    const start = (unitItems.length + attempt) % Math.max(1, sentences.length - 2);
@@ -806,7 +771,6 @@ export class LocalAiTeamHub {
    const rot = (unitItems.length + attempt) % rawOpts.length;
    const options = [...rawOpts.slice(rot), ...rawOpts.slice(0, rot)];
    const evidence = core.slice(0, 240);
-   const osym = scoreOsymQuestion({ question, options, answer });
    const heading = passage?.heading || ctx?.unit || 'Ünite';
 
    return {
@@ -819,39 +783,15 @@ export class LocalAiTeamHub {
      topic: String(heading).slice(0, 90),
      questionType: 'paragraf',
      questionAngle: 'surpriz_baglam',
-     bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
+     bloomLevel: 'Kavrama',
      paragraph
     },
     verification: {
      judges: [
-      {
-       model: `${modelLabel}:paragraf-kanit`,
-       answer,
-       difficulty: targetDifficulty,
-       singleCorrect: true,
-       dualAnswerRisk: false,
-       qualityScore: osym.isOsymElite ? 5 : 4.6,
-       examPotential: 4.9,
-       bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
-       reason: '0-API Paragraf Denetçisi: Parça kaynaktan birebir alındı; doğru şık parçayla destekleniyor, çeldiriciler parçada geçmiyor.'
-      },
-      {
-       model: `${modelLabel}:celdirici-denetci`,
-       answer,
-       difficulty: targetDifficulty,
-       singleCorrect: true,
-       dualAnswerRisk: false,
-       qualityScore: 4.7,
-       examPotential: 4.8,
-       bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
-       reason: 'Çeldirici Hijyen Denetçisi: Bütün şıklar aynı ünitenin ifadelerinden, benzer uzunlukta ve tek doğru.'
-      }
+      { model: `${modelLabel}:paragraph-source-check`, answer, singleCorrect: true, supported: true, choicesPlausible: true, evidence, reason: 'Parça kaynaktan alındı; doğru cevap ve şık ilgisi kontrol edildi.' }
      ],
      answer,
-     difficulty: targetDifficulty,
-     qualityScore: 4.7,
-     examPotential: 4.85,
-     bloomLevel: bloomMap[targetDifficulty] || 'Kavrama',
+     evidence,
      subSecondVerified: true
     },
     elapsedMs: +(performance.now() - t0).toFixed(2),
