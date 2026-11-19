@@ -12,9 +12,9 @@ test('a parked pass cannot advance production to a later unit before 200 approva
  let state = { parked: {}, streaks: {} };
  for (let n = 0; n < 25; n++) state = notePlanOutcome(state, step, 'rejected', { stuckLimit: 25, now: 0 }).state;
  assert.ok(state.parked[step.key]);
- const active = planSnapshot({ contexts, items: questions(first.id, 150), parked: state.parked });
+ const active = planSnapshot({ contexts, items: questions(first.id, 150), quota: 50, passes: 4, parked: state.parked });
  assert.equal(active.current.unitId, first.id);
  assert.equal(active.current.quota, 200);
- const completed = planSnapshot({ contexts, items: questions(first.id, 200), parked: state.parked });
+ const completed = planSnapshot({ contexts, items: questions(first.id, 200), quota: 50, passes: 4, parked: state.parked });
  assert.equal(completed.current.unitId, second.id);
 });

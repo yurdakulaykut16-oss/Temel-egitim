@@ -13,8 +13,8 @@ test('unit order is retained and next unit starts only after 200 approvals', () 
  assert.equal(steps[0].unitId, first.id);
  assert.equal(steps[4].unitId, second.id);
  for (const count of [0, 50, 100, 150, 199]) {
-  assert.equal(planSnapshot({ contexts, items: questions(first.id, count) }).current.unitId, first.id);
+  assert.equal(planSnapshot({ contexts, items: questions(first.id, count), quota: 50, passes: 4 }).current.unitId, first.id);
  }
- assert.equal(planSnapshot({ contexts, items: questions(first.id, 200) }).current.unitId, second.id);
+ assert.equal(planSnapshot({ contexts, items: questions(first.id, 200), quota: 50, passes: 4 }).current.unitId, second.id);
  assert.equal(stepKey(first.id), `${first.id}|all`);
 });

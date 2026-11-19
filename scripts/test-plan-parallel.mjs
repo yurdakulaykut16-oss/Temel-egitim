@@ -12,9 +12,9 @@ test('parallel slots stay on the current unit and its 50-question pass', () => {
  assert.deepEqual([...new Set(planBatch(snap.all, 8).map(step => step.unitId))], [first.id]);
  assert.deepEqual([...new Set(planBatch(snap.all, 8).map(step => step.pass))], [1]);
  assert.equal(pickPlanWork(snap.all, 8, {}).unitId, first.id);
- const secondPass = planSnapshot({ contexts, items: questions(first.id, 50) });
+ const secondPass = planSnapshot({ contexts, items: questions(first.id, 50), quota: 50, passes: 4 });
  assert.equal(secondPass.current.unitId, first.id);
  assert.equal(secondPass.current.pass, 2);
- const nextUnit = planSnapshot({ contexts, items: questions(first.id, 200) });
+ const nextUnit = planSnapshot({ contexts, items: questions(first.id, 200), quota: 50, passes: 4 });
  assert.equal(nextUnit.current.unitId, second.id);
 });

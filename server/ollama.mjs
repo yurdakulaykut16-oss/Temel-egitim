@@ -41,8 +41,9 @@ import { createOllamaClient, OllamaError, isTimeoutKind, clampNumCtx } from './o
 import { planLineup, LINEUP_PROFILES } from './model-lineup.mjs';
 import { normalizeDraft, normalizeVerdict } from './draft-repair.mjs';
 import {
- planConfigFromEnv, planSnapshot, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, summaryPageOf, notePlanOutcome,
- sanitizePlanState, evidenceWithinSummary, pickFocusSentence, describeStep, summarySectionOf, summaryWebSourceOf, leastUsedOption
+ planConfigFromEnv, planBatch, pickPlanWork, countApproved, stepKey, summaryWindow, summaryPageOf, notePlanOutcome,
+ sanitizePlanState, initializeCyclicPlanState, advanceCyclicPlanState, cyclicPlanSnapshot,
+ evidenceWithinSummary, pickFocusSentence, describeStep, summarySectionOf, summaryWebSourceOf, leastUsedOption
 } from './production-plan.mjs';
 import { OPTION_COUNT, MIN_OPTION_COUNT, isStoredOptionCount, isDraftOptionCount } from './option-count.mjs';
 import { buildStyleLibrary, pickStyleExample, buildExamStyleBlock, styleLibraryStats } from './exam-style.mjs';
@@ -980,9 +981,8 @@ async function getPipelineConfig() {
 // Her ünite, PLAN.quota büyüklüğündeki geçişlerle PLAN.passes kez işlenir.
 // Plan açıkken sorular yalnızca konu özetinden kurulur; TEMPO_PLAN=0 plan kotasını kapatır.
 const PLAN = planConfigFromEnv(process.env);
-// Plan hedefi soru havuzunun kapasitesini aşmasın (aşarsa havuz bakımı soruları siler, plan baştan doldurur).
-PLAN.passes = Math.max(1, Math.min(PLAN.passes, Math.floor((QUESTION_POOL_CAPACITY * 0.95) / Math.max(1, contexts.length * PLAN.quota)) || 1));
-let planState = { parked: {}, streaks: {} };
+// Plan çevrimseldir; havuz kapasitesi soru geçmişini temizlese bile çevrim sayacı kalıcıdır.
+let planState = { parked: {}, streaks: {}, cycleInitialized: false, cycle: 0, unitIndex: 0, cycleProgress: {} };
 let planStateLoaded = false;
 let planLastSnapshot = null;
 const planAnnounced = new Set(); // terminale "Plan: …" satırı yazılmış adımlar
@@ -995,6 +995,16 @@ async function loadPlanState() {
   planState = sanitizePlanState(JSON.parse(await readFile(planFile, 'utf8')), contexts, PLAN.quota, PLAN.passes);
  } catch {
   planState = sanitizePlanState(null, contexts, PLAN.quota, PLAN.passes);
+ }
+ return planState;
+}
+
+async function ensureCyclicPlanState(items) {
+ await loadPlanState();
+ const next = initializeCyclicPlanState({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, state: planState });
+ if (JSON.stringify(next) !== JSON.stringify(planState)) {
+  planState = next;
+  await savePlanState();
  }
  return planState;
 }
@@ -1017,31 +1027,22 @@ async function savePlanState() {
  */
 async function nextPlanStep(items, inflight = {}, size = 1) {
  if (!PLAN.enabled) return { step: null, planActive: false };
- await loadPlanState();
- let snap = planSnapshot({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked });
+ await ensureCyclicPlanState(items);
+ let snap = cyclicPlanSnapshot({ contexts, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked, cycle: planState.cycle, unitIndex: planState.unitIndex, cycleProgress: planState.cycleProgress });
  if (snap.allParked && Object.keys(inflight).length === 0) {
-  // Geriye yalnızca atlanan adımlar kaldı: hepsi yeniden denenir.
-  tempoLog(`Plan: sıradaki adımların hepsi tamamlandı; atlanan ${snap.parkedSteps.length} adım yeniden deneniyor.`);
-  planState = { parked: {}, streaks: {} };
+  tempoLog(`Plan çevrimi ${snap.cycle + 1}: sıradaki adımların tümü park edildi; ${snap.parkedSteps.length} adım yeniden deneniyor.`);
+  planState = { ...planState, parked: {}, streaks: {} };
   planAnnounced.clear();
   await savePlanState();
-  snap = planSnapshot({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked });
+  snap = cyclicPlanSnapshot({ contexts, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked, cycle: planState.cycle, unitIndex: planState.unitIndex, cycleProgress: planState.cycleProgress });
  }
  planLastSnapshot = snap;
- if (snap.complete) {
-  if (!planAnnounced.has('complete')) {
-   planAnnounced.add('complete');
-   tempoLog(`Plan tamamlandı: ${snap.totalDone}/${snap.totalTarget} soru. Ünite hedefleri doldu; üretim bekletiliyor.`);
-  }
-  return { step: null, planActive: true };
- }
  const step = pickPlanWork(snap.all, size, inflight);
- // Aynı ünite/geçiş için terminale bir kez duyurulur.
- const visitKey = step ? `${step.pass}|${step.unitId}` : '';
+ const visitKey = step ? `${snap.cycle}|${step.pass}|${step.unitId}` : '';
  if (step && !planAnnounced.has(visitKey)) {
   planAnnounced.add(visitKey);
   const unitCells = snap.all.filter(x => x.pass === step.pass && x.unitId === step.unitId);
-  tempoLog(`Plan: ${step.pass}. tur · ${step.bookNo}. kitap ${step.unitNo}. bölüm — ${step.unit} · ${`${unitCells.reduce((n,x)=>n+Math.max(0,x.done-x.from),0)}/${unitCells.reduce((n,x)=>n+x.share,0)} soru`} (toplam ${snap.totalDone}/${snap.totalTarget})`);
+  tempoLog(`Çevrim ${snap.cycle + 1} · ${step.pass}/${PLAN.passes}. tur · ${step.bookNo}. kitap ${step.unitNo}. bölüm — ${step.unit} · ${`${unitCells.reduce((n,x)=>n+Math.max(0,x.done-x.from),0)}/${unitCells.reduce((n,x)=>n+x.share,0)} soru`} (çevrim ${snap.totalDone}/${snap.totalTarget})`);
  }
  return { step: step || null, planActive: true };
 }
@@ -1064,8 +1065,8 @@ async function recordPlanOutcome(step, outcome, done = 0) {
 /** /status için plan özeti (arayüz bunu gösterir). */
 async function publicPlan(items) {
  if (!PLAN.enabled) return { enabled: false };
- await loadPlanState();
- const snap = planSnapshot({ contexts, items, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked });
+ await ensureCyclicPlanState(items);
+ const snap = cyclicPlanSnapshot({ contexts, quota: PLAN.quota, passes: PLAN.passes, parked: planState.parked, cycle: planState.cycle, unitIndex: planState.unitIndex, cycleProgress: planState.cycleProgress });
  const slim = step => step && ({ key: step.key, pass: step.pass, unitId: step.unitId, book: step.book, unit: step.unit, bookNo: step.bookNo, unitNo: step.unitNo, done: step.done, quota: step.quota, from: step.from, share: step.share });
  const passes = Array.from({ length: PLAN.passes }, (_, i) => i + 1).map(pass => {
   const cells = snap.all.filter(x => x.pass === pass);
@@ -1089,9 +1090,10 @@ async function publicPlan(items) {
   };
  });
  return {
-  enabled: true, quota: PLAN.quota, passCount: PLAN.passes,
+  enabled: true, continuous: true, cycle: snap.cycle, unitIndex: snap.unitIndex,
+  quota: PLAN.quota, passCount: PLAN.passes,
   perUnitTarget: PLAN.quota * PLAN.passes, stuckLimit: PLAN.stuckLimit,
-  summaryOnly: true, complete: snap.complete, totalDone: snap.totalDone, totalTarget: snap.totalTarget,
+  summaryOnly: true, complete: false, totalDone: snap.totalDone, totalTarget: snap.totalTarget,
   current: slim(snap.current), currentLabel: describeStep(snap.current),
   working: batch.map(step => ({ ...slim(step), streak: planState.streaks[step.key] || 0 })),
   workingUnits, parallel: size, passes,
@@ -1736,10 +1738,12 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   let latest = await load();
   const record = validate(parsed, ctx, latest, model, passage, policy);
   record.verification = verification;
-  // Plan kotası ünite başına toplam onaylı soru sayısıdır; zorluk kovası yoktur.
-  if (PLAN.enabled && (countApproved(latest).get(stepKey(ctx.id)) || 0) >= PLAN.quota * PLAN.passes) {
-   recordRejection('plan_quota_full');
-   throw Error(`Bu ünitenin ${PLAN.quota * PLAN.passes} soruluk kotası doldu; soru kaydedilmedi.`);
+  if (PLAN.enabled) {
+   await ensureCyclicPlanState(latest);
+   if ((planState.cycleProgress?.[ctx.id] || 0) >= PLAN.quota * PLAN.passes) {
+    recordRejection('plan_quota_full');
+    throw Error(`Bu ünitenin bu çevrimdeki ${PLAN.quota * PLAN.passes} soruluk hedefi doldu; soru kaydedilmedi.`);
+   }
   }
   if (!record.questionAngle && targetAngle) record.questionAngle = targetAngle;
   // Model soru tipini yazmadıysa istenen tip kaydedilir (aynı cümleye sonraki uğrayışta farklı tip seçilebilsin).
@@ -1751,6 +1755,10 @@ async function finalize(parsed, ctx, model, verification, passage = null, policy
   latest = await makeRoomForQuestion(latest);
   latest.push(record);
   await save(trimQuestionPool(pruneRejectedTail(latest), MAX_QUESTIONS));
+  if (PLAN.enabled) {
+   planState = advanceCyclicPlanState(planState, ctx.id, contexts, PLAN.quota, PLAN.passes);
+   await savePlanState();
+  }
   telemetry.approvedTotal++;
   telemetry.recentApprovedTimestamps.push(Date.now());
   return record;

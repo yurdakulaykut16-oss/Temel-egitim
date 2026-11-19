@@ -3,15 +3,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
- buildPlanSteps, planSnapshot, planBatch, pickPlanWork, planConfigFromEnv,
- countApproved, stepKey, notePlanOutcome, sanitizePlanState,
+ buildPlanSteps, planSnapshot, cyclicPlanSnapshot, advanceCyclicPlanState, initializeCyclicPlanState,
+ planBatch, pickPlanWork, planConfigFromEnv, countApproved, stepKey, notePlanOutcome, sanitizePlanState,
  evidenceWithinSummary, splitSummarySentences
 } from '../server/production-plan.mjs';
 
 const contexts = JSON.parse(readFileSync(new URL('../server/contexts.json', import.meta.url), 'utf8'));
 const approved = (unitId, n) => Array.from({ length: n }, () => ({ unitId, status: 'approved' }));
 
-test('all 29 loaded units have four sequential 50-question passes (200 per unit)', () => {
+test('all 29 loaded units can be expanded into sequential capped passes', () => {
  assert.equal(contexts.length, 29);
  const steps = buildPlanSteps(contexts, 50, 4);
  assert.equal(steps.length, 29 * 4);
@@ -22,8 +22,9 @@ test('all 29 loaded units have four sequential 50-question passes (200 per unit)
   assert.deepEqual(unitSteps.map(step => [step.from, step.share, step.quota]), [[0,50,50],[50,50,100],[100,50,150],[150,50,200]]);
   assert.ok(unitSteps.every((step, passIndex) => step.index === index * 4 + passIndex));
  }
- assert.deepEqual(planConfigFromEnv({}).passes, 4);
+ assert.deepEqual(planConfigFromEnv({}).passes, 100);
  assert.deepEqual(planConfigFromEnv({}).quota, 50);
+ assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN_PASSES: '150', TEMPO_PLAN_QUOTA: '80' }), { enabled: true, quota: 50, passes: 100, stuckLimit: 25 });
  assert.deepEqual(planConfigFromEnv({ TEMPO_PLAN: '0' }).enabled, false);
 });
 
@@ -77,6 +78,33 @@ test('per-unit stuck counters park the current unit step without difficulty buck
  assert.equal(resumed.current.pass, 4, 'remaining approved questions are filled before advancing');
  assert.equal(resumed.all.find(s => s.key === step.key).parked, false);
  assert.deepEqual(sanitizePlanState(state, contexts), state);
+});
+
+test('continuous plan keeps each pass capped at 50, finishes units in order, and cycles forever', () => {
+ const small = contexts.slice(0, 2);
+ const quota = 2, passes = 2, target = quota * passes;
+ let state = initializeCyclicPlanState({ contexts: small, items: [], quota, passes });
+ assert.equal(state.cycle, 0);
+ assert.equal(state.unitIndex, 0);
+ assert.equal(cyclicPlanSnapshot({ contexts: small, quota, passes, ...state }).current.pass, 1);
+ assert.equal(cyclicPlanSnapshot({ contexts: small, quota, passes, ...state }).targetPerUnit, 4);
+
+ for (let n = 0; n < target; n++) state = advanceCyclicPlanState(state, small[0].id, small, quota, passes);
+ assert.equal(state.unitIndex, 1, 'the next unit starts only after this unit reaches its cycle target');
+ assert.equal(state.cycle, 0);
+ for (let n = 0; n < target; n++) state = advanceCyclicPlanState(state, small[1].id, small, quota, passes);
+ assert.equal(state.unitIndex, 0, 'after the last unit, production restarts at the first unit');
+ assert.equal(state.cycle, 1);
+ assert.deepEqual(state.cycleProgress, { [small[0].id]: 0, [small[1].id]: 0 });
+ const restarted = cyclicPlanSnapshot({ contexts: small, quota, passes, ...state });
+ assert.equal(restarted.continuous, true);
+ assert.equal(restarted.complete, false);
+ assert.equal(restarted.current.unitId, small[0].id);
+
+ const existing = initializeCyclicPlanState({ contexts: small, items: approved(small[0].id, 3), quota, passes });
+ assert.equal(existing.unitIndex, 0);
+ assert.equal(existing.cycleProgress[small[0].id], 3, 'legacy approved questions seed the first cycle');
+ assert.equal(cyclicPlanSnapshot({ contexts: small, quota, passes, ...existing }).current.pass, 2);
 });
 
 test('source-evidence helper accepts source wording and rejects unsupported evidence', () => {
